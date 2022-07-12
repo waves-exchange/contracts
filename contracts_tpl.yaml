@@ -40,12 +40,6 @@
   testnet-signer: $MANAGER_PRV
   mainnet-pub: FoGdD9qz4AFW3pdmp1QCA5vvo9wn3fTbv4JnYrWZe3BB
 
-- file: factory_v2.ride
-  tag: factory_v2
-  testnet-prv: $FACTORYV2_PRV
-  testnet-signer: $MANAGER_PRV
-  mainnet-pub: HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61
-
 - file: vesting.ride
   tag: vesting
   testnet-prv: $VESTING_PRV
