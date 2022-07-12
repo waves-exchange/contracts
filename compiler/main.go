@@ -61,6 +61,7 @@ func main() {
 		kind string
 	}
 
+	exitCode := 0
 	for _, _file := range dir {
 		file := _file
 		for _, c := range []cfg{{
@@ -78,6 +79,7 @@ func main() {
 					Str("kind", c.kind).
 					Err(e).
 					Msg("compilation failed")
+				exitCode = 1
 			}
 			log.Info().
 				Str("file", file.Name()).
@@ -86,6 +88,7 @@ func main() {
 				Msg("compiled")
 		}
 	}
+	os.Exit(exitCode)
 }
 
 func NewAPI(wavesClient WavesClient) *API {
