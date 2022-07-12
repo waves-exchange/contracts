@@ -570,8 +570,9 @@ func finalizeHelper() = {
         let nextUserOrUnit = match userOrUnit {
           case _: Unit => pool.getVotesListName().keyListHead().getString()
           case user: String => {
+            strict next = pool.getVotesListName().keyListNext(user).getString()
             strict processVoteInv = this.invoke("processVoteINTERNAL", [poolStr, user], [])
-            pool.getVotesListName().keyListNext(user).getString()
+            next
           }
         }
         match nextUserOrUnit {
@@ -620,11 +621,11 @@ func finalizeHelper() = {
         }
       }
       case poolStr: String => {
+        strict nextPoolOrUnit = poolsListName.keyListNext(poolStr).getString()
         strict r = this.invoke("processPoolINTERNAL", [poolStr], []).exactAs[Boolean]
         if (r) then {
           ([], true)
         } else {
-          let nextPoolOrUnit = poolsListName.keyListNext(poolStr).getString()
           match nextPoolOrUnit {
             case _: Unit => {
               ([
