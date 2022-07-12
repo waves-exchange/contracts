@@ -1,0 +1,24 @@
+{
+	"type": 16,
+	"senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+	"fee": 500000,
+	"feeAssetId": null,
+	"proofs": [],
+	"version": 1,
+	"dApp": "3P2bFG9Nab5cBdvnvV4RSWWiVRiBuwWVQr9",
+	"payment": [{
+		"assetId": "Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on",
+		"amount": 100000
+	}],
+	"call": {
+		"function": "suggest",
+		"args": [{
+				"type": "string",
+				"value": "J19LBFH7io454MqmWDWy9oUGqn3fH4NufpTp725iQoYr"
+			},
+			{
+				"type": "string",
+				"value": ""
+			}]
+	}
+}

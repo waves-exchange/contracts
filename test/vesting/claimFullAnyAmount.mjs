@@ -1,0 +1,76 @@
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { address } from '@waves/ts-lib-crypto';
+import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import { create } from '@waves/node-api-js';
+import { sleep } from '../utils.mjs';
+
+chai.use(chaiAsPromised);
+const { expect } = chai;
+
+const apiBase = process.env.API_NODE_URL;
+const chainId = 'R';
+
+const api = create(apiBase);
+
+/** @typedef {
+ * Mocha.Suite & {accounts: Object.<string, number>, votingDuration: number, wxAssetId: string}
+ * } MochaSuiteModified
+ * */
+describe('vesting: claimFullAnyAmount.mjs', /** @this {MochaSuiteModified} */() => {
+  it('should successfully claim full amount even if perBlockAmount is rounded', async function () {
+    const vesting = address(this.accounts.vesting, chainId);
+    const user1 = address(this.accounts.user1, chainId);
+
+    const createDepositFor = invokeScript({
+      dApp: vesting,
+      payment: [{
+        assetId: this.wxAssetId,
+        amount: 10000,
+      }],
+      call: {
+        function: 'createDepositFor',
+        args: [
+          { type: 'string', value: user1 },
+          { type: 'integer', value: 6 },
+        ],
+      },
+      chainId,
+    }, this.accounts.manager);
+    await api.transactions.broadcast(createDepositFor, {});
+    await ni.waitForTx(createDepositFor.id, { apiBase });
+
+    await sleep(30);
+
+    const beforeClaim1 = await api.assets.fetchBalanceAddressAssetId(user1, this.wxAssetId);
+    const claim1 = invokeScript({
+      dApp: vesting,
+      payment: [],
+      call: {
+        function: 'claim',
+        args: [],
+      },
+      chainId,
+    }, this.accounts.user1);
+    await api.transactions.broadcast(claim1, {});
+    await ni.waitForTx(claim1.id, { apiBase });
+
+    await sleep(90);
+
+    const claim2 = invokeScript({
+      dApp: vesting,
+      payment: [],
+      call: {
+        function: 'claim',
+        args: [],
+      },
+      chainId,
+    }, this.accounts.user1);
+    await api.transactions.broadcast(claim2, {});
+    await ni.waitForTx(claim2.id, { apiBase });
+    const afterClaim2 = await api.assets.fetchBalanceAddressAssetId(user1, this.wxAssetId);
+
+    const diffBalance = afterClaim2.balance - beforeClaim1.balance;
+    expect(diffBalance).equal(10000);
+  });
+});

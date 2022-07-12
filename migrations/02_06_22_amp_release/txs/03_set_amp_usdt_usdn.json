@@ -1,0 +1,17 @@
+{
+  "dApp": "3P36szQtxxpSaefdqaFjbM9Ush8ieCjVZVw",
+  "fee": 500000,
+  "proofs": [],
+  "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+  "timestamp": 0,
+  "type": 16,
+  "version": 1,
+  "payment": [],
+  "call": {
+    "function": "setAmp",
+    "args": [{
+        "type": "string",
+        "value": "1000"
+      }]
+  }
+}

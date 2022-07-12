@@ -1,0 +1,14 @@
+{
+	"type": 16,
+	"senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+	"fee": 500000,
+	"feeAssetId": null,
+	"proofs": [],
+	"version": 1,
+	"dApp": "3PJUgThZstRRseuZZKnxdAvfG1N9uxK33aX",
+	"payment": [],
+	"call": {
+		"function": "setAdmins",
+		"args": [{"type": "list", "value": [{"type": "string", "value": "4WXFewnkvLS5GXdMgchWLpyb5Z5XgxoGdNQqCrL4upfW"}]}]
+	}
+}

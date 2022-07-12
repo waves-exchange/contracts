@@ -1,0 +1,17 @@
+{
+  "dApp": "3NCroKxpCWCYijwjiVBg6hc2T7DaajrHuBr",
+  "fee": 500000,
+  "proofs": [],
+  "senderPublicKey": "EsqRXDXnACFAdXz6EPhF1SbKyeV7MVuoyDqmXsMz7ySv",
+  "timestamp": 0,
+  "type": 16,
+  "version": 1,
+  "payment": [{
+    "assetId": "Cv675Rk1R74AVByZ2cVjL8DkEx7RxD5PYZN1b4QH2Fc5",
+    "amount": 43082
+  }],
+  "call": {
+    "function": "submitGetRequest",
+    "args": []
+  }
+}

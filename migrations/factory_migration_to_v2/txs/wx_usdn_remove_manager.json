@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "type": 12,
+  "chainId": 87,
+  "data": [
+    {
+      "key": "%s__managerPublicKey",
+      "value": null
+    }
+  ],
+  "fee": 500000,
+  "proofs": [],
+  "timestamp": 0,
+  "senderPublicKey": "24dorn126Pv4mGCgUu61v1RLxqW4VNXbuHjmCHh7tc3K"
+}

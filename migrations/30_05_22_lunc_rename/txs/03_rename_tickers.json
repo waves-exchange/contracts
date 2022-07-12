@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "type": 12,
+  "data": [
+    {
+      "key": "%s%s__assetId2ticker__EJfotnMGepQxZTBsqbYjrEbbhzWd7oS6GAQcPZBsWmqh",
+      "type": "string",
+      "value": "LUNCUSDNLP"
+    }, {
+      "key": "%s%s__ticker2assetId__LUNCUSDNLP",
+      "type": "string",
+      "value": "EJfotnMGepQxZTBsqbYjrEbbhzWd7oS6GAQcPZBsWmqh"
+    }, {
+      "key": "%s%s__ticker2assetId__LUNAUSDNLP",
+      "value": null
+    }, {
+      "key": "%s%s__assetId2ticker__CymTEeirv8DPccRnozQrEvR1yCdHY4QSf4AtGKoKkWqU",
+      "type": "string",
+      "value": "USTCUSDNLP"
+    }, {
+      "key": "%s%s__ticker2assetId__USTCUSDNLP",
+      "type": "string",
+      "value": "CymTEeirv8DPccRnozQrEvR1yCdHY4QSf4AtGKoKkWqU"
+    }, {
+      "key": "%s%s__ticker2assetId__USTUSDNLP",
+      "value": null
+    }, {
+      "key": "%s%s__assetId2ticker__6QUVF8nVVVvM7do7JT2eJ5o5ehnZgXUg13ysiB9JiQrZ",
+      "type": "string",
+      "value": "LUNC"
+    }, {
+      "key": "%s%s__ticker2assetId__LUNA",
+      "value": null
+    }, {
+      "key": "%s%s__ticker2assetId__LUNC",
+      "type": "string",
+      "value": "6QUVF8nVVVvM7do7JT2eJ5o5ehnZgXUg13ysiB9JiQrZ"
+    }, {
+      "key": "%s%s__assetId2ticker__2thtesXvnVMcCnih9iZbJL3d2NQZMfzENJo8YFj6r5jU",
+      "type": "string",
+      "value": "USTC"
+    },  {
+      "key": "%s%s__ticker2assetId__UST",
+      "value": null
+    },  {
+      "key": "%s%s__ticker2assetId__USTC",
+      "type": "string",
+      "value": "2thtesXvnVMcCnih9iZbJL3d2NQZMfzENJo8YFj6r5jU"
+    }
+  ],
+  "fee": 500000,
+  "proofs": [],
+  "senderPublicKey": "Ajaez2Qx6UNQu7rT1BceE2hNDrQd52fLHsoq7Js5q3by"
+}

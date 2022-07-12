@@ -1,0 +1,13 @@
+{-# STDLIB_VERSION 5 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+@Callable(i)
+func activate(amtAssetStr: String, priceAssetStr: String) = {
+  (nil, "success")
+}
+
+@Callable(i)
+func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
+  (nil, unit)
+}

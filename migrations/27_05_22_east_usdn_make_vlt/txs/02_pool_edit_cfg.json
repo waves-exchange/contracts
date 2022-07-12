@@ -1,0 +1,15 @@
+{
+  "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+  "data": [
+    {
+      "key": "%d%d%s__36__2__config",
+      "type": "string",
+      "value": "%s%d%s%s%s%d%d%d%d%d%s__3PHxdxsgxNwEjVRt45sjeUfNZZ8uHzYVpvH__4__AF3twxhEeRcAmEhoah3Ej39mBUnzgKJFcFLuPu7gihDA__3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p__100000000__1000000__36__2__100000000__VLTPOOL"
+    }
+  ],
+  "feeAssetId": null,
+  "proofs": [],
+  "fee": 500000,
+  "type": 12,
+  "version": 2
+}

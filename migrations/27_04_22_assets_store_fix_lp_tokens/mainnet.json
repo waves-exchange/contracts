@@ -1,0 +1,21 @@
+{
+  "senderPublicKey": "Ajaez2Qx6UNQu7rT1BceE2hNDrQd52fLHsoq7Js5q3by",
+  "data": [
+    {
+      "key": "%s%s__labels__CDNRpYYrfXsfUpoL8Yj3SvU1xT6GBoBFiG7dVGnWXkg7",
+      "type": "string",
+      "value": "POOLS_LP"
+    },
+    {
+      "key": "status_<CDNRpYYrfXsfUpoL8Yj3SvU1xT6GBoBFiG7dVGnWXkg7>",
+      "type": "integer",
+      "value": 0
+    }
+  ],
+  "feeAssetId": null,
+  "proofs": [],
+  "fee": 500000,
+  "type": 12,
+  "version": 2,
+  "chainId": 87
+}

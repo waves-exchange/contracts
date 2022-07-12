@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "type": 12,
+  "chainId": 87,
+  "data": [
+    {
+      "key": "%s__delay",
+      "type": "integer",
+      "value": 2
+    }
+  ],
+  "fee": 500000,
+  "proofs": [],
+  "timestamp": 0,
+  "senderPublicKey": "4Ehd2yvuqp3EmRgQpRKmpb8D7FskicPp35nK7GCGZTuM"
+}

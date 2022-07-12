@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "type": 12,
+  "chainId": 87,
+  "data": [
+    {
+      "key": "%s__addonAddr",
+      "type": "string",
+      "value": "3PLrcPueenkE8GircQaJe1ex9TWZuuRXi5i"
+    }
+  ],
+  "fee": 500000,
+  "proofs": [],
+  "timestamp": 0,
+  "senderPublicKey": "H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8"
+}

@@ -1,0 +1,125 @@
+name: WX Contracts CI
+on: push
+
+jobs:
+  compile:
+    env:
+      TESTNETNODE: ${{ secrets.TESTNETNODE }}
+      MAINNETNODE: ${{ secrets.MAINNETNODE }}
+    runs-on: ubuntu-20.04
+    container:
+      image: golang:1.18
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          cd compiler
+          go run main.go
+
+  deploy_testnet:
+    env:
+      MODE: deployTestnet
+      TESTNETNODE: ${{ secrets.TESTNETNODE }}
+      MAINNETNODE: ${{ secrets.MAINNETNODE }}
+      CONTRACTS: ../contracts.yaml
+      ASSETSSTORE_PRV: ${{ secrets.ASSETSSTORE_PRV }}
+      BOOSTING_PRV: ${{ secrets.BOOSTING_PRV }}
+      EASTUSDNPOOL_SRV: ${{ secrets.EASTUSDNPOOL_SRV }}
+      EMISSION_PRV: ${{ secrets.EMISSION_PRV }}
+      FACTORYV2_PRV: ${{ secrets.FACTORYV2_PRV }}
+      GWXREWARD_PRV: ${{ secrets.GWXREWARD_PRV }}
+      LPSTAKINGV2_PRV: ${{ secrets.LPSTAKINGV2_PRV }}
+      MANAGER_PRV: ${{ secrets.MANAGER_PRV }}
+      STAKING_PRV: ${{ secrets.STAKING_PRV }}
+      USDCUSDTPOOLADDON_PRV: ${{ secrets.USDCUSDTPOOLADDON_PRV }}
+      USDCUSDTPOOL_PRV: ${{ secrets.USDCUSDTPOOL_PRV }}
+      USDTUSDNPOOLADDON_PRV: ${{ secrets.USDTUSDNPOOLADDON_PRV }}
+      USDTUSDNPOOL_PRV: ${{ secrets.USDTUSDNPOOL_PRV }}
+      USERPOOLS_PRV: ${{ secrets.USERPOOLS_PRV }}
+      VESTING_PRV: ${{ secrets.VESTING_PRV }}
+      VORINGEMISSIONCANDIDATE_PRV: ${{ secrets.VORINGEMISSIONCANDIDATE_PRV }}
+      VOTINGEMISSION_PRV: ${{ secrets.VOTINGEMISSION_PRV }}
+      VOTINGVERIFIED_PRV: ${{ secrets.VOTINGVERIFIED_PRV }}
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-20.04
+    container:
+      image: golang:1.18
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          apt update
+          apt install gettext-base -y
+      - run: |
+          envsubst < contracts_tpl.yaml > contracts.yaml
+          cd deployer
+          go run main.go
+
+  compare_mainnet:
+    env:
+      MODE: compareMainnet
+      TESTNETNODE: ${{ secrets.TESTNETNODE }}
+      MAINNETNODE: ${{ secrets.MAINNETNODE }}
+      CONTRACTS: ../contracts.yaml
+      ASSETSSTORE_PRV: ${{ secrets.ASSETSSTORE_PRV }}
+      BOOSTING_PRV: ${{ secrets.BOOSTING_PRV }}
+      EASTUSDNPOOL_SRV: ${{ secrets.EASTUSDNPOOL_SRV }}
+      EMISSION_PRV: ${{ secrets.EMISSION_PRV }}
+      FACTORYV2_PRV: ${{ secrets.FACTORYV2_PRV }}
+      GWXREWARD_PRV: ${{ secrets.GWXREWARD_PRV }}
+      LPSTAKINGV2_PRV: ${{ secrets.LPSTAKINGV2_PRV }}
+      MANAGER_PRV: ${{ secrets.MANAGER_PRV }}
+      STAKING_PRV: ${{ secrets.STAKING_PRV }}
+      USDCUSDTPOOLADDON_PRV: ${{ secrets.USDCUSDTPOOLADDON_PRV }}
+      USDCUSDTPOOL_PRV: ${{ secrets.USDCUSDTPOOL_PRV }}
+      USDTUSDNPOOLADDON_PRV: ${{ secrets.USDTUSDNPOOLADDON_PRV }}
+      USDTUSDNPOOL_PRV: ${{ secrets.USDTUSDNPOOL_PRV }}
+      USERPOOLS_PRV: ${{ secrets.USERPOOLS_PRV }}
+      VESTING_PRV: ${{ secrets.VESTING_PRV }}
+      VORINGEMISSIONCANDIDATE_PRV: ${{ secrets.VORINGEMISSIONCANDIDATE_PRV }}
+      VOTINGEMISSION_PRV: ${{ secrets.VOTINGEMISSION_PRV }}
+      VOTINGVERIFIED_PRV: ${{ secrets.VOTINGVERIFIED_PRV }}
+    if: |
+      github.ref == 'refs/heads/dev' ||
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-20.04
+    container:
+      image: golang:1.18
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          apt update
+          apt install gettext-base -y
+      - run: |
+          envsubst < contracts_tpl.yaml > contracts.yaml
+          cd deployer
+          go run main.go
+
+  test:
+    env:
+      API_NODE_URL: ${{ secrets.API_NODE_URL }}
+    runs-on: ubuntu-20.04
+    container:
+      image: node:18.1
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          npm i
+          npm run ci-test
+
+  lint_go:
+    runs-on: ubuntu-20.04
+    container:
+      image: golang:1.18
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          gofmt -l .
+
+  lint_js:
+    runs-on: ubuntu-20.04
+    container:
+      image: node:18.1
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          npm i
+          npm run lint

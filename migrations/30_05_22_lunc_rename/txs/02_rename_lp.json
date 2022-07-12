@@ -1,0 +1,11 @@
+{
+  "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+  "fee": 500000,
+  "description": "WX USTC/USDN pool liquidity provider token",
+  "type": 17,
+  "version": 1,
+  "feeAssetId": null,
+  "proofs": [],
+  "assetId": "CymTEeirv8DPccRnozQrEvR1yCdHY4QSf4AtGKoKkWqU",
+  "name": "USTCUSDNLP"
+}

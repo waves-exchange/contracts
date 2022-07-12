@@ -1,0 +1,14 @@
+{
+  "senderPublicKey": "EAtbDa63mS5omrvW7Pfr7DKWEVLuReJtu72vfiBLRXsx",
+  "data": [
+    {
+      "key": "%s__migratorPublicKey",
+      "value": null
+    }
+  ],
+  "feeAssetId": null,
+  "proofs": [],
+  "fee": 500000,
+  "type": 12,
+  "version": 2
+}

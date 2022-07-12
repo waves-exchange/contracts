@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "type": 12,
+  "chainId": 87,
+  "data": [
+    {
+      "key": "%s__nextProcessedPeriod",
+      "type": "integer",
+      "value": 0
+    }
+  ],
+  "fee": 500000,
+  "proofs": [],
+  "timestamp": 0,
+  "senderPublicKey": "4Uv4fNGxmwhwHRipWuYvZe87BazB9H19nVEac9pguorM"
+}

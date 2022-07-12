@@ -1,0 +1,10 @@
+{
+  "type": 12,
+  "version": 2,
+  "senderPublicKey": "Ajaez2Qx6UNQu7rT1BceE2hNDrQd52fLHsoq7Js5q3by",
+  "fee": 500000,
+  "feeAssetId": null,
+  "timestamp": 0,
+  "proofs": [],
+  "data": [{"key": "%s__labels", "type": "string", "value": "COMMUNITY_VERIFIED__POOLS_LP__GATEWAY__DEFI"}]
+}

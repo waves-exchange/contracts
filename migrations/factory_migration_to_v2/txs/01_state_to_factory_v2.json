@@ -1,0 +1,361 @@
+{
+  "chainId": 87,
+  "data": [
+    {
+      "key": "%d%d%s%s__1__2__mappings__PoolAssets2LpAsset",
+      "type": "string",
+      "value": "%s__7KZbJrVopwJhkdwbe1eFDBbex4dkY63MxjTNjqXtrzj1"
+    },
+    {
+      "key": "%d%d%s%s__1__2__mappings__poolAssets2PoolContract",
+      "type": "string",
+      "value": "3PPZWgFNRKHLvM51pwS934C8VZ7d2F4Z58g"
+    },
+    {
+      "key": "%d%d%s%s__3__2__mappings__PoolAssets2LpAsset",
+      "type": "string",
+      "value": "%s__8WhH5CCJ6NakPvEvAJcizqqD7H6axhupdYHDFumSDwsy"
+    },
+    {
+      "key": "%d%d%s%s__3__2__mappings__poolAssets2PoolContract",
+      "type": "string",
+      "value": "3PCBWDTA6jrFswd7gQgaE3Xk7gLM5RKofvp"
+    },
+    {
+      "key": "%d%d%s%s__4__2__mappings__PoolAssets2LpAsset",
+      "type": "string",
+      "value": "%s__6gtgBD12xZkUTnzGofoFJpMg5gYG1FP6PaGyLviVQjbh"
+    },
+    {
+      "key": "%d%d%s%s__4__2__mappings__poolAssets2PoolContract",
+      "type": "string",
+      "value": "3PEMqetsaJDbYMw1XGovmE37FB8VUhGnX9A"
+    },
+    {
+      "key": "%d%d%s%s__5__2__mappings__PoolAssets2LpAsset",
+      "type": "string",
+      "value": "%s__97zHFp1C3cB7qfvx8Xv5f2rWp9nUSG5UnAamfPcW6txf"
+    },
+    {
+      "key": "%d%d%s%s__5__2__mappings__poolAssets2PoolContract",
+      "type": "string",
+      "value": "3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz"
+    },
+    {
+      "key": "%d%d%s%s__6__2__mappings__PoolAssets2LpAsset",
+      "type": "string",
+      "value": "%s__F2AKkA513k5yHEJkLsU6vWxCYYk811GpjLhwEv2WGwZ9"
+    },
+    {
+      "key": "%d%d%s%s__6__2__mappings__poolAssets2PoolContract",
+      "type": "string",
+      "value": "3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99"
+    },
+    {
+      "key": "%d%d%s%s__7__2__mappings__PoolAssets2LpAsset",
+      "type": "string",
+      "value": "%s__HaZoXL5MsvdDQAq3hnYdxZZUWWDyFtjfdLWG3z8Bs4kb"
+    },
+    {
+      "key": "%d%d%s%s__7__2__mappings__poolAssets2PoolContract",
+      "type": "string",
+      "value": "3P8NCvcipinDQVQZujpczBdvG7FL5EvTqLM"
+    },
+    {
+      "key": "%d%d%s__1__2__config",
+      "type": "string",
+      "value": "%s%d%s%s%s%d%d%d%d%d%s__3PPZWgFNRKHLvM51pwS934C8VZ7d2F4Z58g__1__7KZbJrVopwJhkdwbe1eFDBbex4dkY63MxjTNjqXtrzj1__WAVES__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p__100000000__1000000__1__2__100000000__VLTPOOL"
+    },
+    {
+      "key": "%d%d%s__3__2__config",
+      "type": "string",
+      "value": "%s%d%s%s%s%d%d%d%d%d%s__3PCBWDTA6jrFswd7gQgaE3Xk7gLM5RKofvp__1__8WhH5CCJ6NakPvEvAJcizqqD7H6axhupdYHDFumSDwsy__8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p__100000000__1000000__3__2__100000000__VLTPOOL"
+    },
+    {
+      "key": "%d%d%s__4__2__config",
+      "type": "string",
+      "value": "%s%d%s%s%s%d%d%d%d%d%s__3PEMqetsaJDbYMw1XGovmE37FB8VUhGnX9A__1__6gtgBD12xZkUTnzGofoFJpMg5gYG1FP6PaGyLviVQjbh__474jTeYx2r2Va35794tCScAXWJG9hU2HcgxzMowaZUnu__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p__100000000__1000000__4__2__100000000__VLTPOOL"
+    },
+    {
+      "key": "%d%d%s__5__2__config",
+      "type": "string",
+      "value": "%s%d%s%s%s%d%d%d%d%d%s__3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz__1__97zHFp1C3cB7qfvx8Xv5f2rWp9nUSG5UnAamfPcW6txf__34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p__1000000__1000000__5__2__100000000__STBLPOOL"
+    },
+    {
+      "key": "%d%d%s__6__2__config",
+      "type": "string",
+      "value": "%s%d%s%s%s%d%d%d%d%d%s__3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99__1__F2AKkA513k5yHEJkLsU6vWxCYYk811GpjLhwEv2WGwZ9__Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p__100000000__1000000__6__2__100000000__VLTPOOL"
+    },
+    {
+      "key": "%d%d%s__7__2__config",
+      "type": "string",
+      "value": "%s%d%s%s%s%d%d%d%d%d%s__3P8NCvcipinDQVQZujpczBdvG7FL5EvTqLM__1__HaZoXL5MsvdDQAq3hnYdxZZUWWDyFtjfdLWG3z8Bs4kb__5UYBPpq4WoU5n4MwpFkgJnW3Fq4B1u3ukpK33ik4QerR__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p__100000000__1000000__7__2__100000000__VLTPOOL"
+    },
+    {
+      "key": "%s%s%d__mappings__internal2baseAssetId__1",
+      "type": "string",
+      "value": "WAVES"
+    },
+    {
+      "key": "%s%s%d__mappings__internal2baseAssetId__2",
+      "type": "string",
+      "value": "DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p"
+    },
+    {
+      "key": "%s%s%d__mappings__internal2baseAssetId__3",
+      "type": "string",
+      "value": "8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS"
+    },
+    {
+      "key": "%s%s%d__mappings__internal2baseAssetId__4",
+      "type": "string",
+      "value": "474jTeYx2r2Va35794tCScAXWJG9hU2HcgxzMowaZUnu"
+    },
+    {
+      "key": "%s%s%d__mappings__internal2baseAssetId__5",
+      "type": "string",
+      "value": "34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ"
+    },
+    {
+      "key": "%s%s%d__mappings__internal2baseAssetId__6",
+      "type": "string",
+      "value": "Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on"
+    },
+    {
+      "key": "%s%s%d__mappings__internal2baseAssetId__7",
+      "type": "string",
+      "value": "5UYBPpq4WoU5n4MwpFkgJnW3Fq4B1u3ukpK33ik4QerR"
+    },
+    {
+      "key": "%s%s%s__3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz__mappings__poolContract2LpAsset",
+      "type": "string",
+      "value": "97zHFp1C3cB7qfvx8Xv5f2rWp9nUSG5UnAamfPcW6txf"
+    },
+    {
+      "key": "%s%s%s__3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz__mappings__poolContract2PoolAssets",
+      "type": "string",
+      "value": "%d%d__5__2"
+    },
+    {
+      "key": "%s%s%s__3P8NCvcipinDQVQZujpczBdvG7FL5EvTqLM__mappings__poolContract2LpAsset",
+      "type": "string",
+      "value": "HaZoXL5MsvdDQAq3hnYdxZZUWWDyFtjfdLWG3z8Bs4kb"
+    },
+    {
+      "key": "%s%s%s__3P8NCvcipinDQVQZujpczBdvG7FL5EvTqLM__mappings__poolContract2PoolAssets",
+      "type": "string",
+      "value": "%d%d__7__2"
+    },
+    {
+      "key": "%s%s%s__3PCBWDTA6jrFswd7gQgaE3Xk7gLM5RKofvp__mappings__poolContract2LpAsset",
+      "type": "string",
+      "value": "8WhH5CCJ6NakPvEvAJcizqqD7H6axhupdYHDFumSDwsy"
+    },
+    {
+      "key": "%s%s%s__3PCBWDTA6jrFswd7gQgaE3Xk7gLM5RKofvp__mappings__poolContract2PoolAssets",
+      "type": "string",
+      "value": "%d%d__3__2"
+    },
+    {
+      "key": "%s%s%s__3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99__mappings__poolContract2LpAsset",
+      "type": "string",
+      "value": "F2AKkA513k5yHEJkLsU6vWxCYYk811GpjLhwEv2WGwZ9"
+    },
+    {
+      "key": "%s%s%s__3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99__mappings__poolContract2PoolAssets",
+      "type": "string",
+      "value": "%d%d__6__2"
+    },
+    {
+      "key": "%s%s%s__3PEMqetsaJDbYMw1XGovmE37FB8VUhGnX9A__mappings__poolContract2LpAsset",
+      "type": "string",
+      "value": "6gtgBD12xZkUTnzGofoFJpMg5gYG1FP6PaGyLviVQjbh"
+    },
+    {
+      "key": "%s%s%s__3PEMqetsaJDbYMw1XGovmE37FB8VUhGnX9A__mappings__poolContract2PoolAssets",
+      "type": "string",
+      "value": "%d%d__4__2"
+    },
+    {
+      "key": "%s%s%s__3PPZWgFNRKHLvM51pwS934C8VZ7d2F4Z58g__mappings__poolContract2LpAsset",
+      "type": "string",
+      "value": "7KZbJrVopwJhkdwbe1eFDBbex4dkY63MxjTNjqXtrzj1"
+    },
+    {
+      "key": "%s%s%s__3PPZWgFNRKHLvM51pwS934C8VZ7d2F4Z58g__mappings__poolContract2PoolAssets",
+      "type": "string",
+      "value": "%d%d__1__2"
+    },
+    {
+      "key": "%s%s%s__6gtgBD12xZkUTnzGofoFJpMg5gYG1FP6PaGyLviVQjbh__mappings__lpAsset2Pool",
+      "type": "string",
+      "value": "%d%d__4__2"
+    },
+    {
+      "key": "%s%s%s__6gtgBD12xZkUTnzGofoFJpMg5gYG1FP6PaGyLviVQjbh__mappings__lpAsset2PoolContract",
+      "type": "string",
+      "value": "3PEMqetsaJDbYMw1XGovmE37FB8VUhGnX9A"
+    },
+    {
+      "key": "%s%s%s__7KZbJrVopwJhkdwbe1eFDBbex4dkY63MxjTNjqXtrzj1__mappings__lpAsset2Pool",
+      "type": "string",
+      "value": "%d%d__1__2"
+    },
+    {
+      "key": "%s%s%s__7KZbJrVopwJhkdwbe1eFDBbex4dkY63MxjTNjqXtrzj1__mappings__lpAsset2PoolContract",
+      "type": "string",
+      "value": "3PPZWgFNRKHLvM51pwS934C8VZ7d2F4Z58g"
+    },
+    {
+      "key": "%s%s%s__8WhH5CCJ6NakPvEvAJcizqqD7H6axhupdYHDFumSDwsy__mappings__lpAsset2Pool",
+      "type": "string",
+      "value": "%d%d__3__2"
+    },
+    {
+      "key": "%s%s%s__8WhH5CCJ6NakPvEvAJcizqqD7H6axhupdYHDFumSDwsy__mappings__lpAsset2PoolContract",
+      "type": "string",
+      "value": "3PCBWDTA6jrFswd7gQgaE3Xk7gLM5RKofvp"
+    },
+    {
+      "key": "%s%s%s__97zHFp1C3cB7qfvx8Xv5f2rWp9nUSG5UnAamfPcW6txf__mappings__lpAsset2Pool",
+      "type": "string",
+      "value": "%d%d__5__2"
+    },
+    {
+      "key": "%s%s%s__97zHFp1C3cB7qfvx8Xv5f2rWp9nUSG5UnAamfPcW6txf__mappings__lpAsset2PoolContract",
+      "type": "string",
+      "value": "3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz"
+    },
+    {
+      "key": "%s%s%s__F2AKkA513k5yHEJkLsU6vWxCYYk811GpjLhwEv2WGwZ9__mappings__lpAsset2Pool",
+      "type": "string",
+      "value": "%d%d__6__2"
+    },
+    {
+      "key": "%s%s%s__F2AKkA513k5yHEJkLsU6vWxCYYk811GpjLhwEv2WGwZ9__mappings__lpAsset2PoolContract",
+      "type": "string",
+      "value": "3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99"
+    },
+    {
+      "key": "%s%s%s__HaZoXL5MsvdDQAq3hnYdxZZUWWDyFtjfdLWG3z8Bs4kb__mappings__lpAsset2Pool",
+      "type": "string",
+      "value": "%d%d__7__2"
+    },
+    {
+      "key": "%s%s%s__HaZoXL5MsvdDQAq3hnYdxZZUWWDyFtjfdLWG3z8Bs4kb__mappings__lpAsset2PoolContract",
+      "type": "string",
+      "value": "3P8NCvcipinDQVQZujpczBdvG7FL5EvTqLM"
+    },
+    {
+      "key": "%s%s%s__mappings__baseAsset2internalId__34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ",
+      "type": "integer",
+      "value": 5
+    },
+    {
+      "key": "%s%s%s__mappings__baseAsset2internalId__474jTeYx2r2Va35794tCScAXWJG9hU2HcgxzMowaZUnu",
+      "type": "integer",
+      "value": 4
+    },
+    {
+      "key": "%s%s%s__mappings__baseAsset2internalId__5UYBPpq4WoU5n4MwpFkgJnW3Fq4B1u3ukpK33ik4QerR",
+      "type": "integer",
+      "value": 7
+    },
+    {
+      "key": "%s%s%s__mappings__baseAsset2internalId__8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS",
+      "type": "integer",
+      "value": 3
+    },
+    {
+      "key": "%s%s%s__mappings__baseAsset2internalId__Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on",
+      "type": "integer",
+      "value": 6
+    },
+    {
+      "key": "%s%s%s__mappings__baseAsset2internalId__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p",
+      "type": "integer",
+      "value": 2
+    },
+    {
+      "key": "%s%s%s__mappings__baseAsset2internalId__WAVES",
+      "type": "integer",
+      "value": 1
+    },
+    {
+      "key": "%s%s__matcher__publicKey",
+      "type": "string",
+      "value": "EhjS7Fc4hSUZCRaohvQHRKNCbGUv2DAxmYLXmNW8kavW"
+    },
+    {
+      "key": "%s%s__poolWeight__3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz",
+      "type": "integer",
+      "value": 30000000
+    },
+    {
+      "key": "%s%s__poolWeight__3P8NCvcipinDQVQZujpczBdvG7FL5EvTqLM",
+      "type": "integer",
+      "value": 0
+    },
+    {
+      "key": "%s%s__poolWeight__3PCBWDTA6jrFswd7gQgaE3Xk7gLM5RKofvp",
+      "type": "integer",
+      "value": 12500000
+    },
+    {
+      "key": "%s%s__poolWeight__3PCBWDTA6jrFswd7gQgaE3Xk7gLM5RKofvp__0",
+      "type": "integer",
+      "value": 15000000
+    },
+    {
+      "key": "%s%s__poolWeight__3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99",
+      "type": "integer",
+      "value": 30000000
+    },
+    {
+      "key": "%s%s__poolWeight__3PEMqetsaJDbYMw1XGovmE37FB8VUhGnX9A",
+      "type": "integer",
+      "value": 7500000
+    },
+    {
+      "key": "%s%s__poolWeight__3PEMqetsaJDbYMw1XGovmE37FB8VUhGnX9A__0",
+      "type": "integer",
+      "value": 10000000
+    },
+    {
+      "key": "%s%s__poolWeight__3PPZWgFNRKHLvM51pwS934C8VZ7d2F4Z58g",
+      "type": "integer",
+      "value": 15000000
+    },
+    {
+      "key": "%s%s__poolWeight__GWXvirtualPOOL",
+      "type": "integer",
+      "value": 5000000
+    },
+    {
+      "key": "%s__factoryConfig",
+      "type": "string",
+      "value": "%s%s%s%s%s%s%s%s%s%s%s__3PPNhHYkkEy13gRWDCaruQyhNbX2GrjYSyV__3PJL8Hn8LACaSBWLQ3UVhctA5cTQLBFwBAP__3PKpsc1TNquw4HAF62pWK8ka1DBz9vyEBkt__3PDt4YQURTeERKPzaFWAcaVZZTaU8HfFYgL__3PJyz4AHXKBgDuFx7uZdYmHCBtTmDnRgCx3__3P8MoPnsaurofk1VyhsdAFkeQ6ijpJYXCpW__3PHmyHFaFTNh6Yh8vicJke9DnxcsUA56uWb__3PJeKwpb71YnAs1DHFfee7jWQiQrqhtwtV1__3PHpaXvHpdthSBwXzjJiNnAes6dqzgr9BcU__3PH83bJCZraJoEzFefz4p8UXZD9YazNnj1n__3P2zEpvpNr7hh5F1wtBBVDb6cG37qvLuQFg"
+    },
+    {
+      "key": "%s__lpTokensList",
+      "type": "string",
+      "value": "7KZbJrVopwJhkdwbe1eFDBbex4dkY63MxjTNjqXtrzj1__8WhH5CCJ6NakPvEvAJcizqqD7H6axhupdYHDFumSDwsy__6gtgBD12xZkUTnzGofoFJpMg5gYG1FP6PaGyLviVQjbh__97zHFp1C3cB7qfvx8Xv5f2rWp9nUSG5UnAamfPcW6txf__F2AKkA513k5yHEJkLsU6vWxCYYk811GpjLhwEv2WGwZ9__HaZoXL5MsvdDQAq3hnYdxZZUWWDyFtjfdLWG3z8Bs4kb"
+    },
+    {
+      "key": "%s__nextInternalAssetId",
+      "type": "integer",
+      "value": 7
+    },
+    {
+      "key": "%s__priceDecimals",
+      "type": "integer",
+      "value": 100000000
+    }
+  ],
+  "fee": 800000,
+  "proofs": [],
+  "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+  "timestamp": 0,
+  "type": 12,
+  "version": 2
+}

@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "type": 12,
+  "chainId": 87,
+  "data": [
+    {
+      "key": "%s%s%d__shutdown__manager__0",
+      "type": "string",
+      "value": "3PLC7GbU8HsuLN6EsMLbCxScSi9m4BWdVyJ"
+    },
+    {
+      "key": "%s%s%d__shutdown__manager__1",
+      "type": "string",
+      "value": "3PLC7GbU8HsuLN6EsMLbCxScSi9m4BWdVyJ"
+    },
+    {
+      "key": "%s%s%d__shutdown__manager__2",
+      "type": "string",
+      "value": "3PLC7GbU8HsuLN6EsMLbCxScSi9m4BWdVyJ"
+    },
+    {
+      "key": "%s%s%d__shutdown__manager__3",
+      "type": "string",
+      "value": "3PLC7GbU8HsuLN6EsMLbCxScSi9m4BWdVyJ"
+    }
+  ],
+  "fee": 500000,
+  "proofs": [],
+  "timestamp": 0,
+  "senderPublicKey": "7AkYRHYaiaxocnoA7YJv29kujpmkVBJxFppUkasDe4Ej"
+}

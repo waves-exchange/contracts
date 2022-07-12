@@ -1,0 +1,39 @@
+{
+  "chainId": 87,
+  "dApp": "3PCuHsTU58WKhCqotbcSwABvdPzqqVAbbTv",
+  "fee": 500000,
+  "proofs": [],
+  "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+  "payment": [],
+  "timestamp": 0,
+  "type": 16,
+  "version": 1,
+  "call": {
+    "function": "constructorV4",
+    "args": [{
+      "type": "string",
+      "value": "3PKA6yAEpCLkH9dzweP15j7tijdXrHN2SPp"
+    }, {
+      "type": "list",
+      "value": [{
+        "type": "string",
+        "value": "3PPZWgFNRKHLvM51pwS934C8VZ7d2F4Z58g"
+      }, {
+        "type": "string",
+        "value": "3PCBWDTA6jrFswd7gQgaE3Xk7gLM5RKofvp"
+      }, {
+        "type": "string",
+        "value": "3PEMqetsaJDbYMw1XGovmE37FB8VUhGnX9A"
+      }, {
+        "type": "string",
+        "value": "3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz"
+      }, {
+        "type": "string",
+        "value": "3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99"
+      }, {
+        "type": "string",
+        "value": "3P8NCvcipinDQVQZujpczBdvG7FL5EvTqLM"
+      }]
+    }]
+  }
+}

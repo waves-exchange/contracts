@@ -1,0 +1,32 @@
+{-# STDLIB_VERSION 5 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let separator = "__"
+
+let keyPriceAssets = "priceAssets"
+let statusPending = "pending"
+let statusDeclined = "declined"
+let statusActive = "active"
+
+func keyStatus(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "status", amountAssetId, priceAssetId].makeString(separator)
+
+@Callable(i)
+func priceAssetsREADONLY() = {
+  let priceAssets = match keyPriceAssets.getString() {
+    case s: String => if (s.size() == 0) then nil else s.split(separator)
+    case _ => nil
+  }
+
+  (nil, priceAssets)
+}
+
+@Callable(i)
+func statusREADONLY(amountAssetId: String, priceAssetId: String) = {
+  let status = match keyStatus(amountAssetId, priceAssetId).getString() {
+    case s: String => s
+    case _ => unit
+  }
+
+  (nil, status)
+}

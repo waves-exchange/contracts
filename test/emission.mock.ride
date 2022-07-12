@@ -1,0 +1,20 @@
+{-# STDLIB_VERSION 5 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let keyBurnedAmount = "burnedAmount"
+let keyBurnedAsset = "burnedAsset"
+
+@Callable(i)
+func burn() = {
+  let pmt = i.payments[0]
+  let assetId = pmt.assetId.value().toBase58String()
+  let pmtAmount = pmt.amount
+  (
+    [
+      IntegerEntry(keyBurnedAmount, pmtAmount),
+      StringEntry(keyBurnedAsset, assetId)
+    ],
+    unit
+  )
+}

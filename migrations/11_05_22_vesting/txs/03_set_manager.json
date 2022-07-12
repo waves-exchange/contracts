@@ -1,0 +1,19 @@
+{
+  "dApp": "3PE8xSXKC8NiYUGW5mZuMeJqQbibhXqTcHE",
+  "fee": 900000,
+  "proofs": [],
+  "senderPublicKey": "5k2UWS7wygmRcxBwEgn852bk5KPTt5435nWprBqxXooc",
+  "timestamp": 0,
+  "type": 16,
+  "version": 1,
+  "payment": [],
+  "call": {
+    "function": "setManager",
+    "args": [
+      {
+        "type": "string",
+        "value": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq"
+      }
+    ]
+  }
+}

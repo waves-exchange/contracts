@@ -1,0 +1,14 @@
+{
+  "senderPublicKey": "8UkECVQDrTMphgxPR4biz8JzirebQ52v5yo92rLa9xBT",
+  "data": [
+    {
+      "key": "%s__poolAddress",
+      "value": null
+    }
+  ],
+  "feeAssetId": null,
+  "proofs": [],
+  "fee": 500000,
+  "type": 12,
+  "version": 2
+}

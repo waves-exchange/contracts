@@ -1,0 +1,14 @@
+{
+	"type": 16,
+	"senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+	"fee": 500000,
+	"feeAssetId": null,
+	"proofs": [],
+	"version": 1,
+	"dApp": "3PJ6QtoKKLr1b2mK4FhHT6jJ3EpXXH4Z7jp",
+	"payment": [],
+	"call": {
+		"function": "confirmManager",
+		"args": []
+	}
+}

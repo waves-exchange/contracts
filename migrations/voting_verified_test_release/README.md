@@ -1,0 +1,12 @@
+- set_script_voting_verified.json
+- constructor_voting_verified.json
+- set_script_boosting.json
+- set_script_emission.json
+- constructor_v2_emission.json
+- set_script_assets_store.json
+- set_manager_assets_store.json
+- confirm_manager_assets_store.json
+- set_admins_assets_store.json
+- waves_associations_to_asset_store_01.json
+- waves_associations_to_asset_store_02.json
+- (optional) suggest_voting_verified.json
