@@ -73,6 +73,9 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
+      - name: Rename contracts_tpl.yaml -> contracts.yaml
+        run: |
+          mv contracts_tpl.yaml contracts.yaml
       - name: Compare contracts with mainnet and print diff
         run: |
           cd deployer
