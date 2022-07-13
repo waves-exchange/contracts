@@ -1,4 +1,4 @@
-name: WX Contracts CI
+name: CI
 on: push
 
 jobs:
@@ -10,8 +10,10 @@ jobs:
     container:
       image: golang:1.18
     steps:
-      - uses: actions/checkout@v2
-      - run: |
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Compile .ride files
+        run: |
           cd compiler
           go run main.go
 
@@ -39,16 +41,19 @@ jobs:
       VORINGEMISSIONCANDIDATE_PRV: ${{ secrets.VORINGEMISSIONCANDIDATE_PRV }}
       VOTINGEMISSION_PRV: ${{ secrets.VOTINGEMISSION_PRV }}
       VOTINGVERIFIED_PRV: ${{ secrets.VOTINGVERIFIED_PRV }}
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref_name == dev
     runs-on: ubuntu-20.04
     container:
       image: golang:1.18
     steps:
-      - uses: actions/checkout@v2
-      - run: |
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Install envsubst
+        run: |
           apt update
           apt install gettext-base -y
-      - run: |
+      - name: Deploy changed contracts to testnet
+        run: |
           envsubst < contracts_tpl.yaml > contracts.yaml
           cd deployer
           go run main.go
@@ -60,18 +65,16 @@ jobs:
       MAINNETNODE: ${{ secrets.MAINNETNODE }}
       CONTRACTS: ../contracts.yaml
     if: |
-      github.ref == 'refs/heads/dev' ||
-      github.ref == 'refs/heads/main'
+      github.ref_name == dev ||
+      github.ref_name == main
     runs-on: ubuntu-20.04
     container:
       image: golang:1.18
     steps:
-      - uses: actions/checkout@v2
-      - run: |
-          apt update
-          apt install gettext-base -y
-      - run: |
-          envsubst < contracts_tpl.yaml > contracts.yaml
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Compare contracts with mainnet and print diff
+        run: |
           cd deployer
           go run main.go
 
@@ -82,8 +85,10 @@ jobs:
     container:
       image: node:18.1
     steps:
-      - uses: actions/checkout@v2
-      - run: |
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Run tests on private node
+        run: |
           npm i
           npm run ci-test
 
@@ -92,8 +97,10 @@ jobs:
     container:
       image: golang:1.18
     steps:
-      - uses: actions/checkout@v2
-      - run: |
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Check .go code gofmt-formatted
+        run: |
           gofmt -l .
 
   lint_js:
@@ -101,7 +108,9 @@ jobs:
     container:
       image: node:18.1
     steps:
-      - uses: actions/checkout@v2
-      - run: |
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Check .js and .mjs code eslint-formatted
+        run: |
           npm i
           npm run lint
