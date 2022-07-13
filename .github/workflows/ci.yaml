@@ -41,7 +41,7 @@ jobs:
       VORINGEMISSIONCANDIDATE_PRV: ${{ secrets.VORINGEMISSIONCANDIDATE_PRV }}
       VOTINGEMISSION_PRV: ${{ secrets.VOTINGEMISSION_PRV }}
       VOTINGVERIFIED_PRV: ${{ secrets.VOTINGVERIFIED_PRV }}
-    if: github.ref_name == dev
+    if: github.ref_name == 'dev'
     runs-on: ubuntu-20.04
     container:
       image: golang:1.18
@@ -65,8 +65,8 @@ jobs:
       MAINNETNODE: ${{ secrets.MAINNETNODE }}
       CONTRACTS: ../contracts.yaml
     if: |
-      github.ref_name == dev ||
-      github.ref_name == main
+      github.ref_name == 'dev' ||
+      github.ref_name == 'main'
     runs-on: ubuntu-20.04
     container:
       image: golang:1.18
