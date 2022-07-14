@@ -39,6 +39,7 @@ jobs:
       VORINGEMISSIONCANDIDATE_PRV: ${{ secrets.VORINGEMISSIONCANDIDATE_PRV }}
       VOTINGEMISSION_PRV: ${{ secrets.VOTINGEMISSION_PRV }}
       VOTINGVERIFIED_PRV: ${{ secrets.VOTINGVERIFIED_PRV }}
+      OTC_PRV: ${{ secrets.OTC_PRV }}
     if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-20.04
     container:
