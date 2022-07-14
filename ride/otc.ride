@@ -1,37 +1,17 @@
-{-# STDLIB_VERSION 6 #-}
+{-# STDLIB_VERSION 4 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+let USDT = "34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ"
+let USDN = "DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p"
+let idUSDN = USDN.fromBase58String()
+let idUSDT = USDT.fromBase58String()
 let withdrawDelay = 1460
 let decimalPartUSDN = 1000000
 let decimalPartUSDT = 1000000
 let minimalAmountToSwapUSDT = 10000*decimalPartUSDN
 let minimalAmountToSwapUSDN = 10000*decimalPartUSDT
 
-func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
-
-func keyUsdtAssetId() = "%s__USDT";
-func keyUsdnAssetId() = "%s__USDN";
-let idUSDN = keyUsdtAssetId().fromBase58String()
-let idUSDT = keyUsdnAssetId().fromBase58String()
-
-func constructor(usdtAssetId: String, usdnAssetId: String){
-  [
-    StringEntry(keyUsdtAssetId(), usdtAssetId);
-    StringEntry(keyUsdnAssetId(), usdnAssetId);
-  ]
-}
-
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
 
 func collectKey(address: String, amountToSwapInKey:Int, allowToWithdrawHeight:Int) = {
     makeString([address, "WITHDRAW", toString(amountToSwapInKey), "HEIGHT", toString(allowToWithdrawHeight)], "_")
@@ -84,14 +64,6 @@ func currentWithdrawals(address: String, amount: Int) = {
     [toWithdrawWithoutFee, toWithdrawWithFee, fee]
 }
 
-func mustManager(i: Invocation) = {
-  let pd = "Permission denied".throw()
-
-  match managerPublicKeyOrUnit() {
-    case pk: ByteVector => i.callerPublicKey == pk || pd
-    case _: Unit => i.caller == this || pd
-  }
-}
 
 @Callable(invoke)
 func swapUSDTtoUSDN() =   {
@@ -145,6 +117,7 @@ func initializationUSDNtoUSDTswap() = {
     ]
 }
 
+
 @Callable(invoke)
 func swapUSDNtoUSDT(amount: Int, heightInKey: Int) =   {
         let key = collectKey(invoke.caller.toString(), amount, heightInKey)
@@ -160,31 +133,7 @@ func swapUSDNtoUSDT(amount: Int, heightInKey: Int) =   {
         else throw("Withdrawal is possible after "+toString(heightInKey)+" height or you have already withdrawn USDT.")
 }
 
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
-}
-
 @Verifier(tx)
 func verify () = {
-  let targetPublicKey = match managerPublicKeyOrUnit() {
-    case pk: ByteVector => pk
-    case _: Unit => tx.senderPublicKey
-  }
   sigVerify(tx.bodyBytes, tx.proofs[0], fromBase58String("2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq"))
 }
