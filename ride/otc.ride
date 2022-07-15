@@ -11,17 +11,10 @@ let minimalAmountToSwapUSDN = 10000*decimalPartUSDT
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 
-func keyUsdtAssetId() = "%s__USDT";
-func keyUsdnAssetId() = "%s__USDN";
+func keyUsdtAssetId() = "%s__USDT"
+func keyUsdnAssetId() = "%s__USDN"
 let idUSDN = keyUsdtAssetId().fromBase58String()
 let idUSDT = keyUsdnAssetId().fromBase58String()
-
-func constructor(usdtAssetId: String, usdnAssetId: String){
-  [
-    StringEntry(keyUsdtAssetId(), usdtAssetId);
-    StringEntry(keyUsdnAssetId(), usdnAssetId);
-  ]
-}
 
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
   case s: String => s.fromBase58String()
@@ -91,6 +84,14 @@ func mustManager(i: Invocation) = {
     case pk: ByteVector => i.callerPublicKey == pk || pd
     case _: Unit => i.caller == this || pd
   }
+}
+
+@Callable(i)
+func constructor(usdtAssetId: String, usdnAssetId: String) = {
+  [
+    StringEntry(keyUsdtAssetId(), usdtAssetId),
+    StringEntry(keyUsdnAssetId(), usdnAssetId)
+  ]
 }
 
 @Callable(invoke)
