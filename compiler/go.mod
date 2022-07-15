@@ -1,4 +1,4 @@
-module gitlab.waves.exchange/wx-defi/contracts-v2/compiler
+module github.com/waves-exchange/contracts/compiler
 
 go 1.17
 
