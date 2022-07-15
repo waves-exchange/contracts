@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-
-	"gitlab.waves.exchange/wx-defi/contracts-v2/deployer/pkg/config"
-	"gitlab.waves.exchange/wx-defi/contracts-v2/deployer/pkg/logger"
-	"gitlab.waves.exchange/wx-defi/contracts-v2/deployer/pkg/syncer"
+	"github.com/waves-exchange/contracts/deployer/pkg/config"
+	"github.com/waves-exchange/contracts/deployer/pkg/logger"
+	"github.com/waves-exchange/contracts/deployer/pkg/syncer"
 )
 
 func main() {
