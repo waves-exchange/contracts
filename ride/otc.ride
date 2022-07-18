@@ -13,8 +13,6 @@ func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 
 func keyUsdtAssetId() = "%s__USDT"
 func keyUsdnAssetId() = "%s__USDN"
-let idUSDN = keyUsdtAssetId().fromBase58String()
-let idUSDT = keyUsdnAssetId().fromBase58String()
 
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
   case s: String => s.fromBase58String()
@@ -89,8 +87,8 @@ func mustManager(i: Invocation) = {
 @Callable(i)
 func constructor(usdtAssetId: String, usdnAssetId: String) = {
   [
-    StringEntry(keyUsdtAssetId(), usdtAssetId),
-    StringEntry(keyUsdnAssetId(), usdnAssetId)
+    StringEntry(keyUsdtAssetId().fromBase58String(), usdtAssetId),
+    StringEntry(keyUsdnAssetId().fromBase58String(), usdnAssetId)
   ]
 }
 
