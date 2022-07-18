@@ -8,6 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog"
+	"github.com/waves-exchange/contracts/deployer/pkg/config"
+	"github.com/wavesplatform/gowaves/pkg/client"
+	"github.com/wavesplatform/gowaves/pkg/crypto"
+	"github.com/wavesplatform/gowaves/pkg/proto"
 	"io"
 	"math"
 	"net/http"
@@ -16,12 +21,6 @@ import (
 	"path"
 	"strings"
 	"time"
-
-	"github.com/rs/zerolog"
-	"github.com/wavesplatform/gowaves/pkg/client"
-	"github.com/wavesplatform/gowaves/pkg/crypto"
-	"github.com/wavesplatform/gowaves/pkg/proto"
-	"gitlab.waves.exchange/wx-defi/contracts-v2/deployer/pkg/config"
 )
 
 type Syncer struct {
