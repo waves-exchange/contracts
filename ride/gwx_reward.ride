@@ -137,6 +137,8 @@ func keyUserBValueForPeriod(period: Int, userIndex: Int) =
 func keyUserWeightForPeriod(period: Int, userIndex: Int) =
   makeString(["%s%d%s%d__paramByPeriod", userIndex.toString(), "weight", period.toString()], SEP)
 
+func keyReferralsContractAddress()  = "%s%s__config__referralsContractAddress"
+
 func HistoryEntry(type: String, user: String, amountFromMatcher: Int, amountFromEmission: Int, currentPeriod: Int, latestPeriod: Int, i: Invocation) = {
   let historyKEY = makeString(["%s%s%s%s__history", type, user, i.transactionId.toBase58String()], SEP)
   let historyDATA = makeString([
@@ -487,6 +489,13 @@ func constructorV3(emissionAddress: String) = {
   let initLatestPeriod = if (getInteger(this, keyLatestPeriod()).isDefined()) then [] else [IntegerEntry(keyLatestPeriod(), -1)]
 
   initLatestPeriod :+ StringEntry(keyEmissionAddress(), emissionAddress)
+}
+
+@Callable(i)
+func constructorV4(referralsContractAddress: String) = {
+  strict checkCaller = i.mustManager()
+
+  [StringEntry(keyReferralsContractAddress(), referralsContractAddress)]
 }
 
 # save starting height of reward from emission 5%
