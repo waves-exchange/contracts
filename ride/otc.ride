@@ -87,8 +87,8 @@ func mustManager(i: Invocation) = {
 @Callable(i)
 func constructor(usdtAssetId: String, usdnAssetId: String) = {
   [
-    StringEntry(keyUsdtAssetId().fromBase58String(), usdtAssetId),
-    StringEntry(keyUsdnAssetId().fromBase58String(), usdnAssetId)
+    StringEntry(keyUsdtAssetId(), usdtAssetId),
+    StringEntry(keyUsdnAssetId(), usdnAssetId)
   ]
 }
 
@@ -97,7 +97,7 @@ func swapUSDTtoUSDN() =   {
     let balanceKey = collectBalanceKeyWithFee(invoke.caller.toString())
     let payment = value(invoke.payments[0])
 
-    if (payment.assetId != idUSDT) then usdtToUsdnAssetError() else
+    if (payment.assetId != keyUsdtAssetId().fromBase58String()) then usdtToUsdnAssetError() else
 
     let amount = payment.amount
     let fee = amount / 100 * 2
@@ -107,7 +107,7 @@ func swapUSDTtoUSDN() =   {
 
     [
         IntegerEntry(balanceKey, currentClientBalanceUSDT + amount),
-        ScriptTransfer(invoke.caller, amount - fee, idUSDN)
+        ScriptTransfer(invoke.caller, amount - fee, keyUsdnAssetId().fromBase58String())
     ]
 }
 
@@ -116,7 +116,7 @@ func initializationUSDNtoUSDTswap() = {
     let payment = value(invoke.payments[0])
     let address = invoke.caller.toString()
 
-    if (payment.assetId != idUSDN) then usdnToUsdtAssetError() else
+    if (payment.assetId != keyUsdnAssetId().fromBase58String()) then usdnToUsdtAssetError() else
 
     let amount = payment.amount
 
@@ -153,7 +153,7 @@ func swapUSDNtoUSDT(amount: Int, heightInKey: Int) =   {
         if height >= heightInKey && contains(withdrawnInfo, "not_withdrawn") then
             [
                 DeleteEntry(key),
-                ScriptTransfer(invoke.caller, parseInt(toWithdraw).valueOrErrorMessage("Wrong withdraw data!"), idUSDT)
+                ScriptTransfer(invoke.caller, parseInt(toWithdraw).valueOrErrorMessage("Wrong withdraw data!"), keyUsdtAssetId().fromBase58String())
             ]
 
         else throw("Withdrawal is possible after "+toString(heightInKey)+" height or you have already withdrawn USDT.")
