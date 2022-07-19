@@ -254,7 +254,7 @@ func calcBoostBulkInternalREADONLY(currentIter: Int, deltaWxAmountBulk: List[Int
   let deltaLpAmount = deltaLpAmountBulk[currentIter]
   let lpAssetIdOpt = lpAssetIdOptBulk[currentIter]
   let userAddressOpt = userAddressOptBulk[currentIter]
-  let info = this.invoke("calcBoostREADONLY", [deltaWxAmount, deltaLockPeriodInBlocks, deltaLpAmount, lpAssetIdOpt, userAddressOpt], []).exactAs[String].split(SEP)
+  let info = this.invoke("calcBoostREADONLY", [deltaWxAmount, deltaLockPeriodInBlocks, deltaLpAmount, lpAssetIdOpt, userAddressOpt], []).exactAs[String]
   let res = resAcc :+ info
   strict inv = this.invoke("claimWxBulkInternalREADONLY", [currentIter+1, deltaWxAmountBulk, deltaLockPeriodInBlocksBulk, deltaLpAmountBulk, lpAssetIdOptBulk, userAddressOptBulk, res], []).exactAs[List[Any]]
   ([], inv)
