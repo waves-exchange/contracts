@@ -185,5 +185,5 @@ func verify () = {
     case pk: ByteVector => pk
     case _: Unit => tx.senderPublicKey
   }
-  sigVerify(tx.bodyBytes, tx.proofs[0], fromBase58String("2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq"))
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
 }
