@@ -343,27 +343,7 @@ func calcBoostREADONLY(deltaWxAmount: Int, deltaLockPeriodInBlocks: Int, deltaLp
 
   let boostCoeff = if (userWxPerBlockX3 == 0) then 1*MULT8 else fraction(userBoostPerBlockX3 + userWxPerBlockX3, MULT8, userWxPerBlockX3)
 
-  let debug = ["lpAssetIdStr=" + lpAssetIdStr,
-              "userAddressStr=" + userAddressStr,
-              "userNumStr=" + userNumStr,
-              "userAmount=" + userAmount.toString(),
-              "userAmountNew=" + userAmountNew.toString(),
-              "lockDurationNew=" + lockDurationNew.toString(),
-              "gWxAmountStart=" + gWxAmountStartNew.toString(),
-              #"userMaxBoostIntNew=" + userMaxBoostIntNew.toString(),
-              #"totalMaxBoostInt=" + totalMaxBoostInt.toString(),
-              "tmpUserBoostPerBlockX3=" + tmpUserBoostPerBlockX3.toString(),
-              "stakedByUserNew=" + stakedByUserNew.toString(),
-              "stakedTotalNew=" + stakedTotalNew.toString(),
-              "poolWeight=" + poolWeight.toString(),
-              "wxPerLpX3=" + wxPerLpX3.toString(),
-              "poolWxEmissionPerBlockX3=" + poolWxEmissionPerBlockX3.toString(),
-              "userWxPerBlockX3=" + userWxPerBlockX3.toString(),
-              "gWxAmountDiff=" + gWxAmountDiff.toString(),
-              "totalCachedGwx=" + totalCachedGwx.toString(),
-              "userCurrgWxAmount=" + userCurrgWxAmount.toString()].makeString("::")
-
-  ([], makeString(["%d%d%s", gWxAmountStartNew.toString(), boostCoeff.toString(), debug], SEP))
+  ([], makeString(["%d%d%s", gWxAmountStartNew.toString(), boostCoeff.toString()], SEP))
 }
 
 @Callable(i)
