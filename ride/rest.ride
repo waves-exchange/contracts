@@ -246,6 +246,27 @@ func claimedRewardREADONLY(userAddress: String) = {
 }
 
 @Callable(i)
+func calcBoostBulkInternalREADONLY(currentIter: Int, deltaWxAmountBulk: List[Int], deltaLockPeriodInBlocksBulk: List[Int], deltaLpAmountBulk: List[Int], lpAssetIdOptBulk: List[String], userAddressOptBulk: List[String], resAcc: List[String]) = {
+  if (currentIter == lpAssetIds.size()) then ([], resAcc) else
+
+  let deltaWxAmount = deltaWxAmountBulk[currentIter]
+  let deltaLockPeriodInBlocks = deltaLockPeriodInBlocksBulk[currentIter]
+  let deltaLpAmount = deltaLpAmountBulk[currentIter]
+  let lpAssetIdOpt = lpAssetIdOptBulk[currentIter]
+  let userAddressOpt = userAddressOptBulk[currentIter]
+  let info = this.invoke("calcBoostREADONLY", [deltaWxAmount, deltaLockPeriodInBlocks, deltaLpAmount, lpAssetIdOpt, userAddressOpt], []).exactAs[String].split(SEP)
+  let res = resAcc :+ info
+  strict inv = this.invoke("claimWxBulkInternalREADONLY", [currentIter+1, deltaWxAmountBulk, deltaLockPeriodInBlocksBulk, deltaLpAmountBulk, lpAssetIdOptBulk, userAddressOptBulk, res], []).exactAs[List[Any]]
+  ([], inv)
+}
+
+@Callable(i)
+func calcBoostBulkREADONLY(deltaWxAmount: List[Int], deltaLockPeriodInBlocks: List[Int], deltaLpAmount: List[Int], lpAssetIdOpt: List[String], userAddressOpt: List[String]) = {
+  let res = this.invoke("calcBoostBulkInternalREADONLY", [0, deltaWxAmount, deltaLockPeriodInBlocks, deltaLpAmount, lpAssetIdOpt, userAddressOpt, []], [])
+  ([], res)
+}
+
+@Callable(i)
 func calcBoostREADONLY(deltaWxAmount: Int, deltaLockPeriodInBlocks: Int, deltaLpAmount: Int, lpAssetIdOpt: String, userAddressOpt: String) = {
   let mathDapp = gwxRewardDapp
   let EMPTYSTR = "empty"
