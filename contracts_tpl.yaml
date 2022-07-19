@@ -327,6 +327,8 @@
 
 - file: otc.ride
   tag: otc
+  testnet-prv: $OTC_PRV
+  testnet-signer: $OTC_PRV
   mainnet-pub: MuJFxUBAQVpXXraxYbYJEzWYG8NukYhQEQFm7CaZLcT
 
 - file: lambo.ride
