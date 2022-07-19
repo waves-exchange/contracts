@@ -246,22 +246,21 @@ func claimedRewardREADONLY(userAddress: String) = {
 }
 
 @Callable(i)
-func calcBoostBulkInternalREADONLY(currentIter: Int, deltaWxAmountBulk: List[Int], deltaLockPeriodInBlocksBulk: List[Int], deltaLpAmountBulk: List[Int], lpAssetIdOptBulk: List[String], userAddressOptBulk: List[String], resAcc: List[String]) = {
+func calcBoostBulkInternalREADONLY(currentIter: Int, deltaWxAmountBulk: List[Int], deltaLockPeriodInBlocksBulk: List[Int], deltaLpAmountBulk: List[Int], lpAssetIdOptBulk: List[String], userAddressOpt: String, resAcc: List[String]) = {
   if (currentIter == deltaWxAmountBulk.size()) then ([], resAcc) else
 
   let deltaWxAmount = deltaWxAmountBulk[currentIter]
   let deltaLockPeriodInBlocks = deltaLockPeriodInBlocksBulk[currentIter]
   let deltaLpAmount = deltaLpAmountBulk[currentIter]
   let lpAssetIdOpt = lpAssetIdOptBulk[currentIter]
-  let userAddressOpt = userAddressOptBulk[currentIter]
   let info = this.invoke("calcBoostREADONLY", [deltaWxAmount, deltaLockPeriodInBlocks, deltaLpAmount, lpAssetIdOpt, userAddressOpt], []).exactAs[String]
   let res = resAcc :+ info
-  strict inv = this.invoke("calcBoostBulkInternalREADONLY", [currentIter+1, deltaWxAmountBulk, deltaLockPeriodInBlocksBulk, deltaLpAmountBulk, lpAssetIdOptBulk, userAddressOptBulk, res], []).exactAs[List[Any]]
+  strict inv = this.invoke("calcBoostBulkInternalREADONLY", [currentIter+1, deltaWxAmountBulk, deltaLockPeriodInBlocksBulk, deltaLpAmountBulk, lpAssetIdOptBulk, userAddressOpt, res], []).exactAs[List[Any]]
   ([], inv)
 }
 
 @Callable(i)
-func calcBoostBulkREADONLY(deltaWxAmount: List[Int], deltaLockPeriodInBlocks: List[Int], deltaLpAmount: List[Int], lpAssetIdOpt: List[String], userAddressOpt: List[String]) = {
+func calcBoostBulkREADONLY(deltaWxAmount: List[Int], deltaLockPeriodInBlocks: List[Int], deltaLpAmount: List[Int], lpAssetIdOpt: List[String], userAddressOpt: String) = {
   let res = this.invoke("calcBoostBulkInternalREADONLY", [0, deltaWxAmount, deltaLockPeriodInBlocks, deltaLpAmount, lpAssetIdOpt, userAddressOpt, []], [])
   ([], res)
 }
