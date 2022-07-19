@@ -343,7 +343,7 @@ func calcBoostREADONLY(deltaWxAmount: Int, deltaLockPeriodInBlocks: Int, deltaLp
 
   let boostCoeff = if (userWxPerBlockX3 == 0) then 1*MULT8 else fraction(userBoostPerBlockX3 + userWxPerBlockX3, MULT8, userWxPerBlockX3)
 
-  ([], makeString(["%d%d%s", gWxAmountStartNew.toString(), boostCoeff.toString(), "debug"], SEP))
+  ([], makeString(["%d%d%s", gWxAmountStartNew.toString(), boostCoeff.toString(), "d"], SEP))
 }
 
 @Callable(i)
