@@ -2,11 +2,13 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-let withdrawDelay = 1460
 let decimalPartUSDN = 1000000
 let decimalPartUSDT = 1000000
-let minimalAmountToSwapUSDT = 10000*decimalPartUSDN
-let minimalAmountToSwapUSDN = 10000*decimalPartUSDT
+
+func keyWithdrawDelay() = "%s__withdrawDelay"
+
+func keyMinimalAmountToSwapUsdt() = "%s__minimalAmountToSwapUsdt"
+func keyMinimalAmountToSwapUsdn() = "%s__minimalAmountToSwapUsdn"
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
@@ -90,11 +92,29 @@ func mustManager(i: Invocation) = {
   }
 }
 
-# @Callable(i)
-# func setWithdrawDelay(newDelay: Int) = {
-#   strict checkCaller = i.mustManager()
-#   withdrawDelay
-# }
+@Callable(i)
+func setWithdrawDelay(newWithdrawDelay: Int) = {
+    strict checkCaller = i.mustManager()
+    [
+        IntegerEntry(keyWithdrawDelay(), newWithdrawDelay)
+    ]
+}
+
+@Callable(i)
+func setMinimalAmountToSwapUsdt(newMinimalAmount: Int) = {
+    strict checkCaller = i.mustManager()
+    [
+        IntegerEntry(keyMinimalAmountToSwapUsdt(), newMinimalAmount)
+    ]
+}
+
+@Callable(i)
+func setMinimalAmountToSwapUsdn(newMinimalAmount: Int) = {
+    strict checkCaller = i.mustManager()
+    [
+        IntegerEntry(keyMinimalAmountToSwapUsdn(), newMinimalAmount)
+    ]
+}
 
 @Callable(i)
 func setWithdrawFee(newFee: Int) = {
