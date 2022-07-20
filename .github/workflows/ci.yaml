@@ -85,7 +85,7 @@ jobs:
   test:
     env:
       API_NODE_URL: ${{ secrets.API_NODE_URL }}
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     container:
       image: node:18.1
     steps:
