@@ -21,7 +21,7 @@ const emissionMockPath = format({ dir: testPath, base: 'emission.mock.ride' });
 export const mochaHooks = {
   async beforeAll() {
     const spinner = ora('Initializing').start();
-    this.votingDuration = 3;
+    this.votingDuration = 6;
     // setup accounts
     const contractNames = ['voting', 'boosting', 'emission', 'store'];
     const userNames = Array.from({ length: 3 }, (_, k) => `user${k}`);
