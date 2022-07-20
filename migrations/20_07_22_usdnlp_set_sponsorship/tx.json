@@ -1,0 +1,11 @@
+{
+  "senderPublicKey": "6ggGUvisvwXkZVUaHNi5huvqSYFSVk3T1RiD5VnRq4DY",
+  "feeAssetId": null,
+  "proofs": [],
+  "assetId": "BsEhvHg3jZh1JYcnQCoYtHeePnG7PiHucwHLp2A6ryDz",
+  "fee": 100,
+  "minSponsoredAssetFee": 290000,
+  "type": 14,
+  "version": 1,
+  "timestamp": 0
+}
