@@ -14,7 +14,7 @@ func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 func keyUsdtAssetId() = "%s__usdtAssetId"
 func keyUsdnAssetId() = "%s__usdnAssetId"
 
-func keyDepositFee() = "%s__deposiFee"
+func keyDepositFee() = "%s__depositFee"
 func keyWithdrawFee() = "%s__withdrawFee"
 
 func usdt() = keyUsdtAssetId().getString().value().fromBase58String()
