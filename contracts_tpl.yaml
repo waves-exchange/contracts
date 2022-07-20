@@ -326,8 +326,6 @@
   mainnet-pub: CvsTo9usJavK5soxr9dGE5AKo6tDQ53fu7BeLGFJFUEo
 
 - file: otc.ride
-  testnet-prv: $OTC_PRV
-  testnet-signer: $MANAGER_PRV
   tag: otc
   testnet-prv: $OTC_PRV
   testnet-signer: $OTC_PRV
