@@ -7,8 +7,13 @@ let decimalPartUSDT = 1000000
 
 func keyWithdrawDelay() = "%s__withdrawDelay"
 
+func withdrawDelay() = keyWithdrawDelay().getInteger().value()
+
 func keyMinimalAmountToSwapUsdt() = "%s__minimalAmountToSwapUsdt"
 func keyMinimalAmountToSwapUsdn() = "%s__minimalAmountToSwapUsdn"
+
+func minUsdt() = keyMinimalAmountToSwapUsdt().getInteger().value()
+func minUsdn() = keyMinimalAmountToSwapUsdn().getInteger().value()
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
@@ -53,7 +58,7 @@ func usdnToUsdtAssetError() = {
 }
 
 func usdtToUsdnLowLimitError() = {
-    throw("you can swap at least " + toString(minimalAmountToSwapUSDT / decimalPartUSDT) + " tokens")
+    throw("you can swap at least " + toString(keyMinimalAmountToSwapUsdt().getInteger().value() / decimalPartUSDT) + " tokens")
 }
 
 func abs(n: Int) = {
@@ -74,7 +79,7 @@ func currentWithdrawals(address: String, amount: Int) = {
     let currentClientBalanceWithFee  = this.getInteger(balanceWithFeeKey).valueOrElse(0)
     let userBalance = currentClientBalance + currentClientBalanceWithFee
 
-    if (userBalance < amount || amount < minimalAmountToSwapUSDN) then throw("Swap amount fail, amount is to small or to big.") else
+    if (userBalance < amount || amount < minUsdn()) then throw("Swap amount fail, amount is to small or to big.") else
 
     let toWithdrawWithoutFee = getWithoutFeeWithdraw(amount, currentClientBalance)
     let toWithdrawWithFee = amount - toWithdrawWithoutFee
@@ -153,7 +158,7 @@ func swapUSDTtoUSDN() =   {
     let fee = amount / 100 * keyDepositFee().getInteger().value()
     let currentClientBalanceUSDT = this.getInteger(balanceKey).valueOrElse(0)
 
-    if (amount < minimalAmountToSwapUSDT) then usdtToUsdnLowLimitError() else
+    if (amount < minUsdt()) then usdtToUsdnLowLimitError() else
 
     [
         IntegerEntry(balanceKey, currentClientBalanceUSDT + amount),
@@ -183,7 +188,7 @@ func initializationUSDNtoUSDTswap() = {
     let fee = getElement(data, 2).valueOrErrorMessage("Wrong 'currentWithdrawals' method!")
     let total = toWithdrawWithFee + toWithdrawWithoutFee - fee
 
-    let allowToWithDrawHeight = height + withdrawDelay
+    let allowToWithDrawHeight = height + withdrawDelay()
 
     if this.getString(collectKey(invoke.caller.toString(), amount, allowToWithDrawHeight)).isDefined() then throw("You have already started withdrawal process, wait next block.") else
 
