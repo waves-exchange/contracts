@@ -21,7 +21,7 @@
     "test-lp-staking-v2": "mocha --parallel --require test/lp_staking_v2/_hooks.mjs test/lp_staking_v2",
     "test-lp": "mocha --parallel --require test/lp/_hooks.mjs test/lp",
     "test-lp-stable": "mocha --parallel --require test/lp_stable/_hooks.mjs test/lp_stable",
-    "ci-test": "concurrently --max-processes 3 --timings npm:test-*",
+    "ci-test": "concurrently --max-processes 6 --timings npm:test-*",
     "test": "API_NODE_URL=http://localhost:6869 npm run ci-test",
     "lint": "eslint . --ext .mjs --ext .js",
     "lint-fix": "eslint . --ext .mjs --ext .js --fix"
