@@ -83,7 +83,7 @@ jobs:
           go run main.go
 
   test:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     container:
       image: node:18.1
     services:
