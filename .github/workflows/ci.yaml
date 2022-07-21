@@ -92,7 +92,7 @@ jobs:
         ports:
           - 6869:6869
     env:
-      API_NODE_URL: http://localhost:6869
+      API_NODE_URL: http://waves-private-node:6869
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
