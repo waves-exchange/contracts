@@ -148,7 +148,7 @@ func constructor(usdtAssetId: String, usdnAssetId: String) = {
 }
 
 @Callable(invoke)
-func swapUSDTtoUSDN() =   {
+func swapUSDTtoUSDN() = {
     let balanceKey = collectBalanceKeyWithFee(invoke.caller.toString())
     let payment = value(invoke.payments[0])
 
@@ -200,7 +200,7 @@ func initializationUSDNtoUSDTswap() = {
 }
 
 @Callable(invoke)
-func swapUSDNtoUSDT(amount: Int, heightInKey: Int) =   {
+func swapUSDNtoUSDT(amount: Int, heightInKey: Int) = {
         let key = collectKey(invoke.caller.toString(), amount, heightInKey)
         let withdrawnInfo = this.getString(key).valueOrErrorMessage("This key doesn't exists "+ key + " at address  " + toString(this))
         let toWithdraw = getListElementOrDefault(split(withdrawnInfo, "_"), 2, toString(amount))

@@ -1,0 +1,14 @@
+{
+  "dApp": "3P54B92RNzMrgqPmKhsqL413NjAGwf4q9ep",
+  "fee": 500000,
+  "proofs": [],
+  "senderPublicKey": "",
+  "timestamp": 0,
+  "type": 16,
+  "version": 1,
+  "payment": [],
+  "call": {
+    "function": "confirmManager",
+    "args": []
+  }
+}
