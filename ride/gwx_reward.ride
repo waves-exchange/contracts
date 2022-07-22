@@ -9,6 +9,8 @@ let USERDEPTH = 26
 let SCALE = 1000
 let MULT8 = 1_0000_0000
 let zeroBigInt = 0.toBigInt()
+let processingStageTotal = 0
+let processingStageShares = 1
 
 func getNumberByKey(key: String) = getInteger(this, key).valueOrElse(0)
 
@@ -89,6 +91,9 @@ func keyLatestPeriod() = "%s__latestPeriod"
 
 # period to place incoming payment next time (incremented by deposit() callable)
 func keyNextPeriod() = "%s__nextPeriod"
+
+# stage of processing 0|Unit - calculate total weight, 1 - calculate shares
+func keyProcessingStage() = "%s__processingStage"
 
 # period to be processed next time (incomplete)
 func keyNextProcessedPeriod() = "%s__nextProcessedPeriod"
@@ -229,7 +234,7 @@ func invokeProcess(boostingContract: ByteVector, period: Int, user: Int, depth: 
 }
 
 # process next batch of up to 6 users starting from currentPeriod and currentUser (inclusive)
-# return: ([IntegerEntry(totalWeightKey, totalWeight)], nextProcessedPeriod, nextProcessedUser, totalWeight)
+# return: ([IntegerEntry(totalWeightKey, totalWeight)], nextProcessingStage, nextProcessedUser, totalWeight)
 func processNextBatchInternal(boostingContract: ByteVector, currentPeriod: Int, currentUser: Int, depth: Int, totalWeight: Int) = {
   let boostingContractAddress = Address(boostingContract)
   let latestPeriod = getNumberByKey(keyLatestPeriod())
@@ -259,28 +264,28 @@ func processNextBatchInternal(boostingContract: ByteVector, currentPeriod: Int, 
                 let r5 = invokeProcess(boostingContract, currentPeriod, currentUser + 6, depth - 1, weight5)
                 (t0._2 ++ t1._2 ++ t2._2 ++ t3._2 ++ t4._2 ++ t5._2, r5._1, r5._2, r5._3)
               } else { # exactly 6 users left in the current period
-                ([IntegerEntry(totalWeightKey, weight5)] ++ t0._2 ++ t1._2 ++ t2._2 ++ t3._2 ++ t4._2 ++ t5._2, currentPeriod + 1, 0, 0)
+                ([IntegerEntry(totalWeightKey, weight5)] ++ t0._2 ++ t1._2 ++ t2._2 ++ t3._2 ++ t4._2 ++ t5._2, processingStageShares, 0, 0)
               }
             } else { # exactly 5 users left in the current period
-              ([IntegerEntry(totalWeightKey, weight4)] ++ t0._2 ++ t1._2 ++ t2._2 ++ t3._2 ++ t4._2, currentPeriod + 1, 0, 0)
+              ([IntegerEntry(totalWeightKey, weight4)] ++ t0._2 ++ t1._2 ++ t2._2 ++ t3._2 ++ t4._2, processingStageShares, 0, 0)
             }
           } else { # exactly 4 users left in the current period
-            ([IntegerEntry(totalWeightKey, weight3)] ++ t0._2 ++ t1._2 ++ t2._2 ++ t3._2, currentPeriod + 1, 0, 0)
+            ([IntegerEntry(totalWeightKey, weight3)] ++ t0._2 ++ t1._2 ++ t2._2 ++ t3._2, processingStageShares, 0, 0)
           }
         } else { # exactly 3 users left in the current period
-          ([IntegerEntry(totalWeightKey, weight2)] ++ t0._2 ++ t1._2 ++ t2._2, currentPeriod + 1, 0, 0)
+          ([IntegerEntry(totalWeightKey, weight2)] ++ t0._2 ++ t1._2 ++ t2._2, processingStageShares, 0, 0)
         }
       } else { # exactly 2 users left in the current period
-        ([IntegerEntry(totalWeightKey, weight1)] ++ t0._2 ++ t1._2, currentPeriod + 1, 0, 0)
+        ([IntegerEntry(totalWeightKey, weight1)] ++ t0._2 ++ t1._2, processingStageShares, 0, 0)
       }
     } else { # exactly 1 users left in the current period (0 users case is impossible)
-      ([IntegerEntry(totalWeightKey, weight0)] ++ t0._2, currentPeriod + 1, 0, 0)
+      ([IntegerEntry(totalWeightKey, weight0)] ++ t0._2, processingStageShares, 0, 0)
     }
   } else { # depth == 0 or no more periods
     if (currentUser == 0) then { # weight already saved at previous period
-      ([], currentPeriod, 0, 0)
+      ([], processingStageTotal, 0, 0)
     } else {
-      ([IntegerEntry(totalWeightKey, totalWeight)], currentPeriod, currentUser, 0)
+      ([IntegerEntry(totalWeightKey, totalWeight)], processingStageTotal, currentUser, 0)
     }
   }
 }
@@ -335,6 +340,7 @@ func processNextBatch(boostingContract: ByteVector, currentPeriod: Int, currentU
 # Called by anyone. Process finalized periods only (no more than one period per call)
 @Callable(i)
 func processPendingPeriodsAndUsers() = {
+  let processingStage = keyProcessingStage().getInteger().valueOrElse(processingStageTotal)
   let currentPeriod = getNumberByKey(keyNextProcessedPeriod()) # period with reward being currently distributed
   if (currentPeriod > getNumberByKey(keyLatestPeriod())) then throw("Nothing to process") else
   let cfgArray = readConfigArrayOrFail()
@@ -343,10 +349,16 @@ func processPendingPeriodsAndUsers() = {
   let boostingContract = cfgArray[IdxCfgBoostingContract].fromBase58String()
   let currentUser = getNumberByKey(keyNextProcessedUser()) # user to start with
   let totalWeight = getNumberByKey(keyTotalWeightForPeriod(currentPeriod))
-  let r = processNextBatchInternal(boostingContract, currentPeriod, currentUser, depth, totalWeight)
-  r._1 # actions to execute
-    :+ IntegerEntry(keyNextProcessedPeriod(), r._2) # period
-    :+ IntegerEntry(keyNextProcessedUser(), r._3) # user
+  if (processingStage == processingStageTotal) {
+    let r = processNextBatchInternal(boostingContract, currentPeriod, currentUser, depth, totalWeight)
+    r._1 # actions to execute
+      :+ IntegerEntry(keyProcessingStage(), r._2) # processingStage
+      :+ IntegerEntry(keyNextProcessedUser(), r._3) # user
+  } else if (processingStage == processingStageShares) {
+    let r = processNextBatchInternal(boostingContract, currentPeriod, currentUser, depth, totalWeight)
+    r._1 # actions to execute
+      :+ IntegerEntry(keyNextProcessedPeriod(), r._2) # period
+  } else "invalid processing stage".throw()
 }
 
 # Deposit total WX reward for next period. Also requests 5% emission reward from emission contract
