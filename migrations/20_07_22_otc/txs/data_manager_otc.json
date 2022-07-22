@@ -1,0 +1,15 @@
+{
+    "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+    "data": [
+        {
+            "key": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+            "type": "string",
+            "value": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq"
+        }
+    ],
+    "feeAssetId": null,
+    "proofs": [],
+    "fee": 500000,
+    "type": 12,
+    "version": 2
+}
