@@ -1,8 +1,8 @@
 {
-    "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+    "senderPublicKey": "MuJFxUBAQVpXXraxYbYJEzWYG8NukYhQEQFm7CaZLcT",
     "data": [
         {
-            "key": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+            "key": "%s__managerPublicKey",
             "type": "string",
             "value": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq"
         }
