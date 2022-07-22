@@ -11,6 +11,7 @@ let MULT8 = 1_0000_0000
 let zeroBigInt = 0.toBigInt()
 let processingStageTotal = 0
 let processingStageShares = 1
+let maxDepthDefault = 30
 
 func getNumberByKey(key: String) = getInteger(this, key).valueOrElse(0)
 
@@ -23,6 +24,8 @@ func getStringOrFail(key: String) =
   getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
 
 func abs(val: BigInt) = if (val < zeroBigInt) then -val else val
+
+let keyMaxDepth = "%s__maxDepth"
 
 # FACTORY API
 # own factory address key
@@ -349,16 +352,43 @@ func processPendingPeriodsAndUsers() = {
   let boostingContract = cfgArray[IdxCfgBoostingContract].fromBase58String()
   let currentUser = getNumberByKey(keyNextProcessedUser()) # user to start with
   let totalWeight = getNumberByKey(keyTotalWeightForPeriod(currentPeriod))
-  if (processingStage == processingStageTotal) {
+  if (processingStage == processingStageTotal) then {
     let r = processNextBatchInternal(boostingContract, currentPeriod, currentUser, depth, totalWeight)
     r._1 # actions to execute
       :+ IntegerEntry(keyProcessingStage(), r._2) # processingStage
       :+ IntegerEntry(keyNextProcessedUser(), r._3) # user
-  } else if (processingStage == processingStageShares) {
+  } else if (processingStage == processingStageShares) then {
     let r = processNextBatchInternal(boostingContract, currentPeriod, currentUser, depth, totalWeight)
     r._1 # actions to execute
       :+ IntegerEntry(keyNextProcessedPeriod(), r._2) # period
   } else "invalid processing stage".throw()
+}
+
+@Callable(i)
+func finalizeHelper() = {
+  (nil, unit)
+}
+
+@Callable(i)
+func finalizeWrapper(counter: Int) = {
+  let maxDepth = this.getInteger(keyMaxDepth).valueOrElse(maxDepthDefault)
+  strict result = this.invoke("finalizeHelper", [], []).exactAs[Boolean]
+  if (!result && counter == maxDepth) then {
+    "Current voting is not over yet".throw()
+  } else {
+    if (counter < maxDepth) then {
+      ([], this.invoke("finalizeWrapper", [counter - 1], []))
+    } else {
+      ([], unit)
+    }
+  }
+}
+
+@Callable(i)
+func finalize() = {
+  let maxDepth = this.getInteger(keyMaxDepth).valueOrElse(maxDepthDefault)
+
+  ([], this.invoke("finalizeWrapper", [maxDepth], []))
 }
 
 # Deposit total WX reward for next period. Also requests 5% emission reward from emission contract
