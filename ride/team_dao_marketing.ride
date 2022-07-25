@@ -16,6 +16,9 @@
 
 let SEP = "__"
 
+let keyReferral = ["%s", "referral"].makeString(SEP)
+let keyWxAssetId = ["%s", "wxAssetId"].makeString(SEP)
+
 # State Data Formatting Functions
 let IdxCfgClaimStartBlock        = 1
 let IdxCfgClaimVestingPeriod     = 2
@@ -169,6 +172,16 @@ func claim() = {
       TotalsEntry(keyTotals(), readTotalsArray(), claimingAssetAmount, lastCalulationBlock),
       ClaimOperationHistoryEntry(userAddress58, claimingAssetAmount, claimingBlocks, firstCalulationBlock, lastCalulationBlock, i.transactionId)
   ]
+}
+
+@Callable(i)
+func withdrawReferralReward(wxAmount: Int) = {
+  strict mustReferral = i.caller.toString() == getString(keyReferral).value() || "permissions denied".throw()
+
+  let wxAssetId = getString(keyWxAssetId).value().fromBase58String()
+  ([
+    ScriptTransfer(i.caller, wxAmount, wxAssetId)
+  ], unit)
 }
 
 @Verifier(tx)
