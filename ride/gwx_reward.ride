@@ -9,7 +9,6 @@
 # * "%s%s__config__referralsContractAddress": String
 # * "%s__latestPeriod": Integer
 
-let revisionNum = ""
 let SEP = "__"
 let USERDEPTH = 26
 let SCALE = 1000
@@ -17,31 +16,25 @@ let MULT8 = 1_0000_0000
 let zeroBigInt = 0.toBigInt()
 let processingStageTotal = 0
 let processingStageShares = 1
-let maxDepthDefault = 30
 
-func getNumberByKey(key: String) = getInteger(this, key).valueOrElse(0)
-
-func getNumberOrFail(key: String) = getInteger(this, key)
-  .valueOrErrorMessage("mandatory this." + key + " is not defined")
-
-func getStringByKey(key: String) = getString(this, key).valueOrElse("")
-
-func getStringOrFail(key: String) =
-  getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+func getNumberByKey(key: String) = this.getInteger(key).valueOrElse(0)
+func getNumberOrFail(key: String) = this.getInteger(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+func getStringByKey(key: String) = this.getString(key).valueOrElse("")
+func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
 
 func abs(val: BigInt) = if (val < zeroBigInt) then -val else val
 
 let keyMaxDepth = "%s__maxDepth"
+let maxDepthDefault = 30
+let maxDepth = this.getInteger(keyMaxDepth).valueOrElse(maxDepthDefault)
 
 # FACTORY API
 # own factory address key
-func keyFactoryAddress()  = "%s%s__config__factoryAddress"
+func keyFactoryAddress() = "%s%s__config__factoryAddress"
 
 # GLOBAL VARIABLES
-# CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
 let factoryAddressStr = getStringOrFail(keyFactoryAddress())
-let factoryContract   = factoryAddressStr.addressFromStringValue()
-
+let factoryContract = factoryAddressStr.addressFromStringValue()
 
 # EMISSION API
 # own emission address key
@@ -72,7 +65,7 @@ func keyReferrer(referralAddress: String) = ["%s%s%s", "referrer", referralProgr
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
 let emissionAddressStr = getStringOrFail(keyEmissionAddress())
-let emissionContract   = emissionAddressStr.addressFromStringValue()
+let emissionContract = emissionAddressStr.addressFromStringValue()
 
 
 # ***********************
@@ -86,8 +79,7 @@ let IdxCfgMaxDepth            = 4
 
 func keyConfig() = "%s__config"
 
-func readConfigArrayOrFail() =
-  getStringOrFail(keyConfig()).split(SEP)
+func readConfigArrayOrFail() = getStringOrFail(keyConfig()).split(SEP)
 
 func formatConfig(wxAssetIdStr: String, matcherPacemakerAddressStr: String, boostingContractAddressStr: String, maxDepth: Int) = {
   makeString([
@@ -300,12 +292,12 @@ func commonClaimReward(userAddress: String, startPeriod: Int|Unit) = {
 @Callable(i)
 func finalizeHelper() = {
   let processingStage = keyProcessingStage().getInteger().valueOrElse(processingStageTotal)
-  let currentPeriod = getNumberByKey(keyNextProcessedPeriod()) # period with reward being currently distributed
+  let currentPeriod = keyNextProcessedPeriod().getNumberByKey() # period with reward being currently distributed
   let currentUser = keyNextProcessedUser().getNumberByKey() # user to start with
   let latestPeriod = keyLatestPeriod().getNumberByKey()
   let usersCount = boostingContractOrFail().getInteger(keyUsersCount()).valueOrElse(0)
   let totalWeightKey = currentPeriod.keyTotalWeightForPeriod()
-  let totalWeight = keyTotalWeightForPeriod(currentPeriod).getNumberByKey()
+  let totalWeight = currentPeriod.keyTotalWeightForPeriod().getNumberByKey()
   let heightForPeriod = currentPeriod.keyHeightForPeriod().getNumberByKey()
   if (currentPeriod > latestPeriod) then {
     # nothing to process
@@ -313,7 +305,7 @@ func finalizeHelper() = {
   } else if (processingStage == processingStageTotal) then {
     # calculate total weight for period
     # process one user
-    let (userWeight, userActions) = calcUserWeight(boostingContractOrFail(), heightForPeriod, currentPeriod, currentUser)
+    let (userWeight, userActions) = boostingContractOrFail().calcUserWeight(heightForPeriod, currentPeriod, currentUser)
     let totalWeightNew = totalWeight + userWeight
     # if no users left, change processing stage to shares
     let processingActions = if (currentUser < usersCount) then {
@@ -332,15 +324,15 @@ func finalizeHelper() = {
     )
   } else if (processingStage == processingStageShares) then {
     # calculate user shares for period
-    let userWeight = calcUserWeightForClaim(boostingContractOrFail(), heightForPeriod, currentPeriod, currentUser)
-    let userAmountMatcherForPeriod = fraction(currentPeriod.keyTotalAmountForPeriod().getNumberByKey(), userWeight, totalWeight)
-    let userAmountEmissionForPeriod = fraction(currentPeriod.keyAuxEmissionRewardForPeriod().getNumberByKey(), userWeight, totalWeight)
+    let userWeight = boostingContractOrFail().calcUserWeightForClaim(heightForPeriod, currentPeriod, currentUser)
+    let userAmountMatcherForPeriod = currentPeriod.keyTotalAmountForPeriod().getNumberByKey().fraction(userWeight, totalWeight)
+    let userAmountEmissionForPeriod = currentPeriod.keyAuxEmissionRewardForPeriod().getNumberByKey().fraction(userWeight, totalWeight)
     let userTotalAmount = userAmountEmissionForPeriod + userAmountMatcherForPeriod
     let userAddress = boostingContractOrFail().getStringValue(currentUser.keyNum2UserMapping())
     let referrer = referralsContractAddressOrFail.getString(userAddress.keyReferrer())
     strict referralInv = if (referrer == unit || userWeight < referralMinGWxAmount) then unit else {
-      let referrerReward = fraction(userTotalAmount, referrerRewardPermille, SCALE)
-      let referralReward = fraction(userTotalAmount, referralRewardPermille, SCALE)
+      let referrerReward = userTotalAmount.fraction(referrerRewardPermille, SCALE)
+      let referralReward = userTotalAmount.fraction(referralRewardPermille, SCALE)
       referralsContractAddressOrFail.invoke("incUnclaimed", [referralProgramName, userAddress, referrerReward, referralReward], [])
     }
     let processingActions = if (currentUser < usersCount) then {
@@ -360,7 +352,6 @@ func finalizeHelper() = {
 
 @Callable(i)
 func finalizeWrapper(counter: Int) = {
-  let maxDepth = this.getInteger(keyMaxDepth).valueOrElse(maxDepthDefault)
   strict result = this.invoke("finalizeHelper", [], []).exactAs[Boolean]
   if (!result && counter == maxDepth) then {
     "Nothing to process".throw()
@@ -375,8 +366,6 @@ func finalizeWrapper(counter: Int) = {
 
 @Callable(i)
 func processPendingPeriodsAndUsers() = {
-  let maxDepth = this.getInteger(keyMaxDepth).valueOrElse(maxDepthDefault)
-
   ([], this.invoke("finalizeWrapper", [maxDepth], []))
 }
 
