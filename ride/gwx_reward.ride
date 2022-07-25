@@ -2,6 +2,13 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+# Required keys:
+# * "%s__config": String ("%s%s%s__<wxAssetIdStr>__<matcherPacemakerAddressStr>__<boostingContractAddressStr>")
+# * "%s%s__config__factoryAddress": String
+# * "%s%s__config__emissionAddress": String
+# * "%s%s__config__referralsContractAddress": String
+# * "%s__latestPeriod": Integer
+
 let revisionNum = ""
 let SEP = "__"
 let USERDEPTH = 26
