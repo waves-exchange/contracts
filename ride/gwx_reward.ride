@@ -18,10 +18,6 @@ let zeroBigInt = 0.toBigInt()
 let processingStageTotal = 0
 let processingStageShares = 1
 let maxDepthDefault = 30
-let referralMinGWxAmount = 500 * MULT8
-let referrerPart = 5
-let referralPart = 5
-let wxLockReferralProgramName = "wxlock"
 
 func getNumberByKey(key: String) = getInteger(this, key).valueOrElse(0)
 
@@ -55,7 +51,23 @@ func keyEmissionAddress() = "%s%s__config__emissionAddress"
 func keyNum2UserMapping(num: Int) = makeString(["%s%s%s__mapping__num2user", num.toString()], SEP)
 
 # Referrals
-func keyReferrer(referralAddress: String) = ["%s%s%s", "referrer", wxLockReferralProgramName, referralAddress].makeString(SEP)
+let keyReferralProgramName = "%s%s__referral__programName"
+let referralProgramNameDefault = "wxlock"
+let referralProgramName = this.getString(keyReferralProgramName).valueOrElse(referralProgramNameDefault)
+
+let keyReferralMinGWxAmount = "%s%s__referral__minGWxAmount"
+let referralMinGWxAmountDefault = 500 * MULT8
+let referralMinGWxAmount = this.getInteger(keyReferralMinGWxAmount).valueOrElse(referralMinGWxAmountDefault)
+
+let keyReferrerRewardPermille = "%s%s__referral__referrerRewardPermille"
+let referrerRewardPermilleDefault = 50
+let referrerRewardPermille = this.getInteger(keyReferrerRewardPermille).valueOrElse(referrerRewardPermilleDefault)
+
+let keyReferralRewardPermille = "%s%s__referral__referralRewardPermille"
+let referralRewardPermilleDefault = 50
+let referralRewardPermille = this.getInteger(keyReferralRewardPermille).valueOrElse(referralRewardPermilleDefault)
+
+func keyReferrer(referralAddress: String) = ["%s%s%s", "referrer", referralProgramName, referralAddress].makeString(SEP)
 
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
@@ -327,9 +339,9 @@ func finalizeHelper() = {
     let userAddress = boostingContractOrFail().getStringValue(currentUser.keyNum2UserMapping())
     let referrer = referralsContractAddressOrFail.getString(userAddress.keyReferrer())
     strict referralInv = if (referrer == unit || userWeight < referralMinGWxAmount) then unit else {
-      let referrerReward = fraction(userTotalAmount, referrerPart, 100)
-      let referralReward = fraction(userTotalAmount, referralPart, 100)
-      referralsContractAddressOrFail.invoke("incUnclaimed", [wxLockReferralProgramName, userAddress, referrerReward, referralReward], [])
+      let referrerReward = fraction(userTotalAmount, referrerRewardPermille, SCALE)
+      let referralReward = fraction(userTotalAmount, referralRewardPermille, SCALE)
+      referralsContractAddressOrFail.invoke("incUnclaimed", [referralProgramName, userAddress, referrerReward, referralReward], [])
     }
     let processingActions = if (currentUser < usersCount) then {
       [IntegerEntry(keyNextProcessedUser(), currentUser + 1)]
