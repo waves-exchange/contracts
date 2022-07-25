@@ -40,7 +40,7 @@ describe('vesting: claimFullAnyAmount.mjs', /** @this {MochaSuiteModified} */() 
     await api.transactions.broadcast(createDepositFor, {});
     const { height } = await ni.waitForTx(createDepositFor.id, { apiBase });
 
-    await waitForHeight(height + 3)
+    await waitForHeight(height + 3);
 
     const beforeClaim1 = await api.assets.fetchBalanceAddressAssetId(user1, this.wxAssetId);
     const claim1 = invokeScript({
@@ -55,7 +55,7 @@ describe('vesting: claimFullAnyAmount.mjs', /** @this {MochaSuiteModified} */() 
     await api.transactions.broadcast(claim1, {});
     const { height: heightBeforeClaim1 } = await ni.waitForTx(claim1.id, { apiBase });
 
-    await waitForHeight(heightBeforeClaim1 + 9)
+    await waitForHeight(heightBeforeClaim1 + 9);
 
     const claim2 = invokeScript({
       dApp: vesting,
