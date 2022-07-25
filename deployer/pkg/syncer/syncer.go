@@ -42,7 +42,7 @@ func NewSyncer(
 	switch mode {
 	case config.DeployTestnet:
 		c, err := client.NewClient(
-			client.Options{BaseUrl: testnetNode, Client: &http.Client{Timeout: 10 * time.Second}},
+			client.Options{BaseUrl: testnetNode, Client: &http.Client{Timeout: time.Minute}},
 		)
 		if err != nil {
 			return Syncer{}, fmt.Errorf("client.NewClient: %w", err)
@@ -50,7 +50,7 @@ func NewSyncer(
 		cl = c
 	case config.CompareMainnet:
 		c, err := client.NewClient(
-			client.Options{BaseUrl: mainnetNode, Client: &http.Client{Timeout: 10 * time.Second}},
+			client.Options{BaseUrl: mainnetNode, Client: &http.Client{Timeout: time.Minute}},
 		)
 		if err != nil {
 			return Syncer{}, fmt.Errorf("client.NewClient: %w", err)

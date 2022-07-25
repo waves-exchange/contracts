@@ -1,0 +1,19 @@
+{-# STDLIB_VERSION 5 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+@Callable(i)
+func stake() = {
+  (nil, unit)
+}
+
+@Callable(i)
+func unstake(lpAssetIdStr: String, amount: Int) = {
+  let lpAssetId = lpAssetIdStr.fromBase58String()
+  (
+    [
+      ScriptTransfer(i.caller, amount, lpAssetId)
+    ],
+    unit
+   )
+}

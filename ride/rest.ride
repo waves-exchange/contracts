@@ -246,6 +246,26 @@ func claimedRewardREADONLY(userAddress: String) = {
 }
 
 @Callable(i)
+func calcBoostBulkInternalREADONLY(currentIter: Int, deltaWxAmountBulk: List[Int], deltaLockPeriodInBlocksBulk: List[Int], deltaLpAmountBulk: List[Int], lpAssetIdOptBulk: List[String], userAddressOpt: String, resAcc: List[String]) = {
+  if (currentIter == deltaWxAmountBulk.size()) then ([], resAcc) else
+
+  let deltaWxAmount = deltaWxAmountBulk[currentIter]
+  let deltaLockPeriodInBlocks = deltaLockPeriodInBlocksBulk[currentIter]
+  let deltaLpAmount = deltaLpAmountBulk[currentIter]
+  let lpAssetIdOpt = lpAssetIdOptBulk[currentIter]
+  let info = this.invoke("calcBoostREADONLY", [deltaWxAmount, deltaLockPeriodInBlocks, deltaLpAmount, lpAssetIdOpt, userAddressOpt], []).exactAs[String]
+  let res = resAcc :+ info
+  strict inv = this.invoke("calcBoostBulkInternalREADONLY", [currentIter+1, deltaWxAmountBulk, deltaLockPeriodInBlocksBulk, deltaLpAmountBulk, lpAssetIdOptBulk, userAddressOpt, res], []).exactAs[List[Any]]
+  ([], inv)
+}
+
+@Callable(i)
+func calcBoostBulkREADONLY(deltaWxAmount: List[Int], deltaLockPeriodInBlocks: List[Int], deltaLpAmount: List[Int], lpAssetIdOpt: List[String], userAddressOpt: String) = {
+  let res = this.invoke("calcBoostBulkInternalREADONLY", [0, deltaWxAmount, deltaLockPeriodInBlocks, deltaLpAmount, lpAssetIdOpt, userAddressOpt, []], [])
+  ([], res)
+}
+
+@Callable(i)
 func calcBoostREADONLY(deltaWxAmount: Int, deltaLockPeriodInBlocks: Int, deltaLpAmount: Int, lpAssetIdOpt: String, userAddressOpt: String) = {
   let mathDapp = gwxRewardDapp
   let EMPTYSTR = "empty"
@@ -322,27 +342,7 @@ func calcBoostREADONLY(deltaWxAmount: Int, deltaLockPeriodInBlocks: Int, deltaLp
 
   let boostCoeff = if (userWxPerBlockX3 == 0) then 1*MULT8 else fraction(userBoostPerBlockX3 + userWxPerBlockX3, MULT8, userWxPerBlockX3)
 
-  let debug = ["lpAssetIdStr=" + lpAssetIdStr,
-              "userAddressStr=" + userAddressStr,
-              "userNumStr=" + userNumStr,
-              "userAmount=" + userAmount.toString(),
-              "userAmountNew=" + userAmountNew.toString(),
-              "lockDurationNew=" + lockDurationNew.toString(),
-              "gWxAmountStart=" + gWxAmountStartNew.toString(),
-              #"userMaxBoostIntNew=" + userMaxBoostIntNew.toString(),
-              #"totalMaxBoostInt=" + totalMaxBoostInt.toString(),
-              "tmpUserBoostPerBlockX3=" + tmpUserBoostPerBlockX3.toString(),
-              "stakedByUserNew=" + stakedByUserNew.toString(),
-              "stakedTotalNew=" + stakedTotalNew.toString(),
-              "poolWeight=" + poolWeight.toString(),
-              "wxPerLpX3=" + wxPerLpX3.toString(),
-              "poolWxEmissionPerBlockX3=" + poolWxEmissionPerBlockX3.toString(),
-              "userWxPerBlockX3=" + userWxPerBlockX3.toString(),
-              "gWxAmountDiff=" + gWxAmountDiff.toString(),
-              "totalCachedGwx=" + totalCachedGwx.toString(),
-              "userCurrgWxAmount=" + userCurrgWxAmount.toString()].makeString("::")
-
-  ([], makeString(["%d%d%s", gWxAmountStartNew.toString(), boostCoeff.toString(), debug], SEP))
+  ([], makeString(["%d%d%s", gWxAmountStartNew.toString(), boostCoeff.toString(), "d"], SEP))
 }
 
 @Callable(i)
