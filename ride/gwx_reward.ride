@@ -41,7 +41,7 @@ let factoryContract = factoryAddressStr.addressFromStringValue()
 func keyEmissionAddress() = "%s%s__config__emissionAddress"
 
 # Boosting
-func keyNum2UserMapping(num: Int) = makeString(["%s%s%s__mapping__num2user", num.toString()], SEP)
+func keyNum2UserMapping(num: Int) = ["%s%s%s__mapping__num2user", num.toString()].makeString(SEP)
 
 # Referrals
 let keyReferralProgramName = "%s%s__referral__programName"
