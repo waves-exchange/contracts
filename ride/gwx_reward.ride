@@ -41,22 +41,22 @@ let factoryContract = factoryAddressStr.addressFromStringValue()
 func keyEmissionAddress() = "%s%s__config__emissionAddress"
 
 # Boosting
-func keyNum2UserMapping(num: Int) = ["%s%s%s__mapping__num2user", num.toString()].makeString(SEP)
+func keyNum2UserMapping(num: Int) = ["%s%s%s", "mapping", "num2user", num.toString()].makeString(SEP)
 
 # Referrals
-let keyReferralProgramName = "%s%s__referral__programName"
+let keyReferralProgramName = ["%s%s", "referral", "programName"].makeString(SEP)
 let referralProgramNameDefault = "wxlock"
 let referralProgramName = this.getString(keyReferralProgramName).valueOrElse(referralProgramNameDefault)
 
-let keyReferralMinGWxAmount = "%s%s__referral__minGWxAmount"
+let keyReferralMinGWxAmount = ["%s%s", "referral", "minGWxAmount"].makeString(SEP)
 let referralMinGWxAmountDefault = 500 * MULT8
 let referralMinGWxAmount = this.getInteger(keyReferralMinGWxAmount).valueOrElse(referralMinGWxAmountDefault)
 
-let keyReferrerRewardPermille = "%s%s__referral__referrerRewardPermille"
+let keyReferrerRewardPermille = ["%s%s", "referral", "referrerRewardPermille"].makeString(SEP)
 let referrerRewardPermilleDefault = 50
 let referrerRewardPermille = this.getInteger(keyReferrerRewardPermille).valueOrElse(referrerRewardPermilleDefault)
 
-let keyReferralRewardPermille = "%s%s__referral__referralRewardPermille"
+let keyReferralRewardPermille = ["%s%s", "referral", "referralRewardPermille"].makeString(SEP)
 let referralRewardPermilleDefault = 50
 let referralRewardPermille = this.getInteger(keyReferralRewardPermille).valueOrElse(referralRewardPermilleDefault)
 
@@ -170,7 +170,7 @@ func keyUserBValueForPeriod(period: Int, userIndex: Int) =
 func keyUserWeightForPeriod(period: Int, userIndex: Int) =
   makeString(["%s%d%s%d__paramByPeriod", userIndex.toString(), "weight", period.toString()], SEP)
 
-func keyReferralsContractAddress()  = "%s%s__config__referralsContractAddress"
+func keyReferralsContractAddress()  = ["%s%s", "config", "referralsContractAddress"].makeString(SEP)
 let referralsContractAddressOrFail = keyReferralsContractAddress().getStringOrFail().addressFromStringValue()
 
 func HistoryEntry(type: String, user: String, amountFromMatcher: Int, amountFromEmission: Int, currentPeriod: Int, latestPeriod: Int, i: Invocation) = {
