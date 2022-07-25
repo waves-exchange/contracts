@@ -41,7 +41,7 @@ let factoryContract = factoryAddressStr.addressFromStringValue()
 func keyEmissionAddress() = "%s%s__config__emissionAddress"
 
 # Boosting
-func keyNum2UserMapping(num: Int) = ["%s%s%s", "mapping", "num2user", num.toString()].makeString(SEP)
+func keyNumToUserMapping(num: Int) = ["%s%s%s", "mapping", "num2user", num.toString()].makeString(SEP)
 
 # Referrals
 let keyReferralProgramName = ["%s%s", "referral", "programName"].makeString(SEP)
@@ -53,10 +53,12 @@ let referralMinGWxAmountDefault = 500 * MULT8
 let referralMinGWxAmount = this.getInteger(keyReferralMinGWxAmount).valueOrElse(referralMinGWxAmountDefault)
 
 let keyReferrerRewardPermille = ["%s%s", "referral", "referrerRewardPermille"].makeString(SEP)
+# 50‰ = 5%
 let referrerRewardPermilleDefault = 50
 let referrerRewardPermille = this.getInteger(keyReferrerRewardPermille).valueOrElse(referrerRewardPermilleDefault)
 
 let keyReferralRewardPermille = ["%s%s", "referral", "referralRewardPermille"].makeString(SEP)
+# 50‰ = 5%
 let referralRewardPermilleDefault = 50
 let referralRewardPermille = this.getInteger(keyReferralRewardPermille).valueOrElse(referralRewardPermilleDefault)
 
@@ -328,7 +330,7 @@ func finalizeHelper() = {
     let userAmountMatcherForPeriod = currentPeriod.keyTotalAmountForPeriod().getNumberByKey().fraction(userWeight, totalWeight)
     let userAmountEmissionForPeriod = currentPeriod.keyAuxEmissionRewardForPeriod().getNumberByKey().fraction(userWeight, totalWeight)
     let userTotalAmount = userAmountEmissionForPeriod + userAmountMatcherForPeriod
-    let userAddress = boostingContractOrFail().getStringValue(currentUser.keyNum2UserMapping())
+    let userAddress = boostingContractOrFail().getStringValue(currentUser.keyNumToUserMapping())
     let referrer = referralsContractAddressOrFail.getString(userAddress.keyReferrer())
     strict referralInv = if (referrer == unit || userWeight < referralMinGWxAmount) then unit else {
       let referrerReward = userTotalAmount.fraction(referrerRewardPermille, SCALE)
