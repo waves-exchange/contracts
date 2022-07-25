@@ -1,6 +1,5 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { api } from '../api.mjs';
 
 import {
   votingEmission,
@@ -18,7 +17,7 @@ describe(`${process.pid}: voting_emission: create`, () => {
     const { addr, seed } = this.accounts.votingEmission;
     const amountAssetId = 'amountAssetId';
     const priceAssetId = 'priceAssetId';
-    const { stateChanges } = await votingEmission.create({
+    const { stateChanges, height } = await votingEmission.create({
       dApp: addr, caller: seed, amountAssetId, priceAssetId,
     });
 
@@ -35,7 +34,7 @@ describe(`${process.pid}: voting_emission: create`, () => {
         value: `${amountAssetId}__${priceAssetId}`,
       },
       { key: '%s__currentEpoch', type: 'integer', value: 0 },
-      { key: '%s%d__startHeight__0', type: 'integer', value: (await api.blocks.fetchHeight()).height },
+      { key: '%s%d__startHeight__0', type: 'integer', value: height },
     ]);
   });
 });

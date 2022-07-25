@@ -41,6 +41,7 @@ jobs:
       VORINGEMISSIONCANDIDATE_PRV: ${{ secrets.VORINGEMISSIONCANDIDATE_PRV }}
       VOTINGEMISSION_PRV: ${{ secrets.VOTINGEMISSION_PRV }}
       VOTINGVERIFIED_PRV: ${{ secrets.VOTINGVERIFIED_PRV }}
+      REST_PRV: ${{ secrets.REST_PRV }}
     if: github.ref_name == 'dev'
     runs-on: ubuntu-20.04
     container:
@@ -82,11 +83,16 @@ jobs:
           go run main.go
 
   test:
-    env:
-      API_NODE_URL: ${{ secrets.API_NODE_URL }}
     runs-on: ubuntu-20.04
     container:
       image: node:18.1
+    services:
+      waves-private-node:
+        image: wavesplatform/waves-private-node
+        ports:
+          - 6869:6869
+    env:
+      API_NODE_URL: http://waves-private-node:6869
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
