@@ -4,7 +4,6 @@
 
 let revisionNum = ""
 let SEP = "__"
-let MAXDEPTH = 17 # 17 * 6 = 112 users
 let USERDEPTH = 26
 let SCALE = 1000
 let MULT8 = 1_0000_0000
@@ -69,6 +68,11 @@ func formatConfig(wxAssetIdStr: String, matcherPacemakerAddressStr: String, boos
       boostingContractAddressStr,  # 3
       maxDepth.toString()          # 4
     ], SEP)
+}
+
+func boostingContractOrFail() = {
+  let cfgArray = readConfigArrayOrFail()
+  cfgArray[IdxCfgBoostingContract].addressFromString().valueOrErrorMessage("boosting contract address is not defined")
 }
 
 # ***********************
@@ -348,7 +352,7 @@ func processPendingPeriodsAndUsers() = {
   if (currentPeriod > getNumberByKey(keyLatestPeriod())) then throw("Nothing to process") else
   let cfgArray = readConfigArrayOrFail()
   let depth = cfgArray[IdxCfgMaxDepth].parseIntValue()
-  if (depth > MAXDEPTH) then throw("Depth exceeds MAXDEPTH") else
+  # if (depth > MAXDEPTH) then throw("Depth exceeds MAXDEPTH") else
   let boostingContract = cfgArray[IdxCfgBoostingContract].fromBase58String()
   let currentUser = getNumberByKey(keyNextProcessedUser()) # user to start with
   let totalWeight = getNumberByKey(keyTotalWeightForPeriod(currentPeriod))
@@ -366,7 +370,57 @@ func processPendingPeriodsAndUsers() = {
 
 @Callable(i)
 func finalizeHelper() = {
-  (nil, unit)
+  let processingStage = keyProcessingStage().getInteger().valueOrElse(processingStageTotal)
+  let currentPeriod = getNumberByKey(keyNextProcessedPeriod()) # period with reward being currently distributed
+  let currentUser = keyNextProcessedUser().getNumberByKey() # user to start with
+  let latestPeriod = keyLatestPeriod().getNumberByKey()
+  let usersCount = boostingContractOrFail().getInteger(keyUsersCount()).valueOrElse(0)
+  let totalWeightKey = currentPeriod.keyTotalWeightForPeriod()
+  let totalWeight = keyTotalWeightForPeriod(currentPeriod).getNumberByKey()
+  let heightForPeriod = currentPeriod.keyHeightForPeriod().getNumberByKey()
+  if (currentPeriod > latestPeriod) then {
+    # nothing to process
+    ([], false)
+  } else if (processingStage == processingStageTotal) then {
+    # calculate total weight for period
+    # process one user
+    let (userWeight, userActions) = calcUserWeight(boostingContractOrFail(), heightForPeriod, currentPeriod, currentUser)
+    let totalWeightNew = totalWeight + userWeight
+    # if no users left, change processing stage to shares
+    let processingActions = if (currentUser < usersCount) then {
+      [IntegerEntry(keyNextProcessedUser(), currentUser + 1)]
+    } else {
+      [
+        IntegerEntry(keyProcessingStage(), processingStageShares),
+        IntegerEntry(keyNextProcessedUser(), 0)
+      ]
+    }
+    (
+      [
+        IntegerEntry(totalWeightKey, totalWeightNew)
+      ] ++ processingActions ++ userActions,
+      true
+    )
+  } else if (processingStage == processingStageShares) then {
+    # calculate user shares for period
+    let userWeight = calcUserWeightForClaim(boostingContractOrFail(), heightForPeriod, currentPeriod, currentUser)
+    let userAmountMatcherForPeriod = fraction(currentPeriod.keyTotalAmountForPeriod().getNumberByKey(), userWeight, totalWeight)
+    let userAmountEmissionForPeriod = fraction(currentPeriod.keyAuxEmissionRewardForPeriod().getNumberByKey(), userWeight, totalWeight)
+    let userTotalAmount = userAmountEmissionForPeriod + userAmountMatcherForPeriod
+    # incUnclaimed(programName String, referralAddress: String, referrerReward: Int, referralReward: Int)
+    let processingActions = if (currentUser < usersCount) then {
+      [IntegerEntry(keyNextProcessedUser(), currentUser + 1)]
+    } else {
+      [
+        IntegerEntry(keyNextProcessedPeriod(), currentPeriod + 1),
+        IntegerEntry(keyNextProcessedUser(), 0)
+      ]
+    }
+    (
+      [] ++ processingActions,
+      true
+    )
+  } else "invalid processing stage".throw()
 }
 
 @Callable(i)
