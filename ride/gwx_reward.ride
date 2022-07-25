@@ -374,9 +374,9 @@ func finalizeWrapper(counter: Int) = {
   let maxDepth = this.getInteger(keyMaxDepth).valueOrElse(maxDepthDefault)
   strict result = this.invoke("finalizeHelper", [], []).exactAs[Boolean]
   if (!result && counter == maxDepth) then {
-    "Current voting is not over yet".throw()
+    "Nothing to process".throw()
   } else {
-    if (counter < maxDepth) then {
+    if (counter > 0) then {
       ([], this.invoke("finalizeWrapper", [counter - 1], []))
     } else {
       ([], unit)
