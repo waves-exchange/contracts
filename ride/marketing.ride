@@ -200,7 +200,7 @@ func claim() = {
 
 @Callable(i)
 func withdrawReferralReward(wxAmount: Int) = {
-  strict mustReferral = i.caller.toString() == keyReferral.getString().value() || "permissions denied".throwErr()
+  strict mustReferral = i.caller.toString() == keyReferral.getString().value() || "permission denied".throwErr()
 
   let wxAssetId = keyWxAssetId.getString().value().fromBase58String()
   ([
