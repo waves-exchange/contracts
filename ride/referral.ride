@@ -32,6 +32,10 @@ func keyActiveReferralCount(
   programName: String,
   referrerAddress: String
 ) = makeString(["%s%s%s", "activeReferralCount", programName, referrerAddress], separator)
+func keyIsReferralActive(
+  programName: String,
+  referralAddress: String
+) = makeString(["%s%s%s", "activeReferral", programName, referralAddress], separator)
 
 func keyClaimedTotal(programName: String)           = ["%s%s", "claimedTotal", programName].makeString(separator)
 func keyRewardAssetId(programName: String)          = ["%s%s", "rewardAssetId", programName].makeString(separator)
@@ -70,9 +74,9 @@ func createReferralProgram(programName: String, treasuryContract: String, implem
   strict checkProgramName = programName.getBoolean() == true || "program name already exists".throwErr()
 
   ([
-    BooleanEntry(keyProgramName(programName), true),
-    StringEntry(keyTreasuryContract(programName), treasuryContract),
-    StringEntry(keyImplementationContract(programName), implementationContract)
+    BooleanEntry(programName.keyProgramName(), true),
+    StringEntry(programName.keyTreasuryContract(), treasuryContract),
+    StringEntry(programName.keyImplementationContract(), implementationContract)
   ], unit)
 }
 
@@ -91,25 +95,47 @@ func createPair(
   let backendPublicKey = keyBackendPublicKey.getString().value().toBytes()
   strict validateSignature = sigVerify(pair, signature, backendPublicKey) || "bad signature".throwErr()
 
-  let totalReferralCount = keyTotalReferralCount(programName, referrerAddress).getInteger().valueOrElse(0)
+  let totalReferralCount = programName.keyTotalReferralCount(referrerAddress).getInteger().valueOrElse(0)
   let newTotalReferralCount = totalReferralCount + 1
 
   ([
-    BooleanEntry(keyExistsReferrerToReferral(programName, referrerAddress, referralAddress), true),
-    IntegerEntry(keyTotalReferralCount(programName, referrerAddress), newTotalReferralCount)
+    BooleanEntry(programName.keyExistsReferrerToReferral(referrerAddress, referralAddress), true),
+    IntegerEntry(programName.keyTotalReferralCount(referrerAddress), newTotalReferralCount)
   ], unit)
 }
 
 @Callable(i)
-func setActiveReferralCount(
+func updateReferralActivity(
   programName: String,
-  referrerAddress: String,
-  activeReferralCount: Int
+  referralAddress: String,
+  isActive: Boolean
 ) = {
-  let implementationContract = programName.keyImplementationContract().getString().value()
+  let implementationContract  = programName.keyImplementationContract().getString().value()
+  let isReferralActive        = programName.keyIsReferralActive(referralAddress).getBoolean() != unit
+  let referrerAddress         = programName.keyReferrer(referralAddress).getString().value()
+
   strict checkCaller = i.caller.toString() == implementationContract || "permission denied".throwErr()
 
-  ([IntegerEntry(keyActiveReferralCount(programName, referrerAddress), activeReferralCount)], unit)
+  let update = if isReferralActive == isActive then {
+    ([], unit)
+  } else {
+    let update = if isActive == true then {
+      let newActiveReferralCount = programName.keyActiveReferralCount(referrerAddress).getInteger().valueOrElse(0) + 1
+      ([
+        BooleanEntry(programName.keyIsReferralActive(referralAddress), true),
+        IntegerEntry(programName.keyActiveReferralCount(referrerAddress), newActiveReferralCount)
+      ], unit)
+    } else {
+      let newActiveReferralCount = programName.keyActiveReferralCount(referrerAddress).getInteger().valueOrElse(0) - 1
+      ([
+        DeleteEntry(programName.keyIsReferralActive(referralAddress)),
+        IntegerEntry(programName.keyActiveReferralCount(referrerAddress), newActiveReferralCount)
+      ], unit)
+    }
+    update
+  }
+
+  update
 }
 
 @Callable(i)
@@ -119,8 +145,8 @@ func incUnclaimed(
   referrerReward: Int,
   referralReward: Int
 ) = {
-  let incAllowedContract = programName.keyImplementationContract().getString().value()
-  strict checkCaller = i.caller.toString() == incAllowedContract || "permission denied".throwErr()
+  let implementationContract = programName.keyImplementationContract().getString().value()
+  strict checkCaller = i.caller.toString() == implementationContract || "permission denied".throwErr()
 
   let referrerAddress   = programName.keyReferrer(referralAddress).getString().value()
   let referrerUnclaimed = programName.keyUnclaimed(referrerAddress).getInteger().value()
