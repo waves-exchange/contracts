@@ -35,7 +35,3 @@ export const setScriptFromFile = async (
   await api.transactions.broadcast(ssTx, {});
   await waitForTx(ssTx.id, { apiBase });
 };
-
-export const sleep = async (sec) => new Promise((resolve) => {
-  setTimeout(resolve, sec * 1000);
-});

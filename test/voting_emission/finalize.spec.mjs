@@ -25,7 +25,7 @@ describe(`${process.pid}: voting_emission: finalize`, () => {
   const priceAssetId2Internal = 3;
   const user1GwxAmount = 1000;
   const user2GwxAmount = 3000;
-  const epochLength = 2;
+  const epochLength = 6;
   const poolContract1 = 'poolContract1';
   const poolContract2 = 'poolContract2';
   const poolLpAssetId1 = 'poolLpAssetId1';
@@ -128,7 +128,7 @@ describe(`${process.pid}: voting_emission: finalize`, () => {
   it('successfull finalize', async function () {
     const { addr: dApp } = this.accounts.votingEmission;
     const { value: startHeight } = await api.addresses.fetchDataKey(dApp, '%s%d__startHeight__0');
-    await waitForHeight(startHeight + epochLength);
+    await waitForHeight(startHeight + epochLength + 1);
     await votingEmission.finalize({
       dApp, caller: this.accounts.pacemaker.seed,
     });
