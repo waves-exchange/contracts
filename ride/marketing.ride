@@ -16,6 +16,12 @@
 
 let SEP = "__"
 
+let keyReferral = ["%s", "referral"].makeString(SEP)
+let keyWxAssetId = ["%s", "wxAssetId"].makeString(SEP)
+
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+
 # State Data Formatting Functions
 let IdxCfgClaimStartBlock        = 1
 let IdxCfgClaimVestingPeriod     = 2
@@ -27,6 +33,8 @@ let IdxCfgClaimAssetTotalAmount  = 6
 let IdxTotalsTotalClaimedAmount  = 1
 let IdxTotalsRemainingAmount     = 2
 let IdxTotalsLastClaimedHeight   = 3
+
+func throwErr(msg: String) = ["marketing.ride:", msg].makeString(" ").throw()
 
 func getStringOrFail(key: String) = getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
 
@@ -110,6 +118,25 @@ func ClaimOperationHistoryEntry(userAddress: String, claimedAssetAmount: Int,  c
       formatHistoryRecord(claimedAssetAmount, claimingBlocks, firstCalculationBlock, lastCalculationBlock))
 }
 
+func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func mustManager(i: Invocation) = {
+  let pd = "permission denied".throwErr()
+
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk || pd
+    case _: Unit => i.caller == this || pd
+  }
+}
+
 # params:
 #    1. claimStartBlock         - first block after which funds owner could have a claim possibility
 #    2. vestingPeriod      - period in which funds owner got all emission
@@ -171,7 +198,41 @@ func claim() = {
   ]
 }
 
+@Callable(i)
+func withdrawReferralReward(wxAmount: Int) = {
+  strict mustReferral = i.caller.toString() == keyReferral.getString().value() || "permissions denied".throwErr()
+
+  let wxAssetId = keyWxAssetId.getString().value().fromBase58String()
+  ([
+    ScriptTransfer(i.caller, wxAmount, wxAssetId)
+  ], unit)
+}
+
+@Callable(i)
+func setManager(pendingManagerPublicKey: String) = {
+  strict checkCaller            = i.mustManager()
+  strict checkManagerPublicKey  = pendingManagerPublicKey.fromBase58String()
+
+  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
+}
+
+@Callable(i)
+func confirmManager() = {
+  let pm = pendingManagerPublicKeyOrUnit()
+  strict hasPM    = pm.isDefined() || "no pending manager".throwErr()
+  strict checkPM  = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
+
+  [
+    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
+    DeleteEntry(keyPendingManagerPublicKey())
+  ]
+}
+
 @Verifier(tx)
-func verify () = {
-  sigVerify(tx.bodyBytes, tx.proofs[0], fromBase58String("2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq"))
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
 }
