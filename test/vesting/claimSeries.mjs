@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { sleep } from '../utils.mjs';
+import { waitForHeight } from '../api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -40,7 +40,7 @@ describe('vesting: claimSeries.mjs', /** @this {MochaSuiteModified} */() => {
     await api.transactions.broadcast(createDepositFor, {});
     const minedCreateDepositFor = await ni.waitForTx(createDepositFor.id, { apiBase });
 
-    await sleep(30);
+    await waitForHeight(minedCreateDepositFor.height + 3);
 
     const beforeClaim1 = await api.assets.fetchBalanceAddressAssetId(user1, this.wxAssetId);
     const claim1 = invokeScript({
@@ -56,7 +56,7 @@ describe('vesting: claimSeries.mjs', /** @this {MochaSuiteModified} */() => {
     const minedClaim1 = await ni.waitForTx(claim1.id, { apiBase });
     const afterClaim1 = await api.assets.fetchBalanceAddressAssetId(user1, this.wxAssetId);
 
-    await sleep(60);
+    await waitForHeight(minedClaim1.height + 6);
 
     const claim2 = invokeScript({
       dApp: vesting,
