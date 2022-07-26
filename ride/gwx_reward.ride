@@ -332,6 +332,9 @@ func finalizeHelper() = {
     let userTotalAmount = userAmountEmissionForPeriod + userAmountMatcherForPeriod
     let userAddress = boostingContractOrFail().getStringValue(currentUser.keyNumToUserMapping())
     let referrer = referralsContractAddressOrFail.getString(userAddress.keyReferrer())
+    strict activeReferralInv = if (referrer == unit) then unit else {
+      referralsContractAddressOrFail.invoke("setActiveReferral", [referralProgramName, userAddress, userWeight >= referralMinGWxAmount], [])
+    }
     strict referralInv = if (referrer == unit || userWeight < referralMinGWxAmount) then unit else {
       let referrerReward = userTotalAmount.fraction(referrerRewardPermille, SCALE)
       let referralReward = userTotalAmount.fraction(referralRewardPermille, SCALE)
