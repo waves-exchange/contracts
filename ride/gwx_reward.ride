@@ -2,7 +2,7 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-# Required keys:
+# Required state entries:
 # * "%s__config": String ("%s%s%s__<wxAssetIdStr>__<matcherPacemakerAddressStr>__<boostingContractAddressStr>")
 # * "%s%s__config__factoryAddress": String
 # * "%s%s__config__emissionAddress": String
