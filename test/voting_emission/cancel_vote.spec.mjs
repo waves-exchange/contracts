@@ -11,7 +11,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe(`${process.pid}: voting_emission: cancel vote`, () => {
+describe('voting_emission: cancel_vote.spec.mjs', () => {
   const amountAssetId = 'amountAssetId';
   const priceAssetId = 'priceAssetId';
   const epochLength = 2;

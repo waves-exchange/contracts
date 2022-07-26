@@ -8,11 +8,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe(`${process.pid}: voting_emission: create`, () => {
-  // before(async () => {
-  //   await votingEmission.init();
-  // });
-
+describe('voting_emission: create.spec.mjs', () => {
   it('successfull create', async function () {
     const { addr, seed } = this.accounts.votingEmission;
     const amountAssetId = 'amountAssetId';

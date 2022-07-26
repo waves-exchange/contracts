@@ -14,7 +14,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe(`${process.pid}: voting_emission: finalize: single vote transfer`, () => {
+describe('voting_emission: finalize_single_vote_transfer.spec.mjs', () => {
   const amountAssetId = 'amountAssetId';
   const amountAssetIdInternal = 0;
   const priceAssetId = 'priceAssetId';

@@ -14,7 +14,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe(`${process.pid}: voting_emission: finalize: user removal`, () => {
+describe('voting_emission: finalize_user_removal.spec.mjs', () => {
   const amountAssetId = 'amountAssetId';
   const amountAssetIdInternal = 0;
   const priceAssetId = 'priceAssetId';

@@ -13,7 +13,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe(`${process.pid}: voting_emission: finalize: epoch update`, () => {
+describe('voting_emission: finalize_epoch_update.spec.mjs', () => {
   const amountAssetId = 'amountAssetId';
   const amountAssetIdInternal = 0;
   const priceAssetId = 'priceAssetId';

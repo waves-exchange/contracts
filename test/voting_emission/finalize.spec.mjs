@@ -14,7 +14,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe(`${process.pid}: voting_emission: finalize`, () => {
+describe('voting_emission: finalize.spec.mjs', () => {
   const amountAssetId1 = 'amountAssetId1';
   const amountAssetId1Internal = 0;
   const priceAssetId1 = 'priceAssetId1';
