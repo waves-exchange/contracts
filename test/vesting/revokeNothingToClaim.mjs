@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { sleep } from '../utils.mjs';
+import { waitForHeight } from '../api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -38,9 +38,9 @@ describe('vesting: revokeNothingToClaim.mjs', /** @this {MochaSuiteModified} */(
       chainId,
     }, this.accounts.manager);
     await api.transactions.broadcast(createDepositFor, {});
-    await ni.waitForTx(createDepositFor.id, { apiBase });
+    const { height: heightCreateDepositFor } = await ni.waitForTx(createDepositFor.id, { apiBase });
 
-    await sleep(30);
+    await waitForHeight(heightCreateDepositFor + 3);
 
     const revoke = invokeScript({
       dApp: vesting,
@@ -52,9 +52,9 @@ describe('vesting: revokeNothingToClaim.mjs', /** @this {MochaSuiteModified} */(
       chainId,
     }, this.accounts.manager);
     await api.transactions.broadcast(revoke, {});
-    await ni.waitForTx(revoke.id, { apiBase });
+    const { height: heightRevoke } = await ni.waitForTx(revoke.id, { apiBase });
 
-    await sleep(30);
+    await waitForHeight(heightRevoke + 3);
 
     const claim1 = invokeScript({
       dApp: vesting,
@@ -66,9 +66,9 @@ describe('vesting: revokeNothingToClaim.mjs', /** @this {MochaSuiteModified} */(
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(claim1, {});
-    await ni.waitForTx(claim1.id, { apiBase });
+    const { height: heightClaim1 } = await ni.waitForTx(claim1.id, { apiBase });
 
-    await sleep(30);
+    await waitForHeight(heightClaim1 + 3);
 
     const claim2 = invokeScript({
       dApp: vesting,
