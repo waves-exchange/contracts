@@ -167,9 +167,10 @@ func incUnclaimed(
 
 @Callable(i)
 func claim(programName: String) = {
-  let claimedTotal      = programName.keyClaimedTotal().getInteger().value()
-  let claimerClaimed    = programName.keyClaimed(i.caller.toString()).getInteger().value()
-  let claimerUnclaimed  = programName.keyUnclaimed(i.caller.toString()).getInteger().value()
+  strict checkProgramExists = programName.keyProgramName().getBoolean().valueOrElse(false) || "program does not exist".throwErr()
+  let claimedTotal      = programName.keyClaimedTotal().getInteger().valueOrElse(0)
+  let claimerClaimed    = programName.keyClaimed(i.caller.toString()).getInteger().valueOrElse(0)
+  let claimerUnclaimed  = programName.keyUnclaimed(i.caller.toString()).getInteger().valueOrElse(0)
   let treasuryContract  = programName.keyTreasuryContract().getString().value().addressFromString().value()
   let rewardAssetId     = programName.keyRewardAssetId().getString().value().fromBase58String()
   
