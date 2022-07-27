@@ -16,7 +16,7 @@ describe('referral: claimREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully createReferralProgram',
     async function () {
-      const programName = 'Referral program';
+      const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
 

@@ -392,5 +392,5 @@
 - file: referral.ride
   tag: referral
   testnet-prv: $REFERRAL_PRV
-  testnet-signer: $REFERRAL_PRV
+  testnet-signer: $MANAGER_PRV
   mainnet-pub: AEV7LzxNAcdrjC2NC4182iTxuyTyqfCLzqJ14TXnVSCm
