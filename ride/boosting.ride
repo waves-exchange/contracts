@@ -404,32 +404,7 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   (userBoostAvaliableToClaimTotalNew, dataState, debug)
 }
 
-@Callable(i)
-func constructor(factoryAddressStr: String, lockAssetIdStr: String, minLockAmount: Int, minDuration: Int, maxDuration: Int, mathContract: String) = {
-  strict checkCaller = i.mustManager()
-
-  [IntegerEntry(keyNextUserNum(), 0),
-    StringEntry(
-        keyConfig(),
-        formatConfig(lockAssetIdStr, minLockAmount, minDuration, maxDuration, mathContract)),
-    StringEntry(keyFactoryAddress(), factoryAddressStr)
-  ]
-    ++ StatsEntry(0, 0, 0, 0)
-}
-
-@Callable(i)
-func lockRef(duration: Int, referrerAddress: String, signature: ByteVector) = {
-  strict lockInv = this.invoke("lock", [duration], i.payments)
-  let referralAddress = i.caller.toString()
-  strict refInv = if (referrerAddress == "" || signature == base58'') then unit else {
-    referralsContractAddressOrFail.invoke("createPair", [referralProgramName, referrerAddress, referralAddress, signature], [])
-  }
-
-  (nil, unit)
-}
-
-@Callable(i)
-func lock(duration: Int) = {
+func lockActions(i: Invocation, duration: Int) = {
   let cfgArray          = readConfigArrayOrFail()
   let assetIdStr        = cfgArray[IdxCfgAssetId]
   let assetId           = assetIdStr.fromBase58String()
@@ -508,6 +483,35 @@ func lock(duration: Int) = {
     #IntegerEntry(userMaxBoostIntegralKEY, userMaxBoostInt),
     #IntegerEntry(totalMaxBoostIntegralKEY, totalMaxBoostInt + userMaxBoostInt),
     IntegerEntry(totalCachedGwxKEY, totalCachedGwx + gWxAmountStart)]
+}
+
+@Callable(i)
+func constructor(factoryAddressStr: String, lockAssetIdStr: String, minLockAmount: Int, minDuration: Int, maxDuration: Int, mathContract: String) = {
+  strict checkCaller = i.mustManager()
+
+  [IntegerEntry(keyNextUserNum(), 0),
+    StringEntry(
+        keyConfig(),
+        formatConfig(lockAssetIdStr, minLockAmount, minDuration, maxDuration, mathContract)),
+    StringEntry(keyFactoryAddress(), factoryAddressStr)
+  ]
+    ++ StatsEntry(0, 0, 0, 0)
+}
+
+@Callable(i)
+func lockRef(duration: Int, referrerAddress: String, signature: ByteVector) = {
+  let lockActionsResult = i.lockActions(duration)
+  let referralAddress = i.caller.toString()
+  strict refInv = if (referrerAddress == "" || signature == base58'') then unit else {
+    referralsContractAddressOrFail.invoke("createPair", [referralProgramName, referrerAddress, referralAddress, signature], [])
+  }
+
+  (lockActionsResult, unit)
+}
+
+@Callable(i)
+func lock(duration: Int) = {
+  i.lockActions(duration)
 }
 
 @Callable(i)
