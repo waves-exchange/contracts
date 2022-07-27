@@ -345,7 +345,8 @@ func finalizeHelper() = {
     } else {
       [
         IntegerEntry(keyNextProcessedPeriod(), currentPeriod + 1),
-        IntegerEntry(keyNextProcessedUser(), 0)
+        IntegerEntry(keyNextProcessedUser(), 0),
+        DeleteEntry(keyProcessingStage())
       ]
     }
     (
