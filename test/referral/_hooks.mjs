@@ -31,7 +31,6 @@ export const mochaHooks = {
       'referrerAccount',
       'referralAccount',
       'treasury',
-      'user1',
     ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
@@ -66,12 +65,12 @@ export const mochaHooks = {
 
     console.log('wxAssetId', this.wxAssetId);
 
-    const wxAmount = 1e12;
+    const wxAmount = 1e16;
     const massTransferTxWX = massTransfer({
-      transfers: names.slice(-2).map((name) => ({
+      transfers: names.slice(-1).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: wxAmount,
       })),
-      assetId: this.usdnAssetId,
+      assetId: this.wxAssetId,
       chainId,
     }, seed);
     await api.transactions.broadcast(massTransferTxWX, {});
@@ -110,7 +109,7 @@ export const mochaHooks = {
       additionalFee: 4e5,
       data: [
         {
-          key: '%s__wxAssetId',
+          key: '%s%s__rewardAssetId',
           type: 'string',
           value: this.wxAssetId,
         },
@@ -136,7 +135,7 @@ export const mochaHooks = {
       additionalFee: 4e5,
       data: [
         {
-          key: '%s%s__rewardAssetId',
+          key: '%s__wxAssetId',
           type: 'string',
           value: this.wxAssetId,
         },
