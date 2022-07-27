@@ -71,7 +71,9 @@ func mustManager(i: Invocation) = {
 @Callable(i)
 func createReferralProgram(programName: String, treasuryContract: String, implementationContract: String) = {
   strict checkCaller = i.mustManager()
-  strict checkProgramName = programName.getBoolean() == unit || "program name already exists".throwErr()
+  strict checkProgramName = programName.keyProgramName().getBoolean() == unit || "program name already exists".throwErr()
+  let programNameIsValid = !programName.contains(separator) && !programName.contains(" ")
+  strict checkProgramExists = programNameIsValid || "invalid program name".throwErr()
 
   ([
     BooleanEntry(programName.keyProgramName(), true),
@@ -87,6 +89,7 @@ func createPair(
   referralAddress: String,
   signature: ByteVector
 ) = {
+  strict checkProgramExists = programName.keyProgramName().getBoolean().valueOrElse(false) || "program does not exist".throwErr()
   strict pairReferrerToReferralExistCheck = keyExistsReferrerToReferral(
     programName, referrerAddress, referralAddress
   ).getString() == unit || "pair already exists".throwErr()
