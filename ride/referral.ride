@@ -103,7 +103,8 @@ func createPair(
 
   ([
     BooleanEntry(programName.keyExistsReferrerToReferral(referrerAddress, referralAddress), true),
-    IntegerEntry(programName.keyTotalReferralCount(referrerAddress), newTotalReferralCount)
+    IntegerEntry(programName.keyTotalReferralCount(referrerAddress), newTotalReferralCount),
+    StringEntry(programName.keyReferrer(referralAddress), referrerAddress)
   ], unit)
 }
 
