@@ -310,7 +310,7 @@ func finalizeHelper() = {
     let (userWeight, userActions) = boostingContractOrFail().calcUserWeight(heightForPeriod, currentPeriod, currentUser)
     let totalWeightNew = totalWeight + userWeight
     # if no users left, change processing stage to shares
-    let processingActions = if (currentUser < usersCount) then {
+    let processingActions = if (currentUser < usersCount - 1) then {
       [IntegerEntry(keyNextProcessedUser(), currentUser + 1)]
     } else {
       [
