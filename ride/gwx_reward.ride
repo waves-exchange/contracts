@@ -340,7 +340,7 @@ func finalizeHelper() = {
       let referralReward = userTotalAmount.fraction(referralRewardPermille, SCALE)
       referralsContractAddressOrFail.invoke("incUnclaimed", [referralProgramName, userAddress, referrerReward, referralReward], [])
     }
-    let processingActions = if (currentUser < usersCount) then {
+    let processingActions = if (currentUser < usersCount - 1) then {
       [IntegerEntry(keyNextProcessedUser(), currentUser + 1)]
     } else {
       [
@@ -358,8 +358,8 @@ func finalizeHelper() = {
 @Callable(i)
 func finalizeWrapper(counter: Int) = {
   strict result = this.invoke("finalizeHelper", [], []).exactAs[Boolean]
-  if (!result && counter == maxDepth) then {
-    "Nothing to process".throw()
+  if (!result) then {
+    if (counter == maxDepth) then "Nothing to process".throw() else ([], unit)
   } else {
     if (counter > 0) then {
       ([], this.invoke("finalizeWrapper", [counter - 1], []))
