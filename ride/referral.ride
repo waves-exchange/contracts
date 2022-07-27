@@ -4,7 +4,7 @@
 
 let separator = "__"
 
-let keyBackendPublicKey = makeString(["%s", "backendPulbicKey"], separator)
+let keyBackendPublicKey = makeString(["%s", "backendPublicKey"], separator)
 
 func keyExistsReferrerToReferral(
   programName: String,
@@ -71,7 +71,7 @@ func mustManager(i: Invocation) = {
 @Callable(i)
 func createReferralProgram(programName: String, treasuryContract: String, implementationContract: String) = {
   strict checkCaller = i.mustManager()
-  strict checkProgramName = programName.getBoolean() == true || "program name already exists".throwErr()
+  strict checkProgramName = programName.getBoolean() == unit || "program name already exists".throwErr()
 
   ([
     BooleanEntry(programName.keyProgramName(), true),
