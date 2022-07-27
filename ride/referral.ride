@@ -153,8 +153,8 @@ func incUnclaimed(
   strict checkCaller = i.caller.toString() == implementationContract || "permission denied".throwErr()
 
   let referrerAddress   = programName.keyReferrer(referralAddress).getString().value()
-  let referrerUnclaimed = programName.keyUnclaimed(referrerAddress).getInteger().value()
-  let referralUnclaimed = programName.keyUnclaimed(referralAddress).getInteger().value()
+  let referrerUnclaimed = programName.keyUnclaimed(referrerAddress).getInteger().valueOrElse(0)
+  let referralUnclaimed = programName.keyUnclaimed(referralAddress).getInteger().valueOrElse(0)
 
   let newReferrerUnclaimed = referrerUnclaimed + referrerReward
   let newReferralUnclaimed = referralUnclaimed + referralReward
