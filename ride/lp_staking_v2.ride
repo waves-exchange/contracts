@@ -273,7 +273,7 @@ func adminRegisterAsset(baseAssetStr: String, shareAssetName: String, shareAsset
   let internalBaseAssetStr = internalBaseAssettId.toString()
 
   strict createOrUpdate = assetsStoreContract().invoke("createOrUpdate", [shareAssetStr, shareAssetLogo, false], [])
-  strict addLabel = assetsStoreContract().invoke("addLabel", [shareAssetStr, "DEFI"], [])
+  strict addLabel = assetsStoreContract().invoke("addLabel", [shareAssetStr, "STAKING_LP"], [])
 
   [
   StringEntry(keyAssetCfg(baseAssetStr),
