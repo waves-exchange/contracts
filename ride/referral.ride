@@ -91,7 +91,7 @@ func createPair(
     programName, referrerAddress, referralAddress
   ).getString() == unit || "pair already exists".throwErr()
 
-  let pair = [programName, referrerAddress, referralAddress].makeString(":").toBytes()
+  let pair = [programName, referrerAddress, referralAddress].makeString(":").fromBase58String()
   let backendPublicKey = keyBackendPublicKey.getString().value().toBytes()
   strict validateSignature = sigVerify(pair, signature, backendPublicKey) || "bad signature".throwErr()
 
