@@ -16,8 +16,9 @@ const chainId = 'R';
 const api = create(apiBase);
 const seedWordsCount = 5;
 const ridePath = 'ride';
-// const mockRidePath = 'test/referall/mock';
+const mockRidePath = 'test/referral/mock';
 const referralPath = format({ dir: ridePath, base: 'referral.ride' });
+const treasuryPath = format({ dir: mockRidePath, base: 'treasury.mock.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -25,12 +26,11 @@ export const mochaHooks = {
     const names = [
       'referral',
       'implementation',
-      'marketing',
-      'treasury',
       'manager',
       'backend',
       'referrerAccount',
       'referralAccount',
+      'treasury',
       'user1',
     ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
@@ -50,6 +50,7 @@ export const mochaHooks = {
 
     console.log('setScriptFromFile');
     await setScriptFromFile(referralPath, this.accounts.referral);
+    await setScriptFromFile(treasuryPath, this.accounts.treasury);
 
     console.log('hook execution');
     const wxIssueTx = issue({
@@ -67,7 +68,7 @@ export const mochaHooks = {
 
     const wxAmount = 1e12;
     const massTransferTxWX = massTransfer({
-      transfers: names.slice(-1).map((name) => ({
+      transfers: names.slice(-2).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: wxAmount,
       })),
       assetId: this.usdnAssetId,
@@ -88,9 +89,36 @@ export const mochaHooks = {
       ],
       chainId,
     }, this.accounts.referral);
-
     await api.transactions.broadcast(setBackendPublicKeyTx, {});
     await waitForTx(setBackendPublicKeyTx.id, { apiBase });
+
+    const setTreasuryContractTx = data({
+      additionalFee: 4e5,
+      data: [
+        {
+          key: '%s%s__treasuryContract',
+          type: 'string',
+          value: this.accounts.treasury,
+        },
+      ],
+      chainId,
+    }, this.accounts.referral);
+    await api.transactions.broadcast(setTreasuryContractTx, {});
+    await waitForTx(setTreasuryContractTx.id, { apiBase });
+
+    const setWxAssetIdReferralTx = data({
+      additionalFee: 4e5,
+      data: [
+        {
+          key: '%s__wxAssetId',
+          type: 'string',
+          value: this.wxAssetId,
+        },
+      ],
+      chainId,
+    }, this.accounts.referral);
+    await api.transactions.broadcast(setWxAssetIdReferralTx, {});
+    await waitForTx(setWxAssetIdReferralTx.id, { apiBase });
 
     const setManagerReferralTx = data({
       additionalFee: 4e5,
@@ -103,5 +131,19 @@ export const mochaHooks = {
     }, this.accounts.referral);
     await api.transactions.broadcast(setManagerReferralTx, {});
     await waitForTx(setManagerReferralTx.id, { apiBase });
+
+    const setWxAssetIdTreasuryTx = data({
+      additionalFee: 4e5,
+      data: [
+        {
+          key: '%s%s__rewardAssetId',
+          type: 'string',
+          value: this.wxAssetId,
+        },
+      ],
+      chainId,
+    }, this.accounts.treasury);
+    await api.transactions.broadcast(setWxAssetIdTreasuryTx, {});
+    await waitForTx(setWxAssetIdTreasuryTx.id, { apiBase });
   },
 };
