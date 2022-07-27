@@ -69,16 +69,18 @@ func mustManager(i: Invocation) = {
 }
 
 @Callable(i)
-func createReferralProgram(programName: String, treasuryContract: String, implementationContract: String) = {
+func createReferralProgram(programName: String, treasuryContract: String, implementationContract: String, rewardAssetId: String) = {
   strict checkCaller = i.mustManager()
   strict checkProgramName = programName.keyProgramName().getBoolean() == unit || "program name already exists".throwErr()
   let programNameIsValid = !programName.contains(separator) && !programName.contains(" ")
   strict checkProgramExists = programNameIsValid || "invalid program name".throwErr()
+  strict checkRewardAsset = rewardAssetId.fromBase58String().assetInfo() != unit || "invalid reward asset id".throwErr()
 
   ([
     BooleanEntry(programName.keyProgramName(), true),
     StringEntry(programName.keyTreasuryContract(), treasuryContract),
-    StringEntry(programName.keyImplementationContract(), implementationContract)
+    StringEntry(programName.keyImplementationContract(), implementationContract),
+    StringEntry(programName.keyRewardAssetId(), rewardAssetId)
   ], unit)
 }
 
