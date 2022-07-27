@@ -160,7 +160,7 @@ func incUnclaimed(
   let newReferralUnclaimed = referralUnclaimed + referralReward
 
   ([
-    IntegerEntry(programName.keyClaimed(referralAddress), newReferrerUnclaimed),
+    IntegerEntry(programName.keyUnclaimed(referrerAddress), newReferrerUnclaimed),
     IntegerEntry(programName.keyUnclaimed(referralAddress), newReferralUnclaimed)
   ], unit)
 }
