@@ -16,7 +16,9 @@ describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully createPair',
     async function () {
-      const programName = 'Referral program';
+      const programName = 'ReferralProgram';
+      const treasuryContract = address(this.accounts.treasury, chainId);
+      const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
 
@@ -27,6 +29,22 @@ describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
       );
       const signature = libs.crypto.signBytes(this.accounts.backend, bytes);
       const referral = address(this.accounts.referral, chainId);
+
+      const createReferralProgramTx = invokeScript({
+        dApp: referral,
+        payment: [],
+        call: {
+          function: 'createReferralProgram',
+          args: [
+            { type: 'string', value: programName },
+            { type: 'string', value: treasuryContract },
+            { type: 'string', value: implementationContract },
+          ],
+        },
+        chainId,
+      }, this.accounts.manager);
+      await api.transactions.broadcast(createReferralProgramTx, {});
+      await ni.waitForTx(createReferralProgramTx.id, { apiBase });
 
       const createPairTx = invokeScript({
         dApp: referral,
