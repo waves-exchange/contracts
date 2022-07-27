@@ -386,7 +386,7 @@
 - file: marketing.ride
   tag: marketing
   testnet-prv: $MARKETING_PRV
-  testnet-signer: $MARKETING_PRV
+  testnet-signer: $MANAGER_PRV
   mainnet-pub: rtorwpe32pLWq5ZZJobchM1AJJcZ31hipQ5SW7i6xff
 
 - file: referral.ride

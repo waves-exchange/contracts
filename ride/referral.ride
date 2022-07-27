@@ -38,6 +38,7 @@ func keyIsReferralActive(
 ) = makeString(["%s%s%s", "activeReferral", programName, referralAddress], separator)
 
 func keyClaimedTotal(programName: String)           = ["%s%s", "claimedTotal", programName].makeString(separator)
+func keyRewardsTotal(programName: String)           = ["%s%s", "rewardsTotal", programName].makeString(separator)
 func keyRewardAssetId(programName: String)          = ["%s%s", "rewardAssetId", programName].makeString(separator)
 func keyTreasuryContract(programName: String)       = ["%s%s", "treasuryContract", programName].makeString(separator)
 func keyImplementationContract(programName: String) = {
@@ -69,16 +70,19 @@ func mustManager(i: Invocation) = {
 }
 
 @Callable(i)
-func createReferralProgram(programName: String, treasuryContract: String, implementationContract: String) = {
+func createReferralProgram(programName: String, treasuryContract: String, implementationContract: String, rewardAssetId: String) = {
   strict checkCaller = i.mustManager()
   strict checkProgramName = programName.keyProgramName().getBoolean() == unit || "program name already exists".throwErr()
   let programNameIsValid = !programName.contains(separator) && !programName.contains(" ")
   strict checkProgramExists = programNameIsValid || "invalid program name".throwErr()
+  strict checkRewardAsset = rewardAssetId.fromBase58String().assetInfo() != unit || "invalid reward asset id".throwErr()
 
   ([
     BooleanEntry(programName.keyProgramName(), true),
     StringEntry(programName.keyTreasuryContract(), treasuryContract),
-    StringEntry(programName.keyImplementationContract(), implementationContract)
+    StringEntry(programName.keyImplementationContract(), implementationContract),
+    StringEntry(programName.keyRewardAssetId(), rewardAssetId),
+    IntegerEntry(programName.keyRewardsTotal(), 0)
   ], unit)
 }
 
@@ -155,13 +159,15 @@ func incUnclaimed(
   let referrerAddress   = programName.keyReferrer(referralAddress).getString().value()
   let referrerUnclaimed = programName.keyUnclaimed(referrerAddress).getInteger().valueOrElse(0)
   let referralUnclaimed = programName.keyUnclaimed(referralAddress).getInteger().valueOrElse(0)
+  let rewardsTotal = programName.keyRewardsTotal().getInteger().valueOrElse(0)
 
   let newReferrerUnclaimed = referrerUnclaimed + referrerReward
   let newReferralUnclaimed = referralUnclaimed + referralReward
 
   ([
     IntegerEntry(programName.keyUnclaimed(referrerAddress), newReferrerUnclaimed),
-    IntegerEntry(programName.keyUnclaimed(referralAddress), newReferralUnclaimed)
+    IntegerEntry(programName.keyUnclaimed(referralAddress), newReferralUnclaimed),
+    IntegerEntry(programName.keyRewardsTotal(), rewardsTotal + referrerReward + referralReward)
   ], unit)
 }
 
