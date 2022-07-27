@@ -5,7 +5,7 @@ import { invokeScript, libs, nodeInteraction as ni } from '@waves/waves-transact
 import { create } from '@waves/node-api-js';
 
 chai.use(chaiAsPromised);
-// const { expect } = chai;
+const { expect } = chai;
 
 const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
@@ -20,13 +20,12 @@ describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
 
-      const keys = libs.crypto.keyPair(this.accounts.backend);
+      const expectedTotalReferralCount = 1;
+
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
       );
       const signature = libs.crypto.signBytes(this.accounts.backend, bytes);
-      libs.crypto.verifySignature(keys.publicKey, bytes, signature);
-
       const referral = address(this.accounts.referral, chainId);
 
       const createPairTx = invokeScript({
@@ -38,13 +37,26 @@ describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
             { type: 'string', value: programName },
             { type: 'string', value: referrerAddress },
             { type: 'string', value: referralAddress },
-            { type: 'binary', value: `base64:${libs.crypto.base64Encode(libs.crypto.base58Decode(signature))}` },
+            {
+              type: 'binary',
+              value: `base64:${libs.crypto.base64Encode(libs.crypto.base58Decode(signature))}`,
+            },
           ],
         },
         chainId,
       }, this.accounts.manager);
       await api.transactions.broadcast(createPairTx, {});
-      await ni.waitForTx(createPairTx.id, { apiBase });
+      const { stateChanges } = await ni.waitForTx(createPairTx.id, { apiBase });
+
+      expect(stateChanges.data).to.eql([{
+        key: `%s%s%s%s__existsReferrerToReferral__${programName}__${referrerAddress}__${referralAddress}`,
+        type: 'boolean',
+        value: true,
+      }, {
+        key: `%s%s%s__totalReferralCount__${programName}__${referrerAddress}`,
+        type: 'integer',
+        value: expectedTotalReferralCount,
+      }]);
     },
   );
 });
