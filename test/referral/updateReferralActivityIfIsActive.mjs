@@ -12,7 +12,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: updateReferralActivity.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: updateReferralActivityIfIsActive.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully updateReferralActivity if isActive is false',
     async function () {
