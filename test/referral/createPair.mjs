@@ -75,6 +75,10 @@ describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
         key: `%s%s%s__totalReferralCount__${programName}__${referrerAddress}`,
         type: 'integer',
         value: expectedTotalReferralCount,
+      }, {
+        key: `%s%s%s__referrer__${programName}__${referralAddress}`,
+        type: 'string',
+        value: referrerAddress,
       }]);
     },
   );
