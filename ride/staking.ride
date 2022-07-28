@@ -467,7 +467,7 @@ func unstake(lpAssetIdStr: String, amount: Int) = {
   let availableToClaim = wxToClaimUserNew - claimedByUser
   strict r = if (availableToClaim > zeroBigInt) then this.invoke("claimWxINTERNAL", [lpAssetIdStr, userAddressStr], []) else unit
 
-  if (amount > stakedByUser) then throw("passed amount="+amount.toString()+" is less then available="+stakedByUser.toString()) else
+  if (amount > stakedByUser) then throw("passed amount="+amount.toString()+" is less then available="+stakedByUser.toString()+". lpAssetId="+lpAssetIdStr+". stakedByUserKEY="+stakedByUserKEY) else
   [IntegerEntry(stakedByUserKEY, stakedByUser - amount),
     IntegerEntry(stakedTotalKEY, stakedTotal - amount),
     ScriptTransfer(i.caller, amount, lpAssetId),
