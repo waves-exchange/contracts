@@ -17,15 +17,15 @@ describe('referral: updateReferralActivity.mjs', /** @this {MochaSuiteModified} 
     'should successfully updateReferralActivity if isActive is false',
     async function () {
       const programName = 'ReferralProgram';
-      const isActive = false;
+      const isActive = true;
 
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
 
-      const expectedActiveReferralCount = 0;
-      const expectedActiveReferral = null;
+      const expectedActiveReferralCount = 1;
+      const expectedActiveReferral = true;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
@@ -70,22 +70,6 @@ describe('referral: updateReferralActivity.mjs', /** @this {MochaSuiteModified} 
       await api.transactions.broadcast(createPairTx, {});
       await ni.waitForTx(createPairTx.id, { apiBase });
 
-      const setUpdateReferralActivityTx = invokeScript({
-        dApp: referral,
-        payment: [],
-        call: {
-          function: 'updateReferralActivity',
-          args: [
-            { type: 'string', value: programName },
-            { type: 'string', value: referralAddress },
-            { type: 'boolean', value: true },
-          ],
-        },
-        chainId,
-      }, this.accounts.implementation);
-      await api.transactions.broadcast(setUpdateReferralActivityTx, {});
-      await ni.waitForTx(setUpdateReferralActivityTx.id, { apiBase });
-
       const updateReferralActivityTx = invokeScript({
         dApp: referral,
         payment: [],
@@ -104,6 +88,7 @@ describe('referral: updateReferralActivity.mjs', /** @this {MochaSuiteModified} 
 
       expect(stateChanges.data).to.eql([{
         key: `%s%s%s__activeReferral__${programName}__${referralAddress}`,
+        type: 'boolean',
         value: expectedActiveReferral,
       }, {
         key: `%s%s%s__activeReferralCount__${programName}__${referrerAddress}`,
