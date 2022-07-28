@@ -39,6 +39,7 @@ describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
             { type: 'string', value: programName },
             { type: 'string', value: treasuryContract },
             { type: 'string', value: implementationContract },
+            { type: 'string', value: this.wxAssetId },
           ],
         },
         chainId,

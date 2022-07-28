@@ -12,13 +12,15 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: claimREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: createReferralProgram.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully createReferralProgram',
     async function () {
       const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
+
+      const expectedRewardsTotal = 0;
 
       const referral = address(this.accounts.referral, chainId);
 
@@ -31,6 +33,7 @@ describe('referral: claimREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
             { type: 'string', value: programName },
             { type: 'string', value: treasuryContract },
             { type: 'string', value: implementationContract },
+            { type: 'string', value: this.wxAssetId },
           ],
         },
         chainId,
@@ -50,6 +53,14 @@ describe('referral: claimREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
         key: `%s%s__implementationContract__${programName}`,
         type: 'string',
         value: implementationContract,
+      }, {
+        key: `%s%s__rewardAssetId__${programName}`,
+        type: 'string',
+        value: this.wxAssetId,
+      }, {
+        key: `%s%s__rewardsTotal__${programName}`,
+        type: 'integer',
+        value: expectedRewardsTotal,
       }]);
     },
   );

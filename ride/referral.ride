@@ -200,12 +200,11 @@ func claim(programName: String) = {
 }
 
 @Callable(i)
-func claimREADONLY(programName: String, referralAddress: String) = {
-  let claimerClaimed    = programName.keyClaimed(referralAddress).getInteger().value()
-  let claimerUnclaimed  = programName.keyUnclaimed(referralAddress).getInteger().value()
+func claimREADONLY(programName: String, userAddress: String) = {
+  let claimerClaimed    = programName.keyClaimed(userAddress).getInteger().valueOrElse(0)
+  let claimerUnclaimed  = programName.keyUnclaimed(userAddress).getInteger().valueOrElse(0)
 
-  let newClaimerClaimed = claimerClaimed + claimerUnclaimed
-  ([], newClaimerClaimed)
+  ([], [claimerUnclaimed, claimerClaimed])
 }
 
 @Callable(i)
