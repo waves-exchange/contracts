@@ -43,6 +43,8 @@ jobs:
       VOTINGVERIFIED_PRV: ${{ secrets.VOTINGVERIFIED_PRV }}
       OTC_PRV: ${{ secrets.OTC_PRV }}
       REST_PRV: ${{ secrets.REST_PRV }}
+      MARKETING_PRV: ${{ secrets.MARKETING_PRV }}
+      REFERRAL_PRV: ${{ secrets.REFERRAL_PRV }}
     if: github.ref_name == 'dev'
     runs-on: ubuntu-20.04
     container:

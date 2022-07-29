@@ -380,3 +380,15 @@
   testnet-prv: $REST_PRV
   testnet-signer: $MANAGER_PRV
   mainnet-pub: 6tusy8LfPEh2eoAsxHwZZn6cw8DBMGTHAce3gqLXwQxC
+
+- file: marketing.ride
+  tag: marketing
+  testnet-prv: $MARKETING_PRV
+  testnet-signer: $MANAGER_PRV
+  mainnet-pub: rtorwpe32pLWq5ZZJobchM1AJJcZ31hipQ5SW7i6xff
+
+- file: referral.ride
+  tag: referral
+  testnet-prv: $REFERRAL_PRV
+  testnet-signer: $MANAGER_PRV
+  mainnet-pub: AEV7LzxNAcdrjC2NC4182iTxuyTyqfCLzqJ14TXnVSCm
