@@ -120,6 +120,8 @@ func keyEmissionStartBlock() = "%s%s__emission__startBlock"
 func keyEmissionDurationInBlocks() = "%s%s__emission__duration"
 func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 
+func keyAddonAddr() = "%s__addonAddr"
+
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
 let factoryDapp   = readFactoryAddressOrFail()
@@ -596,6 +598,12 @@ func gwxUserInfoREADONLY(userAddress: String) = {
   let gwxUserInfoLIST = boostingDapp.invoke("gwxUserInfoREADONLY", [userAddress], []).asAnyList()
   let gwxAmount = gwxUserInfoLIST[0].asInt()
   ([], ["%d", gwxAmount.toString()].makeString(SEP))
+}
+
+@Callable(i)
+func unstakeAndGetOneTkn(poolAddress: String, amount: Int, exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String, slippage: Int) = {
+  strict inv = poolAddress.addressFromStringValue().getString(keyAddonAddr()).value().addressFromStringValue().invoke("unstakeAndGetOneTkn", [amount, exchResult, notUsed, outAmount, outAssetId, slippage], [])
+  ([], unit)
 }
 
 @Callable(i)
