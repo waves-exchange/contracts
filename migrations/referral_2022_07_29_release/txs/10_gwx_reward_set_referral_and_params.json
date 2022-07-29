@@ -1,18 +1,18 @@
 {
   "type": 12,
   "version": 2,
-  "senderPublicKey": "G349Uq3FTox7dRNLeAfAQeoACvwZ9iEnVSaHcEYn6j8J",
+  "senderPublicKey": "4Uv4fNGxmwhwHRipWuYvZe87BazB9H19nVEac9pguorM",
   "fee": 500000,
   "feeAssetId": null,
-  "timestamp": 1659087644723,
+  "timestamp": 1659088313122,
   "proofs": [],
   "chainId": 87,
-  "id": "EbjdPNihoryZRhouhHYJq6FfXqPDc6aBAnZ95GicrZof",
+  "id": "84AArjzXU6WMeym6WR9R4Psiz7g7VibUcB9hzfrv2Lun",
   "data": [
     {
       "key": "%s%s__config__referralsContractAddress",
       "type": "string",
-      "value": "3PNt4tEEp6XQLwByQk2hdDpBMzMvCLc1JpV"
+      "value": "3PJWdC3vouNYMUfzgcA4scj9gBbnyRqf8g3"
     },
     {
       "key": "%s%s__referral__minGWxAmount",

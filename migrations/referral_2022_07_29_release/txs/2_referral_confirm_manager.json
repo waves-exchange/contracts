@@ -2,7 +2,7 @@
   "type": 16,
   "version": 2,
   "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
-  "dApp": "3PNt4tEEp6XQLwByQk2hdDpBMzMvCLc1JpV",
+  "dApp": "3PJWdC3vouNYMUfzgcA4scj9gBbnyRqf8g3",
   "call": {
     "args": [],
     "function": "confirmManager"
@@ -10,8 +10,8 @@
   "payment": [],
   "fee": 900000,
   "feeAssetId": null,
-  "timestamp": 1659087643825,
+  "timestamp": 1659088312225,
   "chainId": 87,
   "proofs": [],
-  "id": "AY9T5booikU1fj5gF2aN8sDteiF7zX76gX5xgcv7ztFq"
+  "id": "GLa5Zn7aUm9Qzg9VJ8kCJBcP7ezM5ba6jBZUarjzkno3"
 }
