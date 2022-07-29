@@ -124,6 +124,16 @@ try {
     chainId,
   }), 'referral_create_program']);
 
+  // marketing set manager with data tx
+  txs.push([data({
+    data: [
+      { key: '%s__managerPublicKey', type: 'string', value: managerPublicKey },
+    ],
+    senderPublicKey: marketingAddress,
+    additionalFee: 4e5,
+    chainId,
+  }), 'marketing_set_manager_public_key']);
+
   // marketing set script
   txs.push([setScript({
     script: ride.compile(await readFile(join(ridePath, 'marketing.ride'), { encoding: 'utf-8' })).result.base64,
@@ -131,32 +141,6 @@ try {
     additionalFee: 4e5,
     chainId,
   }), 'marketing_set_script']);
-
-  // marketing set manager
-  txs.push([invokeScript({
-    dApp: marketingAddress,
-    call: {
-      function: 'setManager',
-      args: [
-        { type: 'string', value: managerPublicKey },
-      ],
-    },
-    senderPublicKey: marketingPublicKey,
-    additionalFee: 4e5,
-    chainId,
-  }), 'marketing_set_manager']);
-
-  // marketing confirm manager
-  txs.push([invokeScript({
-    dApp: marketingAddress,
-    call: {
-      function: 'confirmManager',
-      args: [],
-    },
-    senderPublicKey: managerPublicKey,
-    additionalFee: 4e5,
-    chainId,
-  }), 'marketing_confirm_manager']);
 
   // marketing set referral contract address and wxAssetId
   txs.push([data({
