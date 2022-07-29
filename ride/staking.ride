@@ -75,6 +75,7 @@ func keyFactoryCfg() = "%s__factoryConfig"
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 func keyStablePoolAddonAddr() = "%s__stablePoolAddonAddr"
+func keyAddonAddr() = "%s__addonAddr"
 func keyFactoryLp2AssetsMapping(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
 func keyFactoryLpList()   = "%s__lpTokensList"
 func keyFactoryLpAssetToPoolContractAddress(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
@@ -443,7 +444,7 @@ func unstake(lpAssetIdStr: String, amount: Int) = {
   let lpAssetId = lpAssetIdStr.fromBase58String()
   let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
   # todo: temporal fix, remove after node increase max possible script size and pool addon contract is removed
-  let poolAddon = this.getString(keyStablePoolAddonAddr()).valueOrElse(poolAddressStr)
+  let poolAddon = poolAddressStr.addressFromStringValue().getString(keyAddonAddr()).valueOrElse(poolAddressStr)
   let callerStr = i.caller.toString()
   let userAddressStr = if (callerStr == poolAddressStr || callerStr == poolAddon) then i.originCaller.toString() else callerStr
 
