@@ -601,6 +601,12 @@ func gwxUserInfoREADONLY(userAddress: String) = {
 }
 
 @Callable(i)
+func unstakeAndGetOneTkn(poolAddress: String, amount: Int, exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String, slippage: Int) = {
+  strict inv = poolAddress.addressFromStringValue().getString(keyAddonAddr()).value().addressFromStringValue().invoke("unstakeAndGetOneTkn", [amount, exchResult, notUsed, outAmount, outAssetId, slippage], [])
+  ([], unit)
+}
+
+@Callable(i)
 func setManager(pendingManagerPublicKey: String) = {
   strict checkCaller = i.mustManager()
   strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
