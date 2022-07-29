@@ -124,15 +124,17 @@ try {
     chainId,
   }), 'referral_create_program']);
 
-  // marketing set manager with data tx
+  // marketing set manager with data tx and params
   txs.push([data({
     data: [
       { key: '%s__managerPublicKey', type: 'string', value: managerPublicKey },
+      { key: '%s__referral', type: 'string', value: referralAddress },
+      { key: '%s__wxAssetId', type: 'string', value: wxAssetId },
     ],
-    senderPublicKey: marketingAddress,
+    senderPublicKey: marketingPublicKey,
     additionalFee: 4e5,
     chainId,
-  }), 'marketing_set_manager_public_key']);
+  }), 'marketing_set_manager_public_key_and_params']);
 
   // marketing set script
   txs.push([setScript({
@@ -141,17 +143,6 @@ try {
     additionalFee: 4e5,
     chainId,
   }), 'marketing_set_script']);
-
-  // marketing set referral contract address and wxAssetId
-  txs.push([data({
-    data: [
-      { key: '%s__referral', type: 'string', value: referralAddress },
-      { key: '%s__wxAssetId', type: 'string', value: wxAssetId },
-    ],
-    senderPublicKey: marketingPublicKey,
-    additionalFee: 4e5,
-    chainId,
-  }), 'marketing_set_referral_and_wx_asset_id']);
 
   // gwx_reward set script
   txs.push([setScript({

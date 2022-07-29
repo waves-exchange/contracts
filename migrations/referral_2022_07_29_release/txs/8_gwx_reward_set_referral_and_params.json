@@ -4,10 +4,10 @@
   "senderPublicKey": "4Uv4fNGxmwhwHRipWuYvZe87BazB9H19nVEac9pguorM",
   "fee": 500000,
   "feeAssetId": null,
-  "timestamp": 1659088313122,
+  "timestamp": 1659089609492,
   "proofs": [],
   "chainId": 87,
-  "id": "84AArjzXU6WMeym6WR9R4Psiz7g7VibUcB9hzfrv2Lun",
+  "id": "ABPLQJeFZcgdtMgZL8ARdKxGSW78CksRQ6EfQ71SyPAn",
   "data": [
     {
       "key": "%s%s__config__referralsContractAddress",

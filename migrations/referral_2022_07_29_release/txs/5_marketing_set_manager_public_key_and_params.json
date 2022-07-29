@@ -4,11 +4,16 @@
   "senderPublicKey": "rtorwpe32pLWq5ZZJobchM1AJJcZ31hipQ5SW7i6xff",
   "fee": 500000,
   "feeAssetId": null,
-  "timestamp": 1659088312473,
+  "timestamp": 1659089608596,
   "proofs": [],
   "chainId": 87,
-  "id": "6f3u9hyHciSgFsCLZFw9JheZe6Gnmb8PG7RbaZt5FP9e",
+  "id": "EAaiQieW6u9ayUwkLMsPnX6wgGV6zYnstUXVaxUxwAtH",
   "data": [
+    {
+      "key": "%s__managerPublicKey",
+      "type": "string",
+      "value": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq"
+    },
     {
       "key": "%s__referral",
       "type": "string",
