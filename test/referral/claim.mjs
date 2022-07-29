@@ -27,6 +27,7 @@ describe('referral: claim.mjs', /** @this {MochaSuiteModified} */() => {
       const expectedClaimed = 100;
       const expectedClaimedTotal = 100;
       const expectedUnclaimed = 0;
+      const expectedClaimerUnclaimedHistory = 100;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
@@ -101,7 +102,9 @@ describe('referral: claim.mjs', /** @this {MochaSuiteModified} */() => {
         chainId,
       }, this.accounts.referralAccount);
       await api.transactions.broadcast(claimTx, {});
-      const { stateChanges } = await ni.waitForTx(claimTx.id, { apiBase });
+      const { height, stateChanges } = await ni.waitForTx(claimTx.id, { apiBase });
+
+      const { timestamp } = await api.blocks.fetchHeadersAt(height);
 
       expect(stateChanges.data).to.eql([{
         key: `%s%s%s%s__claimed__${programName}__${referralAddress}`,
@@ -115,6 +118,10 @@ describe('referral: claim.mjs', /** @this {MochaSuiteModified} */() => {
         key: `%s%s%s%s__unclaimed__${programName}__${referralAddress}`,
         type: 'integer',
         value: expectedUnclaimed,
+      }, {
+        key: `%s%s%s%s%s__history__claim__${programName}__${referralAddress}__${claimTx.id}`,
+        type: 'string',
+        value: `%d%d%d__${height}__${timestamp}__${expectedClaimerUnclaimedHistory}`,
       }]);
 
       expect(stateChanges.transfers).to.eql([{
