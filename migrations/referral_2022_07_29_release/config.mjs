@@ -19,7 +19,7 @@ export default {
     gwxRewardPublicKey: '4Uv4fNGxmwhwHRipWuYvZe87BazB9H19nVEac9pguorM',
     referralPublicKey: 'AEV7LzxNAcdrjC2NC4182iTxuyTyqfCLzqJ14TXnVSCm',
     marketingPublicKey: 'rtorwpe32pLWq5ZZJobchM1AJJcZ31hipQ5SW7i6xff',
-    backendSignerPublicKey: '',
+    backendSignerPublicKey: 'CC35KFHBKs3LqekXLrVuJQbmqkswgHUhBQUsf5SJwiZx',
     chainId: 84,
     wxAssetId: 'EMAMLxDnv3xiz8RXg8Btj33jcEw3wLczL3JKYYmuubpc',
   },
