@@ -1,0 +1,34 @@
+{
+  "type": 16,
+  "version": 2,
+  "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+  "dApp": "3PNt4tEEp6XQLwByQk2hdDpBMzMvCLc1JpV",
+  "call": {
+    "args": [
+      {
+        "type": "string",
+        "value": "wxlock"
+      },
+      {
+        "type": "string",
+        "value": "3P53wLvSeHxk6p7GmPPSnsZWgCvbsBHiokq"
+      },
+      {
+        "type": "string",
+        "value": "3P26ZgC9ixmqdJqNRRVPhV7uWtLR58T1wp7"
+      },
+      {
+        "type": "string",
+        "value": "Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on"
+      }
+    ],
+    "function": "createReferralProgram"
+  },
+  "payment": [],
+  "fee": 500000,
+  "feeAssetId": null,
+  "timestamp": 1659087643826,
+  "chainId": 87,
+  "proofs": [],
+  "id": "712ggn7X3fmda74swpbFRU4V34QdhmzbvDAHU9k9MXm2"
+}

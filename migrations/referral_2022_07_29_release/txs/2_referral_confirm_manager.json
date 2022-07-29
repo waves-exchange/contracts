@@ -1,0 +1,17 @@
+{
+  "type": 16,
+  "version": 2,
+  "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+  "dApp": "3PNt4tEEp6XQLwByQk2hdDpBMzMvCLc1JpV",
+  "call": {
+    "args": [],
+    "function": "confirmManager"
+  },
+  "payment": [],
+  "fee": 900000,
+  "feeAssetId": null,
+  "timestamp": 1659087643825,
+  "chainId": 87,
+  "proofs": [],
+  "id": "AY9T5booikU1fj5gF2aN8sDteiF7zX76gX5xgcv7ztFq"
+}

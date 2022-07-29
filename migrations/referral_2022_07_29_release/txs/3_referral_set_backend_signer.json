@@ -1,0 +1,18 @@
+{
+  "type": 12,
+  "version": 2,
+  "senderPublicKey": "33fpjdpM9FMu87RZKePniPardKqQXM96sm7VhAk3JEVQ",
+  "fee": 500000,
+  "feeAssetId": null,
+  "timestamp": 1659087643826,
+  "proofs": [],
+  "chainId": 87,
+  "id": "9Zid7Z6GKyZ9ueuQhxHrHX9zgANwx1nfFYMAG2vumybh",
+  "data": [
+    {
+      "key": "%s__backendPublicKey",
+      "type": "string",
+      "value": "7xZThMgqjfP71zMErfRXkTrthGkN6dYdmJB4ci8HYEoj"
+    }
+  ]
+}

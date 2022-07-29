@@ -1,0 +1,23 @@
+{
+  "type": 12,
+  "version": 2,
+  "senderPublicKey": "3EfudNNQNACtTotZKwkRu97fZW5fFjUPwuP1gd3oBHJs",
+  "fee": 500000,
+  "feeAssetId": null,
+  "timestamp": 1659087644077,
+  "proofs": [],
+  "chainId": 87,
+  "id": "DTHD62vdYvadXECEHQH1xgbJxDYd6AMXXfzV3MB1GNKC",
+  "data": [
+    {
+      "key": "%s__referral",
+      "type": "string",
+      "value": "3PNt4tEEp6XQLwByQk2hdDpBMzMvCLc1JpV"
+    },
+    {
+      "key": "%s__wxAssetId",
+      "type": "string",
+      "value": "Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "type": 16,
+  "version": 2,
+  "senderPublicKey": "3EfudNNQNACtTotZKwkRu97fZW5fFjUPwuP1gd3oBHJs",
+  "dApp": "3P53wLvSeHxk6p7GmPPSnsZWgCvbsBHiokq",
+  "call": {
+    "args": [
+      {
+        "type": "string",
+        "value": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq"
+      }
+    ],
+    "function": "setManager"
+  },
+  "payment": [],
+  "fee": 900000,
+  "feeAssetId": null,
+  "timestamp": 1659087644075,
+  "chainId": 87,
+  "proofs": [],
+  "id": "HoU3fHkHGcTxPofcKUK8iH98ETdbkcJYMhQwUHA94dsD"
+}
