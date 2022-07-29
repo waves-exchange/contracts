@@ -1,7 +1,7 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import { waitForHeight } from '../api.mjs';
 
-import { sleep } from '../utils.mjs';
 import {
   setPoolsStatusActiveData,
   setStoreStatusData,
@@ -24,13 +24,14 @@ describe('voting_emission_candidate: finalize.mjs', /** @this {MochaSuiteModifie
     );
     await setStoreStatusData(this.accounts.store, this.amountAssetId);
 
-    await suggest(
+    const { height } = await suggest(
       this.accounts.votingEmissionCandidate,
       this.accounts.user0,
       this.amountAssetId,
       this.usdnId,
       this.wxAssetId,
     );
+    this.startHeightBlock = height;
 
     await setUserGWXData(this.accounts.boosting, this.accounts.user0, this.gwxAmount);
 
@@ -52,8 +53,8 @@ describe('voting_emission_candidate: finalize.mjs', /** @this {MochaSuiteModifie
   });
 
   it('successfull finalize voting', async function () {
-    // TODO: wait for height
-    await sleep(20);
+    await waitForHeight(this.startHeightBlock + this.votingDuration);
+
     const { stateChanges } = await finalize(
       this.accounts.votingEmissionCandidate,
       this.accounts.user0,

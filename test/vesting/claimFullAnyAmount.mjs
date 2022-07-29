@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { sleep } from '../utils.mjs';
+import { waitForHeight } from '../api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -38,9 +38,9 @@ describe('vesting: claimFullAnyAmount.mjs', /** @this {MochaSuiteModified} */() 
       chainId,
     }, this.accounts.manager);
     await api.transactions.broadcast(createDepositFor, {});
-    await ni.waitForTx(createDepositFor.id, { apiBase });
+    const { height } = await ni.waitForTx(createDepositFor.id, { apiBase });
 
-    await sleep(30);
+    await waitForHeight(height + 3);
 
     const beforeClaim1 = await api.assets.fetchBalanceAddressAssetId(user1, this.wxAssetId);
     const claim1 = invokeScript({
@@ -53,9 +53,9 @@ describe('vesting: claimFullAnyAmount.mjs', /** @this {MochaSuiteModified} */() 
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(claim1, {});
-    await ni.waitForTx(claim1.id, { apiBase });
+    const { height: heightBeforeClaim1 } = await ni.waitForTx(claim1.id, { apiBase });
 
-    await sleep(90);
+    await waitForHeight(heightBeforeClaim1 + 9);
 
     const claim2 = invokeScript({
       dApp: vesting,

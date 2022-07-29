@@ -75,7 +75,7 @@ export const mochaHooks = {
     );
 
     this.feeAmount = 100000000;
-    this.votingDuration = 2;
+    this.votingDuration = 6;
     this.finalizeReward = 1;
     this.gwxAmount = 100;
 
