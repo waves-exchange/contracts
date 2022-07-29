@@ -2,6 +2,12 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+# Required state entries:
+# * "%s%s__config__referralsContractAddress": String
+# * "%s__nextUserNum": Int
+# * "%s%s__config__factoryAddress": String
+# * "%s__config": String ("%s%d%d%d__<assetId__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>")
+
 let SEP = "__"
 let SCALE8  = 8
 let MULT8   = 100000000
@@ -32,6 +38,13 @@ func ai(val: Any) = {
     case _ => throw("fail to cast into Int")
   }
 }
+
+func keyReferralsContractAddress()  = ["%s%s", "config", "referralsContractAddress"].makeString(SEP)
+let referralsContractAddressOrFail = this.strf(keyReferralsContractAddress()).addressFromStringValue()
+
+let keyReferralProgramName = ["%s%s", "referral", "programName"].makeString(SEP)
+let referralProgramNameDefault = "wxlock"
+let referralProgramName = this.getString(keyReferralProgramName).valueOrElse(referralProgramNameDefault)
 
 # FACTORY API
 # own factory address key
@@ -391,21 +404,7 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   (userBoostAvaliableToClaimTotalNew, dataState, debug)
 }
 
-@Callable(i)
-func constructor(factoryAddressStr: String, lockAssetIdStr: String, minLockAmount: Int, minDuration: Int, maxDuration: Int, mathContract: String) = {
-  strict checkCaller = i.mustManager()
-
-  [IntegerEntry(keyNextUserNum(), 0),
-    StringEntry(
-        keyConfig(),
-        formatConfig(lockAssetIdStr, minLockAmount, minDuration, maxDuration, mathContract)),
-    StringEntry(keyFactoryAddress(), factoryAddressStr)
-  ]
-    ++ StatsEntry(0, 0, 0, 0)
-}
-
-@Callable(i)
-func lock(duration: Int) = {
+func lockActions(i: Invocation, duration: Int) = {
   let cfgArray          = readConfigArrayOrFail()
   let assetIdStr        = cfgArray[IdxCfgAssetId]
   let assetId           = assetIdStr.fromBase58String()
@@ -484,6 +483,35 @@ func lock(duration: Int) = {
     #IntegerEntry(userMaxBoostIntegralKEY, userMaxBoostInt),
     #IntegerEntry(totalMaxBoostIntegralKEY, totalMaxBoostInt + userMaxBoostInt),
     IntegerEntry(totalCachedGwxKEY, totalCachedGwx + gWxAmountStart)]
+}
+
+@Callable(i)
+func constructor(factoryAddressStr: String, lockAssetIdStr: String, minLockAmount: Int, minDuration: Int, maxDuration: Int, mathContract: String) = {
+  strict checkCaller = i.mustManager()
+
+  [IntegerEntry(keyNextUserNum(), 0),
+    StringEntry(
+        keyConfig(),
+        formatConfig(lockAssetIdStr, minLockAmount, minDuration, maxDuration, mathContract)),
+    StringEntry(keyFactoryAddress(), factoryAddressStr)
+  ]
+    ++ StatsEntry(0, 0, 0, 0)
+}
+
+@Callable(i)
+func lockRef(duration: Int, referrerAddress: String, signature: ByteVector) = {
+  let lockActionsResult = i.lockActions(duration)
+  let referralAddress = i.caller.toString()
+  strict refInv = if (referrerAddress == "" || signature == base58'') then unit else {
+    referralsContractAddressOrFail.invoke("createPair", [referralProgramName, referrerAddress, referralAddress, signature], [])
+  }
+
+  (lockActionsResult, unit)
+}
+
+@Callable(i)
+func lock(duration: Int) = {
+  i.lockActions(duration)
 }
 
 @Callable(i)
