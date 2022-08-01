@@ -28,6 +28,14 @@ let keyMaxDepth = "%s__maxDepth"
 let maxDepthDefault = 30
 let maxDepth = this.getInteger(keyMaxDepth).valueOrElse(maxDepthDefault)
 
+let keyMaxDepthMigration = "%s__maxDepthMigration"
+let maxDepthMigrationDefault = 3
+let maxDepthMigration = this.getInteger(keyMaxDepthMigration).valueOrElse(maxDepthMigrationDefault)
+
+let keyMigrated = "migrated"
+let migrated = this.getBoolean(keyMigrated).valueOrElse(false)
+let keyNextProcessedUserMigration = "nextProcessedUserMigration"
+
 # FACTORY API
 # own factory address key
 func keyFactoryAddress() = "%s%s__config__factoryAddress"
@@ -128,6 +136,9 @@ func keyProcessingStage() = "%s__processingStage"
 # period to be processed next time (incomplete)
 func keyNextProcessedPeriod() = "%s__nextProcessedPeriod"
 
+func keyUserUnclaimed(userIndex: Int) =
+  ["%s%d", "userUnclaimed", userIndex.toString()].makeString(SEP)
+
 # next (unclaimed yet) period for user
 func keyNextUnlaimedPeriodOfUser(userIndex: Int) =
   makeString(["%s%d__nextClaimedPeriod", userIndex.toString()], SEP)
@@ -175,16 +186,13 @@ func keyUserWeightForPeriod(period: Int, userIndex: Int) =
 func keyReferralsContractAddress()  = ["%s%s", "config", "referralsContractAddress"].makeString(SEP)
 let referralsContractAddressOrFail = keyReferralsContractAddress().getStringOrFail().addressFromStringValue()
 
-func HistoryEntry(type: String, user: String, amountFromMatcher: Int, amountFromEmission: Int, currentPeriod: Int, latestPeriod: Int, i: Invocation) = {
+func HistoryEntry(type: String, user: String, amount: Int, i: Invocation) = {
   let historyKEY = makeString(["%s%s%s%s__history", type, user, i.transactionId.toBase58String()], SEP)
   let historyDATA = makeString([
         "%d%d%d%d%d%d",
         lastBlock.height.toString(),
         lastBlock.timestamp.toString(),
-        amountFromMatcher.toString(),
-        amountFromEmission.toString(),
-        currentPeriod.toString(),
-        latestPeriod.toString()],
+        amount.toString()],
     SEP)
   StringEntry(historyKEY, historyDATA)
 }
@@ -280,15 +288,25 @@ func claimInternal(boostingContract: ByteVector, currentPeriod: Int, currentUser
   }
 }
 
-func commonClaimReward(userAddress: String, startPeriod: Int|Unit) = {
+func commonClaimReward(userAddress: String) = {
   let cfgArray = readConfigArrayOrFail()
   let userIdx = getUserIndexByAddress(cfgArray[IdxCfgBoostingContract], userAddress) # will throw if no such user
-  let currentPeriod = if (startPeriod != unit) then startPeriod.value() else getNumberByKey(keyNextUnlaimedPeriodOfUser(userIdx)) # period being currently claimed
-  let nextProcessedPeriod = getNumberByKey(keyNextProcessedPeriod())
-  if (currentPeriod >= nextProcessedPeriod) then throw("Nothing to claim") else
-  let boostingContract = cfgArray[IdxCfgBoostingContract].fromBase58String()
-  let (period, amountFromMatcher, amountFromEmission) = claimInternal(boostingContract, currentPeriod, userIdx, USERDEPTH, 0, 0)
-  (period, amountFromMatcher, amountFromEmission, userIdx, cfgArray, nextProcessedPeriod)
+  let userUnclaimedOption = userIdx.keyUserUnclaimed().getInteger()
+  match userUnclaimedOption {
+    case _: Unit => if (migrated) then "Nothing to claim".throw() else {
+      let currentPeriod = getNumberByKey(keyNextUnlaimedPeriodOfUser(userIdx)) # period being currently claimed
+      let nextProcessedPeriod = getNumberByKey(keyNextProcessedPeriod())
+      if (currentPeriod >= nextProcessedPeriod) then throw("Nothing to claim") else
+      let boostingContract = cfgArray[IdxCfgBoostingContract].fromBase58String()
+      let (period, amountFromMatcher, amountFromEmission) = claimInternal(boostingContract, currentPeriod, userIdx, USERDEPTH, 0, 0)
+      let amount = amountFromMatcher + amountFromEmission
+      let actions = [
+        IntegerEntry(userIdx.keyNextUnlaimedPeriodOfUser(), period)
+      ]
+      (amount, actions)
+    }
+    case u: Int => (u, [])
+  }
 }
 
 @Callable(i)
@@ -330,6 +348,7 @@ func finalizeHelper() = {
     let userAmountMatcherForPeriod = currentPeriod.keyTotalAmountForPeriod().getNumberByKey().fraction(userWeight, totalWeight)
     let userAmountEmissionForPeriod = currentPeriod.keyAuxEmissionRewardForPeriod().getNumberByKey().fraction(userWeight, totalWeight)
     let userTotalAmount = userAmountEmissionForPeriod + userAmountMatcherForPeriod
+    let userUnclaimedOption = currentUser.keyUserUnclaimed().getInteger()
     let userAddress = boostingContractOrFail().getStringValue(currentUser.keyNumToUserMapping())
     let referrer = referralsContractAddressOrFail.getString(userAddress.keyReferrer())
     strict activeReferralInv = if (referrer == unit) then unit else {
@@ -340,6 +359,9 @@ func finalizeHelper() = {
       let referralReward = userTotalAmount.fraction(referralRewardPermille, SCALE)
       referralsContractAddressOrFail.invoke("incUnclaimed", [referralProgramName, userAddress, referrerReward, referralReward], [])
     }
+    let unclaimedActions = if (migrated || userUnclaimedOption != unit) then {
+      [IntegerEntry(currentUser.keyUserUnclaimed(), userUnclaimedOption.valueOrElse(0) + userTotalAmount)]
+    } else []
     let processingActions = if (currentUser < usersCount - 1) then {
       [IntegerEntry(keyNextProcessedUser(), currentUser + 1)]
     } else {
@@ -350,7 +372,7 @@ func finalizeHelper() = {
       ]
     }
     (
-      processingActions,
+      unclaimedActions ++ processingActions,
       true
     )
   } else "invalid processing stage".throw()
@@ -373,6 +395,51 @@ func finalizeWrapper(counter: Int) = {
 @Callable(i)
 func processPendingPeriodsAndUsers() = {
   ([], this.invoke("finalizeWrapper", [maxDepth], []))
+}
+
+@Callable(i)
+func migrateHelper() = {
+  let currentUser = keyNextProcessedUserMigration.getNumberByKey()
+  let usersCount = boostingContractOrFail().getInteger(keyUsersCount()).valueOrElse(0)
+  if (migrated) then {
+    ([], false)
+  } else {
+    let userAddress = boostingContractOrFail().getStringValue(currentUser.keyNumToUserMapping())
+    let (userUnclaimed, actions) = commonClaimReward(userAddress)
+    let processingActions = if (currentUser < usersCount - 1) then {
+      [IntegerEntry(keyNextProcessedUserMigration, currentUser + 1)]
+    } else {
+      [
+        DeleteEntry(keyNextProcessedUserMigration),
+        BooleanEntry(keyMigrated, true)
+      ]
+    }
+    (
+      [
+        IntegerEntry(currentUser.keyUserUnclaimed(), userUnclaimed)
+      ] ++ processingActions,
+      true
+    )
+  }
+}
+
+@Callable(i)
+func migrateWrapper(counter: Int) = {
+  strict result = this.invoke("migrateHelper", [], []).exactAs[Boolean]
+  if (!result) then {
+    if (counter == maxDepthMigration) then "Migration is over".throw() else ([], unit)
+  } else {
+    if (counter > 0) then {
+      ([], this.invoke("migrateWrapper", [counter - 1], []))
+    } else {
+      ([], unit)
+    }
+  }
+}
+
+@Callable(i)
+func migrate() = {
+  ([], this.invoke("migrateWrapper", [maxDepthMigration], []))
 }
 
 # Deposit total WX reward for next period. Also requests 5% emission reward from emission contract
@@ -425,43 +492,22 @@ func claimNextBatch(boostingContract: ByteVector, currentPeriod: Int, currentUse
 # called by user
 @Callable(i)
 func claimReward() = {
+  let cfgArray = readConfigArrayOrFail()
   let address = i.caller.toString()
-  let (period, amountFromMatcher, amountFromEmission, userIdx, cfgArray, nextProcessedPeriod) = commonClaimReward(address, unit)
+  let (amount, actions) = commonClaimReward(address)
+  # remove if unused
+  let amountFromEmission = 0
   ([
-    IntegerEntry(keyNextUnlaimedPeriodOfUser(userIdx), period),
-    ScriptTransfer(i.caller, amountFromMatcher + amountFromEmission, cfgArray[IdxCfgAssetId].fromBase58String()),
-    HistoryEntry("claim", address, amountFromMatcher, amountFromEmission, period, nextProcessedPeriod, i)
-  ], [amountFromMatcher, amountFromEmission])
+    ScriptTransfer(i.caller, amount, cfgArray[IdxCfgAssetId].fromBase58String()),
+    HistoryEntry("claim", address, amount, i)
+  ] ++ actions, [amount, amountFromEmission])
 }
 
 # returns total claimable reward by user address
 @Callable(i)
 func claimRewardREADONLY(address: String) = {
-  let claimResults = commonClaimReward(address, unit)
-  let amount = claimResults._2 + claimResults._3 # both from matcher and from emission
+  let (amount, actions) = commonClaimReward(address)
   ([], amount)
-}
-
-# returns total claimable reward by user address
-@Callable(i)
-func claimRewardPaginatedREADONLY(address: String, startPeriod: Int) = {
-  let (period, fromMatcher, fromEmission) = commonClaimReward(address, if (startPeriod < 0) then unit else startPeriod)
-  let amount = fromMatcher + fromEmission # both from matcher and from emission
-  ([], (amount, period))
-}
-
-# returns claimable rewards by user address (total and detailed by type)
-@Callable(i)
-func claimRewardDetailedREADONLY(address: String) = {
-  let (ignored, fromMatcher, fromEmission) = commonClaimReward(address, unit)
-  ([], makeString(["%d%d%d", toString(fromMatcher + fromEmission), fromMatcher.toString(), fromEmission.toString()], SEP))
-}
-
-# returns claimable rewards by user address (total and detailed by type)
-@Callable(i)
-func claimRewardDetailedPaginatedREADONLY(address: String, startPeriod: Int) = {
-  let (period, fromMatcher, fromEmission) = commonClaimReward(address, if (startPeriod < 0) then unit else startPeriod)
-  ([], (makeString(["%d%d%d", toString(fromMatcher + fromEmission), fromMatcher.toString(), fromEmission.toString()], SEP), period))
 }
 
 # returns -1 if there were no payments via deposit() call
