@@ -23,6 +23,8 @@ describe('referral: verify.mjs', /** @this {MochaSuiteModified} */() => {
   let someAccount;
   let managerAccount;
 
+  const expectedRejectMessage = 'Transaction is not allowed by account-script';
+
   before(async function () {
     someAccount = this.accounts.backend;
     managerAccount = this.accounts.manager;
@@ -99,6 +101,21 @@ describe('referral: verify.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should reject verify if caller is not manager',
     async () => {
+      const setDummyKeyTx = data({
+        additionalFee: 4e5,
+        data: [
+          {
+            key: dummyKey,
+            type: 'string',
+            value: dummyValue,
+          },
+        ],
+        chainId,
+      }, someAccount);
+
+      await expect(api.transactions.broadcast(setDummyKeyTx, {})).to.be.rejectedWith(
+        expectedRejectMessage,
+      );
     },
   );
 });
