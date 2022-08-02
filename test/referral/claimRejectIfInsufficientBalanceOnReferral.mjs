@@ -3,6 +3,8 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, libs, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { format } from 'path';
+import { setScriptFromFile } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -12,9 +14,16 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: claim.mjs', /** @this {MochaSuiteModified} */() => {
+const mockRidePath = 'test/referral/mock';
+const treasuryPath = format({ dir: mockRidePath, base: 'treasury_without_transfer.mock.ride' });
+
+describe('referral: claimRejectIfInsufficientBalanceOnReferral.mjs', /** @this {MochaSuiteModified} */() => {
+  before(async function () {
+    await setScriptFromFile(treasuryPath, this.accounts.treasury);
+  });
+
   it(
-    'should successfully claim',
+    'should reject claim',
     async function () {
       const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
@@ -24,10 +33,7 @@ describe('referral: claim.mjs', /** @this {MochaSuiteModified} */() => {
       const referrerReward = 1e4;
       const referralReward = 1e2;
 
-      const expectedClaimed = 100;
-      const expectedClaimedTotal = 100;
-      const expectedUnclaimed = 0;
-      const expectedClaimerUnclaimedHistory = 100;
+      const expectedRejectMessage = 'referral.ride: insufficient balance on referral contract';
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
@@ -101,39 +107,12 @@ describe('referral: claim.mjs', /** @this {MochaSuiteModified} */() => {
         },
         chainId,
       }, this.accounts.referralAccount);
-      await api.transactions.broadcast(claimTx, {});
-      const { height, stateChanges } = await ni.waitForTx(claimTx.id, { apiBase });
 
-      const { timestamp } = await api.blocks.fetchHeadersAt(height);
-
-      expect(stateChanges.data).to.eql([{
-        key: `%s%s%s%s__claimed__${programName}__${referralAddress}`,
-        type: 'integer',
-        value: expectedClaimed,
-      }, {
-        key: `%s%s__claimedTotal__${programName}`,
-        type: 'integer',
-        value: expectedClaimedTotal,
-      }, {
-        key: `%s%s%s%s__unclaimed__${programName}__${referralAddress}`,
-        type: 'integer',
-        value: expectedUnclaimed,
-      }, {
-        key: `%s%s%s%s%s__history__claim__${programName}__${referralAddress}__${claimTx.id}`,
-        type: 'string',
-        value: `%d%d%d__${height}__${timestamp}__${expectedClaimerUnclaimedHistory}`,
-      }]);
-
-      expect(stateChanges.transfers).to.eql([{
-        address: referralAddress,
-        asset: this.wxAssetId,
-        amount: expectedClaimed,
-      }]);
-
-      expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
-        .to.deep.include.members([
-          [treasuryContract, 'withdrawReferralReward'],
-        ]);
+      await expect(
+        api.transactions.broadcast(claimTx, {}),
+      ).to.be.rejectedWith(
+        `Error while executing account-script: ${expectedRejectMessage}`,
+      );
     },
   );
 });

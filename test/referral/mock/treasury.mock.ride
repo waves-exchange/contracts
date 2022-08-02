@@ -8,7 +8,6 @@ let keyWxAssetId = ["%s", "wxAssetId"].makeString(SEP)
 
 @Callable(i)
 func withdrawReferralReward(wxAmount: Int) = {
-
   let wxAssetId = keyWxAssetId.getString().value().fromBase58String()
   ([
     ScriptTransfer(i.caller, wxAmount, wxAssetId)

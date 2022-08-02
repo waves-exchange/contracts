@@ -292,6 +292,16 @@ func commonClaimReward(userAddress: String, startPeriod: Int|Unit) = {
 }
 
 @Callable(i)
+func updateReferralActivity(userAddress: String, gWxAmountStart: Int) = {
+  let referrer = referralsContractAddressOrFail.getString(userAddress.keyReferrer())
+  strict activeReferralInv = if (referrer == unit) then unit else {
+    referralsContractAddressOrFail.invoke("updateReferralActivity", [referralProgramName, userAddress, gWxAmountStart >= referralMinGWxAmount], [])
+  }
+
+  (nil, unit)
+}
+
+@Callable(i)
 func finalizeHelper() = {
   let processingStage = keyProcessingStage().getInteger().valueOrElse(processingStageTotal)
   let currentPeriod = keyNextProcessedPeriod().getNumberByKey() # period with reward being currently distributed
