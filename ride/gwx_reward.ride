@@ -305,7 +305,9 @@ func commonClaimReward(userAddress: String) = {
       ]
       (amount, actions)
     }
-    case u: Int => (u, [])
+    case u: Int => (u, [
+      IntegerEntry(userIdx.keyUserUnclaimed(), 0)
+    ])
   }
 }
 
