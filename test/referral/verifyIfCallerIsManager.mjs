@@ -17,13 +17,9 @@ const api = create(apiBase);
 const ridePath = 'ride';
 const referralPath = format({ dir: ridePath, base: 'referral.ride' });
 
-describe('referral: verify.mjs', /** @this {MochaSuiteModified} */() => {
-  const dummyKey = 'dummyKey';
-  const dummyValue = 'dummyValue';
+describe('referral: verifyIfCallerIsManager.mjs', /** @this {MochaSuiteModified} */() => {
   let someAccount;
   let managerAccount;
-
-  const expectedRejectMessage = 'Transaction is not allowed by account-script';
 
   before(async function () {
     someAccount = this.accounts.backend;
@@ -31,36 +27,11 @@ describe('referral: verify.mjs', /** @this {MochaSuiteModified} */() => {
     await setScriptFromFile(referralPath, someAccount);
   });
   it(
-    'should successfully verify if caller is account',
-    async () => {
-      const setDummyKeyTx = data({
-        additionalFee: 4e5,
-        data: [
-          {
-            key: dummyKey,
-            type: 'string',
-            value: dummyValue,
-          },
-        ],
-        chainId,
-      }, someAccount);
-      await api.transactions.broadcast(setDummyKeyTx, {});
-      await ni.waitForTx(setDummyKeyTx.id, { apiBase });
-
-      const dataFromNode = await api.addresses.fetchDataKey(
-        address(someAccount, chainId),
-        dummyKey,
-      );
-      expect(dataFromNode).to.eql({
-        key: dummyKey,
-        type: 'string',
-        value: dummyValue,
-      });
-    },
-  );
-  it(
     'should successfully verify if caller is manager',
     async () => {
+      const dummyKey = 'dummyKey';
+      const dummyValue = 'dummyValue';
+
       const setManagerReferralTx = data({
         additionalFee: 4e5,
         data: [{
@@ -75,6 +46,7 @@ describe('referral: verify.mjs', /** @this {MochaSuiteModified} */() => {
 
       const setDummyKeyTx = data({
         additionalFee: 4e5,
+        senderPublicKey: publicKey(someAccount),
         data: [
           {
             key: dummyKey,
@@ -96,26 +68,6 @@ describe('referral: verify.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'string',
         value: dummyValue,
       });
-    },
-  );
-  it(
-    'should reject verify if caller is not manager',
-    async () => {
-      const setDummyKeyTx = data({
-        additionalFee: 4e5,
-        data: [
-          {
-            key: dummyKey,
-            type: 'string',
-            value: dummyValue,
-          },
-        ],
-        chainId,
-      }, someAccount);
-
-      await expect(api.transactions.broadcast(setDummyKeyTx, {})).to.be.rejectedWith(
-        expectedRejectMessage,
-      );
     },
   );
 });

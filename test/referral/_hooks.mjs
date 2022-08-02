@@ -6,7 +6,7 @@ import {
   nodeInteraction,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { format } from 'path';
+import { format, join } from 'path';
 import { setScriptFromFile } from '../utils.mjs';
 
 const { waitForTx } = nodeInteraction;
@@ -16,7 +16,7 @@ const chainId = 'R';
 const api = create(apiBase);
 const seedWordsCount = 5;
 const ridePath = 'ride';
-const mockRidePath = 'test/referral/mock';
+const mockRidePath = join('test', 'referral', 'mock');
 const referralPath = format({ dir: ridePath, base: 'referral.ride' });
 const treasuryPath = format({ dir: mockRidePath, base: 'treasury.mock.ride' });
 
