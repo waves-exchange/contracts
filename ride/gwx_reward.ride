@@ -293,10 +293,10 @@ func commonClaimReward(userAddress: String) = {
   let userIdx = getUserIndexByAddress(cfgArray[IdxCfgBoostingContract], userAddress) # will throw if no such user
   let userUnclaimedOption = userIdx.keyUserUnclaimed().getInteger()
   match userUnclaimedOption {
-    case _: Unit => if (migrated) then "Nothing to claim".throw() else {
+    case _: Unit => if (migrated) then (0, []) else {
       let currentPeriod = getNumberByKey(keyNextUnlaimedPeriodOfUser(userIdx)) # period being currently claimed
       let nextProcessedPeriod = getNumberByKey(keyNextProcessedPeriod())
-      if (currentPeriod >= nextProcessedPeriod) then throw("Nothing to claim") else
+      if (currentPeriod >= nextProcessedPeriod) then (0, []) else
       let boostingContract = cfgArray[IdxCfgBoostingContract].fromBase58String()
       let (period, amountFromMatcher, amountFromEmission) = claimInternal(boostingContract, currentPeriod, userIdx, USERDEPTH, 0, 0)
       let amount = amountFromMatcher + amountFromEmission
@@ -497,6 +497,7 @@ func claimReward() = {
   let cfgArray = readConfigArrayOrFail()
   let address = i.caller.toString()
   let (amount, actions) = commonClaimReward(address)
+  strict checkAmount = amount > 0 || "Nothing to claim".throw()
   # remove if unused
   let amountFromEmission = 0
   ([
