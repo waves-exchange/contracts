@@ -206,8 +206,8 @@ func claim(programName: String) = {
       user,
       programName.keyClaimedReferrer(user).getInteger().valueOrElse(0),
       programName.keyUnclaimedReferrer(user).getInteger().valueOrElse(0),
-      programName.keyClaimedReferral(user),
-      programName.keyUnclaimedReferral(user)
+      programName.keyClaimedReferrer(user),
+      programName.keyUnclaimedReferrer(user)
     )
   }
   let claimedTotal      = programName.keyClaimedTotal().getInteger().valueOrElse(0)
