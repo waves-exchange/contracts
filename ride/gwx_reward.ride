@@ -72,6 +72,11 @@ let referralRewardPermille = this.getInteger(keyReferralRewardPermille).valueOrE
 
 func keyReferrer(referralAddress: String) = ["%s%s%s", "referrer", referralProgramName, referralAddress].makeString(SEP)
 
+func keyUnclaimedReferral(
+  programName: String,
+  claimerAddress: String
+) = makeString(["%s%s%s%s", "unclaimedReferral", programName, claimerAddress], SEP)
+
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
 let emissionAddressStr = getStringOrFail(keyEmissionAddress())
@@ -510,17 +515,22 @@ func claimReward() = {
   strict checkAmount = amount > 0 || "Nothing to claim".throw()
   # remove if unused
   let amountFromEmission = 0
+  let claimedReferral = referralsContractAddressOrFail.invoke("claim", [referralProgramName], []).exactAs[Int]
+  let totalAmount = amount + claimedReferral
   ([
-    ScriptTransfer(i.caller, amount, cfgArray[IdxCfgAssetId].fromBase58String()),
+    ScriptTransfer(i.caller, totalAmount, cfgArray[IdxCfgAssetId].fromBase58String()),
     HistoryEntry("claim", address, amount, i)
-  ] ++ actions, [amount, amountFromEmission])
+  ] ++ actions, [totalAmount, amountFromEmission])
 }
 
 # returns total claimable reward by user address
 @Callable(i)
 func claimRewardREADONLY(address: String) = {
   let (amount, actions) = commonClaimReward(address)
-  ([], amount)
+  let referralUnclaimed = referralsContractAddressOrFail.getInteger(keyUnclaimedReferral(referralProgramName, address)).valueOrElse(0)
+  let totalAmount = amount + referralUnclaimed
+
+  ([], totalAmount)
 }
 
 # returns -1 if there were no payments via deposit() call
@@ -662,4 +672,3 @@ func verify() = {
   }
   sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
 }
-
