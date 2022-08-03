@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, libs, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { format } from 'path';
+import { format, join } from 'path';
 import { setScriptFromFile } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
@@ -14,7 +14,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-const mockRidePath = 'test/referral/mock';
+const mockRidePath = join('test', 'referral', 'mock');
 const treasuryPath = format({ dir: mockRidePath, base: 'treasury_without_transfer.mock.ride' });
 
 describe('referral: claimRejectIfInsufficientBalanceOnReferral.mjs', /** @this {MochaSuiteModified} */() => {
