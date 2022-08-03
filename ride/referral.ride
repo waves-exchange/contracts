@@ -190,20 +190,24 @@ func incUnclaimed(
 @Callable(i)
 func claim(programName: String) = {
   strict checkProgramExists = programName.keyProgramName().getBoolean().valueOrElse(false) || "program does not exist".throwErr()
-  let isImplementationContract = i.caller.toString() == keyImplementationContract().getString().value()
-  let (userAddressStr, claimerClaimed, claimerUnclaimed) = if (isImplementationContract) then {
+  let isImplementationContract = i.caller.toString() == keyImplementationContract(programName).getString().value()
+  let (userAddressStr, claimerClaimed, claimerUnclaimed, keyClaimed, keyUnclaimed) = if (isImplementationContract) then {
     let user = i.originCaller.toString()
     (
       user,
       programName.keyClaimedReferral(user).getInteger().valueOrElse(0),
-      programName.keyUnclaimedReferral(user).getInteger().valueOrElse(0)
+      programName.keyUnclaimedReferral(user).getInteger().valueOrElse(0),
+      programName.keyClaimedReferral(user),
+      programName.keyUnclaimedReferral(user)
     )
   } else {
     let user = i.caller.toString()
     (
       user,
       programName.keyClaimedReferrer(user).getInteger().valueOrElse(0),
-      programName.keyUnclaimedReferrer(user).getInteger().valueOrElse(0)
+      programName.keyUnclaimedReferrer(user).getInteger().valueOrElse(0),
+      programName.keyClaimedReferral(user),
+      programName.keyUnclaimedReferral(user)
     )
   }
   let claimedTotal      = programName.keyClaimedTotal().getInteger().valueOrElse(0)
@@ -225,10 +229,10 @@ func claim(programName: String) = {
     strict checkBalance   = balanceDiff == claimerUnclaimed || "insufficient balance on referral contract".throwErr()
 
     ([
-      IntegerEntry(programName.keyClaimed(userAddressStr), newClaimerClaimed),
+      IntegerEntry(keyClaimed, newClaimerClaimed),
       IntegerEntry(programName.keyClaimedTotal(), newClaimedTotal),
-      IntegerEntry(programName.keyUnclaimed(userAddressStr), 0),
-      ScriptTransfer(userAddressStr, claimerUnclaimed, rewardAssetId),
+      IntegerEntry(keyUnclaimed, 0),
+      ScriptTransfer(userAddressStr.addressFromStringValue(), claimerUnclaimed, rewardAssetId),
       StringEntry(
         programName.keyClaimHistory(userAddressStr, i.transactionId.toBase58String()),
         claimerUnclaimed.formatClaimHistory()
@@ -239,8 +243,8 @@ func claim(programName: String) = {
 
 @Callable(i)
 func claimREADONLY(programName: String, userAddress: String) = {
-  let claimerClaimed    = programName.keyClaimed(userAddress).getInteger().valueOrElse(0)
-  let claimerUnclaimed  = programName.keyUnclaimed(userAddress).getInteger().valueOrElse(0)
+  let claimerClaimed    = programName.keyClaimedReferrer(userAddress).getInteger().valueOrElse(0)
+  let claimerUnclaimed  = programName.keyUnclaimedReferrer(userAddress).getInteger().valueOrElse(0)
 
   ([], [claimerUnclaimed, claimerClaimed])
 }
