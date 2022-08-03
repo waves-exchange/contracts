@@ -64,6 +64,11 @@ let referralRewardPermille = this.getInteger(keyReferralRewardPermille).valueOrE
 
 func keyReferrer(referralAddress: String) = ["%s%s%s", "referrer", referralProgramName, referralAddress].makeString(SEP)
 
+func keyUnclaimedReferral(
+  programName: String,
+  claimerAddress: String
+) = makeString(["%s%s%s%s", "unclaimedReferral", programName, claimerAddress], SEP)
+
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
 let emissionAddressStr = getStringOrFail(keyEmissionAddress())
@@ -437,18 +442,20 @@ func claimNextBatch(boostingContract: ByteVector, currentPeriod: Int, currentUse
 func claimReward() = {
   let address = i.caller.toString()
   let (period, amountFromMatcher, amountFromEmission, userIdx, cfgArray, nextProcessedPeriod) = commonClaimReward(address, unit)
+  let claimedReferral = referralsContractAddressOrFail.invoke("claim", [referralProgramName], []).exactAs[Int]
   ([
     IntegerEntry(keyNextUnlaimedPeriodOfUser(userIdx), period),
     ScriptTransfer(i.caller, amountFromMatcher + amountFromEmission, cfgArray[IdxCfgAssetId].fromBase58String()),
-    HistoryEntry("claim", address, amountFromMatcher, amountFromEmission, period, nextProcessedPeriod, i)
-  ], [amountFromMatcher, amountFromEmission])
+    HistoryEntry("claim", address, amountFromMatcher + claimedReferral, amountFromEmission, period, nextProcessedPeriod, i)
+  ], [amountFromMatcher + claimedReferral, amountFromEmission])
 }
 
 # returns total claimable reward by user address
 @Callable(i)
 func claimRewardREADONLY(address: String) = {
   let claimResults = commonClaimReward(address, unit)
-  let amount = claimResults._2 + claimResults._3 # both from matcher and from emission
+  let referralUnclaimed = referralsContractAddressOrFail.getInteger(keyUnclaimedReferral(address)).valueOrElse(0)
+  let amount = claimResults._2 + claimResults._3 + referralUnclaimed # both from matcher and from emission and referral
   ([], amount)
 }
 

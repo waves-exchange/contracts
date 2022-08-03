@@ -11,14 +11,22 @@ func keyExistsReferrerToReferral(
   referrerAddress: String,
   referralAddress: String
 ) = ["%s%s%s%s", "existsReferrerToReferral", programName, referrerAddress, referralAddress].makeString(separator)
-func keyClaimed(
+func keyClaimedReferrer(
   programName: String,
   claimerAddress: String
-) = makeString(["%s%s%s%s", "claimed", programName, claimerAddress], separator)
-func keyUnclaimed(
+) = makeString(["%s%s%s%s", "claimedReferrer", programName, claimerAddress], separator)
+func keyClaimedReferral(
   programName: String,
   claimerAddress: String
-) = makeString(["%s%s%s%s", "unclaimed", programName, claimerAddress], separator)
+) = makeString(["%s%s%s%s", "claimedReferral", programName, claimerAddress], separator)
+func keyUnclaimedReferrer(
+  programName: String,
+  claimerAddress: String
+) = makeString(["%s%s%s%s", "unclaimedReferrer", programName, claimerAddress], separator)
+func keyUnclaimedReferral(
+  programName: String,
+  claimerAddress: String
+) = makeString(["%s%s%s%s", "unclaimedReferral", programName, claimerAddress], separator)
 func keyReferrer(
   programName: String,
   referralAddress: String
@@ -165,16 +173,16 @@ func incUnclaimed(
   strict checkCaller = i.caller.toString() == implementationContract || "permission denied".throwErr()
 
   let referrerAddress   = programName.keyReferrer(referralAddress).getString().value()
-  let referrerUnclaimed = programName.keyUnclaimed(referrerAddress).getInteger().valueOrElse(0)
-  let referralUnclaimed = programName.keyUnclaimed(referralAddress).getInteger().valueOrElse(0)
+  let referrerUnclaimed = programName.keyUnclaimedReferrer(referrerAddress).getInteger().valueOrElse(0)
+  let referralUnclaimed = programName.keyUnclaimedReferral(referralAddress).getInteger().valueOrElse(0)
   let rewardsTotal = programName.keyRewardsTotal().getInteger().valueOrElse(0)
 
   let newReferrerUnclaimed = referrerUnclaimed + referrerReward
   let newReferralUnclaimed = referralUnclaimed + referralReward
 
   ([
-    IntegerEntry(programName.keyUnclaimed(referrerAddress), newReferrerUnclaimed),
-    IntegerEntry(programName.keyUnclaimed(referralAddress), newReferralUnclaimed),
+    IntegerEntry(programName.keyUnclaimedReferrer(referrerAddress), newReferrerUnclaimed),
+    IntegerEntry(programName.keyUnclaimedReferral(referralAddress), newReferralUnclaimed),
     IntegerEntry(programName.keyRewardsTotal(), rewardsTotal + referrerReward + referralReward)
   ], unit)
 }
@@ -182,34 +190,51 @@ func incUnclaimed(
 @Callable(i)
 func claim(programName: String) = {
   strict checkProgramExists = programName.keyProgramName().getBoolean().valueOrElse(false) || "program does not exist".throwErr()
-  let userAddressStr    = i.caller.toString()
+  let isImplementationContract = i.caller.toString() == keyImplementationContract().getString().value()
+  let (userAddressStr, claimerClaimed, claimerUnclaimed) = if (isImplementationContract) then {
+    let user = i.originCaller.toString()
+    (
+      user,
+      programName.keyClaimedReferral(user).getInteger().valueOrElse(0),
+      programName.keyUnclaimedReferral(user).getInteger().valueOrElse(0)
+    )
+  } else {
+    let user = i.caller.toString()
+    (
+      user,
+      programName.keyClaimedReferrer(user).getInteger().valueOrElse(0),
+      programName.keyUnclaimedReferrer(user).getInteger().valueOrElse(0)
+    )
+  }
   let claimedTotal      = programName.keyClaimedTotal().getInteger().valueOrElse(0)
-  let claimerClaimed    = programName.keyClaimed(userAddressStr).getInteger().valueOrElse(0)
-  let claimerUnclaimed  = programName.keyUnclaimed(userAddressStr).getInteger().valueOrElse(0)
   let treasuryContract  = programName.keyTreasuryContract().getString().value().addressFromString().value()
   let rewardAssetId     = programName.keyRewardAssetId().getString().value().fromBase58String()
-  
-  strict checkCanClaim  = claimerUnclaimed > 0 || "nothing to claim".throwErr()
 
-  let newClaimerClaimed = claimerClaimed + claimerUnclaimed
-  let newClaimedTotal   = claimedTotal + claimerUnclaimed
+  if (isImplementationContract && claimerUnclaimed == 0) then {
+	([], 0)
+  } else {
+    strict checkCanClaim  = claimerUnclaimed > 0 || "nothing to claim".throwErr()
 
-  strict balanceBefore  = this.assetBalance(rewardAssetId).value()
-  strict res            = treasuryContract.invoke("withdrawReferralReward", [claimerUnclaimed], [])
-  strict balanceAfter   = this.assetBalance(rewardAssetId).value()
-  strict balanceDiff    = balanceAfter - balanceBefore
-  strict checkBalance   = balanceDiff == claimerUnclaimed || "insufficient balance on referral contract".throwErr()
+    let newClaimerClaimed = claimerClaimed + claimerUnclaimed
+    let newClaimedTotal   = claimedTotal + claimerUnclaimed
 
-  ([
-    IntegerEntry(programName.keyClaimed(userAddressStr), newClaimerClaimed),
-    IntegerEntry(programName.keyClaimedTotal(), newClaimedTotal),
-    IntegerEntry(programName.keyUnclaimed(userAddressStr), 0),
-    ScriptTransfer(i.caller, claimerUnclaimed, rewardAssetId),
-    StringEntry(
-      programName.keyClaimHistory(userAddressStr, i.transactionId.toBase58String()),
-      claimerUnclaimed.formatClaimHistory()
-    )
-  ], unit)
+    strict balanceBefore  = this.assetBalance(rewardAssetId).value()
+    strict res            = treasuryContract.invoke("withdrawReferralReward", [claimerUnclaimed], [])
+    strict balanceAfter   = this.assetBalance(rewardAssetId).value()
+    strict balanceDiff    = balanceAfter - balanceBefore
+    strict checkBalance   = balanceDiff == claimerUnclaimed || "insufficient balance on referral contract".throwErr()
+
+    ([
+      IntegerEntry(programName.keyClaimed(userAddressStr), newClaimerClaimed),
+      IntegerEntry(programName.keyClaimedTotal(), newClaimedTotal),
+      IntegerEntry(programName.keyUnclaimed(userAddressStr), 0),
+      ScriptTransfer(userAddressStr, claimerUnclaimed, rewardAssetId),
+      StringEntry(
+        programName.keyClaimHistory(userAddressStr, i.transactionId.toBase58String()),
+        claimerUnclaimed.formatClaimHistory()
+      )
+    ], claimerUnclaimed)
+  }
 }
 
 @Callable(i)
