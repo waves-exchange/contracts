@@ -454,7 +454,7 @@ func claimReward() = {
 @Callable(i)
 func claimRewardREADONLY(address: String) = {
   let claimResults = commonClaimReward(address, unit)
-  let referralUnclaimed = referralsContractAddressOrFail.getInteger(keyUnclaimedReferral(address)).valueOrElse(0)
+  let referralUnclaimed = referralsContractAddressOrFail.getInteger(keyUnclaimedReferral(referralProgramName, address)).valueOrElse(0)
   let amount = claimResults._2 + claimResults._3 + referralUnclaimed # both from matcher and from emission and referral
   ([], amount)
 }
@@ -620,4 +620,3 @@ func verify() = {
   }
   sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
 }
-
