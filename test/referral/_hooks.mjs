@@ -24,11 +24,11 @@ export const mochaHooks = {
   async beforeAll() {
     const names = [
       'referral',
-      'implementation',
       'manager',
       'backend',
       'referrerAccount',
       'referralAccount',
+      'implementation',
       'treasury',
     ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
@@ -47,7 +47,7 @@ export const mochaHooks = {
     const wxIssueTx = issue({
       name: 'WX Token',
       description: '',
-      quantity: 1e16,
+      quantity: 10e16,
       decimals: 8,
       chainId,
     }, seed);
@@ -57,7 +57,7 @@ export const mochaHooks = {
 
     const wxAmount = 1e16;
     const massTransferTxWX = massTransfer({
-      transfers: names.slice(-1).map((name) => ({
+      transfers: names.slice(names.length - 2).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: wxAmount,
       })),
       assetId: this.wxAssetId,
