@@ -21,6 +21,7 @@ const implementationPath = format({ dir: mockRidePath, base: 'implementation.moc
 
 describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
   const programName = 'ReferralProgram';
+  const referralReward = 1e2;
   before(async function () {
     await setScriptFromFile(implementationPath, this.accounts.implementation);
 
@@ -28,7 +29,7 @@ describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
       additionalFee: 4e5,
       data: [
         {
-          key: '%s__wxAssetId',
+          key: 'assetId',
           type: 'string',
           value: this.wxAssetId,
         },
@@ -36,28 +37,27 @@ describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.implementation);
     await api.transactions.broadcast(setWxAssetIdImplementationTx, {});
-    await waitForTx(setWxAssetIdImplementationTx.id, { apiBase });
+    await ni.waitForTx(setWxAssetIdImplementationTx.id, { apiBase });
 
-    const mockAmount = 10000;
     const setMockAmountTx = data({
       additionalFee: 4e5,
       data: [
         {
-          key: 'mockAmount',
+          key: 'amount',
           type: 'integer',
-          value: mockAmount,
+          value: referralReward,
         },
       ],
       chainId,
     }, this.accounts.implementation);
     await api.transactions.broadcast(setMockAmountTx, {});
-    await waitForTx(setMockAmountTx.id, { apiBase });
+    await ni.waitForTx(setMockAmountTx.id, { apiBase });
 
     const setReferralProgramNameTx = data({
       additionalFee: 4e5,
       data: [
         {
-          key: 'referralProgramName',
+          key: 'programName',
           type: 'string',
           value: programName,
         },
@@ -65,21 +65,21 @@ describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.implementation);
     await api.transactions.broadcast(setReferralProgramNameTx, {});
-    await waitForTx(setReferralProgramNameTx.id, { apiBase });
+    await ni.waitForTx(setReferralProgramNameTx.id, { apiBase });
 
     const setKeyReferralsContractAddressTx = data({
       additionalFee: 4e5,
       data: [
         {
-          key: 'referralsContractAddress',
+          key: 'referralAddress',
           type: 'string',
-          value: address(accounts.referral, chainId),
+          value: address(this.accounts.referral, chainId),
         },
       ],
       chainId,
     }, this.accounts.implementation);
     await api.transactions.broadcast(setKeyReferralsContractAddressTx, {});
-    await waitForTx(setKeyReferralsContractAddressTx.id, { apiBase });
+    await ni.waitForTx(setKeyReferralsContractAddressTx.id, { apiBase });
   });
 
   it(
@@ -90,12 +90,12 @@ describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
       const referrerReward = 1e4;
-      const referralReward = 1e2;
 
-      const expectedClaimed = 10000;
-      const expectedClaimedTotal = 10000;
+      const expectedNewClaimerClaimed = 100;
+      const expectedNewClaimedTotal = 100;
       const expectedUnclaimed = 0;
-      const expectedClaimerUnclaimedHistory = 10000;
+      const expectedClaimerUnclaimed = 100;
+      const expectedClaimerUnclaimedHistory = 100;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
@@ -159,49 +159,50 @@ describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
       await ni.waitForTx(incUnclaimedTx.id, { apiBase });
 
       const claimTx = invokeScript({
-        dApp: referral,
+        dApp: address(this.accounts.implementation, chainId),
         payment: [],
         call: {
-          function: 'claim',
-          args: [
-            { type: 'string', value: programName },
-          ],
+          function: 'claimReward',
+          args: [],
         },
         chainId,
-      }, this.accounts.referrerAccount);
+      }, this.accounts.referralAccount);
       await api.transactions.broadcast(claimTx, {});
       const { height, stateChanges } = await ni.waitForTx(claimTx.id, { apiBase });
 
       const { timestamp } = await api.blocks.fetchHeadersAt(height);
 
-      expect(stateChanges.data).to.eql([{
-        key: `%s%s%s%s__claimedReferral__${programName}__${referrerAddress}`,
+      expect(stateChanges.transfers).to.eql([{
+        address: referralAddress,
+        asset: this.wxAssetId,
+        amount: expectedClaimerUnclaimed,
+      }]);
+
+      const { invokes } = stateChanges;
+      expect(invokes[0].dApp).to.eql(referral);
+      expect(invokes[0].call.function).to.eql('claim');
+      expect(invokes[0].call.args).to.eql([{
+        type: 'String',
+        value: 'ReferralProgram',
+      }]);
+
+      expect(invokes[0].stateChanges.data).to.eql([{
+        key: `%s%s%s%s__claimedReferral__${programName}__${referralAddress}`,
         type: 'integer',
-        value: expectedClaimed,
+        value: expectedNewClaimerClaimed,
       }, {
         key: `%s%s__claimedTotal__${programName}`,
         type: 'integer',
-        value: expectedClaimedTotal,
+        value: expectedNewClaimedTotal,
       }, {
-        key: `%s%s%s%s__unclaimedReferral__${programName}__${referrerAddress}`,
+        key: `%s%s%s%s__unclaimedReferral__${programName}__${referralAddress}`,
         type: 'integer',
         value: expectedUnclaimed,
       }, {
-        key: `%s%s%s%s%s__history__claim__${programName}__${referrerAddress}__${claimTx.id}`,
+        key: `%s%s%s%s%s__history__claim__${programName}__${referralAddress}__${claimTx.id}`,
         type: 'string',
         value: `%d%d%d__${height}__${timestamp}__${expectedClaimerUnclaimedHistory}`,
       }]);
-
-      expect(stateChanges.transfers).to.eql([{
-        address: referrerAddress,
-        asset: this.wxAssetId,
-        amount: expectedClaimed,
-      }]);
-
-      expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
-        .to.deep.include.members([
-          [treasuryContract, 'withdrawReferralReward'],
-        ]);
     },
   );
 });

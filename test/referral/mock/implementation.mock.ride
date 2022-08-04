@@ -2,21 +2,19 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-let SEP = "__"
+let keyAssetId = "assetId"
+let keyAmount = "amount"
+let keyReferralProgramName = "programName"
+let keyReferralAddress  = "referralAddress"
+let referralAddress = keyReferralAddress.getString().value().addressFromStringValue()
 
-let assetId = "assetId"
-let mockAmount = "mockAmount"
-let referralProgramName = "programName"
-func keyReferralsContractAddress()  = ["%s%s", "config", "referralsContractAddress"].makeString(SEP)
-func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
-let referralsContractAddressOrFail = keyReferralsContractAddress().getStringOrFail().addressFromStringValue()
-
-# @Callable(i)
-# func claimReward() = {
-#   let address = i.caller.toString()
-#   let claimedReferral = referralsContractAddressOrFail.invoke("claim", [referralProgramName.getString()], []).exactAs[Int]
-#   (
-#     ScriptTransfer(i.caller, keyMockAmount().getInteger(), assetId.fromBase58String()),
-#     unit
-#   )
-# }
+@Callable(i)
+func claimReward() = {
+  strict invokeResult = referralAddress.invoke("claim", [keyReferralProgramName.getString().value()], [])
+  (
+    [
+      ScriptTransfer(i.caller, keyAmount.getInteger().value(), keyAssetId.getString().value().fromBase58String())
+    ],
+    unit
+  )
+}
