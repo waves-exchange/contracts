@@ -51,7 +51,7 @@ describe('referral: claimRejectIfNothingToClaim.mjs', /** @this {MochaSuiteModif
           ],
         },
         chainId,
-      }, this.accounts.referralAccount);
+      }, this.accounts.referrerAccount);
 
       await expect(
         api.transactions.broadcast(claimTx, {}),

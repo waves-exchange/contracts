@@ -107,7 +107,7 @@ describe('referral: claimReferrer.mjs', /** @this {MochaSuiteModified} */() => {
       const { timestamp } = await api.blocks.fetchHeadersAt(height);
 
       expect(stateChanges.data).to.eql([{
-        key: `%s%s%s%s__claimedReferral__${programName}__${referrerAddress}`,
+        key: `%s%s%s%s__claimedReferrer__${programName}__${referrerAddress}`,
         type: 'integer',
         value: expectedClaimed,
       }, {
@@ -115,11 +115,11 @@ describe('referral: claimReferrer.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: expectedClaimedTotal,
       }, {
-        key: `%s%s%s%s__unclaimedReferral__${programName}__${referrerAddress}`,
+        key: `%s%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
         type: 'integer',
         value: expectedUnclaimed,
       }, {
-        key: `%s%s%s%s%s__history__claim__${programName}__${referrerAddress}__${claimTx.id}`,
+        key: `%s%s%s%s%s__history__claimReferrer__${programName}__${referrerAddress}__${claimTx.id}`,
         type: 'string',
         value: `%d%d%d__${height}__${timestamp}__${expectedClaimerUnclaimedHistory}`,
       }]);

@@ -199,7 +199,7 @@ describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: expectedUnclaimed,
       }, {
-        key: `%s%s%s%s%s__history__claim__${programName}__${referralAddress}__${claimTx.id}`,
+        key: `%s%s%s%s%s__history__claimReferral__${programName}__${referralAddress}__${claimTx.id}`,
         type: 'string',
         value: `%d%d%d__${height}__${timestamp}__${expectedClaimerUnclaimedHistory}`,
       }]);
