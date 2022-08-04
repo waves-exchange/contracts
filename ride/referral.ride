@@ -59,8 +59,9 @@ func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 func keyClaimHistory(
   programName: String,
   userAddress: String,
-  transactionId: String
-) = ["%s%s%s%s%s", "history", "claim", programName, userAddress, transactionId].makeString(separator)
+  transactionId: String,
+  type: String
+) = ["%s%s%s%s%s", "history", type, programName, userAddress, transactionId].makeString(separator)
 func formatClaimHistory(amount: Int) = ["%d%d%d", lastBlock.height.toString(), lastBlock.timestamp.toString(), amount.toString()].makeString(separator)
 
 func throwErr(msg: String) = ["referral.ride:", msg].makeString(" ").throw()
@@ -191,14 +192,15 @@ func incUnclaimed(
 func claim(programName: String) = {
   strict checkProgramExists = programName.keyProgramName().getBoolean().valueOrElse(false) || "program does not exist".throwErr()
   let isImplementationContract = i.caller.toString() == keyImplementationContract(programName).getString().value()
-  let (userAddressStr, claimerClaimed, claimerUnclaimed, keyClaimed, keyUnclaimed) = if (isImplementationContract) then {
+  let (userAddressStr, claimerClaimed, claimerUnclaimed, keyClaimed, keyUnclaimed, claimHistoryKey) = if (isImplementationContract) then {
     let user = i.originCaller.toString()
     (
       user,
       programName.keyClaimedReferral(user).getInteger().valueOrElse(0),
       programName.keyUnclaimedReferral(user).getInteger().valueOrElse(0),
       programName.keyClaimedReferral(user),
-      programName.keyUnclaimedReferral(user)
+      programName.keyUnclaimedReferral(user),
+      programName.keyClaimHistory(user, i.transactionId.toBase58String(), "claimReferral")
     )
   } else {
     let user = i.caller.toString()
@@ -207,7 +209,8 @@ func claim(programName: String) = {
       programName.keyClaimedReferrer(user).getInteger().valueOrElse(0),
       programName.keyUnclaimedReferrer(user).getInteger().valueOrElse(0),
       programName.keyClaimedReferrer(user),
-      programName.keyUnclaimedReferrer(user)
+      programName.keyUnclaimedReferrer(user),
+      programName.keyClaimHistory(user, i.transactionId.toBase58String(), "claimReferrer")
     )
   }
   let claimedTotal      = programName.keyClaimedTotal().getInteger().valueOrElse(0)
@@ -234,7 +237,7 @@ func claim(programName: String) = {
       IntegerEntry(keyUnclaimed, 0),
       ScriptTransfer(userAddressStr.addressFromStringValue(), claimerUnclaimed, rewardAssetId),
       StringEntry(
-        programName.keyClaimHistory(userAddressStr, i.transactionId.toBase58String()),
+        claimHistoryKey,
         claimerUnclaimed.formatClaimHistory()
       )
     ], claimerUnclaimed)
