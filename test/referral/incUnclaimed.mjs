@@ -86,11 +86,11 @@ describe('referral: incUnclaimed.mjs', /** @this {MochaSuiteModified} */() => {
       const { stateChanges } = await ni.waitForTx(incUnclaimedTx.id, { apiBase });
 
       expect(stateChanges.data).to.eql([{
-        key: `%s%s%s%s__unclaimed__${programName}__${referrerAddress}`,
+        key: `%s%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
         type: 'integer',
         value: referrerReward,
       }, {
-        key: `%s%s%s%s__unclaimed__${programName}__${referralAddress}`,
+        key: `%s%s%s%s__unclaimedReferral__${programName}__${referralAddress}`,
         type: 'integer',
         value: referralReward,
       }, {

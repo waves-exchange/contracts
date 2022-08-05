@@ -24,7 +24,7 @@ describe('referral: claimREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
       const referrerReward = 1e4;
       const referralReward = 1e2;
 
-      const expectedClaimerUnclaimed = 100;
+      const expectedClaimerUnclaimed = 10000;
       const expectedClaimerClaimed = 0;
 
       const bytes = libs.crypto.stringToBytes(
@@ -91,7 +91,7 @@ describe('referral: claimREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
       const expected1 = { type: 'Int', value: expectedClaimerUnclaimed };
       const expected2 = { type: 'Int', value: expectedClaimerClaimed };
 
-      const expr = `claimREADONLY(\"${programName}\", \"${referralAddress}\")`; /* eslint-disable-line */
+      const expr = `claimREADONLY(\"${programName}\", \"${referrerAddress}\")`; /* eslint-disable-line */
       const response = await api.utils.fetchEvaluate(referral, expr);
       const checkData = response.result.value._2.value;  /* eslint-disable-line */
 

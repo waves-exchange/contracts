@@ -12,7 +12,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: claim.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: claimReferrer.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully claim',
     async function () {
@@ -24,10 +24,10 @@ describe('referral: claim.mjs', /** @this {MochaSuiteModified} */() => {
       const referrerReward = 1e4;
       const referralReward = 1e2;
 
-      const expectedClaimed = 100;
-      const expectedClaimedTotal = 100;
+      const expectedClaimed = 10000;
+      const expectedClaimedTotal = 10000;
       const expectedUnclaimed = 0;
-      const expectedClaimerUnclaimedHistory = 100;
+      const expectedClaimerUnclaimedHistory = 10000;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
@@ -100,14 +100,14 @@ describe('referral: claim.mjs', /** @this {MochaSuiteModified} */() => {
           ],
         },
         chainId,
-      }, this.accounts.referralAccount);
+      }, this.accounts.referrerAccount);
       await api.transactions.broadcast(claimTx, {});
       const { height, stateChanges } = await ni.waitForTx(claimTx.id, { apiBase });
 
       const { timestamp } = await api.blocks.fetchHeadersAt(height);
 
       expect(stateChanges.data).to.eql([{
-        key: `%s%s%s%s__claimed__${programName}__${referralAddress}`,
+        key: `%s%s%s%s__claimedReferrer__${programName}__${referrerAddress}`,
         type: 'integer',
         value: expectedClaimed,
       }, {
@@ -115,17 +115,17 @@ describe('referral: claim.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: expectedClaimedTotal,
       }, {
-        key: `%s%s%s%s__unclaimed__${programName}__${referralAddress}`,
+        key: `%s%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
         type: 'integer',
         value: expectedUnclaimed,
       }, {
-        key: `%s%s%s%s%s__history__claim__${programName}__${referralAddress}__${claimTx.id}`,
+        key: `%s%s%s%s%s__history__claimReferrer__${programName}__${referrerAddress}__${claimTx.id}`,
         type: 'string',
         value: `%d%d%d__${height}__${timestamp}__${expectedClaimerUnclaimedHistory}`,
       }]);
 
       expect(stateChanges.transfers).to.eql([{
-        address: referralAddress,
+        address: referrerAddress,
         asset: this.wxAssetId,
         amount: expectedClaimed,
       }]);
