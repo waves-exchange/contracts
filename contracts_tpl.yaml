@@ -318,12 +318,16 @@
   mainnet-pub: 98E7XfNDM6JvrpNaQxZiPkXMbtFLyqi6zX1UUF5F2AGr
 
 - file: lp.ride
+  tag: TDX/USDN pool
+  mainnet-pub: CvsTo9usJavK5soxr9dGE5AKo6tDQ53fu7BeLGFJFUEo
+
+- file: lp.ride
   tag: TSN/USDN pool
   mainnet-pub: 5CVh4q2C3vjjALUmXqrdz83GvNuCVvwFcKYcQ3ummGmE
 
 - file: lp.ride
-  tag: TDX/USDN pool
-  mainnet-pub: CvsTo9usJavK5soxr9dGE5AKo6tDQ53fu7BeLGFJFUEo
+  tag: PLUTO/USDN pool
+  mainnet-pub: HwtWrjnvWynhLoJ9k5mnqoWa6HfQd3q2B67qpGoJxHAG
 
 - file: otc.ride
   testnet-prv: $OTC_PRV
