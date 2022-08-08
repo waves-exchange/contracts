@@ -2,7 +2,6 @@ import { address, random } from '@waves/ts-lib-crypto';
 import { massTransfer, nodeInteraction } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { format } from 'path';
-import { table, getBorderCharacters } from 'table';
 import { setScriptFromFile } from '../utils.mjs';
 
 const { waitForTx } = nodeInteraction;
@@ -43,12 +42,5 @@ export const mochaHooks = {
     await setScriptFromFile(boostingMockPath, this.accounts.boosting.seed);
     await setScriptFromFile(factoryMockPath, this.accounts.factory.seed);
     await setScriptFromFile(stakingMockPath, this.accounts.staking.seed);
-    const accountsInfo = Object.entries(this.accounts)
-      .map(([name, { seed, addr }]) => [name, seed, addr]);
-    console.log(table(accountsInfo, {
-      border: getBorderCharacters('norc'),
-      drawHorizontalLine: (index, size) => index === 0 || index === 1 || index === size,
-      header: { content: `pid = ${process.pid}, nonce = ${nonce}` },
-    }));
   },
 };

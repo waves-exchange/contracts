@@ -14,7 +14,7 @@ const { expect } = chai;
 describe(`${process.pid}: voting_emission: cancel vote`, () => {
   const amountAssetId = 'amountAssetId';
   const priceAssetId = 'priceAssetId';
-  const epochLength = 2;
+  const epochLength = 4;
   before(async function () {
     const { addr: dApp, seed } = this.accounts.votingEmission;
     await votingEmission.constructor({

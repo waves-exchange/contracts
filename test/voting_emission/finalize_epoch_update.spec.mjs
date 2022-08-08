@@ -18,7 +18,7 @@ describe(`${process.pid}: voting_emission: finalize: epoch update`, () => {
   const amountAssetIdInternal = 0;
   const priceAssetId = 'priceAssetId';
   const priceAssetIdInternal = 1;
-  const epochLength = 2;
+  const epochLength = 4;
   const poolContract = 'poolContract';
   const poolLpAssetId = 'poolLpAssetId';
   before(async function () {
