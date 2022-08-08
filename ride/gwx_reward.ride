@@ -456,6 +456,7 @@ func claimRewardREADONLY(address: String) = {
   let claimResults = commonClaimReward(address, unit)
   let referralUnclaimed = referralsContractAddressOrFail.getInteger(keyUnclaimedReferral(referralProgramName, address)).valueOrElse(0)
   let amount = claimResults._2 + claimResults._3 + referralUnclaimed # both from matcher and from emission and referral
+  strict check1 = throw("claimResults._2: " + claimResults._2.toString() + " claimResults._3: " + claimResults._3.toString() + " referralUnclaimed: " + referralUnclaimed.toString())
   ([], amount)
 }
 
