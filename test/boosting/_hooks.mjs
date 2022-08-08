@@ -27,6 +27,8 @@ export const mochaHooks = {
       'boosting',
       'factory',
       'manager',
+      'referrerAddress',
+      'mathContract',
       'user1',
     ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
@@ -74,10 +76,11 @@ export const mochaHooks = {
 
     const factoryAddressStr = address(this.accounts.factory, chainId);
     const lockAssetIdStr = this.wxAssetId;
-    const minLockAmount = 0;
-    const minDuration = 0;
-    const maxDuration = 0;
-    const mathContract = '';
+
+    const minLockAmount = 500000000;
+    const minDuration = 10;
+    const maxDuration = 2102400;
+    const mathContract = address(this.accounts.mathContract, chainId);
 
     const constructorTx = invokeScript({
       dApp: address(this.accounts.boosting, chainId),
@@ -97,6 +100,19 @@ export const mochaHooks = {
     }, this.accounts.boosting);
     await api.transactions.broadcast(constructorTx, {});
     await waitForTx(constructorTx.id, { apiBase });
+
+    const boostingConfig = `%s%d%d%d__${lockAssetIdStr}__${minLockAmount}__${minDuration}__${maxDuration}__${mathContract}`;
+    const setConfigTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__config',
+        type: 'string',
+        value: boostingConfig,
+      }],
+      chainId,
+    }, this.accounts.boosting);
+    await api.transactions.broadcast(setConfigTx, {});
+    await waitForTx(setConfigTx.id, { apiBase });
 
     const setManagerBoostingTx = data({
       additionalFee: 4e5,

@@ -12,15 +12,15 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: confirmManager.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: confirmManagerRejectIfYouAreNotPendingManager.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully confirmManager',
     async function () {
-      const anotherPublicKeyManager = publicKey(this.accounts.implementation);
-      const anotherInvalidPublicKeyManager = this.accounts.backend;
+      const anotherPublicKeyManager = publicKey(this.accounts.factory);
+      const anotherInvalidPublicKeyManager = this.accounts.user1;
       const boosting = address(this.accounts.boosting, chainId);
 
-      const expectedRejectMessage = 'boosting.ride: you are not pending manager';
+      const expectedRejectMessage = 'You are not pending manager';
 
       const setManagerTx = invokeScript({
         dApp: boosting,
