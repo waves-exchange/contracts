@@ -20,7 +20,7 @@ describe(`${process.pid}: voting_emission: finalize: user removal`, () => {
   const priceAssetId = 'priceAssetId';
   const priceAssetIdInternal = 1;
   const userGwxAmount = 1000;
-  const epochLength = 2;
+  const epochLength = 4;
   const poolContract = 'poolContract';
   const poolLpAssetId = 'poolLpAssetId';
   before(async function () {

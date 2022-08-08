@@ -256,9 +256,13 @@ func (s Syncer) doAction(ctx context.Context, fileName string) error {
 }
 
 func (s Syncer) preparePathAndScript(ctx context.Context, base64Script string) (string, error) {
-	script, err := s.apiDecompileScript(ctx, strings.NewReader(base64Script))
-	if err != nil {
-		return "", fmt.Errorf("s.apiDecompileScript: %w", err)
+	var script string
+	if base64Script != "" {
+		scr, err := s.apiDecompileScript(ctx, strings.NewReader(base64Script))
+		if err != nil {
+			return "", fmt.Errorf("s.apiDecompileScript: %w", err)
+		}
+		script = scr
 	}
 
 	u, err := uuid.NewRandom()

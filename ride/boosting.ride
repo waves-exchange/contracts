@@ -2,6 +2,12 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+# Required state entries:
+# * "%s%s__config__referralsContractAddress": String
+# * "%s__nextUserNum": Int
+# * "%s%s__config__factoryAddress": String
+# * "%s__config": String ("%s%d%d%d__<assetId__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>")
+
 let SEP = "__"
 let SCALE8  = 8
 let MULT8   = 100000000
@@ -32,6 +38,13 @@ func ai(val: Any) = {
     case _ => throw("fail to cast into Int")
   }
 }
+
+func keyReferralsContractAddress()  = ["%s%s", "config", "referralsContractAddress"].makeString(SEP)
+let referralsContractAddressOrFail = this.strf(keyReferralsContractAddress()).addressFromStringValue()
+
+let keyReferralProgramName = ["%s%s", "referral", "programName"].makeString(SEP)
+let referralProgramNameDefault = "wxlock"
+let referralProgramName = this.getString(keyReferralProgramName).valueOrElse(referralProgramNameDefault)
 
 # FACTORY API
 # own factory address key
@@ -87,6 +100,7 @@ let IdxCfgMathContract        = 5
 
 func keyConfig() = {"%s__config"}
 func readConfigArrayOrFail() = this.strf(keyConfig()).split(SEP)
+let mathContract = readConfigArrayOrFail()[IdxCfgMathContract].addressFromStringValue()
 
 func formatConfigS(assetId: String, minLockAmount: String, minLockDuration: String, maxLockDuration: String, mathContract: String) = {
   makeString([
@@ -391,28 +405,13 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   (userBoostAvaliableToClaimTotalNew, dataState, debug)
 }
 
-@Callable(i)
-func constructor(factoryAddressStr: String, lockAssetIdStr: String, minLockAmount: Int, minDuration: Int, maxDuration: Int, mathContract: String) = {
-  strict checkCaller = i.mustManager()
-
-  [IntegerEntry(keyNextUserNum(), 0),
-    StringEntry(
-        keyConfig(),
-        formatConfig(lockAssetIdStr, minLockAmount, minDuration, maxDuration, mathContract)),
-    StringEntry(keyFactoryAddress(), factoryAddressStr)
-  ]
-    ++ StatsEntry(0, 0, 0, 0)
-}
-
-@Callable(i)
-func lock(duration: Int) = {
+func lockActions(i: Invocation, duration: Int) = {
   let cfgArray          = readConfigArrayOrFail()
   let assetIdStr        = cfgArray[IdxCfgAssetId]
   let assetId           = assetIdStr.fromBase58String()
   let minLockAmount     = cfgArray[IdxCfgMinLockAmount].parseIntValue()
   let minLockDuration   = cfgArray[IdxCfgMinLockDuration].parseIntValue()
   let maxLockDuration   = cfgArray[IdxCfgMaxLockDuration].parseIntValue()
-  let mathContract      = cfgArray[IdxCfgMathContract].addressFromStringValue()
 
   if (i.payments.size() != 1) then throw("invalid payment - exact one payment must be attached") else
   let pmt = i.payments[0]
@@ -475,7 +474,7 @@ func lock(duration: Int) = {
     StringEntry(keyUser2NumMapping(userAddressStr), userNumStr),
     StringEntry(keyNum2UserMapping(userNumStr), userAddressStr)
   ]
-  arr ++ LockParamsEntry(userAddressStr, userNumStr, pmtAmount, lockStart, duration, k, b, period)
+  (arr ++ LockParamsEntry(userAddressStr, userNumStr, pmtAmount, lockStart, duration, k, b, period)
   ++ StatsEntry(pmtAmount, duration, 1, if (userIsExisting) then 0 else 1)
   :+ HistoryEntry("lock", userAddressStr, pmtAmount, lockStart, duration, k, b, i)
 # BOOST INTEGRAL
@@ -483,7 +482,40 @@ func lock(duration: Int) = {
     IntegerEntry(userBoostEmissionLastIntegralKEY, boostEmissionIntegral),
     #IntegerEntry(userMaxBoostIntegralKEY, userMaxBoostInt),
     #IntegerEntry(totalMaxBoostIntegralKEY, totalMaxBoostInt + userMaxBoostInt),
-    IntegerEntry(totalCachedGwxKEY, totalCachedGwx + gWxAmountStart)]
+    IntegerEntry(totalCachedGwxKEY, totalCachedGwx + gWxAmountStart)], gWxAmountStart)
+}
+
+@Callable(i)
+func constructor(factoryAddressStr: String, lockAssetIdStr: String, minLockAmount: Int, minDuration: Int, maxDuration: Int, mathContract: String) = {
+  strict checkCaller = i.mustManager()
+
+  [IntegerEntry(keyNextUserNum(), 0),
+    StringEntry(
+        keyConfig(),
+        formatConfig(lockAssetIdStr, minLockAmount, minDuration, maxDuration, mathContract)),
+    StringEntry(keyFactoryAddress(), factoryAddressStr)
+  ]
+    ++ StatsEntry(0, 0, 0, 0)
+}
+
+@Callable(i)
+func lockRef(duration: Int, referrerAddress: String, signature: ByteVector) = {
+  let (lockActionsResult, gWxAmountStart) = i.lockActions(duration)
+  let referralAddress = i.caller.toString()
+  strict refInv = if (referrerAddress == "" || signature == base58'') then unit else {
+    referralsContractAddressOrFail.invoke("createPair", [referralProgramName, referrerAddress, referralAddress, signature], [])
+  }
+  strict updateRefActivity = mathContract.invoke("updateReferralActivity", [i.caller.toString(), gWxAmountStart], [])
+
+  (lockActionsResult, unit)
+}
+
+@Callable(i)
+func lock(duration: Int) = {
+  let (lockActionsResult, gWxAmountStart) = i.lockActions(duration)
+  strict updateRefActivity = mathContract.invoke("updateReferralActivity", [i.caller.toString(), gWxAmountStart], [])
+
+  (lockActionsResult, unit)
 }
 
 @Callable(i)
@@ -493,7 +525,6 @@ func increaseLock(deltaDuration: Int) = {
   let assetId           = assetIdStr.fromBase58String()
   let minLockDuration   = cfgArray[IdxCfgMinLockDuration].parseIntValue()
   let maxLockDuration   = cfgArray[IdxCfgMaxLockDuration].parseIntValue()
-  let mathContract      = cfgArray[IdxCfgMathContract].addressFromStringValue()
 
   let pmtAmount = extractOptionalPaymentAmountOrFail(i, assetId)
 
@@ -517,6 +548,8 @@ func increaseLock(deltaDuration: Int) = {
 
   let coeffX8 = fraction(lockDurationNew, MULT8, maxLockDuration)
   let gWxAmountStart = fraction(userAmountNew, coeffX8, MULT8)
+
+  strict updateRefActivity = mathContract.invoke("updateReferralActivity", [i.caller.toString(), gWxAmountStart], [])
 
   let lockStartNew = height
   let gWxParamsResultList = invoke(mathContract, "calcGwxParamsREADONLY", [gWxAmountStart, lockStartNew, lockDurationNew], []).aal()
@@ -597,7 +630,6 @@ func unlock(userAddress: String) = {
 
   let cfgArray          = readConfigArrayOrFail()
   let assetId           = cfgArray[IdxCfgAssetId].fromBase58String()
-  let mathContract      = cfgArray[IdxCfgMathContract].addressFromStringValue()
 
   if (lockEnd >= height) then throw("wait " + lockEnd.toString() + " to unlock") else
   if (userAmount <= 0) then throw("nothing to unlock") else
