@@ -34,7 +34,6 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
     }, seed);
     await api.transactions.broadcast(someIssueTx, {});
     await waitForTx(someIssueTx.id, { apiBase });
-    console.log('someIssueId', someIssueTx.id);
     invalidAssetId = someIssueTx.id;
 
     const someAmount = 1e16;

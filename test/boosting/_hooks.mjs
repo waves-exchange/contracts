@@ -26,9 +26,9 @@ export const mochaHooks = {
     const names = [
       'boosting',
       'factory',
-      'manager',
       'referrerAddress',
       'mathContract',
+      'manager',
       'user1',
     ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
@@ -54,7 +54,7 @@ export const mochaHooks = {
     const wxIssueTx = issue({
       name: 'WX Token',
       description: '',
-      quantity: 1e16,
+      quantity: 10e16,
       decimals: 8,
       chainId,
     }, seed);
@@ -65,7 +65,7 @@ export const mochaHooks = {
 
     const wxAmount = 1e16;
     const massTransferTxWX = massTransfer({
-      transfers: names.slice(-1).map((name) => ({
+      transfers: names.slice(names.length - 2).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: wxAmount,
       })),
       assetId: this.wxAssetId,
@@ -77,8 +77,8 @@ export const mochaHooks = {
     const factoryAddressStr = address(this.accounts.factory, chainId);
     const lockAssetIdStr = this.wxAssetId;
 
-    const minLockAmount = 500000000;
-    const minDuration = 10;
+    this.minLockAmount = 500000000;
+    this.minDuration = 10;
     const maxDuration = 2102400;
     const mathContract = address(this.accounts.mathContract, chainId);
 
@@ -90,8 +90,8 @@ export const mochaHooks = {
         args: [
           { type: 'string', value: factoryAddressStr },
           { type: 'string', value: lockAssetIdStr },
-          { type: 'integer', value: minLockAmount },
-          { type: 'integer', value: minDuration },
+          { type: 'integer', value: this.minLockAmount },
+          { type: 'integer', value: this.minDuration },
           { type: 'integer', value: maxDuration },
           { type: 'string', value: mathContract },
         ],
@@ -101,7 +101,7 @@ export const mochaHooks = {
     await api.transactions.broadcast(constructorTx, {});
     await waitForTx(constructorTx.id, { apiBase });
 
-    const boostingConfig = `%s%d%d%d__${lockAssetIdStr}__${minLockAmount}__${minDuration}__${maxDuration}__${mathContract}`;
+    const boostingConfig = `%s%d%d%d__${lockAssetIdStr}__${this.minLockAmount}__${this.minDuration}__${maxDuration}__${mathContract}`;
     const setConfigTx = data({
       additionalFee: 4e5,
       data: [{
