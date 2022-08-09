@@ -79,7 +79,7 @@ export const mochaHooks = {
 
     this.minLockAmount = 500000000;
     this.minDuration = 10;
-    const maxDuration = 2102400;
+    this.maxDuration = 2102400;
     const mathContract = address(this.accounts.mathContract, chainId);
 
     const constructorTx = invokeScript({
@@ -92,7 +92,7 @@ export const mochaHooks = {
           { type: 'string', value: lockAssetIdStr },
           { type: 'integer', value: this.minLockAmount },
           { type: 'integer', value: this.minDuration },
-          { type: 'integer', value: maxDuration },
+          { type: 'integer', value: this.maxDuration },
           { type: 'string', value: mathContract },
         ],
       },
@@ -101,7 +101,7 @@ export const mochaHooks = {
     await api.transactions.broadcast(constructorTx, {});
     await waitForTx(constructorTx.id, { apiBase });
 
-    const boostingConfig = `%s%d%d%d__${lockAssetIdStr}__${this.minLockAmount}__${this.minDuration}__${maxDuration}__${mathContract}`;
+    const boostingConfig = `%s%d%d%d__${lockAssetIdStr}__${this.minLockAmount}__${this.minDuration}__${this.maxDuration}__${mathContract}`;
     const setConfigTx = data({
       additionalFee: 4e5,
       data: [{
