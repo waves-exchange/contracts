@@ -22,7 +22,7 @@ describe('boosting: verifyIfRejectIfCallerIsNotManager.mjs', /** @this {MochaSui
   let managerAccount;
 
   before(async function () {
-    someAccount = this.accounts.factory;
+    someAccount = this.accounts.factoryV2;
     managerAccount = this.accounts.manager;
     await setScriptFromFile(boostingPath, someAccount);
   });

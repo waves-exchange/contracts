@@ -21,9 +21,10 @@ describe('boosting: verifyIfCallerIsАccount.mjs', /** @this {MochaSuiteModified
   let someAccount;
 
   before(async function () {
-    someAccount = this.accounts.factory;
+    someAccount = this.accounts.factoryV2;
     await setScriptFromFile(boostingPath, someAccount);
   });
+
   it(
     'should successfully verify if caller is account',
     async () => {

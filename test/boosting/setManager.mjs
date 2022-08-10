@@ -16,7 +16,7 @@ describe('boosting: setManager.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully setManager',
     async function () {
-      const anotherPublicKeyManager = publicKey(this.accounts.factory);
+      const anotherPublicKeyManager = publicKey(this.accounts.factoryV2);
       const boosting = address(this.accounts.boosting, chainId);
 
       const setManagerTx = invokeScript({

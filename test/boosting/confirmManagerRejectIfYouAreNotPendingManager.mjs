@@ -16,7 +16,7 @@ describe('boosting: confirmManagerRejectIfYouAreNotPendingManager.mjs', /** @thi
   it(
     'should successfully confirmManager',
     async function () {
-      const anotherPublicKeyManager = publicKey(this.accounts.factory);
+      const anotherPublicKeyManager = publicKey(this.accounts.factoryV2);
       const anotherInvalidPublicKeyManager = this.accounts.user1;
       const boosting = address(this.accounts.boosting, chainId);
 

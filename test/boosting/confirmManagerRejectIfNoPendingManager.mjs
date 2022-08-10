@@ -17,7 +17,7 @@ describe('boosting: confirmManagerRejectIfNoPendingManager.mjs', /** @this {Moch
     'should reject confirmManager',
     async function () {
       const boosting = address(this.accounts.boosting, chainId);
-      const someAccount = this.accounts.factory;
+      const someAccount = this.accounts.factoryV2;
 
       const expectedRejectMessage = 'No pending manager';
 

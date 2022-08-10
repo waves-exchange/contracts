@@ -16,7 +16,7 @@ describe('boosting: confirmManager.mjs', /** @this {MochaSuiteModified} */() => 
   it(
     'should successfully confirmManager',
     async function () {
-      const anotherPublicKeyManager = publicKey(this.accounts.factory);
+      const anotherPublicKeyManager = publicKey(this.accounts.factoryV2);
       const boosting = address(this.accounts.boosting, chainId);
 
       const expectedPendingManagerPublicKey = null;
@@ -43,7 +43,7 @@ describe('boosting: confirmManager.mjs', /** @this {MochaSuiteModified} */() => 
           args: [],
         },
         chainId,
-      }, this.accounts.factory);
+      }, this.accounts.factoryV2);
       await api.transactions.broadcast(confirmManagerTx, {});
       const { stateChanges } = await ni.waitForTx(confirmManagerTx.id, { apiBase });
 
