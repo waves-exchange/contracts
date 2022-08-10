@@ -18,16 +18,19 @@ const seedWordsCount = 5;
 const ridePath = 'ride';
 const mockRidePath = join('test', 'boosting', 'mock');
 const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
-const factoryPath = format({ dir: mockRidePath, base: 'factory.ride' });
+const factoryV2Path = format({ dir: mockRidePath, base: 'factory_v2.ride' });
+const mathContractPath = format({ dir: mockRidePath, base: 'math_contract.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
     console.log('test preparation');
     const names = [
       'boosting',
-      'factory',
+      'factoryV2',
       'referrerAddress',
       'mathContract',
+      'emission',
+      'staking',
       'manager',
       'user1',
     ];
@@ -48,7 +51,8 @@ export const mochaHooks = {
 
     console.log('setScriptFromFile');
     await setScriptFromFile(boostingPath, this.accounts.boosting);
-    await setScriptFromFile(factoryPath, this.accounts.factory);
+    await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
+    await setScriptFromFile(mathContractPath, this.accounts.mathContract);
 
     console.log('hook execution');
     const wxIssueTx = issue({
@@ -74,7 +78,7 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTxWX, {});
     await waitForTx(massTransferTxWX.id, { apiBase });
 
-    const factoryAddressStr = address(this.accounts.factory, chainId);
+    const factoryV2AddressStr = address(this.accounts.factoryV2, chainId);
     const lockAssetIdStr = this.wxAssetId;
 
     this.minLockAmount = 500000000;
@@ -88,7 +92,7 @@ export const mochaHooks = {
       call: {
         function: 'constructor',
         args: [
-          { type: 'string', value: factoryAddressStr },
+          { type: 'string', value: factoryV2AddressStr },
           { type: 'string', value: lockAssetIdStr },
           { type: 'integer', value: this.minLockAmount },
           { type: 'integer', value: this.minDuration },
@@ -125,5 +129,78 @@ export const mochaHooks = {
     }, this.accounts.boosting);
     await api.transactions.broadcast(setManagerBoostingTx, {});
     await waitForTx(setManagerBoostingTx.id, { apiBase });
+
+    const stakingContract = address(this.accounts.staking, chainId);
+    const boostingContract = address(this.accounts.boosting, chainId);
+    const idoContract = '';
+    const teamContract = '';
+    const emissionContract = address(this.accounts.emission, chainId);
+    const restContract = '';
+    const slpipageContract = '';
+    const daoContract = '';
+    const marketingContract = '';
+    const gwxRewardsContract = mathContract;
+    const birdsContract = '';
+
+    const factoryV2Config = `%s%s%s%s%s%s%s%s%s%s%s__${stakingContract}__${boostingContract}__${idoContract}__${teamContract}__${emissionContract}__${restContract}__${slpipageContract}__${daoContract}__${marketingContract}__${gwxRewardsContract}__${birdsContract}`;
+
+    const setFactoryV2ConfigTx = data({
+      additionalFee: 4e5,
+      data: [
+        {
+          key: '%s__factoryConfig',
+          type: 'string',
+          value: factoryV2Config,
+        },
+      ],
+      chainId,
+    }, this.accounts.factoryV2);
+    await api.transactions.broadcast(setFactoryV2ConfigTx, {});
+    await waitForTx(setFactoryV2ConfigTx.id, { apiBase });
+
+    const ratePerBlock = 3805175038;
+    const setRatePerBlockTx = data({
+      additionalFee: 4e5,
+      data: [
+        {
+          key: '%s%s__ratePerBlock__current',
+          type: 'integer',
+          value: ratePerBlock,
+        },
+      ],
+      chainId,
+    }, this.accounts.emission);
+    await api.transactions.broadcast(setRatePerBlockTx, {});
+    await waitForTx(setRatePerBlockTx.id, { apiBase });
+
+    const emissionStartBlock = 1806750;
+    const setEmissionStartBlockTx = data({
+      additionalFee: 4e5,
+      data: [
+        {
+          key: '%s%s__emission__startBlock',
+          type: 'integer',
+          value: emissionStartBlock,
+        },
+      ],
+      chainId,
+    }, this.accounts.emission);
+    await api.transactions.broadcast(setEmissionStartBlockTx, {});
+    await waitForTx(setEmissionStartBlockTx.id, { apiBase });
+
+    const emissionEndBlock = 4434750;
+    const setEmissionEndBlockTx = data({
+      additionalFee: 4e5,
+      data: [
+        {
+          key: '%s%s__emission__endBlock',
+          type: 'integer',
+          value: emissionEndBlock,
+        },
+      ],
+      chainId,
+    }, this.accounts.emission);
+    await api.transactions.broadcast(setEmissionEndBlockTx, {});
+    await waitForTx(setEmissionEndBlockTx.id, { apiBase });
   },
 };
