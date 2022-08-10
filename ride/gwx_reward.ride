@@ -10,7 +10,6 @@
 # * "%s__latestPeriod": Integer
 
 let SEP = "__"
-let USERDEPTH = 26
 let SCALE = 1000
 let MULT8 = 1_0000_0000
 let zeroBigInt = 0.toBigInt()
