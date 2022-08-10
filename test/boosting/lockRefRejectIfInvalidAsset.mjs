@@ -17,12 +17,13 @@ const api = create(apiBase);
 describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteModified} */() => {
   const seed = 'waves private node seed with waves tokens';
   let boosting;
-  let manager;
   let wxAssetId;
   let invalidAssetId;
+  let user1;
+
   before(async function () {
     boosting = this.accounts.boosting;
-    manager = this.accounts.manager;
+    user1 = this.accounts.user1;
     wxAssetId = this.wxAssetId;
 
     const someIssueTx = issue({
@@ -38,7 +39,7 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
 
     const someAmount = 1e16;
     const massTransferTxWX = massTransfer({
-      transfers: [{ recipient: address(manager, chainId), amount: someAmount }],
+      transfers: [{ recipient: address(user1, chainId), amount: someAmount }],
       assetId: invalidAssetId,
       chainId,
     }, seed);
@@ -68,7 +69,7 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
           ],
         },
         chainId,
-      }, manager);
+      }, user1);
 
       await expect(
         api.transactions.broadcast(lockRefTx, {}),

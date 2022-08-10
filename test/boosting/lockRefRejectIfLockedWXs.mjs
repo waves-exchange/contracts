@@ -37,7 +37,7 @@ describe('boosting: lockRefRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModif
           ],
         },
         chainId,
-      }, this.accounts.manager);
+      }, this.accounts.user1);
 
       await api.transactions.broadcast(fisrtLockRefTx, {});
       await ni.waitForTx(fisrtLockRefTx.id, { apiBase });
@@ -98,7 +98,7 @@ describe('boosting: lockRefRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModif
           ],
         },
         chainId,
-      }, this.accounts.manager);
+      }, this.accounts.user1);
 
       await expect(
         api.transactions.broadcast(secondLockRefTx, {}),

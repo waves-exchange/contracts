@@ -37,7 +37,7 @@ describe('boosting: lockRefRejectIfAmountIsLessThenMinLockAmount.mjs', /** @this
           ],
         },
         chainId,
-      }, this.accounts.manager);
+      }, this.accounts.user1);
 
       await expect(
         api.transactions.broadcast(lockRefTx, {}),

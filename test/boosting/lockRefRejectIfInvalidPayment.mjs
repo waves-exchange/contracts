@@ -35,7 +35,7 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
           ],
         },
         chainId,
-      }, this.accounts.manager);
+      }, this.accounts.user1);
 
       await expect(
         api.transactions.broadcast(lockRefTx, {}),

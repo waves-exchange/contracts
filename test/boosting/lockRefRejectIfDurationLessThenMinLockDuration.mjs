@@ -37,7 +37,7 @@ describe('boosting: lockRefRejectIfDurationLessThenMinLockDuration.mjs', /** @th
           ],
         },
         chainId,
-      }, this.accounts.manager);
+      }, this.accounts.user1);
 
       await expect(
         api.transactions.broadcast(lockRefTx, {}),
