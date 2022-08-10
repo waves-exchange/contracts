@@ -268,48 +268,12 @@ func getUserIndexByAddress(boostingContractAddressStr: String, userAddress: Stri
 func nextPeriod() =
   getNumberByKey(keyNextPeriod())
 
-func invokeClaim(boostingContract: ByteVector, period: Int, user: Int, depth: Int, totalFromMatcher: Int, totalFromEmission: Int) = {
-  strict result = invoke(this, "claimNextBatch", [boostingContract, period, user, depth, totalFromMatcher, totalFromEmission], [])
-  match (result) {
-    case r: (Int, Int, Int) => r # period, totalFromMatcher, totalFromEmission
-    case _ => throw("Incorrect invoke result")
-  }
-}
-
-# Called internally (recursively)
-func claimInternal(boostingContract: ByteVector, currentPeriod: Int, currentUser: Int, depth: Int, userAccumulatedMatcher: Int, userAccumulatedEmission: Int) = {
-  let boostingContractAddress = Address(boostingContract)
-  let latestPeriod = getNumberByKey(keyNextProcessedPeriod())
-  # at least 1 processing should be done
-  let totalWeight = getNumberByKey(keyTotalWeightForPeriod(currentPeriod))
-  let heightForPeriod = getNumberByKey(keyHeightForPeriod(currentPeriod))
-  let userWeight = calcUserWeightForClaim(boostingContractAddress, heightForPeriod, currentPeriod, currentUser)
-  let userAmountMatcherForPeriod = fraction(getNumberByKey(keyTotalAmountForPeriod(currentPeriod)), userWeight, totalWeight)
-  let userAmountEmissionForPeriod = fraction(getNumberByKey(keyAuxEmissionRewardForPeriod(currentPeriod)), userWeight, totalWeight)
-  if (depth <= 0 || currentPeriod + 1 >= latestPeriod) then {
-    (currentPeriod + 1, userAccumulatedMatcher + userAmountMatcherForPeriod, userAccumulatedEmission + userAmountEmissionForPeriod)
-  } else { # try next period
-    invokeClaim(boostingContract, currentPeriod + 1, currentUser, depth - 1, userAccumulatedMatcher + userAmountMatcherForPeriod, userAccumulatedEmission + userAmountEmissionForPeriod)
-  }
-}
-
 func commonClaimReward(userAddress: String) = {
   let cfgArray = readConfigArrayOrFail()
   let userIdx = getUserIndexByAddress(cfgArray[IdxCfgBoostingContract], userAddress) # will throw if no such user
   let userUnclaimedOption = userIdx.keyUserUnclaimed().getInteger()
   match userUnclaimedOption {
-    case _: Unit => if (migrated) then (0, []) else {
-      let currentPeriod = getNumberByKey(keyNextUnlaimedPeriodOfUser(userIdx)) # period being currently claimed
-      let nextProcessedPeriod = getNumberByKey(keyNextProcessedPeriod())
-      if (currentPeriod >= nextProcessedPeriod) then (0, []) else
-      let boostingContract = cfgArray[IdxCfgBoostingContract].fromBase58String()
-      let (period, amountFromMatcher, amountFromEmission) = claimInternal(boostingContract, currentPeriod, userIdx, USERDEPTH, 0, 0)
-      let amount = amountFromMatcher + amountFromEmission
-      let actions = [
-        IntegerEntry(userIdx.keyNextUnlaimedPeriodOfUser(), period)
-      ]
-      (amount, actions)
-    }
+    case _: Unit => (0, [])
     case u: Int => (u, [
       IntegerEntry(userIdx.keyUserUnclaimed(), 0)
     ])
@@ -414,51 +378,6 @@ func processPendingPeriodsAndUsers() = {
   ([], this.invoke("finalizeWrapper", [maxDepth], []))
 }
 
-@Callable(i)
-func migrateHelper() = {
-  let currentUser = keyNextProcessedUserMigration.getNumberByKey()
-  let usersCount = boostingContractOrFail().getInteger(keyUsersCount()).valueOrElse(0)
-  if (migrated) then {
-    ([], false)
-  } else {
-    let userAddress = boostingContractOrFail().getStringValue(currentUser.keyNumToUserMapping())
-    let (userUnclaimed, actions) = commonClaimReward(userAddress)
-    let processingActions = if (currentUser < usersCount - 1) then {
-      [IntegerEntry(keyNextProcessedUserMigration, currentUser + 1)]
-    } else {
-      [
-        DeleteEntry(keyNextProcessedUserMigration),
-        BooleanEntry(keyMigrated, true)
-      ]
-    }
-    (
-      [
-        IntegerEntry(currentUser.keyUserUnclaimed(), userUnclaimed)
-      ] ++ processingActions,
-      true
-    )
-  }
-}
-
-@Callable(i)
-func migrateWrapper(counter: Int) = {
-  strict result = this.invoke("migrateHelper", [], []).exactAs[Boolean]
-  if (!result) then {
-    if (counter == maxDepthMigration) then "Migration is over".throw() else ([], unit)
-  } else {
-    if (counter > 0) then {
-      ([], this.invoke("migrateWrapper", [counter - 1], []))
-    } else {
-      ([], unit)
-    }
-  }
-}
-
-@Callable(i)
-func migrate() = {
-  ([], this.invoke("migrateWrapper", [maxDepthMigration], []))
-}
-
 # Deposit total WX reward for next period. Also requests 5% emission reward from emission contract
 # This total reward should be distributed
 #  between all the users according to their gWX shares (weights)
@@ -492,17 +411,6 @@ func deposit() = {
     StringEntry(keyLastPayoutInfo(), payoutInfo),
     StringEntry(keyPayoutHistoryInfo(period), payoutInfo)
   ]
-}
-
-# Called internally (recursively)
-@Callable(i)
-func claimNextBatch(boostingContract: ByteVector, currentPeriod: Int, currentUser: Int, depth: Int, totalFromMatcher: Int, totalFromEmission: Int) = {
-  if (i.caller != this) then throw("Should be called by this script only") else
-  let periodAndTotals = claimInternal(boostingContract, currentPeriod, currentUser, depth, totalFromMatcher, totalFromEmission)
-  (
-    [], # actions
-    periodAndTotals
-  )
 }
 
 # Send all WX earned to caller
@@ -561,29 +469,6 @@ func calcGwxAmountStartREADONLY(wxLockAmount: Int, lockDuration: Int, maxLockDur
   let coeffX8 = fraction(lockDuration, MULT8, maxLockDuration)
   let gWxAmountStart = fraction(wxLockAmount, coeffX8, MULT8)
   ([], [gWxAmountStart])
-}
-
-# Constructors should be called sequentially: constructor(), then constructorV2(), then constructorV3() etc
-@Callable(i)
-func constructor(wxAssetIdStr: String, matcherPacemakerAddressStr: String, boostingContractAddressStr: String, maxDepth: Int) = {
-  if (this != i.caller) then throw("not authorized") else
-
-  [StringEntry(keyConfig(), formatConfig(wxAssetIdStr, matcherPacemakerAddressStr, boostingContractAddressStr, maxDepth))]
-}
-
-@Callable(i)
-func constructorV2(factoryAddress: String) = {
-  if (this != i.caller) then throw("not authorized") else
-
-  [StringEntry(keyFactoryAddress(), factoryAddress)]
-}
-
-@Callable(i)
-func constructorV3(emissionAddress: String) = {
-  if (this != i.caller) then throw("not authorized") else
-  let initLatestPeriod = if (getInteger(this, keyLatestPeriod()).isDefined()) then [] else [IntegerEntry(keyLatestPeriod(), -1)]
-
-  initLatestPeriod :+ StringEntry(keyEmissionAddress(), emissionAddress)
 }
 
 # save starting height of reward from emission 5%
