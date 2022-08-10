@@ -28,14 +28,6 @@ let keyMaxDepth = "%s__maxDepth"
 let maxDepthDefault = 30
 let maxDepth = this.getInteger(keyMaxDepth).valueOrElse(maxDepthDefault)
 
-let keyMaxDepthMigration = "%s__maxDepthMigration"
-let maxDepthMigrationDefault = 3
-let maxDepthMigration = this.getInteger(keyMaxDepthMigration).valueOrElse(maxDepthMigrationDefault)
-
-let keyMigrated = "migrated"
-let migrated = this.getBoolean(keyMigrated).valueOrElse(false)
-let keyNextProcessedUserMigration = "nextProcessedUserMigration"
-
 # FACTORY API
 # own factory address key
 func keyFactoryAddress() = "%s%s__config__factoryAddress"
@@ -340,9 +332,7 @@ func finalizeHelper() = {
       let referralReward = userTotalAmount.fraction(referralRewardPermille, SCALE)
       referralsContractAddressOrFail.invoke("incUnclaimed", [referralProgramName, userAddress, referrerReward, referralReward], [])
     }
-    let unclaimedActions = if (migrated || userUnclaimedOption != unit) then {
-      [IntegerEntry(currentUser.keyUserUnclaimed(), userUnclaimedOption.valueOrElse(0) + userTotalAmount)]
-    } else []
+    let unclaimedActions = [IntegerEntry(currentUser.keyUserUnclaimed(), userUnclaimedOption.valueOrElse(0) + userTotalAmount)]
     let processingActions = if (currentUser < usersCount - 1) then {
       [IntegerEntry(keyNextProcessedUser(), currentUser + 1)]
     } else {
