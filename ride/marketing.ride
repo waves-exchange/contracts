@@ -79,6 +79,7 @@ func formatHistoryRecord(claimedAssetAmount: Int, claimingBlocks: Int, firstCalu
 # Keys Definition
 func keyConfig() = {"%s__config"}
 func keyTotals() = {"%s__totals"}
+let keyAmountUnclaimed = ["%s", "amountUnclaimed"].makeString(SEP)
 func keyOperationHistoryRecord(type: String, userAddress: String, txId58: String) = {
     makeString(["%s%s%s%s__history",
         type,
@@ -165,37 +166,44 @@ func constructor(claimStartBlock: Int, vestingPeriodBlocks: Int, beneficiaryAddr
 }
 
 @Callable(i)
-func claim() = {
+func claimAmount(amount: Int) = {
   let cfgArray                  = readConfigArray()
   let cfgClaimStartHeight       = cfgArray[IdxCfgClaimStartBlock].parseIntValue()
   let cfgClaimDuration          = cfgArray[IdxCfgClaimVestingPeriod].parseIntValue()
   let cfgClaimEnd               = cfgClaimStartHeight + cfgClaimDuration
-  let cfgClaimAssetId58         = cfgArray[IdxCfgClaimAssetId]
-  let cfgClaimAssetOwner        = cfgArray[IdxCfgClaimAssetOwner]
+  let cfgClaimAssetId           = cfgArray[IdxCfgClaimAssetId].fromBase58String()
+  let cfgClaimAssetOwner        = cfgArray[IdxCfgClaimAssetOwner].addressFromStringValue()
   let cfgClaimAssetTotalAmount  = cfgArray[IdxCfgClaimAssetTotalAmount].parseIntValue()
-
-  let userAddress            = i.caller
-  let userAddress58          = userAddress.toString()
 
   let origTotalsArray        = readTotalsArray()
   let totalClaimedAmount     = origTotalsArray[IdxTotalsTotalClaimedAmount].parseIntValue()
   let totalRemainingAmount   = origTotalsArray[IdxTotalsRemainingAmount].parseIntValue()
   let lastClaimedHeight      = origTotalsArray[IdxTotalsLastClaimedHeight].parseIntValue()
 
-  if (userAddress58 != cfgClaimAssetOwner) then throw("permissions denied") else
+  if (i.caller != cfgClaimAssetOwner && i.caller != this) then throw("permissions denied") else
   if (height < cfgClaimStartHeight) then throw("Wait claim start block: " + cfgClaimStartHeight.toString()) else
 
   let lastCalulationBlock = if (height > cfgClaimEnd) then cfgClaimEnd else height
   let firstCalulationBlock = if (lastClaimedHeight == 0) then cfgClaimStartHeight else lastClaimedHeight
   let claimingBlocks = lastCalulationBlock - firstCalulationBlock
 
-  let claimingAssetAmount = fraction(cfgClaimAssetTotalAmount, claimingBlocks, cfgClaimDuration)
+  let amountAvailable = fraction(cfgClaimAssetTotalAmount, claimingBlocks, cfgClaimDuration)
+  let amountUnclaimed = this.getInteger(keyAmountUnclaimed).valueOrElse(0)
+  let amountAvailableTotal = amountAvailable + amountUnclaimed
+  let amountToClaim = if (amount <= 0 || amount >= amountAvailableTotal) then amountAvailableTotal else amount
+  let amountUnclaimedNew = amountAvailableTotal - amountToClaim
 
-  [
-      ScriptTransfer(userAddress, claimingAssetAmount, cfgClaimAssetId58.fromBase58String()),
-      TotalsEntry(keyTotals(), readTotalsArray(), claimingAssetAmount, lastCalulationBlock),
-      ClaimOperationHistoryEntry(userAddress58, claimingAssetAmount, claimingBlocks, firstCalulationBlock, lastCalulationBlock, i.transactionId)
-  ]
+  ([
+    IntegerEntry(keyAmountUnclaimed, amountUnclaimedNew),
+    ScriptTransfer(cfgClaimAssetOwner, amountToClaim, cfgClaimAssetId),
+    TotalsEntry(keyTotals(), readTotalsArray(), amountToClaim, lastCalulationBlock),
+    ClaimOperationHistoryEntry(cfgClaimAssetOwner.toString(), amountToClaim, claimingBlocks, firstCalulationBlock, lastCalulationBlock, i.transactionId)
+  ], amountToClaim)
+}
+
+@Callable(i)
+func claim() = {
+  ([], this.invoke("claimAmount", [-1], []))
 }
 
 @Callable(i)
