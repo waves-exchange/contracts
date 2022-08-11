@@ -14,10 +14,10 @@ const api = create(apiBase);
 
 describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully lockRef is referrerAddress is empty',
+    'should successfully lockRef is referrer is empty',
     async function () {
       const duration = this.maxDuration - 1;
-      const referrerAddress = '';
+      const referrer = '';
       const signature = '';
       const assetAmount = this.minLockAmount;
 
@@ -30,7 +30,7 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
           function: 'lockRef',
           args: [
             { type: 'integer', value: duration },
-            { type: 'string', value: referrerAddress },
+            { type: 'string', value: referrer },
             { type: 'string', value: signature },
           ],
         },
