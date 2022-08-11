@@ -200,11 +200,13 @@ func claim() = {
 
 @Callable(i)
 func withdrawReferralReward(wxAmount: Int) = {
-  strict mustReferral = i.caller.toString() == keyReferral.getString().value() || "permission denied".throwErr()
+  let referralContractAddress = keyReferral.getString().value()
+  strict mustReferral = i.caller.toString() == referralContractAddress || "permission denied".throwErr()
 
   let wxAssetId = keyWxAssetId.getString().value().fromBase58String()
   ([
-    ScriptTransfer(i.caller, wxAmount, wxAssetId)
+    ScriptTransfer(i.caller, wxAmount, wxAssetId),
+    ClaimOperationHistoryEntry(referralContractAddress, wxAmount, 0, 0, 0, i.transactionId)
   ], unit)
 }
 
