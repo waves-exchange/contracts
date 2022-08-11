@@ -1,7 +1,7 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
-import { data, invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 
 chai.use(chaiAsPromised);
@@ -12,7 +12,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: lockRefRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: lockRefRejectIfLockedWXs.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should reject lockRef',
     async function () {
@@ -41,48 +41,6 @@ describe('boosting: lockRefRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModif
 
       await api.transactions.broadcast(fisrtLockRefTx, {});
       await ni.waitForTx(fisrtLockRefTx.id, { apiBase });
-
-      const setParamByUserNumStartTx = data({
-        additionalFee: 4e5,
-        data: [
-          {
-            key: `%s%d%s__paramByUserNum__0__start__${this.accounts.assetAmount}`,
-            type: 'integer',
-            value: 0,
-          },
-        ],
-        chainId,
-      }, this.accounts.emission);
-      await api.transactions.broadcast(setParamByUserNumStartTx, {});
-      await ni.waitForTx(setParamByUserNumStartTx.id, { apiBase });
-
-      const setParamByUserNumDurationTx = data({
-        additionalFee: 4e5,
-        data: [
-          {
-            key: `%s%d%s__paramByUserNum__0__duration__${this.accounts.assetAmount}`,
-            type: 'integer',
-            value: 0,
-          },
-        ],
-        chainId,
-      }, this.accounts.emission);
-      await api.transactions.broadcast(setParamByUserNumDurationTx, {});
-      await ni.waitForTx(setParamByUserNumDurationTx.id, { apiBase });
-
-      const setParamByUserNumAmountTx = data({
-        additionalFee: 4e5,
-        data: [
-          {
-            key: `%s%d%s__paramByUserNum__0__amount__${this.accounts.assetAmount}`,
-            type: 'integer',
-            value: assetAmount,
-          },
-        ],
-        chainId,
-      }, this.accounts.emission);
-      await api.transactions.broadcast(setParamByUserNumAmountTx, {});
-      await ni.waitForTx(setParamByUserNumAmountTx.id, { apiBase });
 
       const secondLockRefTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
