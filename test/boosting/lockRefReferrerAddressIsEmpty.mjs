@@ -54,6 +54,7 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
       const expectedLockStart = height;
       const expectedUserBoostEmissionLastIntegralKEY = 0;
       const expectedTotalCachedGwxKEY = 499999760;
+      const expectedInvokesCount = 2;
 
       expect(stateChanges.data).to.eql([{
         key: '%s__nextUserNum',
@@ -128,6 +129,34 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
         type: 'integer',
         value: expectedTotalCachedGwxKEY,
       }]);
+
+      const { invokes } = stateChanges;
+      expect(invokes.length).to.eql(expectedInvokesCount);
+
+      expect(invokes[0].dApp).to.eql(address(this.accounts.mathContract, chainId));
+      expect(invokes[0].call.function).to.eql('calcGwxParamsREADONLY');
+      expect(invokes[0].call.args).to.eql([
+        {
+          type: 'Int',
+          value: expectedTotalCachedGwxKEY,
+        }, {
+          type: 'Int',
+          value: height,
+        }, {
+          type: 'Int',
+          value: duration,
+        }]);
+
+      expect(invokes[1].dApp).to.eql(address(this.accounts.mathContract, chainId));
+      expect(invokes[1].call.function).to.eql('updateReferralActivity');
+      expect(invokes[1].call.args).to.eql([
+        {
+          type: 'String',
+          value: address(this.accounts.user1, chainId),
+        }, {
+          type: 'Int',
+          value: expectedTotalCachedGwxKEY,
+        }]);
     },
   );
 });
