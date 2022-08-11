@@ -142,6 +142,18 @@ export const mochaHooks = {
     await api.transactions.broadcast(setManagerBoostingTx, {});
     await waitForTx(setManagerBoostingTx.id, { apiBase });
 
+    const setReferralsContractAddressTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s%s__config__referralsContractAddress',
+        type: 'string',
+        value: address(this.accounts.referrer, chainId),
+      }],
+      chainId,
+    }, this.accounts.boosting);
+    await api.transactions.broadcast(setReferralsContractAddressTx, {});
+    await waitForTx(setReferralsContractAddressTx.id, { apiBase });
+
     const stakingContract = address(this.accounts.staking, chainId);
     const boostingContract = address(this.accounts.boosting, chainId);
     const idoContract = '';
