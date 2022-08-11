@@ -17,7 +17,7 @@ describe('boosting: lockRefRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModif
     'should reject lockRef',
     async function () {
       const duration = this.maxDuration - 1;
-      const referrerAddress = '';
+      const referrer = '';
       const signature = '';
       const assetAmount = this.minLockAmount;
 
@@ -32,7 +32,7 @@ describe('boosting: lockRefRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModif
           function: 'lockRef',
           args: [
             { type: 'integer', value: duration },
-            { type: 'string', value: referrerAddress },
+            { type: 'string', value: referrer },
             { type: 'string', value: signature },
           ],
         },
@@ -93,7 +93,7 @@ describe('boosting: lockRefRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModif
           function: 'lockRef',
           args: [
             { type: 'integer', value: duration },
-            { type: 'string', value: referrerAddress },
+            { type: 'string', value: referrer },
             { type: 'string', value: signature },
           ],
         },

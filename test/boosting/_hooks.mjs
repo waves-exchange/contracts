@@ -23,11 +23,11 @@ const mathContractPath = format({ dir: mockRidePath, base: 'math_contract.ride' 
 
 export const mochaHooks = {
   async beforeAll() {
-    // console.log('test preparation');
+    console.log('test preparation');
     const names = [
       'boosting',
       'factoryV2',
-      'referrerAddress',
+      'referrer',
       'mathContract',
       'emission',
       'staking',
@@ -44,17 +44,17 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
 
-    // console.log('account addresses:');
-    // for (const [key, value] of Object.entries(this.accounts)) {
-    //   console.log('  ', key, address(value, chainId));
-    // }
+    console.log('account addresses:');
+    for (const [key, value] of Object.entries(this.accounts)) {
+      console.log('  ', key, address(value, chainId));
+    }
 
-    // console.log('setScriptFromFile');
+    console.log('setScriptFromFile');
     await setScriptFromFile(boostingPath, this.accounts.boosting);
     await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
     await setScriptFromFile(mathContractPath, this.accounts.mathContract);
 
-    // console.log('hook execution');
+    console.log('hook execution');
     const wxIssueTx = issue({
       name: 'WX Token',
       description: '',
@@ -65,7 +65,7 @@ export const mochaHooks = {
     await api.transactions.broadcast(wxIssueTx, {});
     await waitForTx(wxIssueTx.id, { apiBase });
     this.wxAssetId = wxIssueTx.id;
-    // console.log('wxAssetId', this.wxAssetId);
+    console.log('wxAssetId', this.wxAssetId);
 
     const wxAmount = 1e16;
     const massTransferTxWX = massTransfer({
@@ -117,6 +117,18 @@ export const mochaHooks = {
     }, this.accounts.boosting);
     await api.transactions.broadcast(setConfigTx, {});
     await waitForTx(setConfigTx.id, { apiBase });
+
+    const setReferralsContractAddressTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s%s__config__referralsContractAddress',
+        type: 'string',
+        value: address(this.accounts.referrer, chainId),
+      }],
+      chainId,
+    }, this.accounts.boosting);
+    await api.transactions.broadcast(setReferralsContractAddressTx, {});
+    await waitForTx(setReferralsContractAddressTx.id, { apiBase });
 
     const setManagerBoostingTx = data({
       additionalFee: 4e5,

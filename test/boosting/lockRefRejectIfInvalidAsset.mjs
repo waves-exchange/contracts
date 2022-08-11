@@ -50,7 +50,7 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
     'should reject lockRef',
     async () => {
       const duration = 0;
-      const referrerAddress = '';
+      const referrer = '';
       const signature = '';
 
       const expectedRejectMessage = `invalid asset is in payment - ${wxAssetId} is expected`;
@@ -64,7 +64,7 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
           function: 'lockRef',
           args: [
             { type: 'integer', value: duration },
-            { type: 'string', value: referrerAddress },
+            { type: 'string', value: referrer },
             { type: 'string', value: signature },
           ],
         },

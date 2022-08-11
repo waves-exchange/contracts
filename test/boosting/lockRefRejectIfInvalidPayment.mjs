@@ -18,7 +18,7 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
     async function () {
       const boosting = address(this.accounts.boosting, chainId);
       const duration = 0;
-      const referrerAddress = '';
+      const referrer = '';
       const signature = '';
 
       const expectedRejectMessage = 'invalid payment - exact one payment must be attached';
@@ -30,7 +30,7 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
           function: 'lockRef',
           args: [
             { type: 'integer', value: duration },
-            { type: 'string', value: referrerAddress },
+            { type: 'string', value: referrer },
             { type: 'string', value: signature },
           ],
         },
