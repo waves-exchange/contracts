@@ -1,7 +1,7 @@
 # Waves Exchange contracts
 
-`dev` branch deployed to `testnet`
-
 `main` branch deployed to `mainnet`
+
+`dev` branch deployed to `testnet`
 
 See [Wiki](https://github.com/waves-exchange/contracts/wiki) for details.
