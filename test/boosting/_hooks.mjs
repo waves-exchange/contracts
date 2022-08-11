@@ -20,6 +20,7 @@ const mockRidePath = join('test', 'boosting', 'mock');
 const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
 const factoryV2Path = format({ dir: mockRidePath, base: 'factory_v2.ride' });
 const mathContractPath = format({ dir: mockRidePath, base: 'math_contract.ride' });
+const referralProgramPath = format({ dir: mockRidePath, base: 'refferal.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -27,6 +28,7 @@ export const mochaHooks = {
     const names = [
       'boosting',
       'factoryV2',
+      'referralProgram',
       'referrer',
       'mathContract',
       'emission',
@@ -53,6 +55,7 @@ export const mochaHooks = {
     await setScriptFromFile(boostingPath, this.accounts.boosting);
     await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
     await setScriptFromFile(mathContractPath, this.accounts.mathContract);
+    await setScriptFromFile(referralProgramPath, this.accounts.referralProgram);
 
     console.log('hook execution');
     const wxIssueTx = issue({
@@ -123,7 +126,7 @@ export const mochaHooks = {
       data: [{
         key: '%s%s__config__referralsContractAddress',
         type: 'string',
-        value: address(this.accounts.referrer, chainId),
+        value: address(this.accounts.referralProgram, chainId),
       }],
       chainId,
     }, this.accounts.boosting);
@@ -141,18 +144,6 @@ export const mochaHooks = {
     }, this.accounts.boosting);
     await api.transactions.broadcast(setManagerBoostingTx, {});
     await waitForTx(setManagerBoostingTx.id, { apiBase });
-
-    const setReferralsContractAddressTx = data({
-      additionalFee: 4e5,
-      data: [{
-        key: '%s%s__config__referralsContractAddress',
-        type: 'string',
-        value: address(this.accounts.referrer, chainId),
-      }],
-      chainId,
-    }, this.accounts.boosting);
-    await api.transactions.broadcast(setReferralsContractAddressTx, {});
-    await waitForTx(setReferralsContractAddressTx.id, { apiBase });
 
     const stakingContract = address(this.accounts.staking, chainId);
     const boostingContract = address(this.accounts.boosting, chainId);
