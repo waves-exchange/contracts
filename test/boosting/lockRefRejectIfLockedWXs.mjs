@@ -1,7 +1,7 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
-import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import { address, publicKey } from '@waves/ts-lib-crypto';
+import { data, invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 
 chai.use(chaiAsPromised);
@@ -20,29 +20,26 @@ describe('boosting: lockRefRejectIfLockedWXs.mjs', /** @this {MochaSuiteModified
       const referrer = '';
       const signature = '';
       const assetAmount = this.minLockAmount;
+      const paramByUserNum = 1;
 
-      const expectedRejectMessage = 'there is an active lock - consider to use increaseLock';
+      const expectedRejectMessage = 'there are locked WXs - consider to use increaseLock %s%d%s__paramByUserNum__0__amount';
 
-      const fisrtLockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
-        payment: [
-          { assetId: this.wxAssetId, amount: assetAmount },
+      const setParamByUserNumStartTx = data({
+        additionalFee: 4e5,
+        senderPublicKey: publicKey(this.accounts.boosting),
+        data: [
+          {
+            key: '%s%d%s__paramByUserNum__0__amount',
+            type: 'integer',
+            value: paramByUserNum,
+          },
         ],
-        call: {
-          function: 'lockRef',
-          args: [
-            { type: 'integer', value: duration },
-            { type: 'string', value: referrer },
-            { type: 'string', value: signature },
-          ],
-        },
         chainId,
-      }, this.accounts.user1);
+      }, this.accounts.manager);
+      await api.transactions.broadcast(setParamByUserNumStartTx, {});
+      await ni.waitForTx(setParamByUserNumStartTx.id, { apiBase });
 
-      await api.transactions.broadcast(fisrtLockRefTx, {});
-      await ni.waitForTx(fisrtLockRefTx.id, { apiBase });
-
-      const secondLockRefTx = invokeScript({
+      const lockRefTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
@@ -59,7 +56,7 @@ describe('boosting: lockRefRejectIfLockedWXs.mjs', /** @this {MochaSuiteModified
       }, this.accounts.user1);
 
       await expect(
-        api.transactions.broadcast(secondLockRefTx, {}),
+        api.transactions.broadcast(lockRefTx, {}),
       ).to.be.rejectedWith(
         `Error while executing account-script: ${expectedRejectMessage}`,
       );
