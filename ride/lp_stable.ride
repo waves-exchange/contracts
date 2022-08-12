@@ -68,6 +68,7 @@ let idxFactSlippCntr     = 7
 let idxFactGwxRewCntr    = 10
 
 let delay = "%s__delay"
+let feePermilleDefault = 10
 #-------------------------
 # WX COMMON LIBRARY
 #-------------------------
@@ -93,6 +94,9 @@ func keyAmountAsset() = {"%s__amountAsset"}
 func keyPriceAsset() = {"%s__priceAsset"}
 func keyAmplificator() = {"%s__amp"}
 func keyAddonAddress() = "%s__addonAddr"
+let keyFeePermille = "%s__feePermille"
+
+let feePermille = this.getInteger(keyFeePermille).valueOrElse(feePermilleDefault)
 
 # lastGetOneTknCall
 func lgotc(caller: String) = {makeString(["%s%s__lastGetOneTknCall", caller], SEP)}
