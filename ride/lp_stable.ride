@@ -98,11 +98,6 @@ let keyFeePermille = "%s__feePermille"
 
 let feePermille = this.getInteger(keyFeePermille).valueOrElse(feePermilleDefault)
 
-# lastGetOneTknCall
-func lgotc(caller: String) = {makeString(["%s%s__lastGetOneTknCall", caller], SEP)}
-# lastSetOneTknCall
-func lsotc(caller: String) = {makeString(["%s%s__lastPutOneTknCall", caller], SEP)}
-
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
@@ -684,12 +679,6 @@ func putOneTkn(amountAssetPart: Int, priceAssetPart: Int, outLp: Int, slippage: 
     let addon       = this.getString(keyAddonAddress()).valueOrElse("")
     let userAddress = if(addon == i.caller.toString()) then i.originCaller else i.caller
 
-    let addonContract = addressFromString(
-      keyAddonAddress().getString().valueOrErrorMessage("no addons")
-    ).valueOrErrorMessage("addon address in not valid")
-
-    strict check = addonContract.reentrantInvoke("ensureCanPutOneTkn", [userAddress.toString()], []);
-
     if(slippage <= 0 || amountAssetPart<=0 || priceAssetPart<=0 || outLp <= 0) then throwErr("Wrong params") else
     if (i.payments.size() != 1) then throwErr("1 payment expected") else
 
@@ -841,12 +830,6 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
   let txId58          = i.transactionId.toBase58String()
   let paymentAssetId  = payment.assetId.value()
   let paymentAmount   = payment.amount
-
-  let addonContract = addressFromString(
-    keyAddonAddress().getString().valueOrErrorMessage("no addons")
-  ).valueOrErrorMessage("addon address in not valid")
-
-  strict check = addonContract.reentrantInvoke("ensureCanGetOneTkn", [userAddress.toString()], []);
 
   if(paymentAmount < 10_00_000_000) then throwErr("Min payment 10 LP") else
 
