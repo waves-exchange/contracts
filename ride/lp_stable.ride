@@ -554,6 +554,11 @@ func commonPut(
   r
 }
 
+func takeFee(amount: Int) = {
+  let fee = fraction(amount, feePermille, thousand)
+  (amount - fee, fee)
+}
+
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
   case s: String => s.fromBase58String()
   case _: Unit => unit
@@ -687,8 +692,7 @@ func putOneTkn(amountAssetPart: Int, priceAssetPart: Int, outLp: Int, slippage: 
     let payment         = i.payments[0].value()
     let paymentAssetId  = payment.assetId.value().toBase58String()
     let paymentAmountRaw = payment.amount
-    let feeAmount = fraction(paymentAmountRaw, feePermille, thousand)
-    let paymentAmount = paymentAmountRaw - feeAmount
+    let (paymentAmount, feeAmount) = paymentAmountRaw.takeFee()
     if (paymentAmount < amountAssetPart || paymentAmount < priceAssetPart || paymentAmount < 10_000_000) then {
       throwErr("wrong payment amount") 
     } else
@@ -885,8 +889,7 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
 
   let (outAm, outPr)  = if(outAssetId == amountId) then (finalRes._2.toInt(), 0) else (0, finalRes._2.toInt())
   let totalAmountRaw = outAm + outPr
-  let feeAmount = fraction(totalAmountRaw, feePermille, thousand)
-  let totalAmount = totalAmountRaw - feeAmount
+  let (totalAmount, feeAmount) = totalAmountRaw.takeFee()
 
   let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
 
