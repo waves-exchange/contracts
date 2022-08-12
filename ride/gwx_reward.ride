@@ -2,44 +2,76 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-let revisionNum = ""
+# Required state entries:
+# * "%s__config": String ("%s%s%s__<wxAssetIdStr>__<matcherPacemakerAddressStr>__<boostingContractAddressStr>")
+# * "%s%s__config__factoryAddress": String
+# * "%s%s__config__emissionAddress": String
+# * "%s%s__config__referralsContractAddress": String
+# * "%s__latestPeriod": Integer
+
 let SEP = "__"
-let MAXDEPTH = 17 # 17 * 6 = 112 users
-let USERDEPTH = 26
 let SCALE = 1000
 let MULT8 = 1_0000_0000
 let zeroBigInt = 0.toBigInt()
+let processingStageTotal = 0
+let processingStageShares = 1
 
-func getNumberByKey(key: String) = getInteger(this, key).valueOrElse(0)
-
-func getNumberOrFail(key: String) = getInteger(this, key)
-  .valueOrErrorMessage("mandatory this." + key + " is not defined")
-
-func getStringByKey(key: String) = getString(this, key).valueOrElse("")
-
-func getStringOrFail(key: String) =
-  getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+func getNumberByKey(key: String) = this.getInteger(key).valueOrElse(0)
+func getNumberOrFail(key: String) = this.getInteger(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+func getStringByKey(key: String) = this.getString(key).valueOrElse("")
+func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
 
 func abs(val: BigInt) = if (val < zeroBigInt) then -val else val
 
+let keyMaxDepth = "%s__maxDepth"
+let maxDepthDefault = 30
+let maxDepth = this.getInteger(keyMaxDepth).valueOrElse(maxDepthDefault)
+
 # FACTORY API
 # own factory address key
-func keyFactoryAddress()  = "%s%s__config__factoryAddress"
+func keyFactoryAddress() = "%s%s__config__factoryAddress"
 
 # GLOBAL VARIABLES
-# CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
 let factoryAddressStr = getStringOrFail(keyFactoryAddress())
-let factoryContract   = factoryAddressStr.addressFromStringValue()
-
+let factoryContract = factoryAddressStr.addressFromStringValue()
 
 # EMISSION API
 # own emission address key
 func keyEmissionAddress() = "%s%s__config__emissionAddress"
 
+# Boosting
+func keyNumToUserMapping(num: Int) = ["%s%s%s", "mapping", "num2user", num.toString()].makeString(SEP)
+
+# Referrals
+let keyReferralProgramName = ["%s%s", "referral", "programName"].makeString(SEP)
+let referralProgramNameDefault = "wxlock"
+let referralProgramName = this.getString(keyReferralProgramName).valueOrElse(referralProgramNameDefault)
+
+let keyReferralMinGWxAmount = ["%s%s", "referral", "minGWxAmount"].makeString(SEP)
+let referralMinGWxAmountDefault = 500 * MULT8
+let referralMinGWxAmount = this.getInteger(keyReferralMinGWxAmount).valueOrElse(referralMinGWxAmountDefault)
+
+let keyReferrerRewardPermille = ["%s%s", "referral", "referrerRewardPermille"].makeString(SEP)
+# 50‰ = 5%
+let referrerRewardPermilleDefault = 50
+let referrerRewardPermille = this.getInteger(keyReferrerRewardPermille).valueOrElse(referrerRewardPermilleDefault)
+
+let keyReferralRewardPermille = ["%s%s", "referral", "referralRewardPermille"].makeString(SEP)
+# 50‰ = 5%
+let referralRewardPermilleDefault = 50
+let referralRewardPermille = this.getInteger(keyReferralRewardPermille).valueOrElse(referralRewardPermilleDefault)
+
+func keyReferrer(referralAddress: String) = ["%s%s%s", "referrer", referralProgramName, referralAddress].makeString(SEP)
+
+func keyUnclaimedReferral(
+  programName: String,
+  claimerAddress: String
+) = makeString(["%s%s%s%s", "unclaimedReferral", programName, claimerAddress], SEP)
+
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
 let emissionAddressStr = getStringOrFail(keyEmissionAddress())
-let emissionContract   = emissionAddressStr.addressFromStringValue()
+let emissionContract = emissionAddressStr.addressFromStringValue()
 
 
 # ***********************
@@ -53,8 +85,7 @@ let IdxCfgMaxDepth            = 4
 
 func keyConfig() = "%s__config"
 
-func readConfigArrayOrFail() =
-  getStringOrFail(keyConfig()).split(SEP)
+func readConfigArrayOrFail() = getStringOrFail(keyConfig()).split(SEP)
 
 func formatConfig(wxAssetIdStr: String, matcherPacemakerAddressStr: String, boostingContractAddressStr: String, maxDepth: Int) = {
   makeString([
@@ -64,6 +95,11 @@ func formatConfig(wxAssetIdStr: String, matcherPacemakerAddressStr: String, boos
       boostingContractAddressStr,  # 3
       maxDepth.toString()          # 4
     ], SEP)
+}
+
+func boostingContractOrFail() = {
+  let cfgArray = readConfigArrayOrFail()
+  cfgArray[IdxCfgBoostingContract].addressFromString().valueOrErrorMessage("boosting contract address is not defined")
 }
 
 # ***********************
@@ -90,8 +126,14 @@ func keyLatestPeriod() = "%s__latestPeriod"
 # period to place incoming payment next time (incremented by deposit() callable)
 func keyNextPeriod() = "%s__nextPeriod"
 
+# stage of processing 0|Unit - calculate total weight, 1 - calculate shares
+func keyProcessingStage() = "%s__processingStage"
+
 # period to be processed next time (incomplete)
 func keyNextProcessedPeriod() = "%s__nextProcessedPeriod"
+
+func keyUserUnclaimed(userIndex: Int) =
+  ["%s%d", "userUnclaimed", userIndex.toString()].makeString(SEP)
 
 # next (unclaimed yet) period for user
 func keyNextUnlaimedPeriodOfUser(userIndex: Int) =
@@ -137,16 +179,16 @@ func keyUserBValueForPeriod(period: Int, userIndex: Int) =
 func keyUserWeightForPeriod(period: Int, userIndex: Int) =
   makeString(["%s%d%s%d__paramByPeriod", userIndex.toString(), "weight", period.toString()], SEP)
 
-func HistoryEntry(type: String, user: String, amountFromMatcher: Int, amountFromEmission: Int, currentPeriod: Int, latestPeriod: Int, i: Invocation) = {
+func keyReferralsContractAddress()  = ["%s%s", "config", "referralsContractAddress"].makeString(SEP)
+let referralsContractAddressOrFail = keyReferralsContractAddress().getStringOrFail().addressFromStringValue()
+
+func HistoryEntry(type: String, user: String, amount: Int, i: Invocation) = {
   let historyKEY = makeString(["%s%s%s%s__history", type, user, i.transactionId.toBase58String()], SEP)
   let historyDATA = makeString([
         "%d%d%d%d%d%d",
         lastBlock.height.toString(),
         lastBlock.timestamp.toString(),
-        amountFromMatcher.toString(),
-        amountFromEmission.toString(),
-        currentPeriod.toString(),
-        latestPeriod.toString()],
+        amount.toString()],
     SEP)
   StringEntry(historyKEY, historyDATA)
 }
@@ -217,134 +259,112 @@ func getUserIndexByAddress(boostingContractAddressStr: String, userAddress: Stri
 func nextPeriod() =
   getNumberByKey(keyNextPeriod())
 
-
-func invokeProcess(boostingContract: ByteVector, period: Int, user: Int, depth: Int, weight: Int) = {
-  strict result = invoke(this, "processNextBatch", [boostingContract, period, user, depth, weight], [])
-  match (result) {
-    case r: (Int, Int, Int) => r # period, user, weight
-    case _ => throw("Incorrect invoke result")
-  }
-}
-
-# process next batch of up to 6 users starting from currentPeriod and currentUser (inclusive)
-# return: ([IntegerEntry(totalWeightKey, totalWeight)], nextProcessedPeriod, nextProcessedUser, totalWeight)
-func processNextBatchInternal(boostingContract: ByteVector, currentPeriod: Int, currentUser: Int, depth: Int, totalWeight: Int) = {
-  let boostingContractAddress = Address(boostingContract)
-  let latestPeriod = getNumberByKey(keyLatestPeriod())
-  let usersCount = getInteger(boostingContractAddress, keyUsersCount()).valueOrElse(0)
-  # at least 1 processing should be done
-  let totalWeightKey = keyTotalWeightForPeriod(currentPeriod)
-  let heightForPeriod = getNumberByKey(keyHeightForPeriod(currentPeriod))
-  if (depth > 0 && currentPeriod <= latestPeriod) then {
-    let t0 = calcUserWeight(boostingContractAddress, heightForPeriod, currentPeriod, currentUser)
-    let weight0 = totalWeight + t0._1
-    if (currentUser + 1 < usersCount) then {
-      let t1 = calcUserWeight(boostingContractAddress, heightForPeriod, currentPeriod, currentUser + 1)
-      let weight1 = weight0 + t1._1
-      if (currentUser + 2 < usersCount) then {
-        let t2 = calcUserWeight(boostingContractAddress, heightForPeriod, currentPeriod, currentUser + 2)
-        let weight2 = weight1 + t2._1
-        if (currentUser + 3 < usersCount) then {
-          let t3 = calcUserWeight(boostingContractAddress, heightForPeriod, currentPeriod, currentUser + 3)
-          let weight3 = weight2 + t3._1
-          if (currentUser + 4 < usersCount) then {
-            let t4 = calcUserWeight(boostingContractAddress, heightForPeriod, currentPeriod, currentUser + 4)
-            let weight4 = weight3 + t4._1
-            if (currentUser + 5 < usersCount) then {
-              let t5 = calcUserWeight(boostingContractAddress, heightForPeriod, currentPeriod, currentUser + 5)
-              let weight5 = weight4 + t5._1
-              if (currentUser + 6 < usersCount) then { # more than 6 users left in the current period
-                let r5 = invokeProcess(boostingContract, currentPeriod, currentUser + 6, depth - 1, weight5)
-                (t0._2 ++ t1._2 ++ t2._2 ++ t3._2 ++ t4._2 ++ t5._2, r5._1, r5._2, r5._3)
-              } else { # exactly 6 users left in the current period
-                ([IntegerEntry(totalWeightKey, weight5)] ++ t0._2 ++ t1._2 ++ t2._2 ++ t3._2 ++ t4._2 ++ t5._2, currentPeriod + 1, 0, 0)
-              }
-            } else { # exactly 5 users left in the current period
-              ([IntegerEntry(totalWeightKey, weight4)] ++ t0._2 ++ t1._2 ++ t2._2 ++ t3._2 ++ t4._2, currentPeriod + 1, 0, 0)
-            }
-          } else { # exactly 4 users left in the current period
-            ([IntegerEntry(totalWeightKey, weight3)] ++ t0._2 ++ t1._2 ++ t2._2 ++ t3._2, currentPeriod + 1, 0, 0)
-          }
-        } else { # exactly 3 users left in the current period
-          ([IntegerEntry(totalWeightKey, weight2)] ++ t0._2 ++ t1._2 ++ t2._2, currentPeriod + 1, 0, 0)
-        }
-      } else { # exactly 2 users left in the current period
-        ([IntegerEntry(totalWeightKey, weight1)] ++ t0._2 ++ t1._2, currentPeriod + 1, 0, 0)
-      }
-    } else { # exactly 1 users left in the current period (0 users case is impossible)
-      ([IntegerEntry(totalWeightKey, weight0)] ++ t0._2, currentPeriod + 1, 0, 0)
-    }
-  } else { # depth == 0 or no more periods
-    if (currentUser == 0) then { # weight already saved at previous period
-      ([], currentPeriod, 0, 0)
-    } else {
-      ([IntegerEntry(totalWeightKey, totalWeight)], currentPeriod, currentUser, 0)
-    }
-  }
-}
-
-func invokeClaim(boostingContract: ByteVector, period: Int, user: Int, depth: Int, totalFromMatcher: Int, totalFromEmission: Int) = {
-  strict result = invoke(this, "claimNextBatch", [boostingContract, period, user, depth, totalFromMatcher, totalFromEmission], [])
-  match (result) {
-    case r: (Int, Int, Int) => r # period, totalFromMatcher, totalFromEmission
-    case _ => throw("Incorrect invoke result")
-  }
-}
-
-# Called internally (recursively)
-func claimInternal(boostingContract: ByteVector, currentPeriod: Int, currentUser: Int, depth: Int, userAccumulatedMatcher: Int, userAccumulatedEmission: Int) = {
-  let boostingContractAddress = Address(boostingContract)
-  let latestPeriod = getNumberByKey(keyNextProcessedPeriod())
-  # at least 1 processing should be done
-  let totalWeight = getNumberByKey(keyTotalWeightForPeriod(currentPeriod))
-  let heightForPeriod = getNumberByKey(keyHeightForPeriod(currentPeriod))
-  let userWeight = calcUserWeightForClaim(boostingContractAddress, heightForPeriod, currentPeriod, currentUser)
-  let userAmountMatcherForPeriod = fraction(getNumberByKey(keyTotalAmountForPeriod(currentPeriod)), userWeight, totalWeight)
-  let userAmountEmissionForPeriod = fraction(getNumberByKey(keyAuxEmissionRewardForPeriod(currentPeriod)), userWeight, totalWeight)
-  if (depth <= 0 || currentPeriod + 1 >= latestPeriod) then {
-    (currentPeriod + 1, userAccumulatedMatcher + userAmountMatcherForPeriod, userAccumulatedEmission + userAmountEmissionForPeriod)
-  } else { # try next period
-    invokeClaim(boostingContract, currentPeriod + 1, currentUser, depth - 1, userAccumulatedMatcher + userAmountMatcherForPeriod, userAccumulatedEmission + userAmountEmissionForPeriod)
-  }
-}
-
-func commonClaimReward(userAddress: String, startPeriod: Int|Unit) = {
+func commonClaimReward(userAddress: String) = {
   let cfgArray = readConfigArrayOrFail()
   let userIdx = getUserIndexByAddress(cfgArray[IdxCfgBoostingContract], userAddress) # will throw if no such user
-  let currentPeriod = if (startPeriod != unit) then startPeriod.value() else getNumberByKey(keyNextUnlaimedPeriodOfUser(userIdx)) # period being currently claimed
-  let nextProcessedPeriod = getNumberByKey(keyNextProcessedPeriod())
-  if (currentPeriod >= nextProcessedPeriod) then throw("Nothing to claim") else
-  let boostingContract = cfgArray[IdxCfgBoostingContract].fromBase58String()
-  let (period, amountFromMatcher, amountFromEmission) = claimInternal(boostingContract, currentPeriod, userIdx, USERDEPTH, 0, 0)
-  (period, amountFromMatcher, amountFromEmission, userIdx, cfgArray, nextProcessedPeriod)
+  let userUnclaimedOption = userIdx.keyUserUnclaimed().getInteger()
+  match userUnclaimedOption {
+    case _: Unit => (0, [])
+    case u: Int => (u, [
+      IntegerEntry(userIdx.keyUserUnclaimed(), 0)
+    ])
+  }
 }
 
-# Called internally (recursively)
 @Callable(i)
-func processNextBatch(boostingContract: ByteVector, currentPeriod: Int, currentUser: Int, depth: Int, totalWeight: Int) = {
-  if (i.caller != this) then throw("Should be called by this script only") else
-  let tpl = processNextBatchInternal(boostingContract, currentPeriod, currentUser, depth, totalWeight)
-  (
-    tpl._1, # actions
-    (tpl._2, tpl._3, tpl._4) # period, user, weightAccumulatedForPeriod
-  )
+func updateReferralActivity(userAddress: String, gWxAmountStart: Int) = {
+  let referrer = referralsContractAddressOrFail.getString(userAddress.keyReferrer())
+  strict activeReferralInv = if (referrer == unit) then unit else {
+    referralsContractAddressOrFail.invoke("updateReferralActivity", [referralProgramName, userAddress, gWxAmountStart >= referralMinGWxAmount], [])
+  }
+
+  (nil, unit)
 }
 
-# Called by anyone. Process finalized periods only (no more than one period per call)
+@Callable(i)
+func finalizeHelper() = {
+  let processingStage = keyProcessingStage().getInteger().valueOrElse(processingStageTotal)
+  let currentPeriod = keyNextProcessedPeriod().getNumberByKey() # period with reward being currently distributed
+  let currentUser = keyNextProcessedUser().getNumberByKey() # user to start with
+  let latestPeriod = keyLatestPeriod().getNumberByKey()
+  let usersCount = boostingContractOrFail().getInteger(keyUsersCount()).valueOrElse(0)
+  let totalWeightKey = currentPeriod.keyTotalWeightForPeriod()
+  let totalWeight = currentPeriod.keyTotalWeightForPeriod().getNumberByKey()
+  let heightForPeriod = currentPeriod.keyHeightForPeriod().getNumberByKey()
+  if (currentPeriod > latestPeriod) then {
+    # nothing to process
+    ([], false)
+  } else if (processingStage == processingStageTotal) then {
+    # calculate total weight for period
+    # process one user
+    let (userWeight, userActions) = boostingContractOrFail().calcUserWeight(heightForPeriod, currentPeriod, currentUser)
+    let totalWeightNew = totalWeight + userWeight
+    # if no users left, change processing stage to shares
+    let processingActions = if (currentUser < usersCount - 1) then {
+      [IntegerEntry(keyNextProcessedUser(), currentUser + 1)]
+    } else {
+      [
+        IntegerEntry(keyProcessingStage(), processingStageShares),
+        IntegerEntry(keyNextProcessedUser(), 0)
+      ]
+    }
+    (
+      [
+        IntegerEntry(totalWeightKey, totalWeightNew)
+      ] ++ processingActions ++ userActions,
+      true
+    )
+  } else if (processingStage == processingStageShares) then {
+    # calculate user shares for period
+    let userWeight = boostingContractOrFail().calcUserWeightForClaim(heightForPeriod, currentPeriod, currentUser)
+    let userAmountMatcherForPeriod = currentPeriod.keyTotalAmountForPeriod().getNumberByKey().fraction(userWeight, totalWeight)
+    let userAmountEmissionForPeriod = currentPeriod.keyAuxEmissionRewardForPeriod().getNumberByKey().fraction(userWeight, totalWeight)
+    let userTotalAmount = userAmountEmissionForPeriod + userAmountMatcherForPeriod
+    let userUnclaimedOption = currentUser.keyUserUnclaimed().getInteger()
+    let userAddress = boostingContractOrFail().getStringValue(currentUser.keyNumToUserMapping())
+    let referrer = referralsContractAddressOrFail.getString(userAddress.keyReferrer())
+    strict activeReferralInv = if (referrer == unit) then unit else {
+      referralsContractAddressOrFail.invoke("updateReferralActivity", [referralProgramName, userAddress, userWeight >= referralMinGWxAmount], [])
+    }
+    strict referralInv = if (referrer == unit || userWeight < referralMinGWxAmount) then unit else {
+      let referrerReward = userTotalAmount.fraction(referrerRewardPermille, SCALE)
+      let referralReward = userTotalAmount.fraction(referralRewardPermille, SCALE)
+      referralsContractAddressOrFail.invoke("incUnclaimed", [referralProgramName, userAddress, referrerReward, referralReward], [])
+    }
+    let unclaimedActions = [IntegerEntry(currentUser.keyUserUnclaimed(), userUnclaimedOption.valueOrElse(0) + userTotalAmount)]
+    let processingActions = if (currentUser < usersCount - 1) then {
+      [IntegerEntry(keyNextProcessedUser(), currentUser + 1)]
+    } else {
+      [
+        IntegerEntry(keyNextProcessedPeriod(), currentPeriod + 1),
+        IntegerEntry(keyNextProcessedUser(), 0),
+        DeleteEntry(keyProcessingStage())
+      ]
+    }
+    (
+      unclaimedActions ++ processingActions,
+      true
+    )
+  } else "invalid processing stage".throw()
+}
+
+@Callable(i)
+func finalizeWrapper(counter: Int) = {
+  strict result = this.invoke("finalizeHelper", [], []).exactAs[Boolean]
+  if (!result) then {
+    if (counter == maxDepth) then "Nothing to process".throw() else ([], unit)
+  } else {
+    if (counter > 0) then {
+      ([], this.invoke("finalizeWrapper", [counter - 1], []))
+    } else {
+      ([], unit)
+    }
+  }
+}
+
 @Callable(i)
 func processPendingPeriodsAndUsers() = {
-  let currentPeriod = getNumberByKey(keyNextProcessedPeriod()) # period with reward being currently distributed
-  if (currentPeriod > getNumberByKey(keyLatestPeriod())) then throw("Nothing to process") else
-  let cfgArray = readConfigArrayOrFail()
-  let depth = cfgArray[IdxCfgMaxDepth].parseIntValue()
-  if (depth > MAXDEPTH) then throw("Depth exceeds MAXDEPTH") else
-  let boostingContract = cfgArray[IdxCfgBoostingContract].fromBase58String()
-  let currentUser = getNumberByKey(keyNextProcessedUser()) # user to start with
-  let totalWeight = getNumberByKey(keyTotalWeightForPeriod(currentPeriod))
-  let r = processNextBatchInternal(boostingContract, currentPeriod, currentUser, depth, totalWeight)
-  r._1 # actions to execute
-    :+ IntegerEntry(keyNextProcessedPeriod(), r._2) # period
-    :+ IntegerEntry(keyNextProcessedUser(), r._3) # user
+  ([], this.invoke("finalizeWrapper", [maxDepth], []))
 }
 
 # Deposit total WX reward for next period. Also requests 5% emission reward from emission contract
@@ -382,58 +402,32 @@ func deposit() = {
   ]
 }
 
-# Called internally (recursively)
-@Callable(i)
-func claimNextBatch(boostingContract: ByteVector, currentPeriod: Int, currentUser: Int, depth: Int, totalFromMatcher: Int, totalFromEmission: Int) = {
-  if (i.caller != this) then throw("Should be called by this script only") else
-  let periodAndTotals = claimInternal(boostingContract, currentPeriod, currentUser, depth, totalFromMatcher, totalFromEmission)
-  (
-    [], # actions
-    periodAndTotals
-  )
-}
-
 # Send all WX earned to caller
 # called by user
 @Callable(i)
 func claimReward() = {
+  let cfgArray = readConfigArrayOrFail()
   let address = i.caller.toString()
-  let (period, amountFromMatcher, amountFromEmission, userIdx, cfgArray, nextProcessedPeriod) = commonClaimReward(address, unit)
+  let (amount, actions) = commonClaimReward(address)
+  strict checkAmount = amount > 0 || "Nothing to claim".throw()
+  # remove if unused
+  let amountFromEmission = 0
+  let claimedReferral = referralsContractAddressOrFail.invoke("claim", [referralProgramName], []).exactAs[Int]
+  let totalAmount = amount + claimedReferral
   ([
-    IntegerEntry(keyNextUnlaimedPeriodOfUser(userIdx), period),
-    ScriptTransfer(i.caller, amountFromMatcher + amountFromEmission, cfgArray[IdxCfgAssetId].fromBase58String()),
-    HistoryEntry("claim", address, amountFromMatcher, amountFromEmission, period, nextProcessedPeriod, i)
-  ], [amountFromMatcher, amountFromEmission])
+    ScriptTransfer(i.caller, totalAmount, cfgArray[IdxCfgAssetId].fromBase58String()),
+    HistoryEntry("claim", address, amount, i)
+  ] ++ actions, [totalAmount, amountFromEmission])
 }
 
 # returns total claimable reward by user address
 @Callable(i)
 func claimRewardREADONLY(address: String) = {
-  let claimResults = commonClaimReward(address, unit)
-  let amount = claimResults._2 + claimResults._3 # both from matcher and from emission
-  ([], amount)
-}
+  let (amount, actions) = commonClaimReward(address)
+  let referralUnclaimed = referralsContractAddressOrFail.getInteger(keyUnclaimedReferral(referralProgramName, address)).valueOrElse(0)
+  let totalAmount = amount + referralUnclaimed
 
-# returns total claimable reward by user address
-@Callable(i)
-func claimRewardPaginatedREADONLY(address: String, startPeriod: Int) = {
-  let (period, fromMatcher, fromEmission) = commonClaimReward(address, if (startPeriod < 0) then unit else startPeriod)
-  let amount = fromMatcher + fromEmission # both from matcher and from emission
-  ([], (amount, period))
-}
-
-# returns claimable rewards by user address (total and detailed by type)
-@Callable(i)
-func claimRewardDetailedREADONLY(address: String) = {
-  let (ignored, fromMatcher, fromEmission) = commonClaimReward(address, unit)
-  ([], makeString(["%d%d%d", toString(fromMatcher + fromEmission), fromMatcher.toString(), fromEmission.toString()], SEP))
-}
-
-# returns claimable rewards by user address (total and detailed by type)
-@Callable(i)
-func claimRewardDetailedPaginatedREADONLY(address: String, startPeriod: Int) = {
-  let (period, fromMatcher, fromEmission) = commonClaimReward(address, if (startPeriod < 0) then unit else startPeriod)
-  ([], (makeString(["%d%d%d", toString(fromMatcher + fromEmission), fromMatcher.toString(), fromEmission.toString()], SEP), period))
+  ([], totalAmount)
 }
 
 # returns -1 if there were no payments via deposit() call
@@ -464,29 +458,6 @@ func calcGwxAmountStartREADONLY(wxLockAmount: Int, lockDuration: Int, maxLockDur
   let coeffX8 = fraction(lockDuration, MULT8, maxLockDuration)
   let gWxAmountStart = fraction(wxLockAmount, coeffX8, MULT8)
   ([], [gWxAmountStart])
-}
-
-# Constructors should be called sequentially: constructor(), then constructorV2(), then constructorV3() etc
-@Callable(i)
-func constructor(wxAssetIdStr: String, matcherPacemakerAddressStr: String, boostingContractAddressStr: String, maxDepth: Int) = {
-  if (this != i.caller) then throw("not authorized") else
-
-  [StringEntry(keyConfig(), formatConfig(wxAssetIdStr, matcherPacemakerAddressStr, boostingContractAddressStr, maxDepth))]
-}
-
-@Callable(i)
-func constructorV2(factoryAddress: String) = {
-  if (this != i.caller) then throw("not authorized") else
-
-  [StringEntry(keyFactoryAddress(), factoryAddress)]
-}
-
-@Callable(i)
-func constructorV3(emissionAddress: String) = {
-  if (this != i.caller) then throw("not authorized") else
-  let initLatestPeriod = if (getInteger(this, keyLatestPeriod()).isDefined()) then [] else [IntegerEntry(keyLatestPeriod(), -1)]
-
-  initLatestPeriod :+ StringEntry(keyEmissionAddress(), emissionAddress)
 }
 
 # save starting height of reward from emission 5%
@@ -575,4 +546,3 @@ func verify() = {
   }
   sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
 }
-

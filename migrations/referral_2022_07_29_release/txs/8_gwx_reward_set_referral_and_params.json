@@ -1,0 +1,33 @@
+{
+  "type": 12,
+  "version": 2,
+  "senderPublicKey": "4Uv4fNGxmwhwHRipWuYvZe87BazB9H19nVEac9pguorM",
+  "fee": 500000,
+  "feeAssetId": null,
+  "timestamp": 1659089609492,
+  "proofs": [],
+  "chainId": 87,
+  "id": "ABPLQJeFZcgdtMgZL8ARdKxGSW78CksRQ6EfQ71SyPAn",
+  "data": [
+    {
+      "key": "%s%s__config__referralsContractAddress",
+      "type": "string",
+      "value": "3PJWdC3vouNYMUfzgcA4scj9gBbnyRqf8g3"
+    },
+    {
+      "key": "%s%s__referral__minGWxAmount",
+      "type": "integer",
+      "value": 50000000000
+    },
+    {
+      "key": "%s%s__referral__referrerRewardPermille",
+      "type": "integer",
+      "value": 50
+    },
+    {
+      "key": "%s%s__referral__referralRewardPermille",
+      "type": "integer",
+      "value": 50
+    }
+  ]
+}
