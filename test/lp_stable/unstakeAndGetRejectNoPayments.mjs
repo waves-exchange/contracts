@@ -55,7 +55,7 @@ describe('lpStable: unstakeAndGetRejectNoPayments.mjs', /** @this {MochaSuiteMod
       }, this.accounts.user1);
 
       await expect(api.transactions.broadcast(unstakeAndGet, {})).to.be.rejectedWith(
-        /^Error while executing account-script: No pmnts expd$/,
+        /^Error while executing account-script: lp_stable.ride: no payments expected$/,
       );
     },
   );
