@@ -18,7 +18,8 @@ describe('boosting: lockRefRejectIfAmountIsLessThenMinLockAmount.mjs', /** @this
     async function () {
       const duration = 0;
       const referrer = '';
-      const signature = '';
+      const signature = 'base64:';
+
       const lessThanMinLockAmount = this.minLockAmount - 1;
 
       const expectedRejectMessage = `amount is less then minLockAmount=${this.minLockAmount}`;
@@ -33,7 +34,7 @@ describe('boosting: lockRefRejectIfAmountIsLessThenMinLockAmount.mjs', /** @this
           args: [
             { type: 'integer', value: duration },
             { type: 'string', value: referrer },
-            { type: 'string', value: signature },
+            { type: 'binary', value: signature },
           ],
         },
         chainId,

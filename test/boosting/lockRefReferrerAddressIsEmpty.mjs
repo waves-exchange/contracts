@@ -18,7 +18,8 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
     async function () {
       const duration = this.maxDuration - 1;
       const referrer = '';
-      const signature = '';
+      const signature = 'base64:';
+
       const assetAmount = this.minLockAmount;
 
       const lockRefTx = invokeScript({
@@ -31,7 +32,7 @@ describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteMod
           args: [
             { type: 'integer', value: duration },
             { type: 'string', value: referrer },
-            { type: 'string', value: signature },
+            { type: 'binary', value: signature },
           ],
         },
         chainId,

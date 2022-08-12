@@ -18,7 +18,8 @@ describe('boosting: lockRefRejectIfDurationGreaterThenMaxLockDuration.mjs', /** 
     async function () {
       const durationLessThenMaxLockDuration = this.maxDuration + 1;
       const referrer = '';
-      const signature = '';
+      const signature = 'base64:';
+
       const assetAmount = this.minLockAmount;
 
       const expectedRejectMessage = `passed duration is greater then maxLockDuration=${this.maxDuration}`;
@@ -33,7 +34,7 @@ describe('boosting: lockRefRejectIfDurationGreaterThenMaxLockDuration.mjs', /** 
           args: [
             { type: 'integer', value: durationLessThenMaxLockDuration },
             { type: 'string', value: referrer },
-            { type: 'string', value: signature },
+            { type: 'binary', value: signature },
           ],
         },
         chainId,
