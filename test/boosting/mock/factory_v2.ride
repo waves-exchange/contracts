@@ -3,8 +3,3 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 
 func keyFactoryConfig() = "%s__factoryConfig"
-
-@Callable(i)
-func modifyWeight(lpAssetId: String, share: Int) = {
-  ([], unit)
-}
