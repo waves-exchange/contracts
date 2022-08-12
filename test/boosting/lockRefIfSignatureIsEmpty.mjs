@@ -19,6 +19,7 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
       const duration = this.maxDuration - 1;
       const referrer = address(this.accounts.referrer, chainId);
       const assetAmount = this.minLockAmount;
+      const signature = 'base64:';
 
       const lockRefTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
@@ -30,7 +31,7 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
           args: [
             { type: 'integer', value: duration },
             { type: 'string', value: referrer },
-            { type: 'binary', value: 'base64:' },
+            { type: 'binary', value: signature },
           ],
         },
         chainId,
