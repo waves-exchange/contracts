@@ -83,7 +83,7 @@
   tag: DAI/USDN pool addon
   mainnet-pub: 3rvLtMkgTXas3CjmLrFtHietFLFbVDb9Qa1dAKAQYYPm
 
-- file: lp_stable.ride
+- file: lp_stable_ust_usdn.ride
   tag: UST/USDN pool
   mainnet-pub: ADu1XuzisH2u8YwfLFVkHDbzwtKpT376inMjiSxYeq83
   compact: true
