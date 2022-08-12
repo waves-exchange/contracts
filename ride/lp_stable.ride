@@ -670,17 +670,20 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
     let pmt         = i.payments[0].value()
     let pmtAssetId  = pmt.assetId.value().toBase58String()
     let pmtAmt      = pmt.amount
-    if(pmtAmt < amAssetPart || pmtAmt < prAssetPart || pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
+    
+    if(pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
     let amBalance = getAccBalance(amId)
     let prBalance = getAccBalance(prId)
 
     let (amBalanceNow, prBalanceNow, virtSwapInAm, virtSwapOutPr, virtSwapInPr, virtSwapOutAm) =
-        if (pmtAssetId == amId) then {
-          (amBalance-pmtAmt, prBalance, pmtAmt - amAssetPart, prAssetPart, 0, 0)
-        } else if (pmtAssetId == prId) then {
-          (amBalance, prBalance-pmtAmt, 0, 0, pmtAmt - prAssetPart, amAssetPart)
-        } else throw("wrong pmtAssetId")
+      if (pmtAssetId == amId) then {
+        if (amBalance < pmtAmt || pmtAmt < amAssetPart) then "invalid payment amount".throw() else
+          (amBalance - pmtAmt, prBalance, pmtAmt - amAssetPart, prAssetPart, 0, 0)
+      } else if (pmtAssetId == prId) then {
+        if (prBalance < pmtAmt || pmtAmt < prAssetPart) then "invalid payment amount".throw() else
+          (amBalance, prBalance - pmtAmt, 0, 0, pmtAmt - prAssetPart, amAssetPart)
+      } else throw("wrong pmtAssetId")
 
     let D0 = gwxCntr.invoke("calcD", [
                     amBalanceNow.toString(),
