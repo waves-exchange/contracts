@@ -917,7 +917,8 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
     "burn",
     [paymentAmount],
     [AttachedPayment(paymentAssetId, paymentAmount)])
-  state
+
+  state :+ sendFeeToMatcher
 }
 
 @Callable(i)
