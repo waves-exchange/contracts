@@ -24,7 +24,6 @@ const referralProgramPath = format({ dir: mockRidePath, base: 'refferal.ride' })
 
 export const mochaHooks = {
   async beforeAll() {
-    console.log('test preparation');
     const names = [
       'boosting',
       'factoryV2',
@@ -46,18 +45,11 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
 
-    console.log('account addresses:');
-    for (const [key, value] of Object.entries(this.accounts)) {
-      console.log('  ', key, address(value, chainId));
-    }
-
-    console.log('setScriptFromFile');
     await setScriptFromFile(boostingPath, this.accounts.boosting);
     await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
     await setScriptFromFile(mathContractPath, this.accounts.mathContract);
     await setScriptFromFile(referralProgramPath, this.accounts.referralProgram);
 
-    console.log('hook execution');
     const wxIssueTx = issue({
       name: 'WX Token',
       description: '',
@@ -68,7 +60,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(wxIssueTx, {});
     await waitForTx(wxIssueTx.id, { apiBase });
     this.wxAssetId = wxIssueTx.id;
-    console.log('wxAssetId', this.wxAssetId);
 
     const wxAmount = 1e16;
     const massTransferTxWX = massTransfer({
