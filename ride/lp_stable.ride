@@ -762,9 +762,9 @@ func putOneTkn(amountAssetPart: Int, priceAssetPart: Int, outLp: Int, slippage: 
       [ScriptTransfer(i.caller, emitLpAmount, lpAssetId)]
     }  
     
-    let sendFeeToMatcher = ScriptTransfer(matcherAddress, feeAmount, paymentAssetId.fromBase58String())
+    let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(matcherAddress, feeAmount, paymentAssetId.fromBase58String())] else []
 
-    state ++ lpTrasfer :+ sendFeeToMatcher
+    state ++ lpTrasfer ++ sendFeeToMatcher
 }
 
 # Put without LP emission
@@ -892,7 +892,7 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
 
   let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
 
-  let sendFeeToMatcher = ScriptTransfer(matcherAddress, feeAmount, outAssetIdOrWaves)
+  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(matcherAddress, feeAmount, outAssetIdOrWaves)] else []
 
   strict decimals = if amountDecimals >= priceDecimals then {
     amountDecimals
@@ -920,7 +920,7 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
     [paymentAmount],
     [AttachedPayment(paymentAssetId, paymentAmount)])
 
-  state :+ sendFeeToMatcher
+  state ++ sendFeeToMatcher
 }
 
 @Callable(i)
