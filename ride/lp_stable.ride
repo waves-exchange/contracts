@@ -376,8 +376,7 @@ func estimatePutOperation(
       let slippageRealX18 = fraction(abs(currentPriceX18 - userPriceX18), scale18, currentPriceX18)
       let slippageX18 = slippageTolerance.toX18(scale8)
 
-      strict validateSlippage = (currentPriceX18 != zeroBigInt && slippageRealX18 > slippageX18) == true ||
-        throwErr("Price slippage " + slippageRealX18.toString() + " > " + slippageX18.toString())
+      if (currentPriceX18 != zeroBigInt && slippageRealX18 > slippageX18) then throwErr("Price slippage " + slippageRealX18.toString() + " > " + slippageX18.toString()) else
 
       let lpEmissionX18 = lpEmission.toX18(scale8)
       # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
