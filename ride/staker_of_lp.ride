@@ -10,13 +10,13 @@ func keyWxOutAddressTwo() = ["%s", "wxOutAddressTwo"].makeString(sep)
 
 func throwErr(msg: String) = ["staker_of_lp.ride:", msg].makeString(" ").throw()
 
-func onlyThis(i: Invocation) = {
+func mustThis(i: Invocation) = {
   i.caller == this || "permission denied".throwErr()
 }
 
 @Callable(i)
 func wxSplit() = {
-  strict checkCaller = i.onlyThis()
+  strict checkCaller = i.mustThis()
 
   let assetId = keyWxAssetId().getString().value().fromBase58String()
   let outAddressOne = keyWxOutAddressOne().getString().value().addressFromStringValue()
