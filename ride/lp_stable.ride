@@ -68,7 +68,7 @@ let idxFactStakCntr      = 1
 let idxFactSlippCntr     = 7
 let idxFactGwxRewCntr    = 10
 
-let feePermilleDefault = 10
+let feePermilleDefault = 0
 #-------------------------
 # WX COMMON LIBRARY
 #-------------------------
