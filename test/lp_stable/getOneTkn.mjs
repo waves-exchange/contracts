@@ -46,6 +46,7 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(putOneTkn, {});
+    await ni.waitForTx(putOneTkn.id, { apiBase });
 
     const getOneTkn = invokeScript({
       dApp: lpStable,
