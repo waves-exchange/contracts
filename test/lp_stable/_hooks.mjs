@@ -28,7 +28,7 @@ const gwxRewardPath = format({ dir: mockRidePath, base: 'gwx_reward.mock.ride' }
 
 export const mochaHooks = {
   async beforeAll() {
-    const names = ['lpStable', 'lpStableAddon', 'factoryV2', 'staking', 'slippage', 'gwxReward', 'manager', 'store', 'user1'];
+    const names = ['lpStable', 'lpStableAddon', 'factoryV2', 'staking', 'slippage', 'gwxReward', 'manager', 'store', 'matcher', 'user1'];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
@@ -72,7 +72,7 @@ export const mochaHooks = {
     const usdtIssueTx = issue({
       name: 'USDT',
       description: '',
-      quantity: 10e8,
+      quantity: 10e16,
       decimals: 6,
       chainId,
     }, seed);
@@ -80,7 +80,7 @@ export const mochaHooks = {
     await waitForTx(usdtIssueTx.id, { apiBase });
     this.usdtAssetId = usdtIssueTx.id;
 
-    const usdtAmount = 1e8;
+    const usdtAmount = 1e16;
     const massTransferTxUSDT = massTransfer({
       transfers: names.slice(-1).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: usdtAmount,
@@ -118,7 +118,7 @@ export const mochaHooks = {
       call: {
         function: 'constructorV2',
         args: [
-          { type: 'string', value: '' },
+          { type: 'string', value: publicKey(this.accounts.matcher) },
         ],
       },
       chainId,
