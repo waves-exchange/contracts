@@ -68,7 +68,6 @@ let idxFactStakCntr      = 1
 let idxFactSlippCntr     = 7
 let idxFactGwxRewCntr    = 10
 
-let delay = "%s__delay"
 let feePermilleDefault = 10
 #-------------------------
 # WX COMMON LIBRARY

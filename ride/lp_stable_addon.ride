@@ -12,8 +12,6 @@ let idxPrAsId                                = 5
 # data indexes from factory config
 let idxFactStakCntr      = 1
 
-let delay = "%s__delay"
-
 #-------------------------
 # KEYS ON CURRENT CONTRACT
 #-------------------------
