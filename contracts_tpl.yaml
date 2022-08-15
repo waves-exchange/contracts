@@ -396,3 +396,7 @@
   testnet-prv: $REFERRAL_PRV
   testnet-signer: $MANAGER_PRV
   mainnet-pub: AEV7LzxNAcdrjC2NC4182iTxuyTyqfCLzqJ14TXnVSCm
+
+- file: staker_of_lp.ride
+  tag: staker_of_lp
+  mainnet-pub: 39cCJMsZ2Sj9hFq5gFmzCk6gM2V6VGegBowt8qtfJhKm
