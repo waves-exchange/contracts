@@ -212,7 +212,7 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
       false
     ], [
       AttachedPayment(amountAssetId.fromBase58String(), keyAmountAssetAmount(amountAssetId, priceAssetId).getInteger().value()),
-      AttachedPayment(priceAssetId.fromBase58String(), keyPriceAssetAmount(amountAssetId, priceAssetId).getInteger().value())
+      AttachedPayment(if (priceAssetId == "WAVES") then unit else priceAssetId.fromBase58String(), keyPriceAssetAmount(amountAssetId, priceAssetId).getInteger().value())
     ]
   )
   strict afterPut = this.assetBalance(lpAssetId.fromBase58String())
