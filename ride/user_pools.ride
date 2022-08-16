@@ -8,17 +8,21 @@ let wavesAssetId = "WAVES"
 
 let invalidPriceAsset = "Invalid price asset"
 
-func throwPD() = "Permission denied".throw()
-func throwCreateNotCalled() = "Create is not called for assets pair".throw()
-func throwYouNotIssuer() = "You are not amountAsset issuer".throw()
-func throwPoolExists() = "Pool with such assets already exists".throw()
-func throwAssetNotVerified() = "Asset is not verified".throw()
-func throwInvalidPriceAsset() = invalidPriceAsset.throw()
-func throwInvalidFeeAsset() = "Invalid fee asset".throw()
-func throwInvalidAmountAsset() = "Invalid amount asset attached".throw()
-func throwInvalidStatus() = "Invalid status".throw()
-func throwCanActivateOnlyPendingPool() = "Can activate pool only in 'pending' status".throw()
-func throwFactoryReturnedNotString() = "FactoryV2 returned not string".throw()
+func throwErr(msg: String) = ["user_pools.ride:", msg].makeString(" ").throw()
+
+func throwPD() = "Permission denied".throwErr()
+func throwCreateNotCalled() = "Create is not called for assets pair".throwErr()
+func throwYouNotIssuer() = "You are not amountAsset issuer".throwErr()
+func throwPoolExists() = "Pool with such assets already exists".throwErr()
+func throwAssetNotVerified() = "Asset is not verified".throwErr()
+func throwInvalidPriceAsset() = invalidPriceAsset.throwErr()
+func throwInvalidFeeAsset() = "Invalid fee asset".throwErr()
+func throwInvalidAmountAsset() = "Invalid amount asset attached".throwErr()
+func throwInvalidStatus() = "Invalid status".throwErr()
+func throwCanActivateOnlyPendingPool() = "Can activate pool only in 'pending' status".throwErr()
+func throwFactoryReturnedNotString() = "FactoryV2 returned not string".throwErr()
+func throwInvalidPriceAssetAmount() = "invalid price asset amount".throwErr()
+func throwInvalidFee() = "invalid fee".throwErr()
 
 func keyManagerPublicKey() = ["%s", "managerPublicKey"].makeString(SEP)
 func keyPendingManagerPublicKey() = ["%s", "pendingManagerPublicKey"].makeString(SEP)
@@ -161,8 +165,8 @@ func create() = {
     isVerified(amountAssetId) || throwAssetNotVerified(),
     keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
     amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
-    priceAssetPayment.amount >= priceAssetMinAmount || "invalid price asset amount".throw(),
-    feeAssetPayment.amount == keyFeeAmount().getInteger() || "invalid fee".throw()
+    priceAssetPayment.amount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
+    feeAssetPayment.amount == keyFeeAmount().getInteger() || throwInvalidFee()
   ]
 
   [
