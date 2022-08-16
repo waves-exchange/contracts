@@ -1,0 +1,13 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+@Callable(i)
+func createPair(
+  programName: String,
+  referrerAddress: String,
+  referralAddress: String,
+  signature: ByteVector
+) = {
+  ([], unit)
+}

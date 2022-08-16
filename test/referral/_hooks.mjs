@@ -41,11 +41,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
 
-    console.log('account addresses:');
-    for (const [key, value] of Object.entries(this.accounts)) {
-      console.log('  ', key, address(value, chainId));
-    }
-
     await setScriptFromFile(referralPath, this.accounts.referral);
     await setScriptFromFile(treasuryPath, this.accounts.treasury);
 
