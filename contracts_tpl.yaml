@@ -19,7 +19,7 @@
 - file: user_pools.ride
   tag: user_pools
   testnet-prv: $USERPOOLS_PRV
-  testnet-signer: $USERPOOLS_PRV
+  testnet-signer: $MANAGER_PRV
   mainnet-pub: 52HVeUFDYgRVXrPNfdX4WinZBFdizmuf1vqmbd8ExAZS
 
 - file: voting_emission_candidate.ride
