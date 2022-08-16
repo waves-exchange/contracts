@@ -68,11 +68,15 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
   case _: Unit => unit
 }
 
-func mustManager(i: Invocation) = {
+func isManager(i: Invocation) = {
   match managerPublicKeyOrUnit() {
-    case pk: ByteVector => i.callerPublicKey == pk || throwPD()
-    case _: Unit => i.caller == this || throwPD()
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
   }
+}
+
+func mustManager(i: Invocation) = {
+  i.isManager() || throwPD()
 }
 
 func mustAdmin(i: Invocation) = {
@@ -80,8 +84,7 @@ func mustAdmin(i: Invocation) = {
   if (adminPKs.containsElement(i.callerPublicKey.toBase58String())) then {
     true
   } else {
-    strict isManager = i.mustManager()
-    true
+    i.mustManager()
   }
 }
 
@@ -133,7 +136,16 @@ func create() = {
   let (feeAssetId, feeAssetInfo) = getIdAndInfo(feeAssetPayment)
 
   let priceAssetsList = keyPriceAssetIds().getString().valueOrElse(EMPTY).split(SEP)
-  let priceAssetsIndex = priceAssetsList.indexOf(priceAssetId).valueOrErrorMessage(invalidPriceAsset)
+
+  let managerPriceAssetMinAmount = 1
+  let priceAssetMinAmount = {
+    if (i.isManager()) then {
+      managerPriceAssetMinAmount
+    } else {
+      let priceAssetsIndex = priceAssetsList.indexOf(priceAssetId).valueOrErrorMessage(invalidPriceAsset)
+      keyPriceAssetsMinAmount().getString().valueOrElse(EMPTY).split(SEP)[priceAssetsIndex].parseInt().value()
+    }
+  }
 
   let lastIndex = keyLastIndex().getInteger().valueOrElse(0)
   let curIndex = lastIndex + 1
@@ -144,7 +156,7 @@ func create() = {
     isVerified(amountAssetId) || throwAssetNotVerified(),
     keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
     amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
-    priceAssetPayment.amount >= keyPriceAssetsMinAmount().getString().valueOrElse(EMPTY).split(SEP)[priceAssetsIndex].parseInt().value() || throw(),
+    priceAssetPayment.amount >= priceAssetMinAmount || "invalid price asset amount".throw(),
     feeAssetPayment.amount == keyFeeAmount().getInteger() || throw()
   ]
 
