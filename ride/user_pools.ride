@@ -162,7 +162,7 @@ func create() = {
     keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
     amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
     priceAssetPayment.amount >= priceAssetMinAmount || "invalid price asset amount".throw(),
-    feeAssetPayment.amount == keyFeeAmount().getInteger() || throw()
+    feeAssetPayment.amount == keyFeeAmount().getInteger() || "invalid fee".throw()
   ]
 
   [
