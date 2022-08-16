@@ -4,6 +4,7 @@
 
 let SEP = "__"
 let EMPTY = ""
+let wavesAssetId = "WAVES"
 
 let invalidPriceAsset = "Invalid price asset"
 
@@ -93,9 +94,13 @@ func isVerified(assetId: String) = {
 }
 
 func getIdAndInfo(payment: AttachedPayment) = {
-  let id = payment.assetId.value()
-  let info = id.assetInfo().value()
-  (id.toBase58String(), info)
+  match payment.assetId {
+    case id: ByteVector => {
+      let info = id.assetInfo().value()
+      (id.toBase58String(), info)
+    }
+    case _: Unit => (wavesAssetId, unit)
+  }
 }
 
 func validStatus(status: String) = {
@@ -152,7 +157,7 @@ func create() = {
 
   strict checks = [
     !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
-    amountAssetInfo.issuer == i.caller || throwYouNotIssuer(),
+    i.isManager() || amountAssetInfo.value().issuer == i.caller || throwYouNotIssuer(),
     isVerified(amountAssetId) || throwAssetNotVerified(),
     keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
     amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
