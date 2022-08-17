@@ -53,8 +53,8 @@ func keyPriceAssetIds() = ["%s", "priceAssetIds"].makeString(SEP)
 
 func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage(key + " is not defined")
 func stringOptionToList(stringOrUnit: String|Unit) = match stringOrUnit {
-  case s: String => s.split(SEP)
-  case _: Unit => []
+  case s: String => if (s.size() == 0) then nil else s.split(SEP)
+  case _: Unit => nil
 }
 
 let factoryContract = keyFactoryContract().getStringOrFail().addressFromStringValue()
@@ -257,12 +257,7 @@ func confirmManager() = {
 
 @Callable(i)
 func priceAssetsREADONLY() = {
-  let priceAssets = match keyPriceAssetIds().getString() {
-    case s: String => if (s.size() == 0) then nil else s.split(SEP)
-    case _ => nil
-  }
-
-  (nil, priceAssets)
+  (nil, keyPriceAssetIds().getString().stringOptionToList())
 }
 
 @Callable(i)
