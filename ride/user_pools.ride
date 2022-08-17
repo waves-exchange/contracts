@@ -3,21 +3,25 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 
 let SEP = "__"
-let EMPTY = ""
+let wavesAssetId = "WAVES"
 
 let invalidPriceAsset = "Invalid price asset"
 
-func throwPD() = "Permission denied".throw()
-func throwCreateNotCalled() = "Create is not called for assets pair".throw()
-func throwYouNotIssuer() = "You are not amountAsset issuer".throw()
-func throwPoolExists() = "Pool with such assets already exists".throw()
-func throwAssetNotVerified() = "Asset is not verified".throw()
-func throwInvalidPriceAsset() = invalidPriceAsset.throw()
-func throwInvalidFeeAsset() = "Invalid fee asset".throw()
-func throwInvalidAmountAsset() = "Invalid amount asset attached".throw()
-func throwInvalidStatus() = "Invalid status".throw()
-func throwCanActivateOnlyPendingPool() = "Can activate pool only in 'pending' status".throw()
-func throwFactoryReturnedNotString() = "FactoryV2 returned not string".throw()
+func throwErr(msg: String) = ["user_pools.ride:", msg].makeString(" ").throw()
+
+func throwPD() = "Permission denied".throwErr()
+func throwCreateNotCalled() = "Create is not called for assets pair".throwErr()
+func throwYouNotIssuer() = "You are not amountAsset issuer".throwErr()
+func throwPoolExists() = "Pool with such assets already exists".throwErr()
+func throwAssetNotVerified() = "Asset is not verified".throwErr()
+func throwInvalidPriceAsset() = invalidPriceAsset.throwErr()
+func throwInvalidFeeAsset() = "Invalid fee asset".throwErr()
+func throwInvalidAmountAsset() = "Invalid amount asset attached".throwErr()
+func throwInvalidStatus() = "Invalid status".throwErr()
+func throwCanActivateOnlyPendingPool() = "Can activate pool only in 'pending' status".throwErr()
+func throwFactoryReturnedNotString() = "FactoryV2 returned not string".throwErr()
+func throwInvalidPriceAssetAmount() = "invalid price asset amount".throwErr()
+func throwInvalidFee() = "invalid fee".throwErr()
 
 func keyManagerPublicKey() = ["%s", "managerPublicKey"].makeString(SEP)
 func keyPendingManagerPublicKey() = ["%s", "pendingManagerPublicKey"].makeString(SEP)
@@ -48,6 +52,11 @@ func keyPriceAssetsMinAmount() = ["%s", "priceAssetsMinAmount"].makeString(SEP)
 func keyPriceAssetIds() = ["%s", "priceAssetIds"].makeString(SEP)
 
 func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage(key + " is not defined")
+func stringOptionToList(stringOrUnit: String|Unit) = match stringOrUnit {
+  case s: String => if (s.size() == 0) then nil else s.split(SEP)
+  case _: Unit => nil
+}
+
 let factoryContract = keyFactoryContract().getStringOrFail().addressFromStringValue()
 
 func isCreateCalled(amountAssetId: String, priceAssetId: String) = {
@@ -68,20 +77,23 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
   case _: Unit => unit
 }
 
-func mustManager(i: Invocation) = {
+func isManager(i: Invocation) = {
   match managerPublicKeyOrUnit() {
-    case pk: ByteVector => i.callerPublicKey == pk || throwPD()
-    case _: Unit => i.caller == this || throwPD()
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
   }
 }
 
+func mustManager(i: Invocation) = {
+  i.isManager() || throwPD()
+}
+
 func mustAdmin(i: Invocation) = {
-  let adminPKs = keyAdminPubKeys().getString().valueOrElse(EMPTY).split(SEP)
+  let adminPKs = keyAdminPubKeys().getString().stringOptionToList()
   if (adminPKs.containsElement(i.callerPublicKey.toBase58String())) then {
     true
   } else {
-    strict isManager = i.mustManager()
-    true
+    i.mustManager()
   }
 }
 
@@ -90,9 +102,13 @@ func isVerified(assetId: String) = {
 }
 
 func getIdAndInfo(payment: AttachedPayment) = {
-  let id = payment.assetId.value()
-  let info = id.assetInfo().value()
-  (id.toBase58String(), info)
+  match payment.assetId {
+    case id: ByteVector => {
+      let info = id.assetInfo().value()
+      (id.toBase58String(), info)
+    }
+    case _: Unit => (wavesAssetId, unit)
+  }
 }
 
 func validStatus(status: String) = {
@@ -128,24 +144,33 @@ func create() = {
   let priceAssetPayment = i.payments[1].value()
   let feeAssetPayment = i.payments[2].value()
 
-  let (amountAssetId, amountAssetInfo) = getIdAndInfo(amountAssetPayment)
-  let (priceAssetId, priceAssetInfo) = getIdAndInfo(priceAssetPayment)
-  let (feeAssetId, feeAssetInfo) = getIdAndInfo(feeAssetPayment)
+  let (amountAssetId, amountAssetInfo) = amountAssetPayment.getIdAndInfo()
+  let (priceAssetId, priceAssetInfo) = priceAssetPayment.getIdAndInfo()
+  let (feeAssetId, feeAssetInfo) = feeAssetPayment.getIdAndInfo()
 
-  let priceAssetsList = keyPriceAssetIds().getString().valueOrElse(EMPTY).split(SEP)
-  let priceAssetsIndex = priceAssetsList.indexOf(priceAssetId).valueOrErrorMessage(invalidPriceAsset)
+  let priceAssetsList = keyPriceAssetIds().getString().stringOptionToList()
+
+  let managerPriceAssetMinAmount = 1
+  let priceAssetMinAmount = {
+    if (i.isManager()) then {
+      managerPriceAssetMinAmount
+    } else {
+      let priceAssetsIndex = priceAssetsList.indexOf(priceAssetId).valueOrErrorMessage(invalidPriceAsset)
+      keyPriceAssetsMinAmount().getString().stringOptionToList()[priceAssetsIndex].parseInt().value()
+    }
+  }
 
   let lastIndex = keyLastIndex().getInteger().valueOrElse(0)
   let curIndex = lastIndex + 1
 
   strict checks = [
     !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
-    amountAssetInfo.issuer == i.caller || throwYouNotIssuer(),
-    isVerified(amountAssetId) || throwAssetNotVerified(),
+    i.isManager() || amountAssetInfo.value().issuer == i.caller || throwYouNotIssuer(),
+    amountAssetId.isVerified() || throwAssetNotVerified(),
     keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
     amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
-    priceAssetPayment.amount >= keyPriceAssetsMinAmount().getString().valueOrElse(EMPTY).split(SEP)[priceAssetsIndex].parseInt().value() || throw(),
-    feeAssetPayment.amount == keyFeeAmount().getInteger() || throw()
+    priceAssetPayment.amount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
+    feeAssetPayment.amount == keyFeeAmount().getInteger() || throwInvalidFee()
   ]
 
   [
@@ -191,7 +216,7 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
       false
     ], [
       AttachedPayment(amountAssetId.fromBase58String(), keyAmountAssetAmount(amountAssetId, priceAssetId).getInteger().value()),
-      AttachedPayment(priceAssetId.fromBase58String(), keyPriceAssetAmount(amountAssetId, priceAssetId).getInteger().value())
+      AttachedPayment(if (priceAssetId == "WAVES") then unit else priceAssetId.fromBase58String(), keyPriceAssetAmount(amountAssetId, priceAssetId).getInteger().value())
     ]
   )
   strict afterPut = this.assetBalance(lpAssetId.fromBase58String())
@@ -232,12 +257,7 @@ func confirmManager() = {
 
 @Callable(i)
 func priceAssetsREADONLY() = {
-  let priceAssets = match keyPriceAssetIds().getString() {
-    case s: String => if (s.size() == 0) then nil else s.split(SEP)
-    case _ => nil
-  }
-
-  (nil, priceAssets)
+  (nil, keyPriceAssetIds().getString().stringOptionToList())
 }
 
 @Callable(i)
