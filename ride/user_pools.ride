@@ -3,7 +3,6 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 
 let SEP = "__"
-let EMPTY = ""
 let wavesAssetId = "WAVES"
 
 let invalidPriceAsset = "Invalid price asset"
@@ -53,6 +52,11 @@ func keyPriceAssetsMinAmount() = ["%s", "priceAssetsMinAmount"].makeString(SEP)
 func keyPriceAssetIds() = ["%s", "priceAssetIds"].makeString(SEP)
 
 func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage(key + " is not defined")
+func stringOptionToList(stringOrUnit: String|Unit) = match stringOrUnit {
+  case s: String => s.split(SEP)
+  case _: Unit => []
+}
+
 let factoryContract = keyFactoryContract().getStringOrFail().addressFromStringValue()
 
 func isCreateCalled(amountAssetId: String, priceAssetId: String) = {
@@ -85,7 +89,7 @@ func mustManager(i: Invocation) = {
 }
 
 func mustAdmin(i: Invocation) = {
-  let adminPKs = keyAdminPubKeys().getString().valueOrElse(EMPTY).split(SEP)
+  let adminPKs = keyAdminPubKeys().getString().stringOptionToList()
   if (adminPKs.containsElement(i.callerPublicKey.toBase58String())) then {
     true
   } else {
@@ -144,7 +148,7 @@ func create() = {
   let (priceAssetId, priceAssetInfo) = priceAssetPayment.getIdAndInfo()
   let (feeAssetId, feeAssetInfo) = feeAssetPayment.getIdAndInfo()
 
-  let priceAssetsList = keyPriceAssetIds().getString().valueOrElse(EMPTY).split(SEP)
+  let priceAssetsList = keyPriceAssetIds().getString().stringOptionToList()
 
   let managerPriceAssetMinAmount = 1
   let priceAssetMinAmount = {
@@ -152,7 +156,7 @@ func create() = {
       managerPriceAssetMinAmount
     } else {
       let priceAssetsIndex = priceAssetsList.indexOf(priceAssetId).valueOrErrorMessage(invalidPriceAsset)
-      keyPriceAssetsMinAmount().getString().valueOrElse(EMPTY).split(SEP)[priceAssetsIndex].parseInt().value()
+      keyPriceAssetsMinAmount().getString().stringOptionToList()[priceAssetsIndex].parseInt().value()
     }
   }
 
