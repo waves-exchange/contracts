@@ -26,17 +26,29 @@ const assetsStorePath = format({ dir: mockRidePath, base: 'assets_store.mock.rid
 
 export const mochaHooks = {
   async beforeAll() {
-    const names = ['lp', 'factoryV2', 'staking', 'slippage', 'manager', 'store', 'user1'];
+    const names = [
+      'lp',
+      'lpStableV2Addon',
+      'factoryV2',
+      'staking',
+      'slippage',
+      'manager',
+      'store',
+      'user1',
+    ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
-    const amount = 1e10;
+    const amount = 10e10;
     const massTransferTx = massTransfer({
       transfers: seeds.map((item) => ({ recipient: address(item, chainId), amount })),
       chainId,
     }, seed);
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
-
+    console.log('account addresses:');
+    for (const [key, value] of Object.entries(this.accounts)) {
+      console.log('  ', key, address(value, chainId));
+    }
     await setScriptFromFile(lpPath, this.accounts.lp);
     await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
     await setScriptFromFile(stakingPath, this.accounts.staking);
