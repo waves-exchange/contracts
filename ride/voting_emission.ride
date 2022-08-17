@@ -449,7 +449,7 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
     .valueOrErrorMessage("processVoteINTERNAL " + poolStr + " " + userAddressStr + ": no previous vote")
   let used = this.getInteger(userAddress.keyUsed(epoch)).valueOrElse(0)
 
-  let newVote = fraction(votePrevious, gwxAmountAtEndTotal, gwxAmountAtEndTotalPrevious)
+  let newVote = if (gwxAmountAtEndTotalPrevious > 0) then fraction(votePrevious, gwxAmountAtEndTotal, gwxAmountAtEndTotalPrevious) else 0
   let actions = if (newVote > 0 && wxEmission) then {
     [
       IntegerEntry(pool.keyVote(userAddress, epoch), newVote),
