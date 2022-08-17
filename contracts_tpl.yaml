@@ -25,7 +25,7 @@
 - file: voting_emission_candidate.ride
   tag: voting_emission_candidate
   testnet-prv: $VORINGEMISSIONCANDIDATE_PRV
-  testnet-signer: $VORINGEMISSIONCANDIDATE_PRV
+  testnet-signer: $MANAGER_PRV
   mainnet-pub: DQtGXvog3Y6B9bxto8pajLFKjsTX8tBjkDi6RRhtP8X5
 
 - file: voting_emission.ride
