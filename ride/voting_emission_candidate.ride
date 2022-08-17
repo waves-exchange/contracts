@@ -86,13 +86,16 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
   case _: Unit => unit
 }
 
-func mustManager(i: Invocation) = {
-  let pd = "permission denied".throw()
 
+func isManager(i: Invocation) = {
   match managerPublicKeyOrUnit() {
-    case pk: ByteVector => i.callerPublicKey == pk || pd
-    case _: Unit => i.caller == this || pd
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
   }
+}
+
+func mustManager(i: Invocation) = {
+  i.isManager() || "permission denied".throw()
 }
 
 func asInt(val: Any) = {
@@ -166,11 +169,11 @@ func suggest(amountAssetId: String, priceAssetId: String) = {
   let info = amountAssetId.fromBase58String().assetInfo().valueOrErrorMessage("invalid amountAssetId ID")
 
   strict checks = [
-    info.issuer == i.caller || "asset can only be suggested by its issuer".throw(),
+    i.isManager() || info.issuer == i.caller || "asset can only be suggested by its issuer".throw(),
     info.scripted == false || "asset is smart".throw(),
     payment.assetId.value().toBase58String() == keyWxAssetId.getString().value() || "invalid fee asset".throw(),
     payment.amount == keyFeeAmount.getInteger().value() || "invalid fee amount".throw(),
-    priceAssetId == keyUsdnAssetId.getString().value() || "priceAssetId is not USDN".throw(),
+    i.isManager() || priceAssetId == keyUsdnAssetId.getString().value() || "priceAssetId is not USDN".throw(),
     keyInListAssetId(amountAssetId, priceAssetId).getInteger() == unit || "already in voting list".throw(),
     !votingEmissionContract.getBoolean(pool.keyInList()).valueOrElse(false) || "pool is in emission voting list".throw()
   ]
