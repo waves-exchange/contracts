@@ -39,6 +39,7 @@
 let scale8 = 100_000_000
 let scale8BigInt = 100_000_000.toBigInt()
 let scale18 = 1_000_000_000_000_000_000.toBigInt()
+let thousand = 1000
 let zeroBigInt = 0.toBigInt()
 let oneBigInt = 1.toBigInt()
 let slippage4D = (scale8 - scale8 * 1 / scale8).toBigInt() # 9999999 or error of 0.0000001
@@ -67,7 +68,7 @@ let idxFactStakCntr      = 1
 let idxFactSlippCntr     = 7
 let idxFactGwxRewCntr    = 10
 
-let delay = "%s__delay"
+let feePermilleDefault = 0
 #-------------------------
 # WX COMMON LIBRARY
 #-------------------------
@@ -97,10 +98,8 @@ func pa() = {"%s__priceAsset"}
 func amp() = {"%s__amp"}
 func ada() = "%s__addonAddr"
 
-# lastGetOneTknCall
-func lgotc(caller: String) = {makeString(["%s%s__lastGetOneTknCall", caller], SEP)}
-# lastSetOneTknCall
-func lsotc(caller: String) = {makeString(["%s%s__lastPutOneTknCall", caller], SEP)}
+let keyFeePermille = "%s__feePermille"
+let feePermille = this.getInteger(keyFeePermille).valueOrElse(feePermilleDefault)
 
 #------------------------
 # KEYS ON OTHER CONTRACTS
@@ -156,6 +155,8 @@ func igs() = {
 func mp() = {
   fca.strf(mtpk()).fromBase58String()
 }
+
+let matcherAddress = mp().addressFromPublicKey()
 
 # getPoolConfig
 # function used to gather all pool data from factory
@@ -532,6 +533,11 @@ func cp(caller: String,
     r
 }
 
+func takeFee(amount: Int) = {
+  let fee = fraction(amount, feePermille, thousand)
+  (amount - fee, fee)
+}
+
 # managerPublicKeyOrUnit
 func m() = match mpk().getString() {
   case s: String => s.fromBase58String()
@@ -658,18 +664,14 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
     let addon       = this.getString(ada()).valueOrElse("")
     let userAddress = if(addon == i.caller.toString()) then i.originCaller else i.caller
 
-    let addonContract = addressFromString(
-      ada().getString().valueOrErrorMessage("no addons")
-    ).valueOrErrorMessage("addon address in not valid")
-
-    strict check = addonContract.reentrantInvoke("ensureCanPutOneTkn", [userAddress.toString()], []);
-
     if(slippage <= 0 || amAssetPart<=0 || prAssetPart<=0 || outLp <= 0) then throw("Wrong params") else
     if (i.payments.size() != 1) then throw("1 pmnt expd") else
 
     let pmt         = i.payments[0].value()
     let pmtAssetId  = pmt.assetId.value().toBase58String()
-    let pmtAmt      = pmt.amount
+    let paymentAmountRaw = pmt.amount
+    let (pmtAmt, feeAmount) = paymentAmountRaw.takeFee()
+
     if(pmtAmt < amAssetPart || pmtAmt < prAssetPart || pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
     let amBalance = getAccBalance(amId)
@@ -727,8 +729,10 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
     let lpTrnsfr =
       if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
       else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
+    
+    let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(matcherAddress, feeAmount, pmtAssetId.fromBase58String())] else []
 
-    state ++ lpTrnsfr
+    state ++ lpTrnsfr ++ sendFeeToMatcher
 }
 
 # Put without LP emission
@@ -798,12 +802,6 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
   let pmtAssetId  = pmt.assetId.value()
   let pmtAmt      = pmt.amount
 
-  let addonContract = addressFromString(
-    ada().getString().valueOrErrorMessage("no addons")
-  ).valueOrErrorMessage("addon address in not valid")
-
-  strict check = addonContract.reentrantInvoke("ensureCanGetOneTkn", [userAddress.toString()], []);
-
   if(pmtAmt < 10_00_000_000) then throw("Min pmt 10 LP") else
 
   if(slippage < 0 || exchResult < 0 || outAmount < 0) then throw("Wrong params") else
@@ -838,13 +836,19 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
   strict finalRes = vad(totalGet.toBigInt(), outAmount.toBigInt(), slippage.toBigInt())
 
   let (outAm, outPr)  = if(outAssetId == amId) then (finalRes._2.toInt(), 0) else (0, finalRes._2.toInt())
+  let totalAmountRaw = outAm + outPr
+  let (totalAmount, feeAmount) = totalAmountRaw.takeFee()
+
+  let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
+
+  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(matcherAddress, feeAmount, outAssetIdOrWaves)] else []
 
   let curPrX18 = cpbi(prBalance.t1(prDcm), amBalance.t1(amDcm))
   let curPr = curPrX18.f1(scale8)
 
   strict state =
   [
-    ScriptTransfer(userAddress, outAm + outPr, if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()),
+    ScriptTransfer(userAddress, totalAmount, outAssetIdOrWaves),
     StringEntry(
           gau(userAddress.toString(), txId58),
           dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)),
@@ -856,7 +860,7 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
                                   "burn",
                                   [pmtAmt],
                                   [AttachedPayment(pmtAssetId, pmtAmt)])
-  state
+  state ++ sendFeeToMatcher
 }
 
 @Callable(i)
