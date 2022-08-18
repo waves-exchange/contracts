@@ -187,13 +187,16 @@ func suggest(amountAssetId: String, priceAssetId: String) = {
     case _ => "user pool is not active".throw()
   }
 
-  strict ensureAmountAssetVerified = match assetsStoreContract.invoke(
-    "isVerifiedREADONLY",
-    [amountAssetId],
-    []
-  ) {
-    case b: Boolean => b || "asset is not verified".throw()
-    case _ => "asset is not verified".throw()
+  strict ensureAmountAssetVerified = if (i.isManager()) then unit else {
+    strict inv = match assetsStoreContract.invoke(
+        "isVerifiedREADONLY",
+        [amountAssetId],
+        []
+      ) {
+        case b: Boolean => b || "asset is not verified".throw()
+        case _ => "asset is not verified".throw()
+      }
+    unit
   }
 
   strict burnFeeInv = emissionContract.invoke("burn", [], [AttachedPayment(payment.assetId, payment.amount)])
