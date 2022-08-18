@@ -41,6 +41,7 @@ let defaultDecimals = 1_000_000
 let scale8 = 100_000_000
 let scale8BigInt = 100_000_000.toBigInt()
 let scale18 = 1_000_000_000_000_000_000.toBigInt()
+let thousand = 1000
 let zeroBigInt = 0.toBigInt()
 let oneBigInt = 1.toBigInt()
 let slippage4D = (scale8 - scale8 * 1 / scale8).toBigInt() # 9999999 or error of 0.0000001
@@ -69,7 +70,7 @@ let idxFactStakCntr      = 1
 let idxFactSlippCntr     = 7
 let idxFactGwxRewCntr    = 10
 
-let delay = "%s__delay"
+let feePermilleDefault = 0
 #-------------------------
 # WX COMMON LIBRARY
 #-------------------------
@@ -96,25 +97,18 @@ func keyPriceAsset() = {"%s__priceAsset"}
 func keyAmplificator() = {"%s__amp"}
 func keyAddonAddress() = "%s__addonAddr"
 
-# lastGetOneTknCall
-func lgotc(caller: String) = {makeString(["%s%s__lastGetOneTknCall", caller], SEP)}
-# lastSetOneTknCall
-func lsotc(caller: String) = {makeString(["%s%s__lastPutOneTknCall", caller], SEP)}
+let keyFeePermille = "%s__feePermille"
+let feePermille = this.getInteger(keyFeePermille).valueOrElse(feePermilleDefault)
 
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
-# from factory
-# keyFactoryConfig
-func fcfg() = {"%s__factoryConfig"}
-# keyMatcherPub
-func mtpk() = "%s%s__matcher__publicKey"
-# keyPoolConfig
-func pc(iAmtAs: String, iPrAs: String) = {"%d%d%s__" + iAmtAs + "__" + iPrAs + "__config"}
-# keyMappingsBaseAsset2internalId
-func mba(bAStr: String) = {"%s%s%s__mappings__baseAsset2internalId__" + bAStr}
+func keyFactoryConfig() = {"%s__factoryConfig"}
+func keyMatcherPub() = "%s%s__matcher__publicKey"
+func keyPoolConfig(iAmtAs: String, iPrAs: String) = {"%d%d%s__" + iAmtAs + "__" + iPrAs + "__config"}
+func keyMappingsBaseAsset2internalId(bAStr: String) = {"%s%s%s__mappings__baseAsset2internalId__" + bAStr}
 # keyAllPoolsShutdown
-func aps() = {"%s__shutdown"}
+func keyAllPoolsShutdown() = {"%s__shutdown"}
 
 #------------------------
 # FAILURES
@@ -154,22 +148,25 @@ let amplificator = getStringOrFail(this, keyAmplificator())
 
 # check that global shutdown is take place
 func isGlobalShutdown() = {
-  factoryContract.getBoolean(aps()).valueOrElse(false)
+  factoryContract.getBoolean(keyAllPoolsShutdown()).valueOrElse(false)
 }
 func getMatcherPubOrFail() = {
-  factoryContract.getStringOrFail(mtpk()).fromBase58String()
+  factoryContract.getStringOrFail(keyMatcherPub()).fromBase58String()
 }
+
+let matcherAddress = getMatcherPubOrFail().addressFromPublicKey()
+
 # function used to gather all pool data from factory
 func getPoolConfig() = {
   let amtAs = getStringOrFail(this, keyAmountAsset())
   let priceAs = getStringOrFail(this, keyPriceAsset())
-  let iPriceAs = getIntOrFail(factoryContract, mba(priceAs))
-  let iAmtAs = getIntOrFail(factoryContract, mba(amtAs))
-  getStringOrFail(factoryContract, pc(iAmtAs.toString(), iPriceAs.toString())).split(SEP)
+  let iPriceAs = getIntOrFail(factoryContract, keyMappingsBaseAsset2internalId(priceAs))
+  let iAmtAs = getIntOrFail(factoryContract, keyMappingsBaseAsset2internalId(amtAs))
+  getStringOrFail(factoryContract, keyPoolConfig(iAmtAs.toString(), iPriceAs.toString())).split(SEP)
 }
 
 func getFactoryConfig() = {
-  getStringOrFail(factoryContract, fcfg()).split(SEP)
+  getStringOrFail(factoryContract, keyFactoryConfig()).split(SEP)
 }
 
 func dataPutActionInfo(inAmtAssetAmt: Int, inPriceAssetAmt: Int, outLpAmt: Int, price: Int, slipByUser: Int, slippageReal: Int, txHeight: Int, txTimestamp: Int, slipageAmAmt: Int, slipagePrAmt: Int) = {
@@ -554,6 +551,11 @@ func commonPut(
   r
 }
 
+func takeFee(amount: Int) = {
+  let fee = fraction(amount, feePermille, thousand)
+  (amount - fee, fee)
+}
+
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
   case s: String => s.fromBase58String()
   case _: Unit => unit
@@ -681,18 +683,14 @@ func putOneTkn(amountAssetPart: Int, priceAssetPart: Int, outLp: Int, slippage: 
     let addon       = this.getString(keyAddonAddress()).valueOrElse("")
     let userAddress = if(addon == i.caller.toString()) then i.originCaller else i.caller
 
-    let addonContract = addressFromString(
-      keyAddonAddress().getString().valueOrErrorMessage("no addons")
-    ).valueOrErrorMessage("addon address in not valid")
-
-    strict check = addonContract.reentrantInvoke("ensureCanPutOneTkn", [userAddress.toString()], []);
-
     if(slippage <= 0 || amountAssetPart<=0 || priceAssetPart<=0 || outLp <= 0) then throwErr("Wrong params") else
     if (i.payments.size() != 1) then throwErr("1 payment expected") else
 
-    let payment         = i.payments[0].value()
-    let paymentAssetId  = payment.assetId.value().toBase58String()
-    let paymentAmount   = payment.amount
+    let payment = i.payments[0].value()
+    let paymentAssetId = payment.assetId.value().toBase58String()
+    let paymentAmountRaw = payment.amount
+    let (paymentAmount, feeAmount) = paymentAmountRaw.takeFee()
+
     if (paymentAmount < amountAssetPart || paymentAmount < priceAssetPart || paymentAmount < 10_000_000) then {
       throwErr("wrong payment amount") 
     } else
@@ -757,13 +755,17 @@ func putOneTkn(amountAssetPart: Int, priceAssetPart: Int, outLp: Int, slippage: 
       slippageContract.invoke("put",[],[AttachedPayment(priceId.fromBase58String(), priceDiff)]) 
     } else []
 
-    let lpTrasfer = if(autoStake) then {
+    let lpTrasfer = if (autoStake) then {
       strict ss = stakingContract.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmount)]); []
     } else {
       [ScriptTransfer(i.caller, emitLpAmount, lpAssetId)]
-    }  
+    }
 
-    state ++ lpTrasfer
+    let sendFeeToMatcher = if (feeAmount > 0) then {
+      [ScriptTransfer(matcherAddress, feeAmount, paymentAssetId.fromBase58String())]
+    } else []
+
+    state ++ lpTrasfer ++ sendFeeToMatcher
 }
 
 # Put without LP emission
@@ -839,12 +841,6 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
   let paymentAssetId  = payment.assetId.value()
   let paymentAmount   = payment.amount
 
-  let addonContract = addressFromString(
-    keyAddonAddress().getString().valueOrErrorMessage("no addons")
-  ).valueOrErrorMessage("addon address in not valid")
-
-  strict check = addonContract.reentrantInvoke("ensureCanGetOneTkn", [userAddress.toString()], []);
-
   if(paymentAmount < 10_00_000_000) then throwErr("Min payment 10 LP") else
 
   if(slippage < 0 || exchResult < 0 || outAmount < 0) then throwErr("Wrong params") else
@@ -892,6 +888,12 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
   strict finalRes = validateAbsDiff(totalGet.toBigInt(), outAmount.toBigInt(), slippage.toBigInt())
 
   let (outAm, outPr)  = if(outAssetId == amountId) then (finalRes._2.toInt(), 0) else (0, finalRes._2.toInt())
+  let totalAmountRaw = outAm + outPr
+  let (totalAmount, feeAmount) = totalAmountRaw.takeFee()
+
+  let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
+
+  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(matcherAddress, feeAmount, outAssetIdOrWaves)] else []
 
   strict decimals = if amountDecimals >= priceDecimals then {
     amountDecimals
@@ -904,9 +906,7 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
 
   strict state =
   [
-    ScriptTransfer(
-      userAddress, outAm + outPr, if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
-    ),
+    ScriptTransfer(userAddress, totalAmount, outAssetIdOrWaves),
     StringEntry(
       keyGetActionByUser(userAddress.toString(), txId58),
       dataGetActionInfo(outAm, outPr, paymentAmount, curPr, height, lastBlock.timestamp)
@@ -920,7 +920,7 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
     "burn",
     [paymentAmount],
     [AttachedPayment(paymentAssetId, paymentAmount)])
-  state
+  state ++ sendFeeToMatcher
 }
 
 @Callable(i)
