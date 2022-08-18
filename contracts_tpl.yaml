@@ -329,6 +329,10 @@
   tag: PLUTO/USDN pool
   mainnet-pub: HwtWrjnvWynhLoJ9k5mnqoWa6HfQd3q2B67qpGoJxHAG
 
+- file: lp.ride
+  tag: WX/WAVES pool
+  mainnet-pub: 9jtFVByKLnroCoLTw6yj1KprjPm4QHRxXSUcsGeLjqNb
+
 - file: otc.ride
   testnet-prv: $OTC_PRV
   testnet-signer: $MANAGER_PRV
