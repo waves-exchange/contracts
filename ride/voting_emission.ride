@@ -31,6 +31,7 @@ func keyInList(pool: (String, String)) = {
   ["%s%s%s", "inList", amountAssetId, priceAssetId].makeString(separator)
 }
 func keyUsed(address: Address, epoch: Int) =["%s%s%d", "used", address.toString(), epoch.toString()].makeString(separator)
+func keyTotal(address: Address, epoch: Int) =["%s%s%d", "total", address.toString(), epoch.toString()].makeString(separator)
 func keyVote(pool: (String, String), address: Address, epoch: Int) = {
   let (amountAssetId, priceAssetId) = pool
 
@@ -52,6 +53,8 @@ func keyPoolShare(pool: (String, String), epoch: Int) = {
 func keyTotalVotes(epoch: Int) = {
   ["%s%d", "totalVotes", epoch.toString()].makeString(separator)
 }
+
+func errWrap(msg: String) = ["voting_emission.ride: ", msg].makeString("")
 
 func getValueOrFail(address: Address, key: String, type: String|Int) = {
   let error = ["mandatory ", address.toString(), ".", key, " is not defined"].makeString("")
@@ -99,6 +102,13 @@ func checkWxEmissionPoolLabel(pool: (String, String)) = {
   let factoryContract = this.getStrOrFail(keyFactoryContract).addressFromStringValue()
 
   factoryContract.invoke("checkWxEmissionPoolLabel", [amountAssetId, priceAssetId], []).exactAs[Boolean]
+}
+
+let boostingContractAddress = this.getStrOrFail(keyBoostingContract)
+  .addressFromString().valueOrErrorMessage("invalid boosting contract address".errWrap())
+
+func getUserGwxAmountAtHeight(userAddress: Address, targetHeight: Int) = {
+  boostingContractAddress.invoke("getUserGwxAmountAtHeightREADONLY", [userAddress.toString(), targetHeight], []).exactAs[Int]
 }
 
 # Doubly linked list ->
@@ -235,14 +245,6 @@ func confirmManager() = {
 }
 # <-
 
-# TODO: Сделать обычной функцией
-@Callable(i)
-func getUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
-  let boostingContractAddress = this.getStrOrFail(keyBoostingContract).addressFromString().valueOrErrorMessage("invalid boosting contract address")
-
-  ([], boostingContractAddress.invoke("getUserGwxAmountAtHeightREADONLY", [userAddress, targetHeight], []).exactAs[Int])
-}
-
 @Callable(i)
 func constructor(
   factoryContract: String,
@@ -312,7 +314,7 @@ func vote(amountAssetId: String, priceAssetId: String, amount: Int) = {
   let vote = this.getInteger(pool.keyVote(i.caller, epoch)).valueOrElse(0)
   let poolResult = this.getInteger(pool.keyVotingResult(epoch)).valueOrElse(0)
   let totalVotes = this.getInteger(epoch.keyTotalVotes()).valueOrElse(0)
-  let gwxAmountAtEndTotal = this.invoke("getUserGwxAmountAtHeight", [i.caller.bytes.toBase58String(), endHeight], []).exactAs[Int]
+  let gwxAmountAtEndTotal = i.caller.getUserGwxAmountAtHeight(endHeight)
   let available = gwxAmountAtEndTotal - used
   let newVote = vote + amount
   let wxEmission = pool.checkWxEmissionPoolLabel()
@@ -333,6 +335,7 @@ func vote(amountAssetId: String, priceAssetId: String, amount: Int) = {
   (
     [
       IntegerEntry(i.caller.keyUsed(epoch), used + amount),
+      IntegerEntry(i.caller.keyTotal(epoch), gwxAmountAtEndTotal),
       IntegerEntry(pool.keyVote(i.caller, epoch), newVote),
       IntegerEntry(pool.keyVotingResult(epoch), poolResult + amount),
       IntegerEntry(epoch.keyTotalVotes(), totalVotes + amount)
@@ -441,8 +444,11 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   let pool = poolStr.stringToPool()
   let (amountAssetId, priceAssetId) = pool
   let wxEmission = pool.checkWxEmissionPoolLabel()
-  let gwxAmountAtEndTotal = this.invoke("getUserGwxAmountAtHeight", [userAddressStr, endHeight], []).exactAs[Int]
-  let gwxAmountAtEndTotalPrevious = this.invoke("getUserGwxAmountAtHeight", [userAddressStr, endHeightPrevious], []).exactAs[Int]
+  let gwxAmountAtEndTotal = userAddress.getUserGwxAmountAtHeight(endHeight)
+  let userTotalPreviousOption = userAddress.keyTotal(epochPrevious).getInteger()
+  let gwxAmountAtEndTotalPrevious = if (userTotalPreviousOption == unit) then {
+    userAddress.getUserGwxAmountAtHeight(endHeightPrevious)
+  } else userTotalPreviousOption.value()
   let totalVotes = epoch.keyTotalVotes().getInteger().valueOrElse(0)
   let votingResult = pool.keyVotingResult(epoch).getInteger().valueOrElse(0)
   let votePrevious = pool.keyVote(userAddress, epochPrevious).getInteger()
@@ -455,7 +461,8 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
       IntegerEntry(pool.keyVote(userAddress, epoch), newVote),
       IntegerEntry(epoch.keyTotalVotes(), totalVotes + newVote),
       IntegerEntry(pool.keyVotingResult(epoch), votingResult + newVote),
-      IntegerEntry(userAddress.keyUsed(epoch), used + newVote)
+      IntegerEntry(userAddress.keyUsed(epoch), used + newVote),
+      IntegerEntry(userAddress.keyTotal(epoch), gwxAmountAtEndTotal)
     ]
   } else {
     pool.getVotesListName().deleteNodeActions(userAddressStr)
@@ -673,6 +680,17 @@ func finalize() = {
   strict inv = this.invoke("finalizeWrapper", [0], [])
 
   ([], unit)
+}
+
+@Callable(i)
+func onLockParamsChange(userAddressStr: String, gwxAmount: Int) = {
+  strict checkCaller = i.caller == boostingContractAddress || "onLockParamsChange: permission denied".errWrap().throw()
+  let userAddress = userAddressStr.addressFromString().valueOrErrorMessage(["invalid user address ", userAddressStr].makeString("").errWrap())
+  let epoch = this.getIntOrFail(keyCurrentEpoch)
+
+  ([
+    IntegerEntry(userAddress.keyTotal(epoch), gwxAmount)
+  ], unit)
 }
 
 # пул теряет свою эмиссию при потере токеном COMMUNITY VERIFIED лейбла.

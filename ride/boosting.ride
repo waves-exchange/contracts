@@ -4,6 +4,7 @@
 
 # Required state entries:
 # * "%s%s__config__referralsContractAddress": String
+# * "%s%s__config__votingEmissionContractAddress": String
 # * "%s__nextUserNum": Int
 # * "%s%s__config__factoryAddress": String
 # * "%s__config": String ("%s%d%d%d__<assetId__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>")
@@ -45,6 +46,9 @@ let referralsContractAddressOrFail = this.strf(keyReferralsContractAddress()).ad
 let keyReferralProgramName = ["%s%s", "referral", "programName"].makeString(SEP)
 let referralProgramNameDefault = "wxlock"
 let referralProgramName = this.getString(keyReferralProgramName).valueOrElse(referralProgramNameDefault)
+
+func keyVotingEmissionContractAddress()  = ["%s%s", "config", "votingEmissionContractAddress"].makeString(SEP)
+let votingEmissionContractAddressOrFail = this.strf(keyVotingEmissionContractAddress()).addressFromStringValue()
 
 # FACTORY API
 # own factory address key
@@ -257,8 +261,11 @@ func calcGwxAmount(kRaw: Int, bRaw: Int, h: Int) = {
   (kRaw * h + bRaw) / SCALE
 }
 
-func LockParamsEntry(userAddress: String, userNum: String, amount: Int, start: Int, duration: Int, k: Int, b: Int, period: String) = {
+func onLockParamsChange(userAddressStr: String, gwxAmount: Int) = {
+  votingEmissionContractAddressOrFail.invoke("onLockParamsChange", [userAddressStr, gwxAmount], [])
+}
 
+func LockParamsEntry(userAddress: String, userNum: String, amount: Int, start: Int, duration: Int, k: Int, b: Int, period: String) = {
   let userAmountKEY       = keyLockParamUserAmount(userNum)
   let startBlockKEY       = keyLockParamStartBlock(userNum)
   let durationKEY         = keyLockParamDuration(userNum)
@@ -269,6 +276,8 @@ func LockParamsEntry(userAddress: String, userNum: String, amount: Int, start: I
 
   # TODO think about moving to another place
   let gwxAmount = calcGwxAmount(k, b, height)
+  strict onLockParamsChangeCall = userAddress.onLockParamsChange(gwxAmount)
+
   [IntegerEntry(userAmountKEY, amount),
     IntegerEntry(startBlockKEY, start),
     IntegerEntry(durationKEY, duration),
