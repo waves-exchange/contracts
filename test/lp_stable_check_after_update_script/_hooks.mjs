@@ -49,6 +49,11 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
 
+    console.log('account addresses:');
+    for (const [key, value] of Object.entries(this.accounts)) {
+      console.log('  ', key, address(value, chainId));
+    }
+
     await setScriptFromFile(lpStablePath, this.accounts.lpStable);
     await setScriptFromFile(lpStableAddonPath, this.accounts.lpStableAddon);
     await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
@@ -100,6 +105,9 @@ export const mochaHooks = {
     }, seed);
     await api.transactions.broadcast(massTransferTxUSDT, {});
     await waitForTx(massTransferTxUSDT.id, { apiBase });
+
+    console.log('usdnAssetId', this.usdnAssetId);
+    console.log('usdtAssetId', this.usdtAssetId);
 
     const constructorFactoryV2InvokeTx = invokeScript({
       dApp: address(this.accounts.factoryV2, chainId),
