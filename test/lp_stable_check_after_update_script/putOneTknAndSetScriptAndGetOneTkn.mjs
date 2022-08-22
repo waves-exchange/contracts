@@ -17,7 +17,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp_stable_check_after_update_script: PutAndGetThanSetScriptAndPutAndGet.mjs', /** @this {MochaSuiteModified} */() => {
+describe('lp_stable_check_after_update_script: putOneTknAndSetScriptAndGetOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully change the state in the same way after changing the script from lp_stable.ride to lp_stable_v2.ride when executing the putOneTkn and get method', async function () {
     const amAssetPart = 1e8;
     const prAssetPart = 1e8;

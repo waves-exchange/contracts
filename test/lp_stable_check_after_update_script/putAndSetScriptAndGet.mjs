@@ -17,7 +17,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp_stable_check_after_update_script: PutAndGetThanSetScriptAndPutAndGet.mjs', /** @this {MochaSuiteModified} */() => {
+describe('lp_stable_check_after_update_script: putAndSetScriptAndGet.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully change the state in the same way after changing the script from lp_stable.ride to lp_stable_v2.ride when executing the put and get method', async function () {
     const usdtAmount = 1e6;
     const usdnAmount = 1e6;
