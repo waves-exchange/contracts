@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
+	"github.com/waves-exchange/contracts/deployer/pkg/contract"
 	"github.com/wavesplatform/gowaves/pkg/client"
 	"github.com/wavesplatform/gowaves/pkg/crypto"
 	"github.com/wavesplatform/gowaves/pkg/proto"
@@ -28,7 +29,7 @@ type Syncer struct {
 	mode            config.Mode
 	client          *client.Client
 	contractsFolder string
-	contracts       []config.Contract
+	contractModel   contract.Model
 }
 
 func NewSyncer(
@@ -36,7 +37,7 @@ func NewSyncer(
 	mode config.Mode,
 	testnetNode string,
 	mainnetNode string,
-	contracts []config.Contract,
+	contractModel contract.Model,
 ) (Syncer, error) {
 	var cl *client.Client
 	switch mode {
@@ -68,7 +69,7 @@ func NewSyncer(
 		logger:          logger,
 		mode:            mode,
 		client:          cl,
-		contracts:       contracts,
+		contractModel:   contractModel,
 		contractsFolder: path.Join("..", "ride"),
 	}, nil
 }
@@ -82,8 +83,13 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("os.ReadDir: %w", err)
 	}
 
+	contracts, err := s.contractModel.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("s.contractModel.GetAll: %w", err)
+	}
+
 	for _, fl := range files {
-		er := s.doAction(ctx, fl.Name())
+		er := s.doAction(ctx, fl.Name(), contracts)
 		if er != nil {
 			return fmt.Errorf("s.doAction: %w", er)
 		}
@@ -93,7 +99,7 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 	return nil
 }
 
-func (s Syncer) doAction(ctx context.Context, fileName string) error {
+func (s Syncer) doAction(ctx context.Context, fileName string, contracts []contract.Contract) error {
 	const (
 		changed    = "contract changed"
 		notChanged = "contract didn't changed"
@@ -119,7 +125,7 @@ func (s Syncer) doAction(ctx context.Context, fileName string) error {
 		return fmt.Errorf("io.ReadAll: %w", err)
 	}
 
-	for _, cont := range s.contracts {
+	for _, cont := range contracts {
 		if fileName != cont.File {
 			continue
 		}
