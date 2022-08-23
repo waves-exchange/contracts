@@ -126,6 +126,8 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 		Value: newHashStr,
 	}
 
+	var mainnetHashEmpty bool
+
 	for _, cont := range contracts {
 		if cont.File == factoryRide && cont.Tag == factoryTag {
 			switch s.mode {
@@ -180,13 +182,15 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 					return fmt.Errorf("s.getStringValue: %w", er)
 				}
 
+				mainnetHashEmpty = actualHash == ""
+
 				dataTx := proto.NewUnsignedDataWithProofs(2, pub, 500000, timestamp())
 				er = dataTx.AppendEntry(dataTxValue)
 				if er != nil {
 					return fmt.Errorf("dataTx.AppendEntry: %w", er)
 				}
 
-				if actualHash != newHashStr {
+				if actualHash != newHashStr && actualHash != "" {
 					tx, e := json.Marshal(dataTx)
 					if e != nil {
 						return fmt.Errorf("json.Marshal: %w", e)
@@ -222,7 +226,7 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 	}
 
 	for _, fl := range files {
-		er := s.doFile(ctx, fl.Name(), contracts)
+		er := s.doFile(ctx, fl.Name(), contracts, mainnetHashEmpty)
 		if er != nil {
 			return fmt.Errorf("s.doFile: %w", er)
 		}
@@ -250,7 +254,12 @@ func (s Syncer) getStringValue(ctx context.Context, address proto.WavesAddress, 
 	return "", fmt.Errorf(invalidType, address.String(), key)
 }
 
-func (s Syncer) doFile(ctx context.Context, fileName string, contracts []contract.Contract) error {
+func (s Syncer) doFile(
+	ctx context.Context,
+	fileName string,
+	contracts []contract.Contract,
+	mainnetHashEmpty bool,
+) error {
 	const (
 		changed    = "contract changed"
 		notChanged = "contract didn't changed"
@@ -397,7 +406,7 @@ func (s Syncer) doFile(ctx context.Context, fileName string, contracts []contrac
 				setScriptFee,
 				timestamp(),
 			)
-			if cont.File == lpRide {
+			if cont.File == lpRide && !mainnetHashEmpty {
 				_, er := s.client.Transactions.Broadcast(ctx, unsignedSetScriptTx)
 				if er != nil {
 					return fmt.Errorf("s.client.Transactions.Broadcast: %w", er)
