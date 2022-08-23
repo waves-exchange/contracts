@@ -19,12 +19,11 @@ jobs:
 
   deploy_testnet:
     env:
-      MODE: deployTestnet
-      TESTNETNODE: ${{ secrets.TESTNETNODE }}
-      MAINNETNODE: ${{ secrets.MAINNETNODE }}
-      MONGOURI: ${{ secrets.MONGOURI }}
-      MONGODATABASENAME: ${{ secrets.MONGODATABASENAME }}
-      MONGOCOLLECTIONCONTRACTS: ${{ secrets.MONGOCOLLECTIONCONTRACTS }}
+      NETWORK: testnet
+      NODE: ${{ secrets.TESTNETNODE }}
+      MONGOURI: ${{ secrets.TESTNETMONGOURI }}
+      MONGODATABASENAME: ${{ secrets.TESTNETMONGODATABASENAME }}
+      MONGOCOLLECTIONCONTRACTS: ${{ secrets.TESTNETMONGOCOLLECTIONCONTRACTS }}
     if: github.ref_name == 'dev'
     runs-on: ubuntu-20.04
     container:
@@ -32,19 +31,18 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Deploy changed contracts to testnet
+      - name: Deploy changed contracts
         run: |
           cd deployer
           go run main.go
 
   deploy_mainnet:
     env:
-      MODE: deployMainnet
-      TESTNETNODE: ${{ secrets.TESTNETNODE }}
-      MAINNETNODE: ${{ secrets.MAINNETNODE }}
-      MONGOURI: ${{ secrets.MONGOURI }}
-      MONGODATABASENAME: ${{ secrets.MONGODATABASENAME }}
-      MONGOCOLLECTIONCONTRACTS: ${{ secrets.MONGOCOLLECTIONCONTRACTS }}
+      NETWORK: mainnet
+      NODE: ${{ secrets.MAINNETNODE }}
+      MONGOURI: ${{ secrets.MAINNETMONGOURI }}
+      MONGODATABASENAME: ${{ secrets.MAINNETMONGODATABASENAME }}
+      MONGOCOLLECTIONCONTRACTS: ${{ secrets.MAINNETMONGOCOLLECTIONCONTRACTS }}
     if: github.ref_name == 'main'
     runs-on: ubuntu-20.04
     container:
@@ -52,7 +50,7 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Compare contracts with mainnet and print diff
+      - name: Compare contracts and print diff. Deploy changed lp.ride
         run: |
           cd deployer
           go run main.go

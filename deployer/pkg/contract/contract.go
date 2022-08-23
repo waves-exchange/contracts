@@ -8,12 +8,12 @@ import (
 )
 
 type Contract struct {
-	File          string `bson:"file,omitempty"`
-	Compact       bool   `bson:"compact,omitempty"`
-	Tag           string `bson:"tag,omitempty"`
-	TestnetPrv    string `bson:"testnet_prv,omitempty"`
-	TestnetSigner string `bson:"testnet_signer,omitempty"`
-	MainnetPub    string `bson:"mainnet_pub,omitempty"`
+	File      string `bson:"file,omitempty"`
+	Compact   bool   `bson:"compact,omitempty"`
+	Tag       string `bson:"tag,omitempty"`
+	BasePub   string `bson:"base_pub,omitempty"`
+	BasePrv   string `bson:"base_prv,omitempty"`
+	SignerPrv string `bson:"signer_prv,omitempty"`
 }
 
 func (c Contract) validate() error {
@@ -23,8 +23,8 @@ func (c Contract) validate() error {
 	if c.Tag == "" {
 		return errors.New("Contract.Tag required")
 	}
-	if c.MainnetPub == "" {
-		return errors.New("Contract.MainnetPub required")
+	if c.BasePub == "" {
+		return errors.New("Contract.BasePub required")
 	}
 
 	return nil

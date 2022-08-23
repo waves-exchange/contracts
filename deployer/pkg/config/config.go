@@ -6,19 +6,18 @@ import (
 )
 
 type Config struct {
-	MongoURI                 string `required:"true"`
-	MongoDatabaseName        string `required:"true"`
-	MongoCollectionContracts string `required:"true"`
-	TestnetNode              string `required:"true"`
-	MainnetNode              string `required:"true"`
-	Mode                     Mode   `required:"true"`
+	Network                  Network `required:"true"`
+	Node                     string  `required:"true"`
+	MongoURI                 string  `required:"true"`
+	MongoDatabaseName        string  `required:"true"`
+	MongoCollectionContracts string  `required:"true"`
 }
 
-type Mode string
+type Network string
 
 const (
-	DeployTestnet Mode = "deployTestnet"
-	DeployMainnet Mode = "deployMainnet"
+	Testnet Network = "testnet"
+	Mainnet Network = "mainnet"
 )
 
 func NewConfig() (Config, error) {

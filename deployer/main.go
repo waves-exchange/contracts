@@ -30,9 +30,8 @@ func main() {
 
 	sc, err := syncer.NewSyncer(
 		logg.ZL,
-		cfg.Mode,
-		cfg.TestnetNode,
-		cfg.MainnetNode,
+		cfg.Network,
+		cfg.Node,
 		contract.NewModel(db.Collection(cfg.MongoCollectionContracts)),
 	)
 	if err != nil {

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -28,7 +27,7 @@ import (
 
 type Syncer struct {
 	logger          zerolog.Logger
-	mode            config.Mode
+	network         config.Network
 	client          *client.Client
 	contractsFolder string
 	contractModel   contract.Model
@@ -37,40 +36,24 @@ type Syncer struct {
 
 func NewSyncer(
 	logger zerolog.Logger,
-	mode config.Mode,
-	testnetNode string,
-	mainnetNode string,
+	network config.Network,
+	node string,
 	contractModel contract.Model,
 ) (Syncer, error) {
-	var cl *client.Client
-	switch mode {
-	case config.DeployTestnet:
-		c, err := client.NewClient(
-			client.Options{BaseUrl: testnetNode, Client: &http.Client{Timeout: time.Minute}},
-		)
-		if err != nil {
-			return Syncer{}, fmt.Errorf("client.NewClient: %w", err)
-		}
-		cl = c
-	case config.DeployMainnet:
-		c, err := client.NewClient(
-			client.Options{BaseUrl: mainnetNode, Client: &http.Client{Timeout: time.Minute}},
-		)
-		if err != nil {
-			return Syncer{}, fmt.Errorf("client.NewClient: %w", err)
-		}
-		cl = c
-	default:
-		return Syncer{}, errors.New("unknown mode=" + string(mode))
+	cl, err := client.NewClient(
+		client.Options{BaseUrl: node, Client: &http.Client{Timeout: time.Minute}},
+	)
+	if err != nil {
+		return Syncer{}, fmt.Errorf("client.NewClient: %w", err)
 	}
 
 	logger.Info().
-		Str("mode", string(mode)).
+		Str("network", string(network)).
 		Msg("syncer init")
 
 	return Syncer{
 		logger:          logger,
-		mode:            mode,
+		network:         network,
 		client:          cl,
 		contractModel:   contractModel,
 		contractsFolder: path.Join("..", "ride"),
@@ -130,16 +113,14 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 
 	for _, cont := range contracts {
 		if cont.File == factoryRide && cont.Tag == factoryTag {
-			switch s.mode {
-			case config.DeployTestnet:
-				prv, er := crypto.NewSecretKeyFromBase58(cont.TestnetPrv)
-				if er != nil {
-					return fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er)
-				}
+			pub, er2 := crypto.NewPublicKeyFromBase58(cont.BasePub)
+			if er2 != nil {
+				return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", er2)
+			}
 
-				pub := crypto.GeneratePublicKey(prv)
-
-				prvSigner, er := crypto.NewSecretKeyFromBase58(cont.TestnetSigner)
+			switch s.network {
+			case config.Testnet:
+				prvSigner, er := crypto.NewSecretKeyFromBase58(cont.SignerPrv)
 				if er != nil {
 					return fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er)
 				}
@@ -166,12 +147,7 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 						return fmt.Errorf("validateSignBroadcastWait: %w", e)
 					}
 				}
-			case config.DeployMainnet:
-				pub, er := crypto.NewPublicKeyFromBase58(cont.MainnetPub)
-				if er != nil {
-					return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", er)
-				}
-
+			case config.Mainnet:
 				addr, er := proto.NewAddressFromPublicKey(proto.MainNetScheme, pub)
 				if er != nil {
 					return fmt.Errorf("proto.NewAddressFromPublicKey: %w", er)
@@ -197,7 +173,7 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 					}
 
 					s.logger.Info().
-						Str("mode", string(s.mode)).
+						Str("network", string(s.network)).
 						Str("address", addr.String()).
 						Str("actualHash", actualHash).
 						Str("newHash", newHashStr).
@@ -211,7 +187,7 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 						}
 						if value == newHashStr {
 							s.logger.Info().
-								Str("mode", string(s.mode)).
+								Str("network", string(s.network)).
 								Msg("AllowedLpScriptHash data-tx done")
 							break
 						}
@@ -290,17 +266,17 @@ func (s Syncer) doFile(
 			continue
 		}
 
-		switch s.mode {
-		case config.DeployTestnet:
+		switch s.network {
+		case config.Testnet:
 			l := s.logger.Info().
 				Str(fileStr, fileName).
 				Str(tag, cont.Tag).
 				Str(action, skip)
-			if cont.TestnetPrv == "" {
+			if cont.BasePrv == "" {
 				l.Msg("no private key in config")
 				continue
 			}
-			if cont.TestnetSigner == "" {
+			if cont.SignerPrv == "" {
 				l.Msg("no signer private key in config")
 				continue
 			}
@@ -310,14 +286,14 @@ func (s Syncer) doFile(
 				return fmt.Errorf("s.compile: %w", er2)
 			}
 
-			prv, er2 := crypto.NewSecretKeyFromBase58(cont.TestnetPrv)
+			prv, er2 := crypto.NewSecretKeyFromBase58(cont.BasePrv)
 			if er2 != nil {
 				return fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er2)
 			}
 
 			pub := crypto.GeneratePublicKey(prv)
 
-			prvSigner, er2 := crypto.NewSecretKeyFromBase58(cont.TestnetSigner)
+			prvSigner, er2 := crypto.NewSecretKeyFromBase58(cont.SignerPrv)
 			if er2 != nil {
 				return fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er2)
 			}
@@ -367,13 +343,13 @@ func (s Syncer) doFile(
 			log.Str(action, deployed).Msg(changed)
 			continue
 
-		case config.DeployMainnet:
+		case config.Mainnet:
 			base64Script, scriptBytes, setScriptFee, er2 := s.compile(ctx, body, cont.Compact)
 			if er2 != nil {
 				return fmt.Errorf("s.compile: %w", er2)
 			}
 
-			pub, er2 := crypto.NewPublicKeyFromBase58(cont.MainnetPub)
+			pub, er2 := crypto.NewPublicKeyFromBase58(cont.BasePub)
 			if er2 != nil {
 				return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", er2)
 			}
