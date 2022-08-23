@@ -567,7 +567,7 @@ func (s Syncer) compileRaw(ctx context.Context, body []byte, compact bool) (stri
 }
 
 func (s Syncer) compile(ctx context.Context, body []byte, compact bool) (string, []byte, uint64, error) {
-	key := string(body) + strconv.FormatBool(compact)
+	key := base64.StdEncoding.EncodeToString(body) + strconv.FormatBool(compact)
 	val, ok := s.compileCache[key]
 	if ok {
 		return val()

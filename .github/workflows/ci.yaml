@@ -22,10 +22,13 @@ jobs:
       MODE: deployTestnet
       TESTNETNODE: ${{ secrets.TESTNETNODE }}
       MAINNETNODE: ${{ secrets.MAINNETNODE }}
+      MONGOURI: ${{ secrets.MONGOURI }}
+      MONGODATABASENAME: ${{ secrets.MONGODATABASENAME }}
+      MONGOCOLLECTIONCONTRACTS: ${{ secrets.MONGOCOLLECTIONCONTRACTS }}
     if: github.ref_name == 'dev'
     runs-on: ubuntu-20.04
     container:
-      image: golang:1.18
+      image: golang:1.19
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
@@ -34,17 +37,18 @@ jobs:
           cd deployer
           go run main.go
 
-  compare_mainnet:
+  deploy_mainnet:
     env:
-      MODE: compareMainnet
+      MODE: deployMainnet
       TESTNETNODE: ${{ secrets.TESTNETNODE }}
       MAINNETNODE: ${{ secrets.MAINNETNODE }}
-    if: |
-      github.ref_name == 'dev' ||
-      github.ref_name == 'main'
+      MONGOURI: ${{ secrets.MONGOURI }}
+      MONGODATABASENAME: ${{ secrets.MONGODATABASENAME }}
+      MONGOCOLLECTIONCONTRACTS: ${{ secrets.MONGOCOLLECTIONCONTRACTS }}
+    if: github.ref_name == 'main'
     runs-on: ubuntu-20.04
     container:
-      image: golang:1.18
+      image: golang:1.19
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
