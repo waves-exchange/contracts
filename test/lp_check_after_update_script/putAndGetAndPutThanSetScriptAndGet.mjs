@@ -23,14 +23,7 @@ describe('lp_check_after_update_script: putAndGetAndPutThanSetScriptAndGet.mjs',
     const eastAmount = 1e8;
     const shouldAutoStake = false;
 
-    const expectedInAmtAssetAmt = 1e8;
-    const expectedInPriceAssetAmt = 1e6;
     const expectedOutLpAmt = 1e8;
-    const expectedPrice = 1e8;
-    const expectedSlipByUser = 0;
-    const expectedSlippageReal = 0;
-    const expectedSlipageAmAmt = 0;
-    const expectedSlipagePrAmt = 0;
     const expectedPriceLast = 1e8;
     const expectedPriceHistory = 1e8;
     const expectedInvokesCount = 1;
@@ -57,6 +50,72 @@ describe('lp_check_after_update_script: putAndGetAndPutThanSetScriptAndGet.mjs',
     await api.transactions.broadcast(putFirst, {});
     await ni.waitForTx(putFirst.id, { apiBase });
 
+    // getAfterPutFirst
+    // --------------------------------------------------------------------------------------------
+    const getAfterPutFirst = invokeScript({
+      dApp: lp,
+      payment: [
+        { assetId: this.lpAssetId, amount: expectedOutLpAmt },
+      ],
+      call: {
+        function: 'get',
+        args: [],
+      },
+      chainId,
+    }, this.accounts.user1);
+    await api.transactions.broadcast(getAfterPutFirst, {});
+    const {
+      height: heightGetAfterPutFirst,
+      stateChanges: stateChangesGetAfterPutFirst,
+      id: idGetAfterPutFirst,
+    } = await ni.waitForTx(getAfterPutFirst.id, { apiBase });
+
+    const {
+      timestamp: timestampGetAfterPutFirst,
+    } = await api.blocks.fetchHeadersAt(heightGetAfterPutFirst);
+    const keyPriceHistoryGetAfterPutFirst = `%s%s%d%d__price__history__${heightGetAfterPutFirst}__${timestampGetAfterPutFirst}`;
+
+    // check getAfterPutFirst
+    // --------------------------------------------------------------------------------------------
+    expect(stateChangesGetAfterPutFirst.data).to.eql([{
+      key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${idGetAfterPutFirst}`,
+      type: 'string',
+      value: `%d%d%d%d%d%d__${eastAmount}__${usdnAmount}__${expectedOutLpAmt}__${expectedPriceLast}__${heightGetAfterPutFirst}__${timestampGetAfterPutFirst}`,
+    }, {
+      key: '%s%s__price__last',
+      type: 'integer',
+      value: expectedPriceLast,
+    }, {
+      key: keyPriceHistoryGetAfterPutFirst,
+      type: 'integer',
+      value: expectedPriceHistory,
+    }]);
+
+    expect(stateChangesGetAfterPutFirst.transfers).to.eql([{
+      address: address(this.accounts.user1, chainId),
+      asset: this.eastAssetId,
+      amount: eastAmount,
+    }, {
+      address: address(this.accounts.user1, chainId),
+      asset: this.usdnAssetId,
+      amount: usdnAmount,
+    }]);
+
+    const { invokes: invokesGetAfterPutFirst } = stateChangesGetAfterPutFirst;
+    expect(invokesGetAfterPutFirst.length).to.eql(expectedInvokesCount);
+
+    expect(invokesGetAfterPutFirst[0].dApp).to.eql(address(this.accounts.factoryV2, chainId));
+    expect(invokesGetAfterPutFirst[0].call.function).to.eql('burn');
+    expect(invokesGetAfterPutFirst[0].call.args).to.eql([
+      {
+        type: 'Int',
+        value: expectedOutLpAmt,
+      }]);
+    expect(invokesGetAfterPutFirst[0].stateChanges.burns).to.eql([{
+      assetId: this.lpAssetId,
+      quantity: expectedOutLpAmt,
+    }]);
+
     // putSecond
     // --------------------------------------------------------------------------------------------
     const putSecond = invokeScript({
@@ -75,193 +134,7 @@ describe('lp_check_after_update_script: putAndGetAndPutThanSetScriptAndGet.mjs',
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(putSecond, {});
-    const {
-      height: heightPutSecond,
-      stateChanges: stateChangesPutSecond,
-      id: idPutSecond,
-    } = await ni.waitForTx(putSecond.id, { apiBase });
-
-    const { timestamp: timestampPutSecond } = await api.blocks.fetchHeadersAt(heightPutSecond);
-    const keyPriceHistoryPutSecond = `%s%s%d%d__price__history__${heightPutSecond}__${timestampPutSecond}`;
-
-    // check putSecond
-    // --------------------------------------------------------------------------------------------
-    expect(stateChangesPutSecond.data).to.eql([{
-      key: '%s%s__price__last',
-      type: 'integer',
-      value: expectedPriceLast,
-    }, {
-      key: keyPriceHistoryPutSecond,
-      type: 'integer',
-      value: expectedPriceHistory,
-    }, {
-      key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${idPutSecond}`,
-      type: 'string',
-      value: `%d%d%d%d%d%d%d%d%d%d__${expectedInAmtAssetAmt}__${expectedInPriceAssetAmt}__${expectedOutLpAmt}__${expectedPrice}__${expectedSlipByUser}__${expectedSlippageReal}__${heightPutSecond}__${timestampPutSecond}__${expectedSlipageAmAmt}__${expectedSlipagePrAmt}`,
-    }]);
-
-    expect(stateChangesPutSecond.transfers).to.eql([{
-      address: address(this.accounts.user1, chainId),
-      asset: this.lpAssetId,
-      amount: expectedOutLpAmt,
-    }]);
-
-    const { invokes: invokesPutSecond } = stateChangesPutSecond;
-    expect(invokesPutSecond.length).to.eql(expectedInvokesCount);
-
-    expect(invokesPutSecond[0].dApp).to.eql(address(this.accounts.factoryV2, chainId));
-    expect(invokesPutSecond[0].call.function).to.eql('emit');
-    expect(invokesPutSecond[0].call.args).to.eql([
-      {
-        type: 'Int',
-        value: expectedOutLpAmt,
-      }]);
-    expect(invokesPutSecond[0].stateChanges.transfers).to.eql([{
-      address: address(this.accounts.lp, chainId),
-      asset: this.lpAssetId,
-      amount: expectedOutLpAmt,
-    }]);
-    expect(invokesPutSecond[0].stateChanges.reissues).to.eql([{
-      assetId: this.lpAssetId,
-      isReissuable: true,
-      quantity: expectedOutLpAmt,
-    }]);
-
-    // getAfterPutSecond
-    // --------------------------------------------------------------------------------------------
-    const getAfterPutSecond = invokeScript({
-      dApp: lp,
-      payment: [
-        { assetId: this.lpAssetId, amount: expectedOutLpAmt },
-      ],
-      call: {
-        function: 'get',
-        args: [],
-      },
-      chainId,
-    }, this.accounts.user1);
-    await api.transactions.broadcast(getAfterPutSecond, {});
-    const {
-      height: heightGetAfterPutSecond,
-      stateChanges: stateChangesGetAfterPutSecond,
-      id: idGetAfterPutSecond,
-    } = await ni.waitForTx(getAfterPutSecond.id, { apiBase });
-
-    const {
-      timestamp: timestampGetAfterPutSecond,
-    } = await api.blocks.fetchHeadersAt(heightGetAfterPutSecond);
-    const keyPriceHistoryGetAfterPutSecond = `%s%s%d%d__price__history__${heightGetAfterPutSecond}__${timestampGetAfterPutSecond}`;
-
-    // check getAfterPutSecond
-    // --------------------------------------------------------------------------------------------
-    expect(stateChangesGetAfterPutSecond.data).to.eql([{
-      key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${idGetAfterPutSecond}`,
-      type: 'string',
-      value: `%d%d%d%d%d%d__${eastAmount}__${usdnAmount}__${expectedOutLpAmt}__${expectedPriceLast}__${heightGetAfterPutSecond}__${timestampGetAfterPutSecond}`,
-    }, {
-      key: '%s%s__price__last',
-      type: 'integer',
-      value: expectedPriceLast,
-    }, {
-      key: keyPriceHistoryGetAfterPutSecond,
-      type: 'integer',
-      value: expectedPriceHistory,
-    }]);
-
-    expect(stateChangesGetAfterPutSecond.transfers).to.eql([{
-      address: address(this.accounts.user1, chainId),
-      asset: this.eastAssetId,
-      amount: eastAmount,
-    }, {
-      address: address(this.accounts.user1, chainId),
-      asset: this.usdnAssetId,
-      amount: usdnAmount,
-    }]);
-
-    const { invokes: invokesGetAfterPutSecond } = stateChangesGetAfterPutSecond;
-    expect(invokesGetAfterPutSecond.length).to.eql(expectedInvokesCount);
-
-    expect(invokesGetAfterPutSecond[0].dApp).to.eql(address(this.accounts.factoryV2, chainId));
-    expect(invokesGetAfterPutSecond[0].call.function).to.eql('burn');
-    expect(invokesGetAfterPutSecond[0].call.args).to.eql([
-      {
-        type: 'Int',
-        value: expectedOutLpAmt,
-      }]);
-    expect(invokesGetAfterPutSecond[0].stateChanges.burns).to.eql([{
-      assetId: this.lpAssetId,
-      quantity: expectedOutLpAmt,
-    }]);
-
-    // putThird
-    // --------------------------------------------------------------------------------------------
-    const putThird = invokeScript({
-      dApp: lp,
-      payment: [
-        { assetId: this.eastAssetId, amount: eastAmount },
-        { assetId: this.usdnAssetId, amount: usdnAmount },
-      ],
-      call: {
-        function: 'put',
-        args: [
-          { type: 'integer', value: 0 },
-          { type: 'boolean', value: shouldAutoStake },
-        ],
-      },
-      chainId,
-    }, this.accounts.user1);
-    await api.transactions.broadcast(putThird, {});
-    const {
-      height: heightPutThird,
-      stateChanges: stateChangesPutThird,
-      id: idPutThird,
-    } = await ni.waitForTx(putThird.id, { apiBase });
-
-    const { timestamp: timestampPutThird } = await api.blocks.fetchHeadersAt(heightPutThird);
-    const keyPriceHistoryPutThird = `%s%s%d%d__price__history__${heightPutThird}__${timestampPutThird}`;
-
-    // check putThird
-    // --------------------------------------------------------------------------------------------
-    expect(stateChangesPutThird.data).to.eql([{
-      key: '%s%s__price__last',
-      type: 'integer',
-      value: expectedPriceLast,
-    }, {
-      key: keyPriceHistoryPutThird,
-      type: 'integer',
-      value: expectedPriceHistory,
-    }, {
-      key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${idPutThird}`,
-      type: 'string',
-      value: `%d%d%d%d%d%d%d%d%d%d__${expectedInAmtAssetAmt}__${expectedInPriceAssetAmt}__${expectedOutLpAmt}__${expectedPrice}__${expectedSlipByUser}__${expectedSlippageReal}__${heightPutThird}__${timestampPutThird}__${expectedSlipageAmAmt}__${expectedSlipagePrAmt}`,
-    }]);
-
-    expect(stateChangesPutThird.transfers).to.eql([{
-      address: address(this.accounts.user1, chainId),
-      asset: this.lpAssetId,
-      amount: expectedOutLpAmt,
-    }]);
-
-    const { invokes: invokesPutThird } = stateChangesPutThird;
-    expect(invokesPutThird.length).to.eql(expectedInvokesCount);
-
-    expect(invokesPutThird[0].dApp).to.eql(address(this.accounts.factoryV2, chainId));
-    expect(invokesPutThird[0].call.function).to.eql('emit');
-    expect(invokesPutThird[0].call.args).to.eql([
-      {
-        type: 'Int',
-        value: expectedOutLpAmt,
-      }]);
-    expect(invokesPutThird[0].stateChanges.transfers).to.eql([{
-      address: address(this.accounts.lp, chainId),
-      asset: this.lpAssetId,
-      amount: expectedOutLpAmt,
-    }]);
-    expect(invokesPutThird[0].stateChanges.reissues).to.eql([{
-      assetId: this.lpAssetId,
-      isReissuable: true,
-      quantity: expectedOutLpAmt,
-    }]);
+    await ni.waitForTx(putSecond.id, { apiBase });
 
     // setScript
     // --------------------------------------------------------------------------------------------
