@@ -50,6 +50,8 @@ let validPoolLabels = [poolLabelWxEmission]
 # KEYS ON CURRENT CONTRACT
 #-------------------------
 
+func keyAllowedLpScriptHash() = "%s__allowedLpScriptHash"
+
 func keyFactoryConfig()
       = "%s__factoryConfig"
 func keyLpTokensList()

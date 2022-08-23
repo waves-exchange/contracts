@@ -17,8 +17,8 @@ type Config struct {
 type Mode string
 
 const (
-	DeployTestnet  Mode = "deployTestnet"
-	CompareMainnet Mode = "compareMainnet"
+	DeployTestnet Mode = "deployTestnet"
+	DeployMainnet Mode = "deployMainnet"
 )
 
 func NewConfig() (Config, error) {

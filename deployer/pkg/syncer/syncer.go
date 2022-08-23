@@ -14,12 +14,14 @@ import (
 	"github.com/wavesplatform/gowaves/pkg/client"
 	"github.com/wavesplatform/gowaves/pkg/crypto"
 	"github.com/wavesplatform/gowaves/pkg/proto"
+	"golang.org/x/crypto/blake2b"
 	"io"
 	"math"
 	"net/http"
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -30,6 +32,7 @@ type Syncer struct {
 	client          *client.Client
 	contractsFolder string
 	contractModel   contract.Model
+	compileCache    map[string]func() (base64Script string, scriptBytes []byte, setScriptFee uint64, err error)
 }
 
 func NewSyncer(
@@ -49,7 +52,7 @@ func NewSyncer(
 			return Syncer{}, fmt.Errorf("client.NewClient: %w", err)
 		}
 		cl = c
-	case config.CompareMainnet:
+	case config.DeployMainnet:
 		c, err := client.NewClient(
 			client.Options{BaseUrl: mainnetNode, Client: &http.Client{Timeout: time.Minute}},
 		)
@@ -74,6 +77,8 @@ func NewSyncer(
 	}, nil
 }
 
+const lpRide = "lp.ride"
+
 func (s Syncer) ApplyChanges(c context.Context) error {
 	ctx, cancel := context.WithTimeout(c, time.Hour)
 	defer cancel()
@@ -88,10 +93,138 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("s.contractModel.GetAll: %w", err)
 	}
 
+	const (
+		factoryRide            = "factory_v2.ride"
+		factoryTag             = "factory_v2"
+		keyAllowedLpScriptHash = "%s__allowedLpScriptHash"
+	)
+	f, err := os.Open(path.Join(s.contractsFolder, lpRide))
+	if err != nil {
+		return fmt.Errorf("os.Open: %w", err)
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	bodyLpRide, err := io.ReadAll(f)
+	if err != nil {
+		return fmt.Errorf("io.ReadAll: %w", err)
+	}
+
+	_, scriptBytes, _, err := s.compile(ctx, bodyLpRide, false)
+	if err != nil {
+		return fmt.Errorf("s.compile: %w", err)
+	}
+
+	lpRideHash, err := blake2b.New256(scriptBytes)
+	if err != nil {
+		return fmt.Errorf("blake2b.New256: %w", err)
+	}
+	newHashStr := base64.StdEncoding.EncodeToString(lpRideHash.Sum(nil))
+	dataTxValue := &proto.StringDataEntry{
+		Key:   keyAllowedLpScriptHash,
+		Value: newHashStr,
+	}
+
+	for _, cont := range contracts {
+		if cont.File == factoryRide && cont.Tag == factoryTag {
+			switch s.mode {
+			case config.DeployTestnet:
+				prv, er := crypto.NewSecretKeyFromBase58(cont.TestnetPrv)
+				if er != nil {
+					return fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er)
+				}
+
+				pub := crypto.GeneratePublicKey(prv)
+
+				prvSigner, er := crypto.NewSecretKeyFromBase58(cont.TestnetSigner)
+				if er != nil {
+					return fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er)
+				}
+
+				dataTx := proto.NewUnsignedDataWithProofs(2, pub, 500000, timestamp())
+				er = dataTx.AppendEntry(dataTxValue)
+				if er != nil {
+					return fmt.Errorf("dataTx.AppendEntry: %w", er)
+				}
+
+				addr, er := proto.NewAddressFromPublicKey(proto.TestNetScheme, pub)
+				if er != nil {
+					return fmt.Errorf("proto.NewAddressFromPublicKey: %w", er)
+				}
+
+				actualHash, er := s.getStringValue(ctx, addr, keyAllowedLpScriptHash)
+				if er != nil {
+					return fmt.Errorf("s.getStringValue: %w", er)
+				}
+
+				if actualHash != newHashStr {
+					e := s.validateSignBroadcastWait(ctx, proto.TestNetScheme, dataTx, prvSigner)
+					if e != nil {
+						return fmt.Errorf("validateSignBroadcastWait: %w", e)
+					}
+				}
+			case config.DeployMainnet:
+				pub, er := crypto.NewPublicKeyFromBase58(cont.MainnetPub)
+				if er != nil {
+					return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", er)
+				}
+
+				addr, er := proto.NewAddressFromPublicKey(proto.MainNetScheme, pub)
+				if er != nil {
+					return fmt.Errorf("proto.NewAddressFromPublicKey: %w", er)
+				}
+
+				actualHash, er := s.getStringValue(ctx, addr, keyAllowedLpScriptHash)
+				if er != nil {
+					return fmt.Errorf("s.getStringValue: %w", er)
+				}
+
+				dataTx := proto.NewUnsignedDataWithProofs(2, pub, 500000, timestamp())
+				er = dataTx.AppendEntry(dataTxValue)
+				if er != nil {
+					return fmt.Errorf("dataTx.AppendEntry: %w", er)
+				}
+
+				if actualHash != newHashStr {
+					tx, e := json.Marshal(dataTx)
+					if e != nil {
+						return fmt.Errorf("json.Marshal: %w", e)
+					}
+
+					s.logger.Info().
+						Str("mode", string(s.mode)).
+						Str("address", addr.String()).
+						Str("actualHash", actualHash).
+						Str("newHash", newHashStr).
+						RawJSON("tx", tx).
+						Msg("waiting AllowedLpScriptHash data-tx sign and broadcast...")
+
+					for {
+						value, er2 := s.getStringValue(ctx, addr, keyAllowedLpScriptHash)
+						if er2 != nil {
+							return fmt.Errorf("s.getStringValue: %w", er2)
+						}
+						if value == newHashStr {
+							s.logger.Info().
+								Str("mode", string(s.mode)).
+								Msg("AllowedLpScriptHash data-tx done")
+							break
+						}
+
+						time.Sleep(5 * time.Second)
+					}
+				}
+			}
+
+			break
+		}
+	}
+
 	for _, fl := range files {
-		er := s.doAction(ctx, fl.Name(), contracts)
+		er := s.doFile(ctx, fl.Name(), contracts)
 		if er != nil {
-			return fmt.Errorf("s.doAction: %w", er)
+			return fmt.Errorf("s.doFile: %w", er)
 		}
 	}
 
@@ -99,7 +232,25 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 	return nil
 }
 
-func (s Syncer) doAction(ctx context.Context, fileName string, contracts []contract.Contract) error {
+func (s Syncer) getStringValue(ctx context.Context, address proto.WavesAddress, key string) (string, error) {
+	data, _, err := s.client.Addresses.AddressesDataKey(ctx, address, key)
+	if err != nil {
+		return "", fmt.Errorf("s.client.Addresses.AddressesDataKey: %w", err)
+	}
+
+	const invalidType = "data is not StringDataEntry: address: %s key: %s"
+	if data.GetValueType() == proto.DataString {
+		res, ok := data.(*proto.StringDataEntry)
+		if !ok {
+			return "", fmt.Errorf(invalidType, address.String(), key)
+		}
+		return res.Value, nil
+	}
+
+	return "", fmt.Errorf(invalidType, address.String(), key)
+}
+
+func (s Syncer) doFile(ctx context.Context, fileName string, contracts []contract.Contract) error {
 	const (
 		changed    = "contract changed"
 		notChanged = "contract didn't changed"
@@ -107,7 +258,7 @@ func (s Syncer) doAction(ctx context.Context, fileName string, contracts []contr
 		skip       = "skip"
 		deployed   = "deployed"
 		sign       = "sign"
-		address    = "address"
+		addressStr = "address"
 		fileStr    = "file"
 		tag        = "tag"
 	)
@@ -174,7 +325,7 @@ func (s Syncer) doAction(ctx context.Context, fileName string, contracts []contr
 
 			log := s.logger.Info().
 				Str(fileStr, fileName).
-				Str(address, addr.String()).
+				Str(addressStr, addr.String()).
 				Str(tag, cont.Tag)
 
 			if base64Script == fromBlockchainScript {
@@ -191,7 +342,7 @@ func (s Syncer) doAction(ctx context.Context, fileName string, contracts []contr
 					pub,
 					scriptBytes,
 					setScriptFee,
-					uint64(time.Now().UnixMilli()),
+					timestamp(),
 				),
 				prvSigner,
 			)
@@ -207,7 +358,7 @@ func (s Syncer) doAction(ctx context.Context, fileName string, contracts []contr
 			log.Str(action, deployed).Msg(changed)
 			continue
 
-		case config.CompareMainnet:
+		case config.DeployMainnet:
 			base64Script, scriptBytes, setScriptFee, er2 := s.compile(ctx, body, cont.Compact)
 			if er2 != nil {
 				return fmt.Errorf("s.compile: %w", er2)
@@ -230,7 +381,7 @@ func (s Syncer) doAction(ctx context.Context, fileName string, contracts []contr
 
 			log := s.logger.Info().
 				Str(fileStr, fileName).
-				Str(address, addr.String()).
+				Str(addressStr, addr.String()).
 				Str(tag, cont.Tag)
 
 			if base64Script == fromBlockchainScript {
@@ -238,23 +389,34 @@ func (s Syncer) doAction(ctx context.Context, fileName string, contracts []contr
 				continue
 			}
 
-			setScriptTx, er2 := json.Marshal(proto.NewUnsignedSetScriptWithProofs(
+			unsignedSetScriptTx := proto.NewUnsignedSetScriptWithProofs(
 				1,
 				proto.MainNetScheme,
 				pub,
 				scriptBytes,
 				setScriptFee,
-				uint64(time.Now().UnixMilli()),
-			))
-			if er2 != nil {
-				return fmt.Errorf("s.validateSignBroadcastWait: %w", er2)
+				timestamp(),
+			)
+			if cont.File == lpRide {
+				_, er := s.client.Transactions.Broadcast(ctx, unsignedSetScriptTx)
+				if er != nil {
+					return fmt.Errorf("s.client.Transactions.Broadcast: %w", er)
+				}
+
+				log.Str(action, deployed).Msg(changed)
+			} else {
+				setScriptTx, er := json.Marshal(unsignedSetScriptTx)
+				if er != nil {
+					return fmt.Errorf("s.validateSignBroadcastWait: %w", er)
+				}
+
+				log.Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
+				er = s.printDiff(ctx, fromBlockchainScript, base64Script)
+				if er != nil {
+					return fmt.Errorf("s.printDiff: %w", er)
+				}
 			}
 
-			log.Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
-			er2 = s.printDiff(ctx, fromBlockchainScript, base64Script)
-			if er2 != nil {
-				return fmt.Errorf("s.printDiff: %w", er2)
-			}
 			continue
 		}
 	}
@@ -345,7 +507,7 @@ func (s Syncer) validateSignBroadcastWait(
 	tx proto.Transaction,
 	prv crypto.SecretKey,
 ) error {
-	_, err := tx.Validate()
+	_, err := tx.Validate(networkByte)
 	if err != nil {
 		return fmt.Errorf("tx.Validate: %w", err)
 	}
@@ -396,6 +558,12 @@ func (s Syncer) compileRaw(ctx context.Context, body []byte, compact bool) (stri
 }
 
 func (s Syncer) compile(ctx context.Context, body []byte, compact bool) (string, []byte, uint64, error) {
+	key := string(body) + strconv.FormatBool(compact)
+	val, ok := s.compileCache[key]
+	if ok {
+		return val()
+	}
+
 	base64Script, err := s.compileRaw(ctx, body, compact)
 	if err != nil {
 		return "", nil, 0, fmt.Errorf("s.compileRaw: %w", err)
@@ -407,7 +575,11 @@ func (s Syncer) compile(ctx context.Context, body []byte, compact bool) (string,
 	}
 	setScriptFee := calcSetScriptFee(scriptBytes)
 
-	return base64Script, scriptBytes, setScriptFee, nil
+	res := func() (string, []byte, uint64, error) {
+		return base64Script, scriptBytes, setScriptFee, nil
+	}
+	s.compileCache[key] = res
+	return res()
 }
 
 func (s Syncer) getScript(ctx context.Context, addr proto.Address) (string, error) {
@@ -513,4 +685,8 @@ func calcSetScriptFee(script []byte) uint64 {
 		return min
 	}
 	return res
+}
+
+func timestamp() uint64 {
+	return uint64(time.Now().UnixMilli())
 }
