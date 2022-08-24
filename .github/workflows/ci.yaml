@@ -24,6 +24,7 @@ jobs:
       MONGOURI: ${{ secrets.TESTNETMONGOURI }}
       MONGODATABASENAME: ${{ secrets.TESTNETMONGODATABASENAME }}
       MONGOCOLLECTIONCONTRACTS: ${{ secrets.TESTNETMONGOCOLLECTIONCONTRACTS }}
+      COMPARELPSCIPRTADDRESS: 3N6wAa7PMFZJu4Zrmp3avXmMnRTrRpMM9Lh # WX/USDN
     if: github.ref_name == 'dev'
     runs-on: ubuntu-20.04
     container:
@@ -43,6 +44,7 @@ jobs:
       MONGOURI: ${{ secrets.MAINNETMONGOURI }}
       MONGODATABASENAME: ${{ secrets.MAINNETMONGODATABASENAME }}
       MONGOCOLLECTIONCONTRACTS: ${{ secrets.MAINNETMONGOCOLLECTIONCONTRACTS }}
+      COMPARELPSCIPRTADDRESS: 3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99 # WX/USDN
     if: github.ref_name == 'main'
     runs-on: ubuntu-20.04
     container:

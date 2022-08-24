@@ -33,6 +33,7 @@ func main() {
 		cfg.Network,
 		cfg.Node,
 		contract.NewModel(db.Collection(cfg.MongoCollectionContracts)),
+		cfg.CompareLpScriptAddress,
 	)
 	if err != nil {
 		panic(fmt.Errorf("syncer.NewSyncer: %w", err))

@@ -26,12 +26,13 @@ import (
 )
 
 type Syncer struct {
-	logger          zerolog.Logger
-	network         config.Network
-	client          *client.Client
-	contractsFolder string
-	contractModel   contract.Model
-	compileCache    map[string]func() (base64Script string, scriptBytes []byte, setScriptFee uint64, err error)
+	logger                 zerolog.Logger
+	network                config.Network
+	client                 *client.Client
+	contractsFolder        string
+	contractModel          contract.Model
+	compareLpScriptAddress proto.Address
+	compileCache           map[string]func() (base64Script string, scriptBytes []byte, setScriptFee uint64, err error)
 }
 
 func NewSyncer(
@@ -39,6 +40,7 @@ func NewSyncer(
 	network config.Network,
 	node string,
 	contractModel contract.Model,
+	compareLpScriptAddress string,
 ) (Syncer, error) {
 	cl, err := client.NewClient(
 		client.Options{BaseUrl: node, Client: &http.Client{Timeout: time.Minute}},
@@ -47,16 +49,33 @@ func NewSyncer(
 		return Syncer{}, fmt.Errorf("client.NewClient: %w", err)
 	}
 
+	var addr proto.Address
+	switch network {
+	case config.Testnet:
+		addr, err = proto.NewAddressFromString(compareLpScriptAddress)
+		if err != nil {
+			return Syncer{}, fmt.Errorf("proto.NewAddressFromString: %w", err)
+		}
+	case config.Mainnet:
+		addr, err = proto.NewAddressFromString(compareLpScriptAddress)
+		if err != nil {
+			return Syncer{}, fmt.Errorf("proto.NewAddressFromString: %w", err)
+		}
+	default:
+		return Syncer{}, fmt.Errorf("unknown network: %s", network)
+	}
+
 	logger.Info().
 		Str("network", string(network)).
 		Msg("syncer init")
 
 	return Syncer{
-		logger:          logger,
-		network:         network,
-		client:          cl,
-		contractModel:   contractModel,
-		contractsFolder: path.Join("..", "ride"),
+		logger:                 logger,
+		network:                network,
+		client:                 cl,
+		contractModel:          contractModel,
+		contractsFolder:        path.Join("..", "ride"),
+		compareLpScriptAddress: addr,
 	}, nil
 }
 
@@ -94,7 +113,7 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("io.ReadAll: %w", err)
 	}
 
-	_, scriptBytes, _, err := s.compile(ctx, bodyLpRide, false)
+	lpRideBase64, scriptBytes, _, err := s.compile(ctx, bodyLpRide, false)
 	if err != nil {
 		return fmt.Errorf("s.compile: %w", err)
 	}
@@ -146,7 +165,20 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 					if e != nil {
 						return fmt.Errorf("validateSignBroadcastWait: %w", e)
 					}
+
+					s.logger.Info().
+						Str("address", addr.String()).
+						Str("actualHash", actualHash).
+						Str("newHash", newHashStr).
+						Msg("factory_v2 AllowedLpScriptHash data-tx done")
+				} else {
+					s.logger.Info().
+						Str("address", addr.String()).
+						Str("actualHash", actualHash).
+						Str("newHash", newHashStr).
+						Msg("factory_v2 AllowedLpScriptHash data-tx not needed")
 				}
+
 			case config.Mainnet:
 				addr, er := proto.NewAddressFromPublicKey(proto.MainNetScheme, pub)
 				if er != nil {
@@ -172,23 +204,39 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 						return fmt.Errorf("json.Marshal: %w", e)
 					}
 
+					lpRideBlockchainBase64, e := s.getScript(ctx, s.compareLpScriptAddress)
+					if e != nil {
+						return fmt.Errorf("s.getScript: %w", e)
+					}
+
 					s.logger.Info().
-						Str("network", string(s.network)).
-						Str("address", addr.String()).
-						Str("actualHash", actualHash).
-						Str("newHash", newHashStr).
-						RawJSON("tx", tx).
-						Msg("waiting AllowedLpScriptHash data-tx sign and broadcast...")
+						Str("address", s.compareLpScriptAddress.String()).
+						Str("left", "blockchain lp.ride").
+						Str("right", "local lp.ride").
+						Msg("print diff")
+					e = s.printDiff(ctx, lpRideBlockchainBase64, lpRideBase64)
+					if e != nil {
+						return fmt.Errorf("s.printDiff: %w", e)
+					}
+
+					log := func() *zerolog.Event {
+						return s.logger.Info().
+							Str("tag", "factory_v2").
+							Str("address", addr.String()).
+							Str("actualHash", actualHash).
+							Str("newHash", newHashStr)
+					}
+
+					log().RawJSON("tx", tx).Msg("we are about to set lp.ride script above as approved. " +
+						"sign and broadcast data-tx to continue...")
 
 					for {
-						value, er2 := s.getStringValue(ctx, addr, keyAllowedLpScriptHash)
-						if er2 != nil {
-							return fmt.Errorf("s.getStringValue: %w", er2)
+						value, er3 := s.getStringValue(ctx, addr, keyAllowedLpScriptHash)
+						if er3 != nil {
+							return fmt.Errorf("s.getStringValue: %w", er3)
 						}
 						if value == newHashStr {
-							s.logger.Info().
-								Str("network", string(s.network)).
-								Msg("AllowedLpScriptHash data-tx done")
+							log().Msg("data-tx done")
 							break
 						}
 
@@ -364,13 +412,15 @@ func (s Syncer) doFile(
 				return fmt.Errorf("s.getScript: %w", er2)
 			}
 
-			log := s.logger.Info().
-				Str(fileStr, fileName).
-				Str(addressStr, addr.String()).
-				Str(tag, cont.Tag)
+			log := func() *zerolog.Event {
+				return s.logger.Info().
+					Str(fileStr, fileName).
+					Str(addressStr, addr.String()).
+					Str(tag, cont.Tag)
+			}
 
 			if base64Script == fromBlockchainScript {
-				log.Str(action, skip).Msg(notChanged)
+				log().Str(action, skip).Msg(notChanged)
 				continue
 			}
 
@@ -388,14 +438,14 @@ func (s Syncer) doFile(
 					return fmt.Errorf("s.client.Transactions.Broadcast: %w", er)
 				}
 
-				log.Str(action, deployed).Msg(changed)
+				log().Str(action, deployed).Msg(changed)
 			} else {
 				setScriptTx, er := json.Marshal(unsignedSetScriptTx)
 				if er != nil {
 					return fmt.Errorf("s.validateSignBroadcastWait: %w", er)
 				}
 
-				log.Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
+				log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
 				er = s.printDiff(ctx, fromBlockchainScript, base64Script)
 				if er != nil {
 					return fmt.Errorf("s.printDiff: %w", er)
