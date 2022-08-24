@@ -1,0 +1,14 @@
+{-# STDLIB_VERSION 5 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+@Callable(i)
+func calcD(
+  x1BigIntStr: String,
+  x2BigIntStr: String,
+  ampBigIntStr: String,
+  aPrecisionBigIntStr: String,
+  targetPrecisionBigIntStr: String
+) = {
+  ([], 1000.toString())
+}
