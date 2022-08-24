@@ -398,7 +398,7 @@ func poolStatsREADONLY(lpAsset: String) = {
   let lpPriceAssetShare = poolAddress.invoke("fromX18WrapperREADONLY", [pricesList[2], MULT8], []).asInt()
 
   let poolWeight = factoryDapp.getIntegerValue(poolAddress.toString().keyFactoryPoolWeight())
-  let feePermille = poolAddress.getIntOrZero(keyPoolFeePermille())
+  let feePermille = poolAddress.getIntOrZero(keyFeePermille())
   (
     [],
     makeString([
