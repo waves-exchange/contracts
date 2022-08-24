@@ -8,7 +8,7 @@ import {
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { format, join } from 'path';
-import { setScriptFromFile } from '../utils.mjs';
+import { setScriptFromFile } from '../../../utils.mjs';
 
 const { waitForTx } = nodeInteraction;
 const apiBase = process.env.API_NODE_URL;
@@ -17,7 +17,7 @@ const chainId = 'R';
 const api = create(apiBase);
 const seedWordsCount = 5;
 const ridePath = 'ride';
-const mockRidePath = join('test', 'lp_check_after_update_script', 'mock');
+const mockRidePath = join('test', 'lp', 'mock');
 const lpPath = format({ dir: ridePath, base: 'lp.ride' });
 const factoryV2Path = format({ dir: ridePath, base: 'factory_v2.ride' });
 const stakingPath = format({ dir: mockRidePath, base: 'staking.mock.ride' });
@@ -45,10 +45,7 @@ export const mochaHooks = {
     }, seed);
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
-    console.log('account addresses:');
-    for (const [key, value] of Object.entries(this.accounts)) {
-      console.log('  ', key, address(value, chainId));
-    }
+
     await setScriptFromFile(lpPath, this.accounts.lp);
     await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
     await setScriptFromFile(stakingPath, this.accounts.staking);
