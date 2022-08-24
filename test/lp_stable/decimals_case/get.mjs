@@ -18,10 +18,10 @@ describe('lp_stable: get.mjs', /** @this {MochaSuiteModified} */() => {
     async function () {
       const usdnAmount = 1e16 / 10;
       const usdtAmount = 1e8 / 10;
-      const lpStableAmount = 1e10;
+      const lpStableAmount = 1e11;
       const shouldAutoStake = false;
-      const priceLast = 1e16;
-      const priceHistory = 1e16;
+      const priceLast = 1e18;
+      const priceHistory = 1e18;
 
       const lpStable = address(this.accounts.lpStable, chainId);
 

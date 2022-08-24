@@ -25,14 +25,14 @@ describe(
       const isEval = true;
       const emitLp = false;
 
-      const expected1 = { type: 'Int', value: 100000000 };
-      const expected2 = { type: 'Int', value: 0 };
-      const expected3 = { type: 'Int', value: 100000000 };
-      const expected4 = { type: 'Int', value: 0 };
-      const expected5 = { type: 'Int', value: 0 };
-      const expected6 = { type: 'Int', value: 0 };
-      const expected7 = { type: 'ByteVector', value: this.lpStableAssetId };
-      const expected8 = { type: 'String', value: '1' };
+      const expected1 = { type: 'Int', value: 1000000000 }; // outLp
+      const expected2 = { type: 'Int', value: 0 }; // emitLpAmount
+      const expected3 = { type: 'Int', value: 10000000000 }; // currentPrice
+      const expected4 = { type: 'Int', value: 0 }; // amountBalance
+      const expected5 = { type: 'Int', value: 0 }; // priceBalance
+      const expected6 = { type: 'Int', value: 0 }; // lpEmission
+      const expected7 = { type: 'ByteVector', value: this.lpStableAssetId }; // lpAssetId
+      const expected8 = { type: 'String', value: '1' }; // sts
       const expected9 = {
         type: 'IntegerEntry',
         value: {
@@ -42,15 +42,15 @@ describe(
           },
           value: {
             type: 'Int',
-            value: 100000000,
+            value: 10000000000,
           },
         },
       };
 
-      const expected10 = { type: 'Int', value: 0 };
-      const expected11 = { type: 'Int', value: 0 };
-      const expected12 = { type: 'String', value: this.usdtAssetId };
-      const expected13 = { type: 'String', value: this.usdnAssetId };
+      const expected10 = { type: 'Int', value: 0 }; // amountDiff
+      const expected11 = { type: 'Int', value: 0 }; // priceDiff
+      const expected12 = { type: 'String', value: this.usdtAssetId }; // inAmountAssetId
+      const expected13 = { type: 'String', value: this.usdnAssetId }; // inPriceAssetId
 
       const lpStable = address(this.accounts.lpStable, chainId);
 

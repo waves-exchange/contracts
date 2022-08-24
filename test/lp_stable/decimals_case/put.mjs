@@ -16,10 +16,10 @@ describe('lp_stable: put.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully put with shouldAutoStake false', async function () {
     const usdnAmount = 1e16 / 10;
     const usdtAmount = 1e8 / 10;
-    const expectedLpAmount = 1e11;
+    const expectedLpAmount = 1e12;
     const shouldAutoStake = false;
-    const priceLast = 1e16;
-    const priceHistory = 1e16;
+    const priceLast = 1e18;
+    const priceHistory = 1e18;
 
     const lpStable = address(this.accounts.lpStable, chainId);
 

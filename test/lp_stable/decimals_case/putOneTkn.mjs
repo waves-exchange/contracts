@@ -16,16 +16,16 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully putOneTkn with autoStake false', async function () {
     const amAssetPart = 1e10;
     const prAssetPart = 1e10;
-    const outLp = 1e10;
+    const outLp = 1e11;
     const slippage = 1e3;
     const autoStake = false;
     const usdtAmount = 1e10;
 
-    const expectedPriceLast = 1e8;
-    const expectedPriceHistory = 1e8;
+    const expectedPriceLast = 1e10;
+    const expectedPriceHistory = 1e10;
     const expectedWriteAmAmt = 1e10;
     const expectedWritePrAmt = 0;
-    const expectedEmitLpAmt = 1e10;
+    const expectedEmitLpAmt = 1e11;
     const expectedslippageCalc = 0;
     const expectedAmDiff = 0;
     const expectedPrDiff = 0;

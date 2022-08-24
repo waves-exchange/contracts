@@ -16,7 +16,7 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully getOneTkn.', async function () {
     const amAssetPart = 1e10;
     const prAssetPart = 1e10;
-    const outLp = 1e10;
+    const outLp = 1e11;
     const slippage = 1e3;
     const autoStake = false;
     const usdtAmount = 1e10;

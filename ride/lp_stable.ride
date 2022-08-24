@@ -36,6 +36,8 @@
 #-----------------
 # GLOBAL VARIABLES
 #-----------------
+let defaultDecimals = 1_000_000
+
 let scale8 = 100_000_000
 let scale8BigInt = 100_000_000.toBigInt()
 let scale18 = 1_000_000_000_000_000_000.toBigInt()
@@ -248,21 +250,18 @@ func estimateGetOperation(txId58: String, paymentAssetId: String, paymentLpAmoun
   let lpEmission = assetInfo(lpAssetId.fromBase58String()).valueOrErrorMessage("Wrong LP id").quantity
 
   strict validationBlock = lpAssetId == paymentAssetId || throwErr("Wrong payment asset")
+  let amountBalance = getAccBalance(amountId)
+  let priceBalance  = getAccBalance(priceId)
 
-  strict decimals = if amountDecimals >= priceDecimals then {
-    amountDecimals
-  } else {
-    priceDecimals
-  }
+  let amountBalanceDefaultDecimals  = fraction(amountBalance, defaultDecimals, amountDecimals)
+  let priceBalanceDefaultDecimals   = fraction(priceBalance, defaultDecimals, priceDecimals)
 
-  let amountBalance     = getAccBalance(amountId)
-  let amountBalanceX18  = amountBalance.toX18(decimals)
-  let priceBalance      = getAccBalance(priceId)
-  let priceBalanceX18   = priceBalance.toX18(decimals)
+  let amountBalanceX18  = amountBalanceDefaultDecimals.toX18(defaultDecimals)
+  let priceBalanceX18   = priceBalanceDefaultDecimals.toX18(defaultDecimals)
 
   let currentPriceX18 = calcPriceBigInt(priceBalanceX18, amountBalanceX18)
   let curPrice = currentPriceX18.fromX18(scale8)
-  
+
   let paymentLpAmountX18 = paymentLpAmount.toX18(scale8)
   let lpEmissionX18 = lpEmission.toX18(scale8)
 
@@ -271,8 +270,11 @@ func estimateGetOperation(txId58: String, paymentAssetId: String, paymentLpAmoun
   let outPriceAmountX18 = fraction(priceBalanceX18, paymentLpAmountX18, lpEmissionX18)
 
   # cast amounts to asset decimals
-  let outAmountAmount = outAmountAmountX18.fromX18(decimals)
-  let outPriceAmount = outPriceAmountX18.fromX18(decimals)
+  let outAmountAmountDefaultDecimals  = outAmountAmountX18.fromX18(defaultDecimals)
+  let outPriceAmountDefaultDecimals  = outPriceAmountX18.fromX18(defaultDecimals)
+
+  let outAmountAmount = fraction(outAmountAmountDefaultDecimals, amountDecimals, defaultDecimals)
+  let outPriceAmount  = fraction(outPriceAmountDefaultDecimals, priceDecimals, defaultDecimals)
 
   let state = if (txId58 == "") then [] else
   [
@@ -332,26 +334,25 @@ func estimatePutOperation(
       if(isOneAsset && paymentId == amountIdStr) then getAccBalance(amountIdStr) - paymentAmount else
       if(isOneAsset) then getAccBalance(amountIdStr) else getAccBalance(amountIdStr) - inAmountAssetAmount
 
-    # calc pool price
     let priceBalance = if(isEvaluate) then getAccBalance(priceIdStr) else
       if(isOneAsset && paymentId == priceIdStr) then getAccBalance(priceIdStr) - paymentAmount else
       if(isOneAsset) then getAccBalance(priceIdStr) else getAccBalance(priceIdStr) - inPriceAssetAmount
 
-    strict decimals = if amountDecimals >= priceDecimals then {
-      amountDecimals
-    } else {
-      priceDecimals
-    }
+    let amountBalanceDefaultDecimals  = fraction(amountBalance, defaultDecimals, amountDecimals)
+    let priceBalanceDefaultDecimals   = fraction(priceBalance, defaultDecimals, priceDecimals)
+
+    let inAmountAssetAmountDefaultDecimals  = fraction(inAmountAssetAmount, defaultDecimals, amountDecimals)
+    let inPriceAssetAmountDefaultDecimals   = fraction(inPriceAssetAmount, defaultDecimals, priceDecimals)
 
     # cast amounts to the lp decimals
-    let inAmountAssetAmountX18 = inAmountAssetAmount.toX18(decimals)
-    let inPriceAssetAmountX18 = inPriceAssetAmount.toX18(decimals)
+    let inAmountAssetAmountX18 = inAmountAssetAmountDefaultDecimals.toX18(defaultDecimals)
+    let inPriceAssetAmountX18 = inPriceAssetAmountDefaultDecimals.toX18(defaultDecimals)
 
     # calc user expected price
     let userPriceX18 = calcPriceBigInt(inPriceAssetAmountX18, inAmountAssetAmountX18)
 
-    let amountBalanceX18 = amountBalance.toX18(decimals)
-    let priceBalanceX18 = priceBalance.toX18(decimals)
+    let amountBalanceX18 = amountBalanceDefaultDecimals.toX18(defaultDecimals)
+    let priceBalanceX18 = priceBalanceDefaultDecimals.toX18(defaultDecimals)
 
     # case of the initial or first deposit
     # result is a tuple containing the following:
@@ -366,8 +367,8 @@ func estimatePutOperation(
       let lpAmountX18 = pow(inAmountAssetAmountX18 * inPriceAssetAmountX18, 0, 5.toBigInt(), 1, 0, DOWN)
       (
         lpAmountX18.fromX18(scale8),
-        inAmountAssetAmountX18.fromX18(decimals),
-        inPriceAssetAmountX18.fromX18(decimals),
+        inAmountAssetAmountX18.fromX18(defaultDecimals),
+        inPriceAssetAmountX18.fromX18(defaultDecimals),
         calcPriceBigInt(priceBalanceX18 + inPriceAssetAmountX18, amountBalanceX18 + inAmountAssetAmountX18),
         slippageX18
       )
@@ -395,16 +396,16 @@ func estimatePutOperation(
       let lpAmountX18 = fraction(lpEmissionX18, expectedPriceAssetAmountX18, priceBalanceX18)
       (
         lpAmountX18.fromX18(scale8),
-        expectedAmountAssetAmountX18.fromX18(decimals),
-        expectedPriceAssetAmountX18.fromX18(decimals),
+        expectedAmountAssetAmountX18.fromX18(defaultDecimals),
+        expectedPriceAssetAmountX18.fromX18(defaultDecimals),
         currentPriceX18,
         slippageX18
       )
     }
 
     let calculateLpAmount           = r._1
-    let calculateAmountAssetPayment = r._2
-    let calculatePriceAssetPayment  = r._3
+    let calculateAmountAssetPayment = fraction(r._2, amountDecimals, defaultDecimals)
+    let calculatePriceAssetPayment  = fraction(r._3, priceDecimals, defaultDecimals)
     let currentPrice                = r._4.fromX18(scale8)
     let slippageCalculate           = r._5.fromX18(scale8)
 
