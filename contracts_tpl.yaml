@@ -371,6 +371,10 @@
   testnet-signer: $MANAGER_PRV
   mainnet-pub: 6ggGUvisvwXkZVUaHNi5huvqSYFSVk3T1RiD5VnRq4DY
 
+- file: lp_staking_v2_pre_release.ride
+  tag: lp_staking_v2_pre_release
+  mainnet-pub: Hgxenqk2qCr4uTukXTAdimvGnYoNzcW3C6B8tRWv4yHn
+
 - file: boosting.ride
   tag: boosting
   testnet-prv: $BOOSTING_PRV
