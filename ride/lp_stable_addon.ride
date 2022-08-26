@@ -216,6 +216,11 @@ func ensureCanPutOneTkn(caller: String) = {
 
 @Verifier(tx)
 func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+
   match tx {
     case s: SetScriptTransaction =>
       let newHash = s.script.value().blake2b256()
@@ -224,17 +229,9 @@ func verify() = {
       if (allowedHash == newHash && currentHash != newHash) then {
         true
       } else {
-        let targetPublicKey = match managerPublicKeyOrUnit() {
-          case pk: ByteVector => pk
-          case _: Unit => tx.senderPublicKey
-        }
         sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
       }
     case _ => {
-      let targetPublicKey = match managerPublicKeyOrUnit() {
-        case pk: ByteVector => pk
-        case _: Unit => tx.senderPublicKey
-      }
       sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
     }
   }

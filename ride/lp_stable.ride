@@ -1044,6 +1044,11 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 
 @Verifier(tx)
 func verify() = {
+  let targetPublicKey = match m() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+
   match tx {
     case order: Order =>
       let matcherPub    = mp()
@@ -1059,17 +1064,9 @@ func verify() = {
       if (allowedHash == newHash && currentHash != newHash) then {
         true
       } else {
-        let targetPublicKey = match m() {
-          case pk: ByteVector => pk
-          case _: Unit => tx.senderPublicKey
-        }
         sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
       }
     case _ => {
-      let targetPublicKey = match m() {
-        case pk: ByteVector => pk
-        case _: Unit => tx.senderPublicKey
-      }
       sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
     }
   }
