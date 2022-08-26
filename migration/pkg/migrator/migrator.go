@@ -31,7 +31,7 @@ func NewMigrator(contracts contracts.Contracts, ctx context.Context, collection 
 			c[i] = Mainnet{
 				File:    contr.File,
 				Tag:     contr.Tag,
-				Compact: true,
+				Compact: false,
 				BasePub: contr.MainnetPub,
 			}
 		}
@@ -47,7 +47,7 @@ func NewMigrator(contracts contracts.Contracts, ctx context.Context, collection 
 			c[i] = Testnet{
 				File:      contr.File,
 				Tag:       contr.Tag,
-				Compact:   true,
+				Compact:   false,
 				BasePub:   contr.MainnetPub,
 				BasePrv:   contr.TestnetPrv,
 				SignerPrv: contr.TestnetSigner,
