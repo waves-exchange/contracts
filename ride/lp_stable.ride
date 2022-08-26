@@ -672,7 +672,7 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
     let paymentAmountRaw = pmt.amount
     let (pmtAmt, feeAmount) = paymentAmountRaw.takeFee()
 
-    if(pmtAmt < amAssetPart || pmtAmt < prAssetPart || pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
+    if(pmtAmt < amAssetPart || pmtAmt < prAssetPart || paymentAmountRaw < 10_000_000) then throw("Wrong pmt amt") else
 
     let amBalance = getAccBalance(amId)
     let prBalance = getAccBalance(prId)
