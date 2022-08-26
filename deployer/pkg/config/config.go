@@ -11,7 +11,11 @@ type Config struct {
 	MongoURI                 string  `required:"true"`
 	MongoDatabaseName        string  `required:"true"`
 	MongoCollectionContracts string  `required:"true"`
-	CompareLpScriptAddress   string  `required:"true"`
+
+	// mainnet only
+	CompareLpScriptAddress            string
+	CompareLpStableScriptAddress      string
+	CompareLpStableAddonScriptAddress string
 }
 
 type Network string
