@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 5 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -1042,7 +1042,6 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
   )
 }
 
-
 @Verifier(tx)
 func verify() = {
   match tx {
@@ -1052,22 +1051,22 @@ func verify() = {
       let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
       let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
 
-      (orderValid && senderValid && matcherValid) || throwOrderError(orderValid, senderValid, matcherValid)
+      (orderValid && senderValid && matcherValid) || toe(orderValid, senderValid, matcherValid)
     case s: SetScriptTransaction =>
       let newHash = s.script.value().blake2b256()
-      let allowedHash = fca.getString(keyAllowedLpScriptHash()).value().fromBase64String()
+      let allowedHash = fca.getString(keyAllowedLpStableScriptHash()).value().fromBase64String()
       let currentHash = this.scriptHash()
       if (allowedHash == newHash && currentHash != newHash) then {
         true
       } else {
-        let targetPublicKey = match managerPublicKeyOrUnit() {
+        let targetPublicKey = match m() {
           case pk: ByteVector => pk
           case _: Unit => tx.senderPublicKey
         }
         sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
       }
     case _ => {
-      let targetPublicKey = match managerPublicKeyOrUnit() {
+      let targetPublicKey = match m() {
         case pk: ByteVector => pk
         case _: Unit => tx.senderPublicKey
       }

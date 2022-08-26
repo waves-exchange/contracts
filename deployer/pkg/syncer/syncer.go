@@ -26,6 +26,10 @@ import (
 	"time"
 )
 
+type compileCacheMap = map[string]func() (
+	base64Script string, scriptBytes []byte, setScriptFee uint64, err error,
+)
+
 type Syncer struct {
 	logger                            zerolog.Logger
 	network                           config.Network
@@ -35,9 +39,7 @@ type Syncer struct {
 	compareLpScriptAddress            proto.WavesAddress
 	compareLpStableScriptAddress      proto.WavesAddress
 	compareLpStableAddonScriptAddress proto.WavesAddress
-	compileCache                      map[string]func() (
-		base64Script string, scriptBytes []byte, setScriptFee uint64, err error,
-	)
+	compileCache                      compileCacheMap
 }
 
 const (
@@ -86,11 +88,12 @@ func NewSyncer(
 		compareLpScriptAddress:            compareLpScriptAddr,
 		compareLpStableScriptAddress:      compareLpStableScriptAddr,
 		compareLpStableAddonScriptAddress: compareLpStableAddonScriptAddr,
+		compileCache:                      make(compileCacheMap),
 	}, nil
 }
 
 func (s Syncer) ApplyChanges(c context.Context) error {
-	ctx, cancel := context.WithTimeout(c, time.Hour)
+	ctx, cancel := context.WithTimeout(c, 8*time.Hour)
 	defer cancel()
 
 	files, err := os.ReadDir(s.contractsFolder)
@@ -191,12 +194,12 @@ func (s Syncer) doHash(
 		return false, fmt.Errorf("s.compile: %w", err)
 	}
 
-	lpRideHash, err := blake2b.New256(scriptBytes)
+	lpRideHash := blake2b.Sum256(scriptBytes)
 	if err != nil {
 		return false, fmt.Errorf("blake2b.New256: %w", err)
 	}
 
-	newHashStr := base64.StdEncoding.EncodeToString(lpRideHash.Sum(nil))
+	newHashStr := base64.StdEncoding.EncodeToString(lpRideHash[:])
 
 	dataTxValue := &proto.StringDataEntry{
 		Key:   key,
@@ -271,6 +274,14 @@ func (s Syncer) doHash(
 			return false, fmt.Errorf("dataTx.AppendEntry: %w", er)
 		}
 
+		log := func() *zerolog.Event {
+			return s.logger.Info().
+				Str("file", fileName).
+				Str("actualHash", actualHash).
+				Str("newHash", newHashStr).
+				Str("key", key)
+		}
+
 		if actualHash != newHashStr && actualHash != "" {
 			tx, e := json.Marshal(dataTx)
 			if e != nil {
@@ -293,13 +304,6 @@ func (s Syncer) doHash(
 				return false, fmt.Errorf("s.printDiff: %w", e)
 			}
 
-			log := func() *zerolog.Event {
-				return s.logger.Info().
-					Str("file", fileName).
-					Str("actualHash", actualHash).
-					Str("newHash", newHashStr)
-			}
-
 			log().RawJSON("tx", tx).
 				Msg("we are about to set script above as approved. " +
 					"sign and broadcast data-tx to continue...")
@@ -316,6 +320,8 @@ func (s Syncer) doHash(
 
 				time.Sleep(5 * time.Second)
 			}
+		} else {
+			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, no need to update allowed script hash")
 		}
 	}
 
@@ -325,6 +331,10 @@ func (s Syncer) doHash(
 func (s Syncer) getStringValue(ctx context.Context, address proto.WavesAddress, key string) (string, error) {
 	data, _, err := s.client.Addresses.AddressesDataKey(ctx, address, key)
 	if err != nil {
+		if strings.Contains(err.Error(), "no data for this key") {
+			return "", nil
+		}
+
 		return "", fmt.Errorf("s.client.Addresses.AddressesDataKey: %w", err)
 	}
 
@@ -498,7 +508,7 @@ func (s Syncer) doFile(
 			doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
 			doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
 			if doLpRide || doLpStableRide || doLpStableAddonRide {
-				_, er := s.client.Transactions.Broadcast(ctx, unsignedSetScriptTx)
+				er := s.validateSignBroadcastWait(ctx, proto.MainNetScheme, unsignedSetScriptTx, crypto.SecretKey{})
 				if er != nil {
 					return fmt.Errorf("s.client.Transactions.Broadcast: %w", er)
 				}
@@ -629,7 +639,7 @@ func (s Syncer) validateSignBroadcastWait(
 
 	_, err = s.client.Transactions.Broadcast(ctx, tx)
 	if err != nil {
-		return fmt.Errorf("testnetClient.Transactions.Broadcast: %w", err)
+		return fmt.Errorf("s.client.Transactions.Broadcast: %w", err)
 	}
 
 	err = s.waitMined(ctx, txHash)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -41,7 +42,7 @@ func NewModel(coll *mongo.Collection) Model {
 }
 
 func (m Model) GetAll(ctx context.Context) ([]Contract, error) {
-	cur, err := m.coll.Find(ctx, nil)
+	cur, err := m.coll.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("m.coll.Find: %w", err)
 	}
