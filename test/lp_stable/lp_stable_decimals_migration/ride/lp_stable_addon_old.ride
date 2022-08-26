@@ -158,27 +158,6 @@ func setAmp(amp: String) = {
 @Callable(i)
 func ensureCanGetOneTkn(caller: String) = {
   strict checkCaller = i.mustPool()
-
-  strict ensureCanPut = match poolContract.getInteger(lastPutOneTknCall(caller)) {
-    case int: Int => {
-      let permittedHeight = int + poolContract.getInteger(delay).value()
-      let isReadyforPutOneTkn = height >= permittedHeight
-      let needBlocks = permittedHeight - height
-      isReadyforPutOneTkn || (["you should wait", needBlocks.toString(), "blocks more to perform the action"]).makeString(" ").throw()
-    }
-    case _ => true
-  }
-
-  strict ensureCanGet = match poolContract.getInteger(lastGetOneTknCall(caller)) {
-    case int: Int => {
-      let permittedHeight = int + poolContract.getInteger(delay).value()
-      let isReadyforGetOneTkn = height >= permittedHeight
-      let needBlocks = permittedHeight - height
-      isReadyforGetOneTkn || (["you should wait", needBlocks.toString(), "blocks more to perform the action"]).makeString(" ").throw()
-    }
-    case _ => true
-  }
-
   strict setI = poolContract.invoke("setI", [lastPutOneTknCall(caller), height], [])
 
   []
@@ -187,27 +166,6 @@ func ensureCanGetOneTkn(caller: String) = {
 @Callable(i)
 func ensureCanPutOneTkn(caller: String) = {
   strict checkCaller = i.mustPool()
-
-  strict ensureCanPut = match poolContract.getInteger(lastPutOneTknCall(caller)) {
-    case int: Int => {
-      let permittedHeight = int + poolContract.getInteger(delay).value()
-      let isReadyforPutOneTkn = height >= permittedHeight
-      let needBlocks = permittedHeight - height
-      isReadyforPutOneTkn || (["you should wait", needBlocks.toString(), "blocks more to perform the action"]).makeString(" ").throw()
-    }
-    case _ => true
-  }
-
-  strict ensureCanGet = match poolContract.getInteger(lastGetOneTknCall(caller)) {
-    case int: Int => {
-      let permittedHeight = int + poolContract.getInteger(delay).value()
-      let isReadyforGetOneTkn = height >= permittedHeight
-      let needBlocks = permittedHeight - height
-      isReadyforGetOneTkn || (["you should wait", needBlocks.toString(), "blocks more to perform the action"]).makeString(" ").throw()
-    }
-    case _ => true
-  }
-
   strict setI = poolContract.invoke("setI", [lastPutOneTknCall(caller), height], [])
 
   []

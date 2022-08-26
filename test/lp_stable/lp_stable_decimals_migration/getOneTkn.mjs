@@ -26,14 +26,14 @@ describe('lp_stable_decimals_migration: getOneTkn.mjs', /** @this {MochaSuiteMod
     const autoStake = false;
     const usdtAmount = 1e8;
     const usdnAmount = 1e8;
-    const delay = 2;
     const exchResult = 0;
     const notUsed = 0;
 
-    const expectedOutLpAmt = 1e8;
+    const expectedOutLpAmt = 1e10;
     const expectedPriceLast = 5e7;
     const expectedPriceHistory = 5e7;
-    const expectedInvokesCount = 1;
+    const expectedInvokesCountOldScript = 4;
+    const expectedInvokesCountNewScript = 3;
 
     const lpStable = address(this.accounts.lpStable, chainId);
 
@@ -55,11 +55,10 @@ describe('lp_stable_decimals_migration: getOneTkn.mjs', /** @this {MochaSuiteMod
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(put, {});
-    const { height } = await ni.waitForTx(put.id, { apiBase });
+    await ni.waitForTx(put.id, { apiBase });
 
     // putOneTknFirst
     // --------------------------------------------------------------------------------------------
-    await ni.waitForHeight(height + delay + 1, { apiBase });
 
     const putOneTknFirst = invokeScript({
       dApp: lpStable,
@@ -110,14 +109,14 @@ describe('lp_stable_decimals_migration: getOneTkn.mjs', /** @this {MochaSuiteMod
     const {
       timestamp: timestampGetOneTknAfterPutOneTknFirst,
     } = await api.blocks.fetchHeadersAt(heightGetOneTknAfterPutOneTknFirst);
-    const keyPriceHistoryGetOneTknAfterPutOneTknFirst = `%s%s%d%d__price__history__${heightGetOneTknAfterPutOneTknFirst}__${timestampGetOneTknAfterPutOneTknFirstt}`;
+    const keyPriceHistoryGetOneTknAfterPutOneTknFirst = `%s%s%d%d__price__history__${heightGetOneTknAfterPutOneTknFirst}__${timestampGetOneTknAfterPutOneTknFirst}`;
 
     // check getOneTknAfterPutOneTknFirst
     // --------------------------------------------------------------------------------------------
     expect(stateChangesGetOneTknAfterPutOneTknFirst.data).to.eql([{
       key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${idGetOneTknAfterPutOneTknFirst}`,
       type: 'string',
-      value: `%d%d%d%d%d%d__${usdtAmount}__${usdnAmount}__${expectedOutLpAmt}__${expectedPriceLast}__${heightGetOneTknAfterPutOneTknFirst}__${timestampGetOneTknAfterPutOneTknFirst}`,
+      value: `%d%d%d%d%d%d__${usdtAmount}__${notUsed}__${expectedOutLpAmt}__${expectedPriceLast}__${heightGetOneTknAfterPutOneTknFirst}__${timestampGetOneTknAfterPutOneTknFirst}`,
     }, {
       key: '%s%s__price__last',
       type: 'integer',
@@ -132,33 +131,15 @@ describe('lp_stable_decimals_migration: getOneTkn.mjs', /** @this {MochaSuiteMod
       address: address(this.accounts.user1, chainId),
       asset: this.usdtAssetId,
       amount: usdtAmount,
-    }, {
-      address: address(this.accounts.user1, chainId),
-      asset: this.usdnAssetId,
-      amount: usdnAmount,
     }]);
 
     const {
       invokes: invokesGetOneTknAfterPutOneTknFirst,
     } = stateChangesGetOneTknAfterPutOneTknFirst;
-    expect(invokesGetOneTknAfterPutOneTknFirst.length).to.eql(expectedInvokesCount);
-
-    expect(invokesGetOneTknAfterPutOneTknFirst[0].dApp)
-      .to.eql(address(this.accounts.factoryV2, chainId));
-    expect(invokesGetOneTknAfterPutOneTknFirst[0].call.function).to.eql('burn');
-    expect(invokesGetOneTknAfterPutOneTknFirst[0].call.args).to.eql([
-      {
-        type: 'Int',
-        value: expectedOutLpAmt,
-      }]);
-    expect(invokesGetOneTknAfterPutOneTknFirst[0].stateChanges.burns).to.eql([{
-      assetId: this.lpStableAssetId,
-      quantity: expectedOutLpAmt,
-    }]);
+    expect(invokesGetOneTknAfterPutOneTknFirst.length).to.eql(expectedInvokesCountOldScript);
 
     // putOneTknSecond
     // --------------------------------------------------------------------------------------------
-    await ni.waitForHeight(heightGetOneTknAfterPutOneTknFirst + delay + 1, { apiBase });
 
     const putOneTknSecond = invokeScript({
       dApp: lpStable,
@@ -178,9 +159,7 @@ describe('lp_stable_decimals_migration: getOneTkn.mjs', /** @this {MochaSuiteMod
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(putOneTknSecond, {});
-    const {
-      height: heightPutOneTknSecond,
-    } = await ni.waitForTx(putOneTknSecond.id, { apiBase });
+    await ni.waitForTx(putOneTknSecond.id, { apiBase });
 
     // setScript
     // --------------------------------------------------------------------------------------------
@@ -194,7 +173,7 @@ describe('lp_stable_decimals_migration: getOneTkn.mjs', /** @this {MochaSuiteMod
     const ssTxLpStableV2 = setScript({
       script: base64LpStableV2,
       chainId,
-      fee: 33e5,
+      fee: 100e5,
       senderPublicKey: publicKey(this.accounts.lpStable),
     }, this.accounts.manager);
     await api.transactions.broadcast(ssTxLpStableV2, {});
@@ -213,7 +192,6 @@ describe('lp_stable_decimals_migration: getOneTkn.mjs', /** @this {MochaSuiteMod
 
     // getOneTknAfterSetScript
     // --------------------------------------------------------------------------------------------
-    await ni.waitForHeight(heightPutOneTknSecond + delay + 1, { apiBase });
 
     const getOneTknAfterSetScript = invokeScript({
       dApp: lpStable,
@@ -249,7 +227,7 @@ describe('lp_stable_decimals_migration: getOneTkn.mjs', /** @this {MochaSuiteMod
     expect(stateChangesGetOneTknAfterSetScript.data).to.eql([{
       key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${idGetOneTknAfterSetScript}`,
       type: 'string',
-      value: `%d%d%d%d%d%d__${usdtAmount}__${usdnAmount}__${expectedOutLpAmt}__${expectedPriceLast}__${heightGetOneTknAfterSetScript}__${timestampGetOneTknAfterSetScript}`,
+      value: `%d%d%d%d%d%d__${usdtAmount}__${notUsed}__${expectedOutLpAmt}__${expectedPriceLast}__${heightGetOneTknAfterSetScript}__${timestampGetOneTknAfterSetScript}`,
     }, {
       key: '%s%s__price__last',
       type: 'integer',
@@ -264,26 +242,9 @@ describe('lp_stable_decimals_migration: getOneTkn.mjs', /** @this {MochaSuiteMod
       address: address(this.accounts.user1, chainId),
       asset: this.usdtAssetId,
       amount: usdtAmount,
-    }, {
-      address: address(this.accounts.user1, chainId),
-      asset: this.usdnAssetId,
-      amount: usdnAmount,
     }]);
 
     const { invokes: invokesGetOneTknAfterSetScript } = stateChangesGetOneTknAfterSetScript;
-    expect(invokesGetOneTknAfterSetScript.length).to.eql(expectedInvokesCount);
-
-    expect(invokesGetOneTknAfterSetScript[0].dApp)
-      .to.eql(address(this.accounts.factoryV2, chainId));
-    expect(invokesGetOneTknAfterSetScript[0].call.function).to.eql('burn');
-    expect(invokesGetOneTknAfterSetScript[0].call.args).to.eql([
-      {
-        type: 'Int',
-        value: expectedOutLpAmt,
-      }]);
-    expect(invokesGetOneTknAfterSetScript[0].stateChanges.burns).to.eql([{
-      assetId: this.lpStableAssetId,
-      quantity: expectedOutLpAmt,
-    }]);
+    expect(invokesGetOneTknAfterSetScript.length).to.eql(expectedInvokesCountNewScript);
   });
 });
