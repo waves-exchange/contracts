@@ -66,7 +66,7 @@ describe('lpStable: unstakeAndGetRejectPoolShutdown.mjs', /** @this {MochaSuiteM
       }, this.accounts.user1);
 
       await expect(api.transactions.broadcast(unstakeAndGet, {})).to.be.rejectedWith(
-        /^Error while executing account-script: Blocked: 4$/,
+        /^Error while executing account-script: lp_stable.ride: Blocked: 4$/,
       );
     },
   );
