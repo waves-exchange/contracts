@@ -22,7 +22,6 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     const usdtAmount = 1e8;
     const exchResult = 0;
     const notUsed = 0;
-    const delay = 2;
 
     const expectedOutAmAmt = 1e8;
     const expectedOutPrAmt = 0;
@@ -47,9 +46,6 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(putOneTkn, {});
-    const { height } = await ni.waitForTx(putOneTkn.id, { apiBase });
-
-    await ni.waitForHeight(height + delay, { apiBase });
 
     const getOneTkn = invokeScript({
       dApp: lpStable,

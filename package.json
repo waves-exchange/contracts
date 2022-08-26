@@ -21,6 +21,7 @@
     "test-lp-staking-v2": "mocha --parallel --require test/lp_staking_v2/_hooks.mjs test/lp_staking_v2",
     "test-lp": "mocha --parallel --require test/lp/_hooks.mjs test/lp",
     "test-lp-stable": "mocha --parallel --require test/lp_stable/_hooks.mjs test/lp_stable",
+    "test-lp-stable-new-pools-with-different-decimals": "mocha --parallel --require test/lp_stable/new_pools_with_different_decimals/_hooks.mjs test/lp_stable/new_pools_with_different_decimals",
     "test-lp-stable-decimals-migration": "mocha --parallel --require test/lp_stable/lp_stable_decimals_migration/_hooks.mjs test/lp_stable/lp_stable_decimals_migration",
     "test-lp-to-lp-stable-migration": "mocha --parallel --require test/lp_stable/lp_to_lp_stable_migration/_hooks.mjs test/lp_stable/lp_to_lp_stable_migration",
     "test-referral": "mocha --parallel --require test/referral/_hooks.mjs test/referral",
