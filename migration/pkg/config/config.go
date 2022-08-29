@@ -6,10 +6,10 @@ import (
 )
 
 type Config struct {
-	Network                 string `required:"true"`
-	MongoURI                string `required:"true"`
-	MongoDatabaseName       string `required:"true"`
-	MongoCollectionContract string `required:"true"`
+	Network                  string `required:"true"`
+	MongoURI                 string `required:"true"`
+	MongoDatabaseName        string `required:"true"`
+	MongoCollectionContracts string `required:"true"`
 }
 
 func NewConfig() (Config, error) {
