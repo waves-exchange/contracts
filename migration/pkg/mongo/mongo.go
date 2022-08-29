@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func NewConn(ctx context.Context, name string, uri string) (*mongo.Collection, error) {
+func NewConn(ctx context.Context, name string, uri string, collectionContract string) (*mongo.Collection, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -32,7 +32,7 @@ func NewConn(ctx context.Context, name string, uri string) (*mongo.Collection, e
 		return nil, fmt.Errorf("conn.Ping: %w", err)
 	}
 
-	collect := conn.Database(name).Collection("contract")
+	collect := conn.Database(name).Collection(collectionContract)
 
 	return collect, nil
 }

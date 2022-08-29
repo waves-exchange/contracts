@@ -21,7 +21,7 @@ func main() {
 		panic(fmt.Errorf("logger.NewLogger: %w", err))
 	}
 
-	collect, err := mongo.NewConn(ctx, cfg.MongoDatabaseName, cfg.MongoURI)
+	collect, err := mongo.NewConn(ctx, cfg.MongoDatabaseName, cfg.MongoURI, cfg.MongoCollectionContract)
 	if err != nil {
 		panic(fmt.Errorf("mongo.NewConn: %w", err))
 	}

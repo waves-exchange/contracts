@@ -16,7 +16,7 @@ type Contracts []struct {
 }
 
 func GetContracts() (Contracts, error) {
-	file, _ := filepath.Abs("contracts_tpl.yaml")
+	file, _ := filepath.Abs("../contracts.yaml")
 	yamlFile, err := ioutil.ReadFile(file)
 	if err != nil {
 		return Contracts{}, err
