@@ -30,7 +30,7 @@ jobs:
       MONGODATABASENAME: ${{ secrets.TESTNETMONGODATABASENAME }}
       MONGOCOLLECTIONCONTRACTS: ${{ secrets.TESTNETMONGOCOLLECTIONCONTRACTS }}
       NETWORK: testnet
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     container:
       image: golang:1.18
     steps:
