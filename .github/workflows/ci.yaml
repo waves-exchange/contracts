@@ -6,7 +6,7 @@ jobs:
     env:
       TESTNETNODE: ${{ secrets.TESTNETNODE }}
       MAINNETNODE: ${{ secrets.MAINNETNODE }}
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     container:
       image: golang:1.18
     steps:
@@ -25,7 +25,7 @@ jobs:
       MONGODATABASENAME: ${{ secrets.TESTNETMONGODATABASENAME }}
       MONGOCOLLECTIONCONTRACTS: ${{ secrets.TESTNETMONGOCOLLECTIONCONTRACTS }}
     if: github.ref_name == 'dev'
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     container:
       image: golang:1.19
     steps:
@@ -47,7 +47,7 @@ jobs:
       COMPARELPSTABLESCIPRTADDRESS: 3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz # USDT/USDN pool
       COMPARELPSTABLEADDONSCIPRTADDRESS: 3P36szQtxxpSaefdqaFjbM9Ush8ieCjVZVw # USDT/USDN pool addon
     if: github.ref_name == 'main'
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     container:
       image: golang:1.19
     steps:
@@ -59,7 +59,7 @@ jobs:
           go run main.go
 
   test:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     container:
       image: node:18.1
     services:
@@ -78,7 +78,7 @@ jobs:
           npm run ci-test
 
   lint_go:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     container:
       image: golang:1.18
     steps:
@@ -89,7 +89,7 @@ jobs:
           gofmt -l .
 
   lint_js:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     container:
       image: node:18.1
     steps:
