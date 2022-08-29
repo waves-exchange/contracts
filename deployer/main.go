@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
+	"github.com/waves-exchange/contracts/deployer/pkg/contract"
 	"github.com/waves-exchange/contracts/deployer/pkg/logger"
+	"github.com/waves-exchange/contracts/deployer/pkg/mongo"
 	"github.com/waves-exchange/contracts/deployer/pkg/syncer"
 )
 
@@ -21,12 +23,19 @@ func main() {
 		panic(fmt.Errorf("logger.NewLogger: %w", err))
 	}
 
+	db, err := mongo.NewConn(ctx, cfg.MongoDatabaseName, cfg.MongoURI)
+	if err != nil {
+		panic(fmt.Errorf("mongo.NewConn: %w", err))
+	}
+
 	sc, err := syncer.NewSyncer(
 		logg.ZL,
-		cfg.Mode,
-		cfg.TestnetNode,
-		cfg.MainnetNode,
-		cfg.ContractsList,
+		cfg.Network,
+		cfg.Node,
+		contract.NewModel(db.Collection(cfg.MongoCollectionContracts)),
+		cfg.CompareLpScriptAddress,
+		cfg.CompareLpStableScriptAddress,
+		cfg.CompareLpStableAddonScriptAddress,
 	)
 	if err != nil {
 		panic(fmt.Errorf("syncer.NewSyncer: %w", err))

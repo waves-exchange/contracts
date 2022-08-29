@@ -166,10 +166,10 @@ func create() = {
   strict checks = [
     !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
     i.isManager() || amountAssetInfo.value().issuer == i.caller || throwYouNotIssuer(),
-    amountAssetId.isVerified() || throwAssetNotVerified(),
+    i.isManager() || amountAssetId.isVerified() || throwAssetNotVerified(),
     keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
-    amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
-    priceAssetPayment.amount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
+    i.isManager() || amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
+    i.isManager() || priceAssetPayment.amount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
     feeAssetPayment.amount == keyFeeAmount().getInteger() || throwInvalidFee()
   ]
 

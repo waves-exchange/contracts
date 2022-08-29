@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 5 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -115,6 +115,7 @@ func pc(iAmtAs: String, iPrAs: String) = {"%d%d%s__" + iAmtAs + "__" + iPrAs + "
 func mba(bAStr: String) = {"%s%s%s__mappings__baseAsset2internalId__" + bAStr}
 # keyAllPoolsShutdown
 func aps() = {"%s__shutdown"}
+func keyAllowedLpStableScriptHash() = "%s__allowedLpStableScriptHash"
 
 #------------------------
 # FAILURES
@@ -672,17 +673,19 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
     let paymentAmountRaw = pmt.amount
     let (pmtAmt, feeAmount) = paymentAmountRaw.takeFee()
 
-    if(pmtAmt < amAssetPart || pmtAmt < prAssetPart || paymentAmountRaw < 10_000_000) then throw("Wrong pmt amt") else
+    if (paymentAmountRaw < 10_000_000) then throw("Wrong pmt amt") else
 
     let amBalance = getAccBalance(amId)
     let prBalance = getAccBalance(prId)
 
     let (amBalanceNow, prBalanceNow, virtSwapInAm, virtSwapOutPr, virtSwapInPr, virtSwapOutAm) =
-        if (pmtAssetId == amId) then {
-          (amBalance-pmtAmt, prBalance, pmtAmt - amAssetPart, prAssetPart, 0, 0)
-        } else if (pmtAssetId == prId) then {
-          (amBalance, prBalance-pmtAmt, 0, 0, pmtAmt - prAssetPart, amAssetPart)
-        } else throw("wrong pmtAssetId")
+      if (pmtAssetId == amId) then {
+        if (amBalance < pmtAmt || pmtAmt < amAssetPart) then "invalid payment amount".throw() else
+          (amBalance - pmtAmt, prBalance, pmtAmt - amAssetPart, prAssetPart, 0, 0)
+      } else if (pmtAssetId == prId) then {
+        if (prBalance < pmtAmt || pmtAmt < prAssetPart) then "invalid payment amount".throw() else
+          (amBalance, prBalance - pmtAmt, 0, 0, pmtAmt - prAssetPart, amAssetPart)
+      } else throw("wrong pmtAssetId")
 
     let D0 = gwxCntr.invoke("calcD", [
                     amBalanceNow.toString(),
@@ -1048,21 +1051,30 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 
 @Verifier(tx)
 func verify() = {
-  match tx {
-        case order: Order =>
-            let mtchPub    = mp()
-            let orV    = moa(order)
-            let sndrV   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
-            let mtchV  = sigVerify(order.bodyBytes, order.proofs[1], mtchPub)
+  let targetPublicKey = match m() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
 
-            (orV && sndrV && mtchV)
-                || toe(orV, sndrV, mtchV)
-        case _ => {
-            let targetPublicKey = match m() {
-              case pk: ByteVector => pk
-              case _: Unit => tx.senderPublicKey
-            }
-            sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
-        }
+  match tx {
+    case order: Order =>
+      let matcherPub    = mp()
+      let orderValid    = moa(order)
+      let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
+      let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
+
+      (orderValid && senderValid && matcherValid) || toe(orderValid, senderValid, matcherValid)
+    case s: SetScriptTransaction =>
+      let newHash = s.script.value().blake2b256()
+      let allowedHash = fca.getString(keyAllowedLpStableScriptHash()).value().fromBase64String()
+      let currentHash = this.scriptHash()
+      if (allowedHash == newHash && currentHash != newHash) then {
+        true
+      } else {
+        sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+      }
+    case _ => {
+      sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
     }
+  }
 }
