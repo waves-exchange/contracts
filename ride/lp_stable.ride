@@ -672,7 +672,7 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
     let paymentAmountRaw = pmt.amount
     let (pmtAmt, feeAmount) = paymentAmountRaw.takeFee()
 
-    if (pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
+    if (paymentAmountRaw < 10_000_000) then throw("Wrong pmt amt") else
 
     let amBalance = getAccBalance(amId)
     let prBalance = getAccBalance(prId)
@@ -816,7 +816,7 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
   let amBalance = getAccBalance(amId)
   let prBalance = getAccBalance(prId)
 
-  let (amBalanceNow, prBalanceNow, virtSwapInAm, virtSwapOutPr, virtSwapInPr, virtSwapOutAm, totalGet) =
+  let (amBalanceNow, prBalanceNow, virtSwapInAm, virtSwapOutPr, virtSwapInPr, virtSwapOutAm, totalGetRaw) =
         if (outAssetId == amId) then {
           (amBalance - estimAmAmt, prBalance - estimPrAmt, exchResult, estimPrAmt, 0, 0, estimAmAmt + exchResult)
         } else if (outAssetId == prId) then {
@@ -835,11 +835,12 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
 
   strict D0vsD1 = vd(D1.str().parseBigIntValue(), D0.str().parseBigIntValue(), slippage4D)
 
+  let totalGet = totalGetRaw.takeFee()._1
   strict finalRes = vad(totalGet.toBigInt(), outAmount.toBigInt(), slippage.toBigInt())
 
   let (outAm, outPr)  = if(outAssetId == amId) then (finalRes._2.toInt(), 0) else (0, finalRes._2.toInt())
-  let totalAmountRaw = outAm + outPr
-  let (totalAmount, feeAmount) = totalAmountRaw.takeFee()
+  let totalAmount = outAm + outPr
+  let feeAmount = totalGetRaw - totalGet
 
   let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
 

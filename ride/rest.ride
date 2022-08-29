@@ -120,7 +120,9 @@ func keyEmissionStartBlock() = "%s%s__emission__startBlock"
 func keyEmissionDurationInBlocks() = "%s%s__emission__duration"
 func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 
+# STABLE POOL API
 func keyAddonAddr() = "%s__addonAddr"
+func keyFeePermille() = "%s__feePermille"
 
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
@@ -396,17 +398,19 @@ func poolStatsREADONLY(lpAsset: String) = {
   let lpPriceAssetShare = poolAddress.invoke("fromX18WrapperREADONLY", [pricesList[2], MULT8], []).asInt()
 
   let poolWeight = factoryDapp.getIntegerValue(poolAddress.toString().keyFactoryPoolWeight())
+  let feePermille = poolAddress.getIntOrZero(keyFeePermille())
   (
     [],
     makeString([
-      "%d%d%d%d%d%d%d",
+      "%d%d%d%d%d%d%d%d",
       accAmtAssetBalance.toString(),
       accPriceAssetBalance.toString(),
       poolLPBalance.toString(),
       curPrice.toString(),
       lpAmtAssetShare.toString(),
       lpPriceAssetShare.toString(),
-      poolWeight.toString()
+      poolWeight.toString(),
+      feePermille.toString()
     ],
     SEP)
   )
