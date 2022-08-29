@@ -15,6 +15,7 @@ import (
 	"github.com/wavesplatform/gowaves/pkg/crypto"
 	"github.com/wavesplatform/gowaves/pkg/proto"
 	"golang.org/x/crypto/blake2b"
+	"golang.org/x/sync/errgroup"
 	"io"
 	"math"
 	"net/http"
@@ -40,6 +41,7 @@ type Syncer struct {
 	compareLpStableScriptAddress      proto.WavesAddress
 	compareLpStableAddonScriptAddress proto.WavesAddress
 	compileCache                      compileCacheMap
+	mined                             errgroup.Group
 }
 
 const (
@@ -54,32 +56,32 @@ func NewSyncer(
 	node string,
 	contractModel contract.Model,
 	compareLpScriptAddress, compareLpStableScriptAddress, compareLpStableAddonScriptAddress string,
-) (Syncer, error) {
+) (*Syncer, error) {
 	cl, err := client.NewClient(
 		client.Options{BaseUrl: node, Client: &http.Client{Timeout: time.Minute}},
 	)
 	if err != nil {
-		return Syncer{}, fmt.Errorf("client.NewClient: %w", err)
+		return nil, fmt.Errorf("client.NewClient: %w", err)
 	}
 
 	compareLpScriptAddr, err := proto.NewAddressFromString(compareLpScriptAddress)
 	if err != nil {
-		return Syncer{}, fmt.Errorf("proto.NewAddressFromString: %w", err)
+		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
 	}
 	compareLpStableScriptAddr, err := proto.NewAddressFromString(compareLpStableScriptAddress)
 	if err != nil {
-		return Syncer{}, fmt.Errorf("proto.NewAddressFromString: %w", err)
+		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
 	}
 	compareLpStableAddonScriptAddr, err := proto.NewAddressFromString(compareLpStableAddonScriptAddress)
 	if err != nil {
-		return Syncer{}, fmt.Errorf("proto.NewAddressFromString: %w", err)
+		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
 	}
 
 	logger.Info().
 		Str("network", string(network)).
 		Msg("syncer init")
 
-	return Syncer{
+	return &Syncer{
 		logger:                            logger,
 		network:                           network,
 		client:                            cl,
@@ -92,7 +94,7 @@ func NewSyncer(
 	}, nil
 }
 
-func (s Syncer) ApplyChanges(c context.Context) error {
+func (s *Syncer) ApplyChanges(c context.Context) error {
 	ctx, cancel := context.WithTimeout(c, 8*time.Hour)
 	defer cancel()
 
@@ -162,11 +164,16 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 		}
 	}
 
+	err = s.mined.Wait()
+	if err != nil {
+		return fmt.Errorf("s.mined.Wait: %w", err)
+	}
+
 	s.logger.Info().Msg("changes applied")
 	return nil
 }
 
-func (s Syncer) doHash(
+func (s *Syncer) doHash(
 	ctx context.Context,
 	factory contract.Contract,
 	fileName string,
@@ -237,7 +244,7 @@ func (s Syncer) doHash(
 		}
 
 		if actualHash != newHashStr {
-			e := s.validateSignBroadcastWait(ctx, proto.TestNetScheme, dataTx, prvSigner)
+			e := s.validateSignBroadcastWait(ctx, proto.TestNetScheme, dataTx, prvSigner, false)
 			if e != nil {
 				return false, fmt.Errorf("validateSignBroadcastWait: %w", e)
 			}
@@ -328,7 +335,7 @@ func (s Syncer) doHash(
 	return hashEmpty, nil
 }
 
-func (s Syncer) getStringValue(ctx context.Context, address proto.WavesAddress, key string) (string, error) {
+func (s *Syncer) getStringValue(ctx context.Context, address proto.WavesAddress, key string) (string, error) {
 	data, _, err := s.client.Addresses.AddressesDataKey(ctx, address, key)
 	if err != nil {
 		if strings.Contains(err.Error(), "no data for this key") {
@@ -350,7 +357,7 @@ func (s Syncer) getStringValue(ctx context.Context, address proto.WavesAddress, 
 	return "", fmt.Errorf(invalidType, address.String(), key)
 }
 
-func (s Syncer) doFile(
+func (s *Syncer) doFile(
 	ctx context.Context,
 	fileName string,
 	contracts []contract.Contract,
@@ -450,6 +457,7 @@ func (s Syncer) doFile(
 					timestamp(),
 				),
 				prvSigner,
+				true,
 			)
 			if er2 != nil {
 				return fmt.Errorf(
@@ -508,7 +516,13 @@ func (s Syncer) doFile(
 			doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
 			doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
 			if doLpRide || doLpStableRide || doLpStableAddonRide {
-				er := s.validateSignBroadcastWait(ctx, proto.MainNetScheme, unsignedSetScriptTx, crypto.SecretKey{})
+				er := s.validateSignBroadcastWait(
+					ctx,
+					proto.MainNetScheme,
+					unsignedSetScriptTx,
+					crypto.SecretKey{},
+					true,
+				)
 				if er != nil {
 					return fmt.Errorf("s.client.Transactions.Broadcast: %w", er)
 				}
@@ -533,7 +547,7 @@ func (s Syncer) doFile(
 	return nil
 }
 
-func (s Syncer) preparePathAndScript(ctx context.Context, base64Script string) (string, error) {
+func (s *Syncer) preparePathAndScript(ctx context.Context, base64Script string) (string, error) {
 	var script string
 	if base64Script != "" {
 		scr, err := s.apiDecompileScript(ctx, strings.NewReader(base64Script))
@@ -563,7 +577,7 @@ func (s Syncer) preparePathAndScript(ctx context.Context, base64Script string) (
 	return p, nil
 }
 
-func (s Syncer) printDiff(ctx context.Context, base64Str1, base64Str2 string) error {
+func (s *Syncer) printDiff(ctx context.Context, base64Str1, base64Str2 string) error {
 	path1, err := s.preparePathAndScript(ctx, base64Str1)
 	defer func() {
 		_ = os.Remove(path1)
@@ -596,7 +610,7 @@ func (s Syncer) printDiff(ctx context.Context, base64Str1, base64Str2 string) er
 	return nil
 }
 
-func (s Syncer) waitMined(ctx context.Context, txHash crypto.Digest) error {
+func (s *Syncer) waitMined(ctx context.Context, txHash crypto.Digest) error {
 	try := 0
 	for {
 		try += 1
@@ -611,11 +625,12 @@ func (s Syncer) waitMined(ctx context.Context, txHash crypto.Digest) error {
 	}
 }
 
-func (s Syncer) validateSignBroadcastWait(
+func (s *Syncer) validateSignBroadcastWait(
 	ctx context.Context,
 	networkByte proto.Scheme,
 	tx proto.Transaction,
 	prv crypto.SecretKey,
+	async bool,
 ) error {
 	_, err := tx.Validate(networkByte)
 	if err != nil {
@@ -642,15 +657,26 @@ func (s Syncer) validateSignBroadcastWait(
 		return fmt.Errorf("s.client.Transactions.Broadcast: %w", err)
 	}
 
-	err = s.waitMined(ctx, txHash)
-	if err != nil {
-		return fmt.Errorf("waitMined: %w", err)
+	fn := func() error {
+		err = s.waitMined(ctx, txHash)
+		if err != nil {
+			return fmt.Errorf("waitMined: %w", err)
+		}
+		return nil
+	}
+	if async {
+		s.mined.Go(fn)
+	} else {
+		err = fn()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (s Syncer) compileRaw(ctx context.Context, body []byte, compact bool) (string, error) {
+func (s *Syncer) compileRaw(ctx context.Context, body []byte, compact bool) (string, error) {
 	if compact {
 		resp, err := s.apiCompactScript(ctx, bytes.NewReader(body))
 		if err != nil {
@@ -667,7 +693,7 @@ func (s Syncer) compileRaw(ctx context.Context, body []byte, compact bool) (stri
 	}
 }
 
-func (s Syncer) compile(ctx context.Context, body []byte, compact bool) (string, []byte, uint64, error) {
+func (s *Syncer) compile(ctx context.Context, body []byte, compact bool) (string, []byte, uint64, error) {
 	key := base64.StdEncoding.EncodeToString(body) + strconv.FormatBool(compact)
 	val, ok := s.compileCache[key]
 	if ok {
@@ -692,7 +718,7 @@ func (s Syncer) compile(ctx context.Context, body []byte, compact bool) (string,
 	return res()
 }
 
-func (s Syncer) getScript(ctx context.Context, addr proto.Address) (string, error) {
+func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, error) {
 	type withScript struct {
 		Script *string `json:"script"`
 	}
@@ -733,7 +759,7 @@ func (s Syncer) getScript(ctx context.Context, addr proto.Address) (string, erro
 	return *info.Script, nil
 }
 
-func (s Syncer) apiCompactScript(c context.Context, body io.Reader) (string, error) {
+func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, error) {
 	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.client.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
@@ -761,7 +787,7 @@ func (s Syncer) apiCompactScript(c context.Context, body io.Reader) (string, err
 	return compileResult.Script, nil
 }
 
-func (s Syncer) apiDecompileScript(c context.Context, body io.Reader) (string, error) {
+func (s *Syncer) apiDecompileScript(c context.Context, body io.Reader) (string, error) {
 	u := fmt.Sprintf("%s/utils/script/decompile", s.client.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
