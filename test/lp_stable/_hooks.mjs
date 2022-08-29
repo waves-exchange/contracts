@@ -50,11 +50,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
 
-    console.log('account addresses:');
-    for (const [key, value] of Object.entries(this.accounts)) {
-      console.log('  ', key, address(value, chainId));
-    }
-
     await setScriptFromFile(lpStablePath, this.accounts.lpStable);
     await setScriptFromFile(lpStableAddonPath, this.accounts.lpStableAddon);
     await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
@@ -289,7 +284,7 @@ export const mochaHooks = {
       data: [{
         key: '%s__amp',
         type: 'string',
-        value: publicKey(this.accounts.matcher),
+        value: '1000',
       }],
       chainId,
     }, this.accounts.lpStable);
@@ -307,9 +302,5 @@ export const mochaHooks = {
     }, this.accounts.lpStable);
     await api.transactions.broadcast(setManagerLpStableTx, {});
     await waitForTx(setManagerLpStableTx.id, { apiBase });
-
-    console.log('usdnAssetId', this.usdnAssetId);
-    console.log('usdtAssetId', this.usdtAssetId);
-    console.log(this.lpStableAssetId);
   },
 };
