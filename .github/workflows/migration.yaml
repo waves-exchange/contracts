@@ -1,0 +1,47 @@
+name: migration
+on: [workflow_dispatch]
+
+jobs:
+  migration:
+    env:
+      ASSETSSTORE_PRV: ${{ secrets.ASSETSSTORE_PRV }}
+      BOOSTING_PRV: ${{ secrets.BOOSTING_PRV }}
+      EASTUSDNPOOL_SRV: ${{ secrets.EASTUSDNPOOL_SRV }}
+      EMISSION_PRV: ${{ secrets.EMISSION_PRV }}
+      FACTORYV2_PRV: ${{ secrets.FACTORYV2_PRV }}
+      GWXREWARD_PRV: ${{ secrets.GWXREWARD_PRV }}
+      LPSTAKINGV2_PRV: ${{ secrets.LPSTAKINGV2_PRV }}
+      MANAGER_PRV: ${{ secrets.MANAGER_PRV }}
+      STAKING_PRV: ${{ secrets.STAKING_PRV }}
+      USDCUSDTPOOLADDON_PRV: ${{ secrets.USDCUSDTPOOLADDON_PRV }}
+      USDCUSDTPOOL_PRV: ${{ secrets.USDCUSDTPOOL_PRV }}
+      USDTUSDNPOOLADDON_PRV: ${{ secrets.USDTUSDNPOOLADDON_PRV }}
+      USDTUSDNPOOL_PRV: ${{ secrets.USDTUSDNPOOL_PRV }}
+      USERPOOLS_PRV: ${{ secrets.USERPOOLS_PRV }}
+      VESTING_PRV: ${{ secrets.VESTING_PRV }}
+      VORINGEMISSIONCANDIDATE_PRV: ${{ secrets.VORINGEMISSIONCANDIDATE_PRV }}
+      VOTINGEMISSION_PRV: ${{ secrets.VOTINGEMISSION_PRV }}
+      VOTINGVERIFIED_PRV: ${{ secrets.VOTINGVERIFIED_PRV }}
+      OTC_PRV: ${{ secrets.OTC_PRV }}
+      REST_PRV: ${{ secrets.REST_PRV }}
+      MARKETING_PRV: ${{ secrets.MARKETING_PRV }}
+      REFERRAL_PRV: ${{ secrets.REFERRAL_PRV }}
+      MONGOURI: ${{ secrets.TESTNETMONGOURI }}
+      MONGODATABASENAME: ${{ secrets.TESTNETMONGODATABASENAME }}
+      MONGOCOLLECTIONCONTRACTS: ${{ secrets.TESTNETMONGOCOLLECTIONCONTRACTS }}
+      NETWORK: testnet
+    runs-on: ubuntu-20.04
+    container:
+      image: golang:1.18
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Install envsubst
+        run: |
+          apt update
+          apt install gettext-base -y
+      - name: Migrate
+        run: |
+          envsubst < contracts_tpl.yaml > contracts.yaml
+          cd migration
+          go run main.go
