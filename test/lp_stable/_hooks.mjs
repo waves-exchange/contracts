@@ -28,7 +28,18 @@ const gwxRewardPath = format({ dir: mockRidePath, base: 'gwx_reward.mock.ride' }
 
 export const mochaHooks = {
   async beforeAll() {
-    const names = ['lpStable', 'lpStableAddon', 'factoryV2', 'staking', 'slippage', 'gwxReward', 'manager', 'store', 'user1'];
+    const names = [
+      'lpStable',
+      'lpStableAddon',
+      'factoryV2',
+      'staking',
+      'slippage',
+      'gwxReward',
+      'manager',
+      'store',
+      'matcher',
+      'user1',
+    ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
@@ -38,6 +49,11 @@ export const mochaHooks = {
     }, seed);
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
+
+    console.log('account addresses:');
+    for (const [key, value] of Object.entries(this.accounts)) {
+      console.log('  ', key, address(value, chainId));
+    }
 
     await setScriptFromFile(lpStablePath, this.accounts.lpStable);
     await setScriptFromFile(lpStableAddonPath, this.accounts.lpStableAddon);
@@ -72,7 +88,7 @@ export const mochaHooks = {
     const usdtIssueTx = issue({
       name: 'USDT',
       description: '',
-      quantity: 10e8,
+      quantity: 1e16,
       decimals: 6,
       chainId,
     }, seed);
@@ -80,7 +96,7 @@ export const mochaHooks = {
     await waitForTx(usdtIssueTx.id, { apiBase });
     this.usdtAssetId = usdtIssueTx.id;
 
-    const usdtAmount = 1e8;
+    const usdtAmount = 1e16;
     const massTransferTxUSDT = massTransfer({
       transfers: names.slice(-1).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: usdtAmount,
@@ -172,6 +188,18 @@ export const mochaHooks = {
     await api.transactions.broadcast(constructorV5FactoryV2InvokeTx, {});
     await waitForTx(constructorV5FactoryV2InvokeTx.id, { apiBase });
 
+    const setMatcherPublicKeyTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s%s__matcher__publicKey',
+        type: 'string',
+        value: publicKey(this.accounts.matcher),
+      }],
+      chainId,
+    }, this.accounts.factoryV2);
+    await api.transactions.broadcast(setMatcherPublicKeyTx, {});
+    await waitForTx(setMatcherPublicKeyTx.id, { apiBase });
+
     const setManagerFactoryV2Tx = data({
       additionalFee: 4e5,
       data: [{
@@ -261,7 +289,7 @@ export const mochaHooks = {
       data: [{
         key: '%s__amp',
         type: 'string',
-        value: '1000',
+        value: publicKey(this.accounts.matcher),
       }],
       chainId,
     }, this.accounts.lpStable);
@@ -279,5 +307,9 @@ export const mochaHooks = {
     }, this.accounts.lpStable);
     await api.transactions.broadcast(setManagerLpStableTx, {});
     await waitForTx(setManagerLpStableTx.id, { apiBase });
+
+    console.log('usdnAssetId', this.usdnAssetId);
+    console.log('usdtAssetId', this.usdtAssetId);
+    console.log(this.lpStableAssetId);
   },
 };
