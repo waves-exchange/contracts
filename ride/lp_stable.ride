@@ -680,11 +680,11 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
 
     let (amBalanceNow, prBalanceNow, virtSwapInAm, virtSwapOutPr, virtSwapInPr, virtSwapOutAm) =
       if (pmtAssetId == amId) then {
-        if (amBalance < pmtAmt || pmtAmt < amAssetPart) then "invalid payment amount".throw() else
-          (amBalance - pmtAmt, prBalance, pmtAmt - amAssetPart, prAssetPart, 0, 0)
+        if (amBalance < paymentAmountRaw || pmtAmt < amAssetPart) then "invalid payment amount".throw() else
+          (amBalance - paymentAmountRaw, prBalance, pmtAmt - amAssetPart, prAssetPart, 0, 0)
       } else if (pmtAssetId == prId) then {
-        if (prBalance < pmtAmt || pmtAmt < prAssetPart) then "invalid payment amount".throw() else
-          (amBalance, prBalance - pmtAmt, 0, 0, pmtAmt - prAssetPart, amAssetPart)
+        if (prBalance < paymentAmountRaw || pmtAmt < prAssetPart) then "invalid payment amount".throw() else
+          (amBalance, prBalance - paymentAmountRaw, 0, 0, pmtAmt - prAssetPart, amAssetPart)
       } else throw("wrong pmtAssetId")
 
     let D0 = gwxCntr.invoke("calcD", [
