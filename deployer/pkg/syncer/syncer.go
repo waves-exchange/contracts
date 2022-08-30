@@ -306,7 +306,7 @@ func (s *Syncer) doHash(
 				Str("left", "blockchain").
 				Str("right", "local").
 				Msg("print diff")
-			e = s.printDiff(ctx, blockchainBase64, scriptBase64)
+			e = s.printDiff(ctx, fileName, blockchainBase64, scriptBase64)
 			if e != nil {
 				return false, fmt.Errorf("s.printDiff: %w", e)
 			}
@@ -535,7 +535,7 @@ func (s *Syncer) doFile(
 				}
 
 				log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
-				er = s.printDiff(ctx, fromBlockchainScript, base64Script)
+				er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
 				if er != nil {
 					return fmt.Errorf("s.printDiff: %w", er)
 				}
@@ -547,7 +547,7 @@ func (s *Syncer) doFile(
 	return nil
 }
 
-func (s *Syncer) preparePathAndScript(ctx context.Context, base64Script string) (string, error) {
+func (s *Syncer) preparePathAndScript(ctx context.Context, fileName, base64Script string) (string, error) {
 	var script string
 	if base64Script != "" {
 		scr, err := s.apiDecompileScript(ctx, strings.NewReader(base64Script))
@@ -562,7 +562,7 @@ func (s *Syncer) preparePathAndScript(ctx context.Context, base64Script string) 
 		return "", fmt.Errorf("uuid.NewRandom: %w", err)
 	}
 
-	p := path.Join("..", "tmp", u.String()+".ride")
+	p := path.Join("..", "tmp", fileName+" "+u.String())
 
 	f, err := os.Create(p)
 	if err != nil {
@@ -577,8 +577,8 @@ func (s *Syncer) preparePathAndScript(ctx context.Context, base64Script string) 
 	return p, nil
 }
 
-func (s *Syncer) printDiff(ctx context.Context, base64Str1, base64Str2 string) error {
-	path1, err := s.preparePathAndScript(ctx, base64Str1)
+func (s *Syncer) printDiff(ctx context.Context, fileName, base64Str1, base64Str2 string) error {
+	path1, err := s.preparePathAndScript(ctx, fileName, base64Str1)
 	defer func() {
 		_ = os.Remove(path1)
 	}()
@@ -586,7 +586,7 @@ func (s *Syncer) printDiff(ctx context.Context, base64Str1, base64Str2 string) e
 		return fmt.Errorf("s.preparePathAndScript: %w", err)
 	}
 
-	path2, err := s.preparePathAndScript(ctx, base64Str2)
+	path2, err := s.preparePathAndScript(ctx, fileName, base64Str2)
 	defer func() {
 		_ = os.Remove(path2)
 	}()
