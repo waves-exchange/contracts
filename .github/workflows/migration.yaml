@@ -74,7 +74,7 @@ jobs:
       MONGODATABASENAME: ${{ secrets.MAINNETMONGODATABASENAME }}
       MONGOCOLLECTIONCONTRACTS: ${{ secrets.MAINNETMONGOCOLLECTIONCONTRACTS }}
       NETWORK: mainnet
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     container:
       image: golang:1.18
     steps:
