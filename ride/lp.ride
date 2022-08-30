@@ -913,11 +913,6 @@ func evaluateGetREADONLY(paymentLpAssetId: String, paymentLpAmt: Int) = {
     SEP))
 }
 
-@Callable(i)
-func testingTest() = {
-  ([], "")
-}
-
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
