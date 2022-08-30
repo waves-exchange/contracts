@@ -116,6 +116,7 @@ func mba(bAStr: String) = {"%s%s%s__mappings__baseAsset2internalId__" + bAStr}
 # keyAllPoolsShutdown
 func aps() = {"%s__shutdown"}
 func keyAllowedLpStableScriptHash() = "%s__allowedLpStableScriptHash"
+func keyFeeCollectorAddress() = "%s__feeCollectorAddress"
 
 #------------------------
 # FAILURES
@@ -157,7 +158,7 @@ func mp() = {
   fca.strf(mtpk()).fromBase58String()
 }
 
-let matcherAddress = mp().addressFromPublicKey()
+let feeCollectorAddress = fca.strf(keyFeeCollectorAddress()).addressFromStringValue()
 
 # getPoolConfig
 # function used to gather all pool data from factory
@@ -733,7 +734,7 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
       if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
       else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
     
-    let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(matcherAddress, feeAmount, pmtAssetId.fromBase58String())] else []
+    let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, pmtAssetId.fromBase58String())] else []
 
     state ++ lpTrnsfr ++ sendFeeToMatcher
 }
@@ -845,7 +846,7 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
 
   let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
 
-  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(matcherAddress, feeAmount, outAssetIdOrWaves)] else []
+  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetIdOrWaves)] else []
 
   let curPrX18 = cpbi(prBalance.t1(prDcm), amBalance.t1(amDcm))
   let curPr = curPrX18.f1(scale8)
