@@ -289,7 +289,7 @@ func (s *Syncer) doHash(
 				Str("key", key)
 		}
 
-		if actualHash != newHashStr && actualHash != "" {
+		if actualHash != newHashStr {
 			tx, e := json.Marshal(dataTx)
 			if e != nil {
 				return false, fmt.Errorf("json.Marshal: %w", e)
