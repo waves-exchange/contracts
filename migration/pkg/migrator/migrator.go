@@ -31,7 +31,7 @@ func NewMigrator(contracts contracts.Contracts, ctx context.Context, collection 
 	case "mainnet":
 		var c []Mainnet
 		for _, contr := range contracts {
-			if contr.TestnetPrv != "" {
+			if contr.TestnetPrv == "" {
 				continue
 			}
 			c = append(c, Mainnet{
@@ -49,12 +49,12 @@ func NewMigrator(contracts contracts.Contracts, ctx context.Context, collection 
 	case "testnet":
 		var c []Testnet
 		for _, contr := range contracts {
-			if contr.MainnetPub != "" {
+			if contr.TestnetPrv == "" {
 				continue
 			}
 			prv, err := crypto.NewSecretKeyFromBase58(contr.TestnetPrv)
 			if err != nil {
-				return fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", err)
+				return fmt.Errorf("crypto.NewSecretKeyFromBase58:", err, "struct:", contr)
 			}
 			pubKey := crypto.GeneratePublicKey(prv)
 			c = append(c, Testnet{
