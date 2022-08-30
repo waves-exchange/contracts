@@ -164,6 +164,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		}
 	}
 
+	s.logger.Info().Msg("waiting transactions is being mined...")
 	err = s.mined.Wait()
 	if err != nil {
 		return fmt.Errorf("s.mined.Wait: %w", err)
@@ -312,7 +313,7 @@ func (s *Syncer) doHash(
 			}
 
 			log().RawJSON("tx", tx).
-				Msg("we are about to set script above as approved. " +
+				Msg("we are about to set script as approved. " +
 					"sign and broadcast data-tx to continue...")
 
 			for {
@@ -325,7 +326,7 @@ func (s *Syncer) doHash(
 					break
 				}
 
-				time.Sleep(5 * time.Second)
+				time.Sleep(3 * time.Second)
 			}
 		} else {
 			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, no need to update allowed script hash")
