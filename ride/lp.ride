@@ -484,14 +484,6 @@ func mustManager(i: Invocation) = {
 }
 
 @Callable(i)
-# ido, team, emission, staking, locking (boosting), rest
-func constructor(factoryContract: String) = {
-  strict checkCaller = i.mustManager()
-
-  [StringEntry(fc(), factoryContract)]
-}
-
-@Callable(i)
 func setManager(pendingManagerPublicKey: String) = {
   strict checkCaller = i.mustManager()
   strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
