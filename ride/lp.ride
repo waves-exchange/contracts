@@ -569,6 +569,16 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
      estPut._9
  }
 
+@Callable(i)
+func putOneToken(slippage: Int, autoStake: Boolean) = {
+  ([], unit)
+}
+
+@Callable(i)
+func getOneToken(minimumToReceive: Int, unstakeAmount: Int) = {
+  ([], unit)
+}
+
 # Called by: LP
 #
 # purpose:
