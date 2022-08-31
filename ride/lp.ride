@@ -563,11 +563,11 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
 
 # Put without LP emission
 @Callable(i)
- func putForFree(maxSlippage: Int) = {
-   if(maxSlippage < 0) then throw("Invalid value passed") else
-     let estPut = commonPut(i, maxSlippage, false)
-     estPut._9
- }
+func putForFree(maxSlippage: Int) = {
+  if(maxSlippage < 0) then throw("Invalid value passed") else
+    let estPut = commonPut(i, maxSlippage, false)
+    estPut._9
+}
 
 @Callable(i)
 func putOneToken(slippage: Int, autoStake: Boolean) = {
