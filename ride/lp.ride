@@ -561,11 +561,13 @@ func putForFree(maxSlippage: Int) = {
     estPut._9
 }
 
+# issued = supply * (√(1 + deposit / balance) - 1)
 @Callable(i)
 func putOneToken(slippage: Int, autoStake: Boolean) = {
   ([], unit)
 }
 
+# amount = balance * (1 - (1 - redeemed / supply)^2)
 @Callable(i)
 func getOneToken(minimumToReceive: Int, unstakeAmount: Int) = {
   ([], unit)
