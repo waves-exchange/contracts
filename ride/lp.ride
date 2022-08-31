@@ -153,6 +153,10 @@ func getFactoryConfig() = {
   getStringOrFail(factoryContract, keyFactoryConfig()).split(SEP)
 }
 
+let stakingContract = getFactoryConfig()[idxFactoryStakingContract].addressFromString().valueOrErrorMessage("incorrect staking address")
+
+let slippageContract = getFactoryConfig()[idxFactorySlippageContract].addressFromString().valueOrErrorMessage("incorrect staking address")
+
 func dataPutActionInfo(inAmtAssetAmt: Int, inPriceAssetAmt: Int, outLpAmt: Int, price: Int, slippageTolerancePassedByUser: Int, slippageToleranceReal: Int, txHeight: Int, txTimestamp: Int, slipageAmtAssetAmt: Int, slipagePriceAssetAmt: Int) = {
   makeString(["%d%d%d%d%d%d%d%d%d%d", inAmtAssetAmt.toString(), inPriceAssetAmt.toString(), outLpAmt.toString(), price.toString(), slippageTolerancePassedByUser.toString(), slippageToleranceReal.toString(), txHeight.toString(), txTimestamp.toString(), slipageAmtAssetAmt.toString(), slipagePriceAssetAmt.toString()], SEP)
 }
@@ -520,9 +524,6 @@ func confirmManager() = {
 #    transfer LP tokens based on deposit share
 @Callable(i)
 func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
-    let factoryCfg = getFactoryConfig()
-    let stakingContract = addressFromString(factoryCfg[idxFactoryStakingContract]).valueOrErrorMessage("Error. Incorrect staking address.")
-    let slippageContract = addressFromString(factoryCfg[idxFactorySlippageContract]).valueOrErrorMessage("Error. Incorrect slippage contract address.")
     if(slippageTolerance < 0) then throw("Invalid slippageTolerance passed") else
     let estPut = commonPut(i, slippageTolerance, true)
 
@@ -623,10 +624,8 @@ func unstakeAndGet(amount: Int) = {
   strict checkPayments = if (i.payments.size() != 0) then throw("No payments are expected") else true
 
   let cfg = getPoolConfig()
-  let factoryCfg = getFactoryConfig()
 
   let lpAssetId = cfg[idxPoolLPAssetId].fromBase58String()
-  let stakingContract = factoryCfg[idxFactoryStakingContract].addressFromString().valueOrErrorMessage("Error. Incorrect staking address.")
 
   # negative amount will not pass
   strict unstakeInv = stakingContract.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
