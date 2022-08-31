@@ -129,6 +129,8 @@ func throwOrderError(orderValid: Boolean, senderValid: Boolean, matcherValid: Bo
 func getStringOrFail(address: Address, key: String) = address.getString(key).valueOrErrorMessage(makeString(["mandatory ", address.toString(), ".", key, " is not defined"], ""))
 func getIntOrFail(address: Address, key: String) = address.getInteger(key).valueOrErrorMessage(makeString(["mandatory ", address.toString(), ".", key, " is not defined"], ""))
 
+func throwErr(msg: String) = ["lp.ride:", msg].makeString(" ").throw()
+
 let factoryContract = addressFromStringValue(getStringOrFail(this, fc()))
 
 # check that global shutdown is take place
@@ -147,6 +149,22 @@ func getPoolConfig() = {
   let iPriceAsset = getIntOrFail(factoryContract, keyMappingsBaseAsset2internalId(priceAsset))
   let iAmtAsset = getIntOrFail(factoryContract, keyMappingsBaseAsset2internalId(amtAsset))
   getStringOrFail(factoryContract, keyPoolConfig(iAmtAsset.toString(), iPriceAsset.toString())).split(SEP)
+}
+
+func parseAssetId(input: String) = {
+  if (input == "WAVES") then unit else input.fromBase58String()
+}
+
+func parsePoolConfig(poolConfig: List[String]) = {
+  (
+    poolConfig[idxPoolAddress].addressFromStringValue(),
+    poolConfig[idxPoolStatus].parseIntValue(),
+    poolConfig[idxPoolLPAssetId].fromBase58String(),
+    poolConfig[idxAmtAssetId].parseAssetId(),
+    poolConfig[idxPriceAssetId].parseAssetId(),
+    poolConfig[idxAmtAssetDcm].parseIntValue(),
+    poolConfig[idxPriceAssetDcm].parseIntValue()
+  )
 }
 
 func getFactoryConfig() = {
@@ -565,6 +583,33 @@ func putForFree(maxSlippage: Int) = {
 # issued = supply * (√(1 + deposit / balance) - 1)
 @Callable(i)
 func putOneToken(slippage: Int, autoStake: Boolean) = {
+  let (
+    poolAddress,
+    poolStatus,
+    lpAssetId,
+    amountAssetId,
+    priceAssetId,
+    amountAssetDecimals,
+    priceAssetDecimals
+  ) = getPoolConfig().parsePoolConfig()
+
+  let isPutDisabled = isGlobalShutdown() || poolStatus == PoolPutDisabled || poolStatus == PoolShutdown
+
+  strict checks = [
+    !isPutDisabled || "put operation is blocked by admin".throwErr(),
+    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr(),
+    slippage >= 0 || "invalid slippage passed".throwErr()
+  ]
+
+  let payment = i.payments[0]
+  let paymentAssetId = payment.assetId
+  let paymentAmount = payment.amount
+
+  let isPaymentAssetIdValid = paymentAssetId == amountAssetId || paymentAssetId == priceAssetId
+  strict checkPaymentAssetId = isPaymentAssetIdValid || "invalid asset".throwErr()
+
+  let lpEmission = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity
+
   ([], unit)
 }
 
