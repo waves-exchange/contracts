@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 6 #-}
+{-# STDLIB_VERSION 5 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -36,8 +36,6 @@
 #-----------------
 # GLOBAL VARIABLES
 #-----------------
-let defaultDecimals = 1_000_000
-
 let scale8 = 100_000_000
 let scale8BigInt = 100_000_000.toBigInt()
 let scale18 = 1_000_000_000_000_000_000.toBigInt()
@@ -118,7 +116,6 @@ func pc(iAmtAs: String, iPrAs: String) = {"%d%d%s__" + iAmtAs + "__" + iPrAs + "
 func mba(bAStr: String) = {"%s%s%s__mappings__baseAsset2internalId__" + bAStr}
 # keyAllPoolsShutdown
 func aps() = {"%s__shutdown"}
-func keyAllowedLpStableScriptHash() = "%s__allowedLpStableScriptHash"
 
 #------------------------
 # FAILURES
@@ -257,14 +254,12 @@ func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address
 
   # validation block
   if (lpId != pmtAssetId) then throw("Wrong pmt asset") else
+
   let amBalance = getAccBalance(amId)
+  let amBalanceX18 = amBalance.t1(amDcm)
+
   let prBalance = getAccBalance(prId)
-
-  let amountBalanceDefaultDecimals = fraction(amBalance, defaultDecimals, amDcm)
-  let priceBalanceDefaultDecimals = fraction(prBalance, defaultDecimals, prDcm)
-
-  let amBalanceX18 = amountBalanceDefaultDecimals.t1(defaultDecimals)
-  let prBalanceX18 = priceBalanceDefaultDecimals.t1(defaultDecimals)
+  let prBalanceX18 = prBalance.t1(prDcm)
 
   let curPriceX18 = cpbi(prBalanceX18, amBalanceX18)
   let curPrice = curPriceX18.f1(scale8)
@@ -276,11 +271,8 @@ func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address
   let outPrAmtX18 = fraction(prBalanceX18, pmtLpAmtX18, lpEmissX18)
 
   # cast amounts to asset decimals
-  let outAmountAmountDefaultDecimals = outAmAmtX18.f1(defaultDecimals)
-  let outPriceAmountDefaultDecimals = outPrAmtX18.f1(defaultDecimals)
-
-  let outAmAmt = fraction(outAmountAmountDefaultDecimals, amDcm, defaultDecimals)
-  let outPrAmt = fraction(outPriceAmountDefaultDecimals, prDcm, defaultDecimals)
+  let outAmAmt = outAmAmtX18.f1(amDcm)
+  let outPrAmt = outPrAmtX18.f1(prDcm)
 
   let state = if (txId58 == "") then [] else
   [
@@ -348,21 +340,15 @@ func epo(txId58: String,
     #                    " etAccBalance(prIdStr) = " + getAccBalance(prIdStr).toString()) else
 
     # cast amounts to the lp decimals
-    let amountBalanceDefaultDecimals = fraction(amBalance, defaultDecimals, amtDcm)
-    let priceBalanceDefaultDecimals = fraction(prBalance, defaultDecimals, priceDcm)
-
-    let inAmountAssetAmountDefaultDecimals = fraction(inAmAmt, defaultDecimals, amtDcm)
-    let inPriceAssetAmountDefaultDecimals = fraction(inPrAmt, defaultDecimals, priceDcm)
-
-    let inAmAssetAmtX18 = inAmountAssetAmountDefaultDecimals.t1(defaultDecimals)
-    let inPrAssetAmtX18 = inPriceAssetAmountDefaultDecimals.t1(defaultDecimals)
+    let inAmAssetAmtX18 = inAmAmt.t1(amtDcm)
+    let inPrAssetAmtX18 = inPrAmt.t1(priceDcm)
 
     # calc user expected price
     let userPriceX18 = cpbi(inPrAssetAmtX18, inAmAssetAmtX18)
 
     # calc pool price
-    let amBalanceX18 = amountBalanceDefaultDecimals.t1(defaultDecimals)
-    let prBalanceX18 = priceBalanceDefaultDecimals.t1(defaultDecimals)
+    let amBalanceX18 = amBalance.t1(amtDcm)
+    let prBalanceX18 = prBalance.t1(priceDcm)
 
     # case of the initial or first deposit
     # result is a tuple containing the following:
@@ -377,8 +363,8 @@ func epo(txId58: String,
         let lpAmtX18 = pow(inAmAssetAmtX18 * inPrAssetAmtX18, 0, 5.toBigInt(), 1, 0, DOWN)
         (
           lpAmtX18.f1(scale8),
-          inAmAssetAmtX18.f1(defaultDecimals),
-          inPrAssetAmtX18.f1(defaultDecimals),
+          inAmAssetAmtX18.f1(amtDcm),
+          inPrAssetAmtX18.f1(priceDcm),
           cpbi(prBalanceX18 + inPrAssetAmtX18, amBalanceX18 + inAmAssetAmtX18),
           slippageX18
         )
@@ -405,16 +391,16 @@ func epo(txId58: String,
             let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18)
             (
               lpAmtX18.f1(scale8),
-              expAmtAssetAmtX18.f1(defaultDecimals),
-              expPriceAssetAmtX18.f1(defaultDecimals),
+              expAmtAssetAmtX18.f1(amtDcm),
+              expPriceAssetAmtX18.f1(priceDcm),
               curPriceX18,
               slippageX18
             )
         }
 
     let calcLpAmt         = r._1
-    let calcAmAssetPmt = fraction(r._2, amtDcm, defaultDecimals)
-    let calcPrAssetPmt = fraction(r._3, priceDcm, defaultDecimals)
+    let calcAmAssetPmt    = r._2
+    let calcPrAssetPmt    = r._3
     let curPrice          = r._4.f1(scale8)
     let slippageCalc      = r._5.f1(scale8)
 
@@ -672,6 +658,11 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
     let addon       = this.getString(ada()).valueOrElse("")
     let userAddress = if(addon == i.caller.toString()) then i.originCaller else i.caller
 
+    let addonContract = addressFromString(
+      ada().getString().valueOrErrorMessage("no addons")
+    ).valueOrErrorMessage("addon address in not valid")
+
+    strict check = addonContract.reentrantInvoke("ensureCanPutOneTkn", [userAddress.toString()], []);
 
     if(slippage <= 0 || amAssetPart<=0 || prAssetPart<=0 || outLp <= 0) then throw("Wrong params") else
     if (i.payments.size() != 1) then throw("1 pmnt expd") else
@@ -679,20 +670,17 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
     let pmt         = i.payments[0].value()
     let pmtAssetId  = pmt.assetId.value().toBase58String()
     let pmtAmt      = pmt.amount
-    
-    if(pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
+    if(pmtAmt < amAssetPart || pmtAmt < prAssetPart || pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
     let amBalance = getAccBalance(amId)
     let prBalance = getAccBalance(prId)
 
     let (amBalanceNow, prBalanceNow, virtSwapInAm, virtSwapOutPr, virtSwapInPr, virtSwapOutAm) =
-      if (pmtAssetId == amId) then {
-        if (amBalance < pmtAmt || pmtAmt < amAssetPart) then "invalid payment amount".throw() else
-          (amBalance - pmtAmt, prBalance, pmtAmt - amAssetPart, prAssetPart, 0, 0)
-      } else if (pmtAssetId == prId) then {
-        if (prBalance < pmtAmt || pmtAmt < prAssetPart) then "invalid payment amount".throw() else
-          (amBalance, prBalance - pmtAmt, 0, 0, pmtAmt - prAssetPart, amAssetPart)
-      } else throw("wrong pmtAssetId")
+        if (pmtAssetId == amId) then {
+          (amBalance-pmtAmt, prBalance, pmtAmt - amAssetPart, prAssetPart, 0, 0)
+        } else if (pmtAssetId == prId) then {
+          (amBalance, prBalance-pmtAmt, 0, 0, pmtAmt - prAssetPart, amAssetPart)
+        } else throw("wrong pmtAssetId")
 
     let D0 = gwxCntr.invoke("calcD", [
                     amBalanceNow.toString(),
@@ -809,6 +797,12 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
   let txId58      = i.transactionId.toBase58String()
   let pmtAssetId  = pmt.assetId.value()
   let pmtAmt      = pmt.amount
+
+  let addonContract = addressFromString(
+    ada().getString().valueOrErrorMessage("no addons")
+  ).valueOrErrorMessage("addon address in not valid")
+
+  strict check = addonContract.reentrantInvoke("ensureCanGetOneTkn", [userAddress.toString()], []);
 
   if(pmtAmt < 10_00_000_000) then throw("Min pmt 10 LP") else
 
@@ -1049,30 +1043,21 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 
 @Verifier(tx)
 func verify() = {
-  let targetPublicKey = match m() {
-    case pk: ByteVector => pk
-    case _: Unit => tx.senderPublicKey
-  }
-
   match tx {
-    case order: Order =>
-      let matcherPub    = mp()
-      let orderValid    = moa(order)
-      let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
-      let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
+        case order: Order =>
+            let mtchPub    = mp()
+            let orV    = moa(order)
+            let sndrV   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
+            let mtchV  = sigVerify(order.bodyBytes, order.proofs[1], mtchPub)
 
-      (orderValid && senderValid && matcherValid) || toe(orderValid, senderValid, matcherValid)
-    case s: SetScriptTransaction =>
-      let newHash = s.script.value().blake2b256()
-      let allowedHash = fca.getString(keyAllowedLpStableScriptHash()).value().fromBase64String()
-      let currentHash = this.scriptHash()
-      if (allowedHash == newHash && currentHash != newHash) then {
-        true
-      } else {
-        sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
-      }
-    case _ => {
-      sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+            (orV && sndrV && mtchV)
+                || toe(orV, sndrV, mtchV)
+        case _ => {
+            let targetPublicKey = match m() {
+              case pk: ByteVector => pk
+              case _: Unit => tx.senderPublicKey
+            }
+            sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+        }
     }
-  }
 }

@@ -14,16 +14,17 @@ const api = create(apiBase);
 
 describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully getOneTkn.', async function () {
-    const amAssetPart = 1e8;
-    const prAssetPart = 1e8;
-    const outLp = 1e10;
+    const amAssetPart = 1e10;
+    const prAssetPart = 1e10;
+    const outLp = 1e11;
     const slippage = 1e3;
     const autoStake = false;
-    const usdtAmount = 1e8;
+    const usdtAmount = 1e10;
+
     const exchResult = 0;
     const notUsed = 0;
 
-    const expectedOutAmAmt = 1e8;
+    const expectedOutAmAmt = 1e10;
     const expectedOutPrAmt = 0;
 
     const lpStable = address(this.accounts.lpStable, chainId);
