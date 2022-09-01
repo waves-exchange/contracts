@@ -177,6 +177,18 @@ export const mochaHooks = {
     await api.transactions.broadcast(constructorV5FactoryV2InvokeTx, {});
     await waitForTx(constructorV5FactoryV2InvokeTx.id, { apiBase });
 
+    const setAllowedLpStableAddonScriptHashTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__allowedLpScriptHash',
+        type: 'string',
+        value: '',
+      }],
+      chainId,
+    }, this.accounts.factoryV2);
+    await api.transactions.broadcast(setAllowedLpStableAddonScriptHashTx, {});
+    await waitForTx(setAllowedLpStableAddonScriptHashTx.id, { apiBase });
+
     const setManagerFactoryV2Tx = data({
       additionalFee: 4e5,
       data: [{
