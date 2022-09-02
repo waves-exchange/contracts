@@ -12,8 +12,6 @@ let idxPrAsId                                = 5
 # data indexes from factory config
 let idxFactStakCntr      = 1
 
-let delay = "%s__delay"
-
 #-------------------------
 # KEYS ON CURRENT CONTRACT
 #-------------------------
@@ -28,8 +26,6 @@ func keyAdminPubKeys() = "%s__adminPubKeys"
 func keyAmp() = "%s__amp"
 func keyAmpHistory(height: Int) = "%s%d__amp__" + height.toString()
 
-func lastGetOneTknCall(caller: String) = {makeString(["%s%s__lastGetOneTknCall", caller], SEP)}
-func lastPutOneTknCall(caller: String) = {makeString(["%s%s__lastPutOneTknCall", caller], SEP)}
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
@@ -142,7 +138,7 @@ func unstakeAndGetOneTkn(amount: Int, exchResult: Int, notUsed: Int, outAmount: 
 
   # negative amount will not pass
   strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
-  strict getOneTkn = poolContract.reentrantInvoke("getOneTkn", [exchResult, notUsed, outAmount, outAssetId, slippage],[AttachedPayment(lpAssetId, amount)] )
+  strict getOneTkn = poolContract.invoke("getOneTkn", [exchResult, notUsed, outAmount, outAssetId, slippage],[AttachedPayment(lpAssetId, amount)] )
   []
 }
 
@@ -154,64 +150,6 @@ func setAmp(amp: String) = {
   let res2 = poolContract.invoke("setS", [height.keyAmpHistory(), amp], [])
 
   ([], (res1, res2))
-}
-
-@Callable(i)
-func ensureCanGetOneTkn(caller: String) = {
-  strict checkCaller = i.mustPool()
-
-  strict ensureCanPut = match poolContract.getInteger(lastPutOneTknCall(caller)) {
-    case int: Int => {
-      let permittedHeight = int + poolContract.getInteger(delay).value()
-      let isReadyforPutOneTkn = height >= permittedHeight
-      let needBlocks = permittedHeight - height
-      isReadyforPutOneTkn || (["you should wait", needBlocks.toString(), "blocks more to perform the action"]).makeString(" ").throw()
-    }
-    case _ => true
-  }
-
-  strict ensureCanGet = match poolContract.getInteger(lastGetOneTknCall(caller)) {
-    case int: Int => {
-      let permittedHeight = int + poolContract.getInteger(delay).value()
-      let isReadyforGetOneTkn = height >= permittedHeight
-      let needBlocks = permittedHeight - height
-      isReadyforGetOneTkn || (["you should wait", needBlocks.toString(), "blocks more to perform the action"]).makeString(" ").throw()
-    }
-    case _ => true
-  }
-
-  strict setI = poolContract.invoke("setI", [lastPutOneTknCall(caller), height], [])
-
-  []
-}
-
-@Callable(i)
-func ensureCanPutOneTkn(caller: String) = {
-  strict checkCaller = i.mustPool()
-
-  strict ensureCanPut = match poolContract.getInteger(lastPutOneTknCall(caller)) {
-    case int: Int => {
-      let permittedHeight = int + poolContract.getInteger(delay).value()
-      let isReadyforPutOneTkn = height >= permittedHeight
-      let needBlocks = permittedHeight - height
-      isReadyforPutOneTkn || (["you should wait", needBlocks.toString(), "blocks more to perform the action"]).makeString(" ").throw()
-    }
-    case _ => true
-  }
-
-  strict ensureCanGet = match poolContract.getInteger(lastGetOneTknCall(caller)) {
-    case int: Int => {
-      let permittedHeight = int + poolContract.getInteger(delay).value()
-      let isReadyforGetOneTkn = height >= permittedHeight
-      let needBlocks = permittedHeight - height
-      isReadyforGetOneTkn || (["you should wait", needBlocks.toString(), "blocks more to perform the action"]).makeString(" ").throw()
-    }
-    case _ => true
-  }
-
-  strict setI = poolContract.invoke("setI", [lastPutOneTknCall(caller), height], [])
-
-  []
 }
 
 @Verifier(tx)

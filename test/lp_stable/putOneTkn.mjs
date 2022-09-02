@@ -17,18 +17,18 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     const amAssetPart = 1e8;
     const prAssetPart = 1e8;
     const outLp = 1e10;
-    const slippage = 1e3;
+    const slipByUser = 1e3;
     const autoStake = false;
     const usdtAmount = 1e8;
 
-    const expectedPriceLast = 1e8;
+    const expectedPrice = 1e8;
     const expectedPriceHistory = 1e8;
-    const expectedWriteAmAmt = 1e8;
-    const expectedWritePrAmt = 0;
-    const expectedEmitLpAmt = 1e10;
-    const expectedslippageCalc = 0;
-    const expectedAmDiff = 0;
-    const expectedPrDiff = 0;
+    const expectedInAmtAssetAmt = 1e8;
+    const expectedInPriceAssetAmt = 0;
+    const expectedOutLpAmt = 1e10;
+    const expectedSlippageReal = 0;
+    const expectedSlipageAmAmt = 0;
+    const expectedSlipagePrAmt = 0;
 
     const lpStable = address(this.accounts.lpStable, chainId);
 
@@ -43,7 +43,7 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
           { type: 'integer', value: amAssetPart },
           { type: 'integer', value: prAssetPart },
           { type: 'integer', value: outLp },
-          { type: 'integer', value: slippage },
+          { type: 'integer', value: slipByUser },
           { type: 'boolean', value: autoStake },
         ],
       },
@@ -58,7 +58,7 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     expect(stateChanges.data).to.eql([{
       key: '%s%s__price__last',
       type: 'integer',
-      value: expectedPriceLast,
+      value: expectedPrice,
     }, {
       key: keyPriceHistory,
       type: 'integer',
@@ -66,7 +66,7 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     }, {
       key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
-      value: `%d%d%d%d%d%d%d%d%d%d__${expectedWriteAmAmt}__${expectedWritePrAmt}__${expectedEmitLpAmt}__${expectedPriceLast}__${slippage}__${expectedslippageCalc}__${height}__${timestamp}__${expectedAmDiff}__${expectedPrDiff}`,
+      value: `%d%d%d%d%d%d%d%d%d%d__${expectedInAmtAssetAmt}__${expectedInPriceAssetAmt}__${expectedOutLpAmt}__${expectedPrice}__${slipByUser}__${expectedSlippageReal}__${height}__${timestamp}__${expectedSlipageAmAmt}__${expectedSlipagePrAmt}`,
     }]);
 
     expect(stateChanges.transfers).to.eql([{
@@ -77,7 +77,6 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
 
     expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
       .to.deep.include.members([
-        [address(this.accounts.lpStableAddon, chainId), 'ensureCanPutOneTkn'],
         [address(this.accounts.gwxReward, chainId), 'calcD'],
         [address(this.accounts.gwxReward, chainId), 'calcD'],
         [address(this.accounts.factoryV2, chainId), 'emit'],
