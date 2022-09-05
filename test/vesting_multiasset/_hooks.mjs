@@ -1,6 +1,6 @@
 import { address, publicKey, randomSeed } from '@waves/ts-lib-crypto';
 import {
-  data, invokeScript, issue, massTransfer, nodeInteraction as ni,
+  data, issue, massTransfer, nodeInteraction as ni,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { format } from 'path';
