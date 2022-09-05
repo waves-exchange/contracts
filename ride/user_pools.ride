@@ -41,6 +41,7 @@ let statusActive = "active" # 'activate' func called and pool waiting while matc
 let statuses = [statusPending, statusDeclined, statusActive]
 
 func keyCreateCalled(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "createCalled", amountAssetId, priceAssetId].makeString(SEP)
+func keyCreateCaller(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "createCaller", amountAssetId, priceAssetId].makeString(SEP)
 func keyAmountAssetAmount(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "amountAssetAmount", amountAssetId, priceAssetId].makeString(SEP)
 func keyPriceAssetAmount(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "priceAssetAmount", amountAssetId, priceAssetId].makeString(SEP)
 func keyHeight(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "height", amountAssetId, priceAssetId].makeString(SEP)
@@ -165,7 +166,6 @@ func create() = {
 
   strict checks = [
     !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
-    i.isManager() || amountAssetInfo.value().issuer == i.caller || throwYouNotIssuer(),
     i.isManager() || amountAssetId.isVerified() || throwAssetNotVerified(),
     keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
     i.isManager() || amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
@@ -175,6 +175,7 @@ func create() = {
 
   [
     BooleanEntry(keyCreateCalled(amountAssetId, priceAssetId), true),
+    StringEntry(keyCreateCaller(amountAssetId, priceAssetId), i.caller.toString()),
     IntegerEntry(keyLastIndex(), curIndex),
     StringEntry(keySuffix(amountAssetId, priceAssetId), curIndex.toString()+indexSuffix),
     IntegerEntry(keyHeight(amountAssetId, priceAssetId), height),
@@ -221,7 +222,7 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
   )
   strict afterPut = this.assetBalance(lpAssetId.fromBase58String())
 
-  let user = amountAssetId.fromBase58String().assetInfo().value().issuer
+  let user = keyCreateCaller(amountAssetId, priceAssetId).getString().value()
 
   [
     StringEntry(keyStatus(amountAssetId, priceAssetId), statusActive),
