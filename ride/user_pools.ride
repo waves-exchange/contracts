@@ -131,7 +131,7 @@ func constructor(factoryV2Address: String, assetsStoreAddress: String, priceAsse
   ]
 }
 
-# Принимает три payment 1) Токен юзера (обязан быть его issuer); 2) >= minAmount of priceAsset; 3)feeAmount of feeAsset;
+# Принимает три payment 1) Токен юзера; 2) >= minAmount of priceAsset; 3)feeAmount of feeAsset;
 # Токен обязан быть верифицированным (инвок на контракт assets_store)
 # Создает заявку на пул в статусе pending
 # Вызвать может любой
