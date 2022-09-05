@@ -222,7 +222,7 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
   )
   strict afterPut = this.assetBalance(lpAssetId.fromBase58String())
 
-  let user = keyCreateCaller(amountAssetId, priceAssetId).getString().value()
+  let user = keyCreateCaller(amountAssetId, priceAssetId).getString().value().addressFromString().value()
 
   [
     StringEntry(keyStatus(amountAssetId, priceAssetId), statusActive),
