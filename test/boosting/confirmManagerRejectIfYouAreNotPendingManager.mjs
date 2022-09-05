@@ -14,7 +14,7 @@ const api = create(apiBase);
 
 describe('boosting: confirmManagerRejectIfYouAreNotPendingManager.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully confirmManager',
+    'should reject confirmManager',
     async function () {
       const anotherPublicKeyManager = publicKey(this.accounts.factoryV2);
       const anotherInvalidPublicKeyManager = this.accounts.user1;
