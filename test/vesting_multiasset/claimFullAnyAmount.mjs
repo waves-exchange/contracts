@@ -36,7 +36,7 @@ describe('vesting_multiasset: claimFullAnyAmount.mjs', /** @this {MochaSuiteModi
         ],
       },
       chainId,
-    }, this.accounts.manager);
+    }, this.accounts.user3);
     await api.transactions.broadcast(createDepositFor, {});
     const { height } = await ni.waitForTx(createDepositFor.id, { apiBase });
 

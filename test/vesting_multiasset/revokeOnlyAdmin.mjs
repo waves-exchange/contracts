@@ -3,7 +3,6 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { waitForHeight } from '../api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -17,8 +16,8 @@ const api = create(apiBase);
  * Mocha.Suite & {accounts: Object.<string, number>, votingDuration: number, wxAssetId: string}
  * } MochaSuiteModified
  * */
-describe('vesting_multiasset: revokeCalc.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should calc revoked total', async function () {
+describe('vesting_multiasset: revokeOnlyAdmin.mjs', /** @this {MochaSuiteModified} */() => {
+  it('should fail if non-manager trying to revoke somebody', async function () {
     const vesting = address(this.accounts.vesting_multiasset, chainId);
     const user1 = address(this.accounts.user1, chainId);
 
@@ -38,9 +37,7 @@ describe('vesting_multiasset: revokeCalc.mjs', /** @this {MochaSuiteModified} */
       chainId,
     }, this.accounts.user3);
     await api.transactions.broadcast(createDepositFor, {});
-    const minedCreateDepositFor = await ni.waitForTx(createDepositFor.id, { apiBase });
-
-    await waitForHeight(minedCreateDepositFor.height + 3);
+    await ni.waitForTx(createDepositFor.id, { apiBase });
 
     const revoke = invokeScript({
       dApp: vesting,
@@ -53,24 +50,8 @@ describe('vesting_multiasset: revokeCalc.mjs', /** @this {MochaSuiteModified} */
         ],
       },
       chainId,
-    }, this.accounts.admin);
-    await api.transactions.broadcast(revoke, {});
-    const minedRevoke = await ni.waitForTx(revoke.id, { apiBase });
-
-    const unclaimed = (minedRevoke.height - minedCreateDepositFor.height) * 2;
-    const { stateChanges } = await api.transactions.fetchInfo(revoke.id);
-    expect(stateChanges.data).to.eql([{
-      key: `%s%s%s__revoked__${this.wxAssetId}__${user1}`,
-      type: 'boolean',
-      value: true,
-    }, {
-      key: `%s%s__revokedTotal__${this.wxAssetId}`,
-      type: 'integer',
-      value: 10000 - unclaimed,
-    }, {
-      key: `%s%s__${this.wxAssetId}__${user1}`,
-      type: 'string',
-      value: `%d%d%d%d%d__10000__${unclaimed}__0__0__${minedCreateDepositFor.height}`,
-    }]);
+    }, this.accounts.user2);
+    await expect(api.transactions.broadcast(revoke, {})).to.be
+      .rejectedWith('Error while executing account-script: vesting_multiasset.ride: permission denied');
   });
 });

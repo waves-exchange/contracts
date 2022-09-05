@@ -17,8 +17,8 @@ const api = create(apiBase);
  * Mocha.Suite & {accounts: Object.<string, number>, votingDuration: number, wxAssetId: string}
  * } MochaSuiteModified
  * */
-describe('vesting_multiasset: revokeLastClaim.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should correct do last claim after revoke', async function () {
+describe('vesting_multiasset: denyAssetClaim.mjs', /** @this {MochaSuiteModified} */() => {
+  it('should successfully createDepositFor and denyAssetClaim', async function () {
     const vesting = address(this.accounts.vesting_multiasset, chainId);
     const user1 = address(this.accounts.user1, chainId);
 
@@ -38,11 +38,12 @@ describe('vesting_multiasset: revokeLastClaim.mjs', /** @this {MochaSuiteModifie
       chainId,
     }, this.accounts.user3);
     await api.transactions.broadcast(createDepositFor, {});
-    const { height } = await ni.waitForTx(createDepositFor.id, { apiBase });
+    const minedCreateDepositFor = await ni.waitForTx(createDepositFor.id, { apiBase });
 
-    await waitForHeight(height + 3);
+    await waitForHeight(minedCreateDepositFor.height + 3);
 
-    const claim1 = invokeScript({
+    await api.assets.fetchBalanceAddressAssetId(user1, this.wxAssetId);
+    const claim = invokeScript({
       dApp: vesting,
       payment: [],
       call: {
@@ -51,29 +52,22 @@ describe('vesting_multiasset: revokeLastClaim.mjs', /** @this {MochaSuiteModifie
       },
       chainId,
     }, this.accounts.user1);
-    await api.transactions.broadcast(claim1, {});
-    const minedClaim1 = await ni.waitForTx(claim1.id, { apiBase });
+    await api.transactions.broadcast(claim, {});
+    await ni.waitForTx(claim.id, { apiBase });
+    await api.assets.fetchBalanceAddressAssetId(user1, this.wxAssetId);
 
-    await waitForHeight(minedClaim1.height + 3);
-
-    const revoke = invokeScript({
+    const denyAssetClaim = invokeScript({
       dApp: vesting,
       payment: [],
       call: {
-        function: 'revokeDepositFor',
-        args: [
-          { type: 'string', value: this.wxAssetId },
-          { type: 'string', value: user1 },
-        ],
+        function: 'denyAssetClaim',
+        args: [{ type: 'string', value: this.wxAssetId }],
       },
       chainId,
     }, this.accounts.admin);
-    await api.transactions.broadcast(revoke, {});
-    const minedRevoke = await ni.waitForTx(revoke.id, { apiBase });
+    await api.transactions.broadcast(denyAssetClaim, {});
+    await ni.waitForTx(denyAssetClaim.id, { apiBase });
 
-    await waitForHeight(minedRevoke.height + 3);
-
-    const beforeClaim2 = await api.assets.fetchBalanceAddressAssetId(user1, this.wxAssetId);
     const claim2 = invokeScript({
       dApp: vesting,
       payment: [],
@@ -83,12 +77,7 @@ describe('vesting_multiasset: revokeLastClaim.mjs', /** @this {MochaSuiteModifie
       },
       chainId,
     }, this.accounts.user1);
-    await api.transactions.broadcast(claim2, {});
-    await ni.waitForTx(claim2.id, { apiBase });
-    const afterClaim2 = await api.assets.fetchBalanceAddressAssetId(user1, this.wxAssetId);
-
-    const diffUnclaimed = (minedRevoke.height - minedClaim1.height) * 2;
-    const diffBalance = afterClaim2.balance - beforeClaim2.balance;
-    expect(diffBalance).equal(diffUnclaimed);
+    await expect(api.transactions.broadcast(claim2, {})).to.be
+      .rejectedWith('Error while executing account-script: vesting_multiasset.ride: asset claim denied');
   });
 });

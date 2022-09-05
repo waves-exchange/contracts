@@ -17,8 +17,8 @@ const vestingPath = format({ dir: ridePath, base: 'vesting_multiasset.ride' });
 export const mochaHooks = {
   async beforeAll() {
     const contractNames = ['vesting_multiasset'];
-    const userNames = Array.from({ length: 3 }, (_, k) => `user${k}`);
-    const names = [...contractNames, ...userNames, 'manager'];
+    const userNames = Array.from({ length: 5 }, (_, k) => `user${k}`);
+    const names = [...contractNames, ...userNames, 'manager', 'admin'];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
@@ -52,6 +52,19 @@ export const mochaHooks = {
     }, this.accounts.manager);
     await api.transactions.broadcast(massTransferTxWx, {});
     await ni.waitForTx(massTransferTxWx.id, { apiBase });
+
+    const setAdminTx = data({
+      dApp: address(this.accounts.vesting_multiasset, chainId),
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__adminPubKeys',
+        type: 'string',
+        value: publicKey(this.accounts.admin),
+      }],
+      chainId,
+    }, this.accounts.vesting_multiasset);
+    await api.transactions.broadcast(setAdminTx, {});
+    await ni.waitForTx(setAdminTx.id, { apiBase });
 
     const setManagerTx = data({
       dApp: address(this.accounts.vesting_multiasset, chainId),

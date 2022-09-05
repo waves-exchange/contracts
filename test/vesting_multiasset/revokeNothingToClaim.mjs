@@ -36,7 +36,7 @@ describe('vesting_multiasset: revokeNothingToClaim.mjs', /** @this {MochaSuiteMo
         ],
       },
       chainId,
-    }, this.accounts.manager);
+    }, this.accounts.user3);
     await api.transactions.broadcast(createDepositFor, {});
     const { height: heightCreateDepositFor } = await ni.waitForTx(createDepositFor.id, { apiBase });
 
@@ -53,7 +53,7 @@ describe('vesting_multiasset: revokeNothingToClaim.mjs', /** @this {MochaSuiteMo
         ],
       },
       chainId,
-    }, this.accounts.manager);
+    }, this.accounts.admin);
     await api.transactions.broadcast(revoke, {});
     const { height: heightRevoke } = await ni.waitForTx(revoke.id, { apiBase });
 

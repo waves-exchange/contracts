@@ -35,7 +35,7 @@ describe('vesting_multiasset: increaseDepositFor.mjs', /** @this {MochaSuiteModi
         ],
       },
       chainId,
-    }, this.accounts.manager);
+    }, this.accounts.user3);
     await api.transactions.broadcast(createDepositFor, {});
     const minedCreateDepositFor = await ni.waitForTx(createDepositFor.id, { apiBase });
 
@@ -52,7 +52,7 @@ describe('vesting_multiasset: increaseDepositFor.mjs', /** @this {MochaSuiteModi
         ],
       },
       chainId,
-    }, this.accounts.manager);
+    }, this.accounts.user4);
     await api.transactions.broadcast(increaseDepositFor, {});
     await ni.waitForTx(increaseDepositFor.id, { apiBase });
 

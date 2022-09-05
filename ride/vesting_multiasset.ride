@@ -113,8 +113,8 @@ func claimInternal(assetId: String, address: String) = {
 
   let amount = availableToClaimNow(assetId, address)
   strict checks = [
-    amount != 0 || "nothing to claim".throwErr(),
-    keyClaimDenied(assetId).getBoolean().valueOrElse(false) == false || "asset claim denied".throwErr()
+    keyClaimDenied(assetId).getBoolean().valueOrElse(false) == false || "asset claim denied".throwErr(),
+    amount != 0 || "nothing to claim".throwErr()
   ]
 
   let totalAmount = getUserTotalAmount(assetId, address)
@@ -257,7 +257,7 @@ func claimREADONLY(assetId: String, address: String) = {
 func denyAssetClaim(assetId: String) = {
   strict checks = [
 	i.mustAdmin(),
-	keyClaimDenied(assetId).getBoolean().valueOrElse(false) == true || "asset already denied".throwErr()
+	keyClaimDenied(assetId).getBoolean().valueOrElse(false) == false || "asset already denied".throwErr()
   ]
 
   [BooleanEntry(keyClaimDenied(assetId), true)]
@@ -267,7 +267,7 @@ func denyAssetClaim(assetId: String) = {
 func allowAssetClaim(assetId: String) = {
   strict checks = [
 	i.mustAdmin(),
-	keyClaimDenied(assetId).getBoolean().valueOrElse(false) == false || "asset already allowed".throwErr()
+	keyClaimDenied(assetId).getBoolean().valueOrElse(false) == true || "asset already allowed".throwErr()
   ]
 
   [DeleteEntry(keyClaimDenied(assetId))]

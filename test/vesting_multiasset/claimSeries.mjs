@@ -36,7 +36,7 @@ describe('vesting_multiasset: claimSeries.mjs', /** @this {MochaSuiteModified} *
         ],
       },
       chainId,
-    }, this.accounts.manager);
+    }, this.accounts.user3);
     await api.transactions.broadcast(createDepositFor, {});
     const minedCreateDepositFor = await ni.waitForTx(createDepositFor.id, { apiBase });
 

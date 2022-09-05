@@ -35,7 +35,7 @@ describe('vesting_multiasset: createDepositFor.mjs', /** @this {MochaSuiteModifi
         ],
       },
       chainId,
-    }, this.accounts.manager);
+    }, this.accounts.user3);
     await api.transactions.broadcast(invokeTx, {});
     const { height } = await ni.waitForTx(invokeTx.id, { apiBase });
 
