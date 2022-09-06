@@ -27,10 +27,10 @@ describe('boosting: increaseLock.mjs', /** @this {MochaSuiteModified} */() => {
       const signature = 'base64:';
 
       const expectedActiveTotalLocked = 1e9;
-      const expectedGwxCachedTotal = 500002375;
+      const expectedGwxCachedTotal = 500000470;
       const expectedInvokesCount = 2;
-      const expectedGWxAmountStart = 2615;
-      const expectedLockDurationNew = 11;
+      const expectedGWxAmountStart = 710;
+      const expectedLockDurationNew = 3;
 
       const lockRefTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
