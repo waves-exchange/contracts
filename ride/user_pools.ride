@@ -149,7 +149,7 @@ func create() = {
   let (priceAssetId, priceAssetInfo) = priceAssetPayment.getIdAndInfo()
   let (feeAssetId, feeAssetInfo) = feeAssetPayment.getIdAndInfo()
 
-  let priceAssetsList = factoryContract.keyPriceAssetIds().getString().stringOptionToList()
+  let priceAssetsList = factoryContract.getString(keyPriceAssetIds()).stringOptionToList()
 
   let managerPriceAssetMinAmount = 1
   let priceAssetMinAmount = {
