@@ -14,7 +14,7 @@ const api = create(apiBase);
 
 describe('boosting: claimWxBoostREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should reject claimWxBoost',
+    'should successfully claimWxBoost',
     async function () {
       const duration = this.maxDuration - 1;
       const assetAmount = this.minLockAmount;
