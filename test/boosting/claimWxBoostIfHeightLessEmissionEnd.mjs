@@ -12,9 +12,9 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: claimWxBoostREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: claimWxBoostIfHeightLessEmissionEnd.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully claimWxBoostREADONLY',
+    'should successfully claimWxBoost',
     async function () {
       const duration = this.maxDuration - 1;
       const assetAmount = this.minLockAmount;
