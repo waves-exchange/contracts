@@ -14,7 +14,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: lockRefRejectIfInvalidAsset.mjs', /** @this {MochaSuiteModified} */() => {
   const seed = 'waves private node seed with waves tokens';
   let boosting;
   let wxAssetId;

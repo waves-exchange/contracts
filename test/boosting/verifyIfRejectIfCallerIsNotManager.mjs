@@ -27,7 +27,7 @@ describe('boosting: verifyIfRejectIfCallerIsNotManager.mjs', /** @this {MochaSui
     await setScriptFromFile(boostingPath, someAccount);
   });
   it(
-    'should successfully verify if caller is manager',
+    'should reject verify',
     async () => {
       const dummyKey = 'dummyKey';
       const dummyValue = 'dummyValue';
