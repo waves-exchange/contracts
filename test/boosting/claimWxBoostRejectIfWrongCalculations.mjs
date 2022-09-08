@@ -12,7 +12,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: claimWxBoostIfHeightMoreEmissionEnd.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: claimWxBoostRejectIfWrongCalculations.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully claimWxBoost',
     async function () {
@@ -60,39 +60,9 @@ describe('boosting: claimWxBoostIfHeightMoreEmissionEnd.mjs', /** @this {MochaSu
         chainId,
       }, this.accounts.factoryV2);
       await api.transactions.broadcast(setPoolWeightTx, {});
-      await ni.waitForTx(setPoolWeightTx.id, { apiBase });
+      const { height } = await ni.waitForTx(setPoolWeightTx.id, { apiBase });
 
-      const emissionEndBlock = 1;
-      const setEmissionEndBlockTx = data({
-        additionalFee: 4e5,
-        data: [
-          {
-            key: '%s%s__emission__endBlock',
-            type: 'integer',
-            value: emissionEndBlock,
-          },
-        ],
-        chainId,
-      }, this.accounts.emission);
-      await api.transactions.broadcast(setEmissionEndBlockTx, {});
-      await ni.waitForTx(setEmissionEndBlockTx.id, { apiBase });
-
-      const emissionStartBlock = 0;
-      const setEmissionStartBlockTx = data({
-        additionalFee: 4e5,
-        data: [
-          {
-            key: '%s%s__emission__startBlock',
-            type: 'integer',
-            value: emissionStartBlock,
-          },
-        ],
-        chainId,
-      }, this.accounts.emission);
-      await api.transactions.broadcast(setEmissionStartBlockTx, {});
-      await ni.waitForTx(setEmissionStartBlockTx.id, { apiBase });
-
-      const ratePerBlock = 1;
+      const ratePerBlock = height + 1e3;
       const setRatePerBlockTx = data({
         additionalFee: 4e5,
         data: [
@@ -114,7 +84,7 @@ describe('boosting: claimWxBoostIfHeightMoreEmissionEnd.mjs', /** @this {MochaSu
           {
             key: '%s%d__userBoostEmissionLastInt__0',
             type: 'integer',
-            value: -10,
+            value: 10,
           },
         ],
         chainId,
@@ -122,11 +92,7 @@ describe('boosting: claimWxBoostIfHeightMoreEmissionEnd.mjs', /** @this {MochaSu
       await api.transactions.broadcast(setUserBoostEmissionLastIntTx, {});
       await ni.waitForTx(setUserBoostEmissionLastIntTx.id, { apiBase });
 
-      const expectedUdh = 15;
-      const expectedULastH = -14;
-      const expectedUdh0 = 14;
-      const expectedUdh1 = 1;
-      const expectedRejectMessage = `invalid udh calc: udh=${expectedUdh} uLastH=${expectedULastH} udh0=${expectedUdh0} udh1=${expectedUdh1}`;
+      const expectedRejectMessage = 'wrong calculations';
 
       const claimWxBoostTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
