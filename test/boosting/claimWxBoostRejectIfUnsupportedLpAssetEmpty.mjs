@@ -12,16 +12,16 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: claimWxBoostRejectIUnsupportedLpAsset.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: claimWxBoostRejectIfUnsupportedLpAssetEmpty.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should reject claimWxBoost',
     async function () {
       const duration = this.maxDuration - 1;
       const assetAmount = this.minLockAmount;
-      const lpAssetIdStr = 'lpAssetId';
+      const lpAssetIdStr = 'empty';
       const userAddressStr = address(this.accounts.user1, chainId);
 
-      const expectedRejectMessage = 'unsupported lp asset lpAssetId';
+      const expectedRejectMessage = 'not readonly mode: unsupported lp asset empty';
 
       const lockTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
