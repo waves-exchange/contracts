@@ -339,6 +339,12 @@
   tag: otc
   mainnet-pub: MuJFxUBAQVpXXraxYbYJEzWYG8NukYhQEQFm7CaZLcT
 
+- file: multiasset_otc.ride
+  testnet-prv: $MULTIASSETOTC_PRV
+  testnet-signer: $MANAGER_PRV
+  tag: multiasset otc
+  mainnet-pub: MuJFxUBAQVpXXraxYbYJEzWYG8NukYhQEQFm7CaZLcT
+
 - file: lambo.ride
   tag: lambo
   mainnet-pub: EM7EfoVTgHtLuphbMD4o1z2Br9abQALk5fCGoMLeKTfX
