@@ -267,9 +267,10 @@ func setLogo(assetId: String, logo: String) = {
     assetId.isCreated() || throwNoAsset()
   ]
 
-  let action = if (logo == "") then DeleteEntry(keyLogo(assetId)) else StringEntry(keyLogo(assetId), logo)
-
-  [action]
+#   let action = if (logo == "") then DeleteEntry(keyLogo(assetId)) else StringEntry(keyLogo(assetId), logo)
+#
+#   [action]
+  []
 }
 
 @Callable(i)
