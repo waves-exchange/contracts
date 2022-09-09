@@ -62,7 +62,7 @@ describe('boosting: claimWxBoostREADONLY.mjs', /** @this {MochaSuiteModified} */
       await api.transactions.broadcast(setPoolWeightTx, {});
       await ni.waitForTx(setPoolWeightTx.id, { apiBase });
 
-      const expr = `claimWxBoostREADONLY(\"${someLpAssetIdStr}\", \"${userAddressStr}\")`; /* eslint-disable-line */
+      const expr = `claimWxBoostREADONLY("${someLpAssetIdStr}", "${userAddressStr}")`; /* eslint-disable-line */
       const response = await api.utils.fetchEvaluate(
         address(this.accounts.boosting, chainId),
         expr,
