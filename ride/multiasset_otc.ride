@@ -1,0 +1,162 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+func keyManagerPublicKey() = "%s__managerPublicKey"
+
+#combine the arguments into a string forming a key of 3 values
+func collectBaseKey3params(str: String, assetA: String, assetB: String) = {
+  makeString(["%s%s%s", str, assetA, assetB], "__")
+}
+
+#combines arguments into a string forming a key of 4 values
+func collectBaseKey4params(str: String, assetA: String, assetB: String, txid: String) = {
+  makeString(["%s%s%s%s", str, assetA, assetB, txid], "__")
+}
+
+#creates a process key
+func collectProcessKey(stage: String, userAddress: String, assetA: String, assetB: String, allowWithdrawHeight: Int) = {
+    makeString(["%s%s%s%s%s%s", "withdrawProcess", stage, userAddress, assetA, assetB, allowWithdrawHeight.toString()], "__")
+}
+
+#converting a manager's public key to a ByteVector
+func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+#checking on the manager
+func mustManager(i: Invocation) = {
+  let pd = "Permission denied".throw()
+
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk || pd
+    case _: Unit => i.caller == this || pd
+  }
+}
+
+#registering a new pair of assets
+@Callable(invoke)
+func registerAsset(assetA: String, assetB: String, withdrawDelay: Int, depositFee: Int, withdrawFee: Int, minAmountDeposit: Int, minAmountWithdraw: Int) = {
+    strict checkCaller = invoke.mustManager()
+
+    let withdrawDelayKey = collectBaseKey3params("withdrawDelay", assetA, assetB)
+    let depositFeePermilleKey = collectBaseKey3params("depositFeePermille", assetA, assetB)
+    let withdrawFeePermilleKey = collectBaseKey3params("withdrawFeePermille", assetA, assetB)
+    let minAmountDepositKey = collectBaseKey3params("minAmountDeposit", assetA, assetB)
+    let minAmountWithdrawKey = collectBaseKey3params("minAmountWithdraw", assetA, assetB)
+
+    [
+        IntegerEntry(withdrawDelayKey, withdrawDelay),
+        IntegerEntry(depositFeePermilleKey, depositFee),
+        IntegerEntry(withdrawFeePermilleKey, withdrawFee),
+        IntegerEntry(minAmountDepositKey, minAmountDeposit),
+        IntegerEntry(minAmountWithdrawKey, minAmountWithdraw)
+    ]
+}
+
+#exchange asset A for B
+@Callable(invoke)
+func swapAssetsAToB(assetB: String) = {
+    let payment = value(invoke.payments[0])
+    let assetA = toUtf8String(payment.assetId.value())
+
+    let userAddress = invoke.caller.toString()
+    let minAmountDeposit = this.getInteger(collectBaseKey3params("minAmountDeposit", assetA, assetB)).valueOrErrorMessage("This asset pair does not exist.")
+    let toDeposit = payment.amount
+
+    let depositFeePermilleKey = collectBaseKey3params("depositFeePermille", assetA, assetB)
+    let depositFee = this.getInteger(depositFeePermilleKey).valueOrElse(0)
+    let fee = toDeposit / 1000 * depositFee
+    let currentUserBalance = this.getInteger(collectBaseKey4params("balance", assetA, assetB, userAddress)).valueOrElse(0)
+
+    let totalCommissions = this.getInteger(collectBaseKey4params("totalCommissionsCollected", "deposit", assetA, assetB)).valueOrElse(0)
+
+    let asset = assetB.value().fromBase58String()
+
+    if (this.getInteger(collectBaseKey3params("assetsPairStatus", assetA, assetB)) != 0) then throw("The couple's deposit is blocked.") else
+    if (payment.amount < minAmountDeposit) then throw("Swap amount fail, amount is to small.") else
+    if (this.getInteger(collectBaseKey3params("assetsPairStatus", assetA, assetB)) != 0) then throw("swap of this pair is prohibited.") else
+
+    [
+        IntegerEntry(collectBaseKey4params("balance", assetA, assetB, userAddress), currentUserBalance + payment.amount - fee),
+        IntegerEntry(collectBaseKey4params("totalCommissionsCollected", "deposit", assetA, assetB), totalCommissions + fee),
+        ScriptTransfer(invoke.caller, toDeposit, asset)
+    ]
+}
+
+# initialize the exchange of asset B for A
+@Callable(invoke)
+func initializationSwapAssetsBToA(assetA: String, assetB: String) = {
+    let payment = value(invoke.payments[0])
+    let amount = payment.amount
+    let userAddress = invoke.caller.toString()
+
+    let minAmountDeposit = this.getInteger(collectBaseKey3params("minAmountWithdraw", assetA, assetB)).valueOrErrorMessage("This asset pair does not exist.")
+
+    let assetLockHeight = height + this.getInteger(collectBaseKey3params("withdrawDelay", assetA, assetB)).valueOrElse(0)
+
+    let currentUserBalance = this.getInteger(collectBaseKey4params("balance", assetA, assetB, userAddress)).valueOrErrorMessage("---")
+
+    let totalCommissions = this.getInteger(collectBaseKey4params("totalCommissionsCollected", "deposit", assetA, assetB)).valueOrElse(0)
+
+    let withdrawFeePermilleKey = collectBaseKey3params("withdrawFeePermille", assetA, assetB)
+    let withdrawFee = this.getInteger(withdrawFeePermilleKey).valueOrElse(0)
+    let fee = amount / 1000 * withdrawFee
+
+    [
+        IntegerEntry(collectBaseKey4params("assetLockTime", assetA, assetB, userAddress), assetLockHeight),
+        IntegerEntry(collectBaseKey4params("balance", assetA, assetB, userAddress), currentUserBalance - amount - fee),
+        IntegerEntry(collectProcessKey("inProgress", userAddress, assetA, assetB, assetLockHeight), amount - fee),
+        IntegerEntry(collectBaseKey4params("totalCommissionsCollected", "withdraw", assetA, assetB), totalCommissions + fee)
+    ]
+}
+
+#withdraw assets initialized at the specified height
+@Callable(invoke)
+func withdrawAsset(assetA: String, assetB: String, heightInKey: Int) = {
+    let userAddress = invoke.caller.toString()
+
+    let assetLockTime = this.getInteger(collectBaseKey4params("assetLockTime", assetA, assetB, userAddress)).valueOrElse(0)
+
+    let toWithdraw = this.getInteger(collectProcessKey("inProgress", userAddress, assetA, assetB, heightInKey)).valueOrElse(0)
+
+    let asset = assetA.value().fromBase58String()
+
+    if (assetLockTime < height) then throw("Withdrawal is possible after "+toString(heightInKey)+" height or you have already withdrawn.") else
+
+    [
+        DeleteEntry(collectProcessKey("inProgress", userAddress, assetA, assetB, heightInKey)),
+        IntegerEntry(collectProcessKey("done", userAddress, assetA, assetB, heightInKey), toWithdraw),
+        IntegerEntry(collectBaseKey4params("balance", assetA, assetB, userAddress), toWithdraw),
+        ScriptTransfer(invoke.caller, toWithdraw, asset)
+    ]
+}
+
+#displays the collected commission to the manager's address
+@Callable(invoke)
+func withdrawFee(assetA: String, assetB: String) = {
+    strict checkCaller = invoke.mustManager()
+
+    let toWithdrawA = this.getInteger(collectBaseKey4params("totalCommissionsCollected", "deposit", assetA, assetB)).valueOrElse(0)
+    let withdrawAssetA = assetA.value().fromBase58String()
+
+    let toWithdrawB = this.getInteger(collectBaseKey4params("totalCommissionsCollected", "withdraw", assetA, assetB)).valueOrElse(0)
+    let withdrawAssetB = assetB.value().fromBase58String()
+
+    [
+        IntegerEntry(collectBaseKey4params("totalCommissionsCollected", "deposit", assetA, assetB), 0),
+        ScriptTransfer(invoke.caller, toWithdrawA, withdrawAssetA),
+        IntegerEntry(collectBaseKey4params("totalCommissionsCollected", "withdraw", assetA, assetB), 0),
+        ScriptTransfer(invoke.caller, toWithdrawB, withdrawAssetB)
+    ]
+}
+
+@Verifier(tx)
+func verify () = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}
