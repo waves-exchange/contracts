@@ -62,8 +62,9 @@ describe('boosting: gwxUserInfoREADONLY.mjs', /** @this {MochaSuiteModified} */(
         chainId,
       }, this.accounts.manager);
       await api.transactions.broadcast(setBTx, {});
-      const { height } = await ni.waitForTx(setBTx.id, { apiBase });
+      await ni.waitForTx(setBTx.id, { apiBase });
 
+      const { height } = await api.blocks.fetchHeight();
       const expectedGwxAmount = Math.floor((k * height + b) / 1000);
 
       const expr = `gwxUserInfoREADONLY(\"${userAddressStr}\")`; /* eslint-disable-line */
