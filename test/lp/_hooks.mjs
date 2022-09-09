@@ -7,7 +7,7 @@ import {
   nodeInteraction,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { format } from 'path';
+import { format, join } from 'path';
 import { setScriptFromFile } from '../utils.mjs';
 
 const { waitForTx } = nodeInteraction;
@@ -17,7 +17,7 @@ const chainId = 'R';
 const api = create(apiBase);
 const seedWordsCount = 5;
 const ridePath = 'ride';
-const mockRidePath = 'test/lp/mock';
+const mockRidePath = join('test', 'lp', 'mock');
 const lpPath = format({ dir: ridePath, base: 'lp.ride' });
 const factoryV2Path = format({ dir: ridePath, base: 'factory_v2.ride' });
 const stakingPath = format({ dir: mockRidePath, base: 'staking.mock.ride' });
@@ -27,7 +27,9 @@ const assetsStorePath = format({ dir: mockRidePath, base: 'assets_store.mock.rid
 export const mochaHooks = {
   async beforeAll() {
     const names = ['lp', 'factoryV2', 'staking', 'slippage', 'manager', 'store', 'user1'];
-    this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
+    this.accounts = Object.fromEntries(
+      names.map((item) => [item, randomSeed(seedWordsCount)]),
+    );
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
     const massTransferTx = massTransfer({
@@ -36,6 +38,11 @@ export const mochaHooks = {
     }, seed);
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
+
+    console.log('account addresses:');
+    for (const [key, value] of Object.entries(this.accounts)) {
+      console.log('  ', key, address(value, chainId));
+    }
 
     await setScriptFromFile(lpPath, this.accounts.lp);
     await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
@@ -46,7 +53,7 @@ export const mochaHooks = {
     const usdnIssueTx = issue({
       name: 'USDN',
       description: '',
-      quantity: 10e16,
+      quantity: 100000e6,
       decimals: 6,
       chainId,
     }, seed);
@@ -54,7 +61,7 @@ export const mochaHooks = {
     await waitForTx(usdnIssueTx.id, { apiBase });
     this.usdnAssetId = usdnIssueTx.id;
 
-    const usdnAmount = 1e16;
+    const usdnAmount = 100e6;
     const massTransferTxUSDN = massTransfer({
       transfers: names.slice(-1).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: usdnAmount,
@@ -68,15 +75,15 @@ export const mochaHooks = {
     const shibIssueTx = issue({
       name: 'SHIB',
       description: '',
-      quantity: 10e8,
-      decimals: 8,
+      quantity: 100000e2,
+      decimals: 2,
       chainId,
     }, seed);
     await api.transactions.broadcast(shibIssueTx, {});
     await waitForTx(shibIssueTx.id, { apiBase });
     this.shibAssetId = shibIssueTx.id;
 
-    const shibAmount = 1e8;
+    const shibAmount = 100e2;
     const massTransferTxSHIB = massTransfer({
       transfers: names.slice(-1).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: shibAmount,
@@ -87,98 +94,128 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTxSHIB, {});
     await waitForTx(massTransferTxSHIB.id, { apiBase });
 
-    const constructorFactoryV2InvokeTx = invokeScript({
-      dApp: address(this.accounts.factoryV2, chainId),
-      additionalFee: 4e5,
-      call: {
-        function: 'constructor',
-        args: [
-          { type: 'string', value: address(this.accounts.staking, chainId) },
-          { type: 'string', value: '' },
-          { type: 'string', value: '' },
-          { type: 'string', value: '' },
-          { type: 'string', value: '' },
-          { type: 'string', value: '' },
-          { type: 'string', value: address(this.accounts.slippage, chainId) },
-          { type: 'integer', value: 8 },
-        ],
-      },
-      chainId,
-    }, this.accounts.factoryV2);
-    await api.transactions.broadcast(constructorFactoryV2InvokeTx, {});
-    await waitForTx(constructorFactoryV2InvokeTx.id, { apiBase });
+    // const constructorFactoryV2InvokeTx = invokeScript({
+    //   dApp: address(this.accounts.factoryV2, chainId),
+    //   additionalFee: 4e5,
+    //   call: {
+    //     function: 'constructor',
+    //     args: [
+    //       { type: 'string', value: address(this.accounts.staking, chainId) },
+    //       { type: 'string', value: '' },
+    //       { type: 'string', value: '' },
+    //       { type: 'string', value: '' },
+    //       { type: 'string', value: '' },
+    //       { type: 'string', value: '' },
+    //       { type: 'string', value: address(this.accounts.slippage, chainId) },
+    //       { type: 'integer', value: 8 },
+    //     ],
+    //   },
+    //   chainId,
+    // }, this.accounts.factoryV2);
+    // await api.transactions.broadcast(constructorFactoryV2InvokeTx, {});
+    // await waitForTx(constructorFactoryV2InvokeTx.id, { apiBase });
+    //
+    // const constructorV2FactoryV2InvokeTx = invokeScript({
+    //   dApp: address(this.accounts.factoryV2, chainId),
+    //   additionalFee: 4e5,
+    //   call: {
+    //     function: 'constructorV2',
+    //     args: [
+    //       { type: 'string', value: '' },
+    //     ],
+    //   },
+    //   chainId,
+    // }, this.accounts.factoryV2);
+    // await api.transactions.broadcast(constructorV2FactoryV2InvokeTx, {});
+    // await waitForTx(constructorV2FactoryV2InvokeTx.id, { apiBase });
+    //
+    // const constructorV3FactoryV2InvokeTx = invokeScript({
+    //   dApp: address(this.accounts.factoryV2, chainId),
+    //   additionalFee: 4e5,
+    //   call: {
+    //     function: 'constructorV3',
+    //     args: [
+    //       { type: 'string', value: '' },
+    //       { type: 'string', value: '' },
+    //       { type: 'string', value: '' },
+    //       { type: 'string', value: '' },
+    //     ],
+    //   },
+    //   chainId,
+    // }, this.accounts.factoryV2);
+    // await api.transactions.broadcast(constructorV3FactoryV2InvokeTx, {});
+    // await waitForTx(constructorV3FactoryV2InvokeTx.id, { apiBase });
+    //
+    // const constructorV4FactoryV2InvokeTx = invokeScript({
+    //   dApp: address(this.accounts.factoryV2, chainId),
+    //   additionalFee: 4e5,
+    //   call: {
+    //     function: 'constructorV4',
+    //     args: [
+    //       { type: 'string', value: '' },
+    //       { type: 'list', value: [{ type: 'string', value: '' }] },
+    //     ],
+    //   },
+    //   chainId,
+    // }, this.accounts.factoryV2);
+    // await api.transactions.broadcast(constructorV4FactoryV2InvokeTx, {});
+    // await waitForTx(constructorV4FactoryV2InvokeTx.id, { apiBase });
+    //
+    // const constructorV5FactoryV2InvokeTx = invokeScript({
+    //   dApp: address(this.accounts.factoryV2, chainId),
+    //   additionalFee: 4e5,
+    //   call: {
+    //     function: 'constructorV5',
+    //     args: [
+    //       { type: 'string', value: address(this.accounts.store, chainId) },
+    //     ],
+    //   },
+    //   chainId,
+    // }, this.accounts.factoryV2);
+    // await api.transactions.broadcast(constructorV5FactoryV2InvokeTx, {});
+    // await waitForTx(constructorV5FactoryV2InvokeTx.id, { apiBase });
 
-    const constructorV2FactoryV2InvokeTx = invokeScript({
-      dApp: address(this.accounts.factoryV2, chainId),
-      additionalFee: 4e5,
-      call: {
-        function: 'constructorV2',
-        args: [
-          { type: 'string', value: '' },
-        ],
-      },
-      chainId,
-    }, this.accounts.factoryV2);
-    await api.transactions.broadcast(constructorV2FactoryV2InvokeTx, {});
-    await waitForTx(constructorV2FactoryV2InvokeTx.id, { apiBase });
+    const stakingContract = address(this.accounts.staking, chainId);
+    const boostingContract = '';
+    const idoContract = '';
+    const teamContract = '';
+    const emissionContract = '';
+    const restContract = '';
+    const slpipageContract = address(this.accounts.slippage, chainId);
+    const daoContract = '';
+    const marketingContract = '';
+    const gwxRewardsContract = '';
+    const birdsContract = '';
 
-    const constructorV3FactoryV2InvokeTx = invokeScript({
-      dApp: address(this.accounts.factoryV2, chainId),
-      additionalFee: 4e5,
-      call: {
-        function: 'constructorV3',
-        args: [
-          { type: 'string', value: '' },
-          { type: 'string', value: '' },
-          { type: 'string', value: '' },
-          { type: 'string', value: '' },
-        ],
-      },
-      chainId,
-    }, this.accounts.factoryV2);
-    await api.transactions.broadcast(constructorV3FactoryV2InvokeTx, {});
-    await waitForTx(constructorV3FactoryV2InvokeTx.id, { apiBase });
+    const factoryV2Config = `%s%s%s%s%s%s%s%s%s%s%s__${stakingContract}__${boostingContract}__${idoContract}__${teamContract}__${emissionContract}__${restContract}__${slpipageContract}__${daoContract}__${marketingContract}__${gwxRewardsContract}__${birdsContract}`;
 
-    const constructorV4FactoryV2InvokeTx = invokeScript({
-      dApp: address(this.accounts.factoryV2, chainId),
+    const setFactoryV2ConfigTx = data({
       additionalFee: 4e5,
-      call: {
-        function: 'constructorV4',
-        args: [
-          { type: 'string', value: '' },
-          { type: 'list', value: [{ type: 'string', value: '' }] },
-        ],
-      },
+      data: [
+        {
+          key: '%s__factoryConfig',
+          type: 'string',
+          value: factoryV2Config,
+        },
+      ],
       chainId,
     }, this.accounts.factoryV2);
-    await api.transactions.broadcast(constructorV4FactoryV2InvokeTx, {});
-    await waitForTx(constructorV4FactoryV2InvokeTx.id, { apiBase });
+    await api.transactions.broadcast(setFactoryV2ConfigTx, {});
+    await waitForTx(setFactoryV2ConfigTx.id, { apiBase });
 
-    const constructorV5FactoryV2InvokeTx = invokeScript({
-      dApp: address(this.accounts.factoryV2, chainId),
+    const setAssetsStoreContractTx = data({
       additionalFee: 4e5,
-      call: {
-        function: 'constructorV5',
-        args: [
-          { type: 'string', value: address(this.accounts.store, chainId) },
-        ],
-      },
+      data: [
+        {
+          key: '%s__assetsStoreContract',
+          type: 'string',
+          value: address(this.accounts.store, chainId),
+        },
+      ],
       chainId,
     }, this.accounts.factoryV2);
-    await api.transactions.broadcast(constructorV5FactoryV2InvokeTx, {});
-    await waitForTx(constructorV5FactoryV2InvokeTx.id, { apiBase });
-
-    const setManagerFactoryV2Tx = data({
-      additionalFee: 4e5,
-      data: [{
-        key: '%s__managerPublicKey',
-        type: 'string',
-        value: publicKey(this.accounts.manager),
-      }],
-      chainId,
-    }, this.accounts.factoryV2);
-    await api.transactions.broadcast(setManagerFactoryV2Tx, {});
-    await waitForTx(setManagerFactoryV2Tx.id, { apiBase });
+    await api.transactions.broadcast(setAssetsStoreContractTx, {});
+    await waitForTx(setAssetsStoreContractTx.id, { apiBase });
 
     const constructorLpInvokeTx = invokeScript({
       dApp: address(this.accounts.lp, chainId),
@@ -196,7 +233,7 @@ export const mochaHooks = {
 
     const activateNewPoolTx = invokeScript({
       dApp: address(this.accounts.factoryV2, chainId),
-      fee: 100500000,
+      fee: 100900000,
       call: {
         function: 'activateNewPool',
         args: [
@@ -211,7 +248,7 @@ export const mochaHooks = {
         ],
       },
       chainId,
-    }, this.accounts.manager);
+    }, this.accounts.factoryV2);
     await api.transactions.broadcast(activateNewPoolTx, {});
     const { stateChanges } = await waitForTx(activateNewPoolTx.id, { apiBase });
     this.lpAssetId = stateChanges.issues[0].assetId;
