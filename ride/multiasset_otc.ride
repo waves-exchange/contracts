@@ -129,7 +129,7 @@ func withdrawAsset(assetA: String, assetB: String, heightInKey: Int) = {
         DeleteEntry(collectProcessKey("inProgress", userAddress, assetA, assetB, heightInKey)),
         IntegerEntry(collectProcessKey("done", userAddress, assetA, assetB, heightInKey), toWithdraw),
         IntegerEntry(collectBaseKey4params("balance", assetA, assetB, userAddress), toWithdraw),
-        ScriptTransfer(invoke.caller, toWithdraw, asset)
+        ScriptTransfer(invoke.caller, toWithdraw, asset
     ]
 }
 
