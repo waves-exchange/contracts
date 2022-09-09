@@ -50,7 +50,7 @@ func keyFeeAssetId() = ["%s", "feeAssetId"].makeString(SEP)
 func keyFeeAmount() = ["%s", "feeAmount"].makeString(SEP)
 func keyAmountAssetMinAmount() = ["%s", "amountAssetMinAmount"].makeString(SEP)
 func keyPriceAssetsMinAmount() = ["%s", "priceAssetsMinAmount"].makeString(SEP)
-func keyPriceAssetIds() = ["%s", "priceAssetIds"].makeString(SEP)
+func keyPriceAssets() = ["%s", "priceAssets"].makeString(SEP)
 
 func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage(key + " is not defined")
 func stringOptionToList(stringOrUnit: String|Unit) = match stringOrUnit {
@@ -123,7 +123,7 @@ func constructor(factoryV2Address: String, assetsStoreAddress: String, priceAsse
   [
     StringEntry(keyFactoryContract(), factoryV2Address),
     StringEntry(keyAssetsStoreContract(), assetsStoreAddress),
-    StringEntry(keyPriceAssetIds(), priceAssetIds.makeString(SEP)),
+    StringEntry(keyPriceAssets(), priceAssetIds.makeString(SEP)),
     StringEntry(keyPriceAssetsMinAmount(), priceAssetsMinAmount.makeString(SEP)),
     IntegerEntry(keyAmountAssetMinAmount(), amountAssetMinAmount),
     StringEntry(keyFeeAssetId(), feeAssetId),
@@ -149,7 +149,7 @@ func create() = {
   let (priceAssetId, priceAssetInfo) = priceAssetPayment.getIdAndInfo()
   let (feeAssetId, feeAssetInfo) = feeAssetPayment.getIdAndInfo()
 
-  let priceAssetsList = factoryContract.getString(keyPriceAssetIds()).stringOptionToList()
+  let priceAssetsList = factoryContract.getString(keyPriceAssets()).stringOptionToList()
 
   let managerPriceAssetMinAmount = 1
   let priceAssetMinAmount = {
@@ -258,7 +258,7 @@ func confirmManager() = {
 
 @Callable(i)
 func priceAssetsREADONLY() = {
-  (nil, keyPriceAssetIds().getString().stringOptionToList())
+  (nil, keyPriceAssets().getString().stringOptionToList())
 }
 
 @Callable(i)
