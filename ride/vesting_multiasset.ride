@@ -13,7 +13,6 @@ func keyAdminPubKeys() = "%s__adminPubKeys"
 
 func keyUser(assetId: String, address: String) = ["%s%s", assetId, address].makeString(SEP)
 func keyUserFixedDeposit(assetId: String, address: String, block: Int) = ["%s%s%s%d", "fixedDeposit", assetId, address, block.toString()].makeString(SEP)
-func keyUserFixedDepositClaimed(assetId: String, address: String, block: Int) = ["%s%s%s%d", "fixedDepositClaimed", assetId, address, block.toString()].makeString(SEP)
 func keyRevoked(assetId: String, address: String) = ["%s%s%s", "revoked", assetId, address].makeString(SEP)
 func keyRevokedTotal(assetId: String) = ["%s%s", "revokedTotal",  assetId].makeString(SEP)
 func keyUserVestingStart(assetId: String, address: String) = ["%s%s%s", "vestingStart", assetId, address].makeString(SEP)
@@ -143,9 +142,9 @@ func claimInternal(assetId: String, address: String) = {
 
 func claimFixedInternal(assetId: String, address: String, releaseBlock: Int) = {
   strict checks = [
-    keyUserFixedDepositClaimed(assetId, address, releaseBlock).getBoolean().valueOrElse(false) == false || "already claimed".throwErr(),
+    keyClaimDenied(assetId).getBoolean().valueOrElse(false) == false || "asset claim denied".throwErr(),
     height > releaseBlock || "current height must be more than releaseBlock for fixed deposit".throwErr(),
-    keyUserFixedDeposit(assetId, address, releaseBlock).getInteger() != unit || "no fixed deposit for assetId/address/height".throwErr()
+    keyUserFixedDeposit(assetId, address, releaseBlock).getInteger().valueOrElse(0) != 0 || "no fixed deposit for assetId/address/height".throwErr()
   ]
 
   let addr = address.addressFromStringValue()
@@ -154,7 +153,7 @@ func claimFixedInternal(assetId: String, address: String, releaseBlock: Int) = {
 
   [
     ScriptTransfer(addr, amount, asset),
-    BooleanEntry(keyUserFixedDepositClaimed(assetId, address, releaseBlock), true)
+    IntegerEntry(keyUserFixedDeposit(assetId, address, releaseBlock), 0)
   ]
 }
 
@@ -283,29 +282,44 @@ func createFixedDepositFor(address: String, releaseBlock: Int) = {
 
   strict checks = [
     releaseBlock > height || "releaseBlock must be more than height".throwErr(),
-	keyUserFixedDeposit(assetId, address, releaseBlock).getString() == unit || "deposit for this height for user already exists".throwErr()
+	keyUserFixedDeposit(assetId, address, releaseBlock).getInteger() == unit || "deposit for this height for user already exists".throwErr()
   ]
 
   [
-	IntegerEntry(keyUserFixedDeposit(assetId, address, releaseBlock), amount),
-	BooleanEntry(keyUserFixedDepositClaimed(assetId, address, releaseBlock), false)
+	IntegerEntry(keyUserFixedDeposit(assetId, address, releaseBlock), amount)
   ]
 }
 
 @Callable(i)
 func claimFixed(assetId: String, releaseBlock: Int) = {
-  claimFixedInternal(assetId, i.caller.bytes.toBase58String())
+  claimFixedInternal(assetId, i.caller.bytes.toBase58String(), releaseBlock)
 }
 
 @Callable(i)
 func claimFixedFor(assetId: String, address: String, releaseBlock: Int) = {
-  claimFixedInternal(assetId, address)
+  claimFixedInternal(assetId, address, releaseBlock)
 }
 
 @Callable(i)
 func claimFixedREADONLY(assetId: String, address: String, releaseBlock: Int) = {
  let amount = availableToClaimFixed(assetId, address, releaseBlock)
  ([], amount)
+}
+
+@Callable(i)
+func revokeFixedDepositFor(assetId: String, address: String, releaseBlock: Int) = {
+  strict checks = [
+    i.mustAdmin(),
+    releaseBlock < height || "can't revoke deposit in past".throwErr(),
+	keyUserFixedDeposit(assetId, address, releaseBlock).getInteger().valueOrElse(0) != 0 || "deposit for this height for user not exists".throwErr()
+  ]
+
+  let amount = keyUserFixedDeposit(assetId, address, releaseBlock).getInteger().value()
+
+  [
+    IntegerEntry(keyRevokedTotal(assetId), amount),
+    IntegerEntry(keyUserFixedDeposit(assetId, address, releaseBlock), 0)
+  ]
 }
 
 @Callable(i)
