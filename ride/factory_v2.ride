@@ -57,7 +57,7 @@ func keyAllowedLpStableAddonScriptHash() = "%s__allowedLpStableAddonScriptHash"
 func keyFactoryConfig()
       = "%s__factoryConfig"
 func keyLpTokensList()
-      = "%s__lpTokensList"
+      = "%s__lpTokensList" # not used anymore
 func keyPoolScriptHash()
       = "%s%s__pool__scriptHash"
 func keyMatcherPub()
@@ -275,11 +275,6 @@ func getInternalAssetIdOrCreate(assetIdStr: String, incrementor: Int) = {
     result
 }
 
-func createLpTokensListEntry(newLpToken: String) = {
-      let lpTokens = this.getString(keyLpTokensList())
-      if(isDefined(lpTokens)) then lpTokens.value() + SEP + newLpToken else newLpToken
-}
-
 func mustAdmin(i: Invocation) = {
   let adminPKs = keyAdminPubKeys().getString().valueOrElse(EMPTY).split(SEP)
   if (adminPKs.containsElement(i.callerPublicKey.toBase58String())) then {
@@ -482,7 +477,6 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
                   StringEntry(keyMappingPoolLPAssetToPoolContractAddress(lpAssetIdStr), poolAddress),
                   StringEntry(keyMappingPoolContractToLPAsset(poolAddress), lpAssetIdStr),
                   IntegerEntry(keyPoolToWeight(poolAddress),poolWeight),
-                  StringEntry(keyLpTokensList(),createLpTokensListEntry(lpAssetIdStr))
               ]
               , lpAssetIdStr
             )
