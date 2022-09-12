@@ -224,29 +224,6 @@ func currentUserRewardRateREADONLY(lpAssetId: String, userAddress: String) = {
     SEP))
 }
 
-#let resultOneLp = "%s%d%d%d%s%s__${lp1}__${minRewardClaimed1}__${boostRewardClaimed1}__${gFeeClaimed1}__end__${user}"
-#let resultTwoLp = "%s%d%d%d%s%s%d%d%d%s%s__${lp1}__${minRewardClaimed1}__${boostRewardClaimed1}__${gFeeClaimed1}__end__${lp2}__${minRewardClaimed2}__${boostRewardClaimed2}__${gFeeClaimed2}__end__${user}"
-@Callable(i)
-func claimedRewardREADONLY(userAddress: String) = {
-  let lpList = readLpList()
-  let prefix = "%s%d%d%d%s"
-
-  func claimedRewardByLpAggregator(resultStr: String, nextLp: String) = {
-    let claimedByUserMinRewardKEY = keyClaimedByUserMinReward(nextLp, userAddress)
-    let claimedByUserBoostRewardKEY = keyClaimedByUserBoostReward(nextLp, userAddress)
-
-    let minRewardClaimed    = stakingDapp.getInteger(claimedByUserMinRewardKEY).valueOrElse(0)
-    let boostRewardClaimed  = stakingDapp.getInteger(claimedByUserBoostRewardKEY).valueOrElse(0)
-    let gFeeClaimed         = 0
-
-    makeString([prefix + resultStr, nextLp, minRewardClaimed.toString(), boostRewardClaimed.toString(), gFeeClaimed.toString(), "end"], SEP)
-  }
-
-  let result = FOLD<10>(lpList, "%s", claimedRewardByLpAggregator)
-
-  ([], result + SEP + userAddress)
-}
-
 @Callable(i)
 func calcBoostBulkInternalREADONLY(currentIter: Int, deltaWxAmountBulk: List[Int], deltaLockPeriodInBlocksBulk: List[Int], deltaLpAmountBulk: List[Int], lpAssetIdOptBulk: List[String], userAddressOpt: String, resAcc: List[String]) = {
   if (currentIter == deltaWxAmountBulk.size()) then ([], resAcc) else
