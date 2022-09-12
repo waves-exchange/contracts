@@ -72,7 +72,7 @@ func mustManager(i: Invocation) = {
 #registering a new pair of assets
 @Callable(i)
 func registerAsset(assetA: String, assetB: String, withdrawDelay: Int, depositFee: Int, withdrawFee: Int, minAmountDeposit: Int, minAmountWithdraw: Int) = {
-    strict checkCaller = invoke.mustManager()
+    strict checkCaller = i.mustManager()
 
     let withdrawDelayKey = collectWithdrawDelayKey(assetA, assetB)
     let depositFeePermilleKey = collectDepositFeePermilleKey(assetA, assetB)
@@ -92,10 +92,10 @@ func registerAsset(assetA: String, assetB: String, withdrawDelay: Int, depositFe
 #exchange asset A for B
 @Callable(i)
 func swapAssetsAToB(assetB: String) = {
-    let payment = invoke.payments[0].value()
+    let payment = i.payments[0].value()
     let assetA = payment.assetId.value().toBase58String()
 
-    let userAddress = invoke.caller.toString()
+    let userAddress = i.caller.toString()
     let minAmountDeposit = collectMinAmountDepositKey(assetA, assetB).getInteger().valueOrErrorMessage("This asset pair does not exist.")
     let toDeposit = payment.amount
 
@@ -114,16 +114,16 @@ func swapAssetsAToB(assetB: String) = {
     [
         IntegerEntry(collectBalanceKey(assetA, assetB, userAddress), currentUserBalance + payment.amount - fee),
         IntegerEntry(collectTotalCommissionsCollectedDepositKey(assetA, assetB), totalCommissions + fee),
-        ScriptTransfer(invoke.caller, toDeposit, asset)
+        ScriptTransfer(i.caller, toDeposit, asset)
     ]
 }
 
 #initialize the exchange of asset B for A
 @Callable(i)
 func initializationSwapAssetsBToA(assetA: String, assetB: String) = {
-    let payment = invoke.payments[0].value()
+    let payment = i.payments[0].value()
     let amount = payment.amount
-    let userAddress = invoke.caller.toString()
+    let userAddress = i.caller.toString()
 
     let minAmountDeposit = collectMinAmountWithdrawKey(assetA, assetB).getInteger().valueOrErrorMessage("This asset pair does not exist.")
 
@@ -148,7 +148,7 @@ func initializationSwapAssetsBToA(assetA: String, assetB: String) = {
 #withdraw assets initialized at the specified height
 @Callable(i)
 func withdrawAsset(assetA: String, assetB: String, heightInKey: Int) = {
-    let userAddress = invoke.caller.toString()
+    let userAddress = i.caller.toString()
 
     let assetLockTime = collectAssetLockTimeKey(assetA, assetB, userAddress).getInteger().valueOrElse(0)
 
@@ -162,14 +162,14 @@ func withdrawAsset(assetA: String, assetB: String, heightInKey: Int) = {
         DeleteEntry(collectProcessInProgressKey(userAddress, assetA, assetB, heightInKey)),
         IntegerEntry(collectProcessDoneKey(userAddress, assetA, assetB, heightInKey), toWithdraw),
         IntegerEntry(collectBalanceKey(assetA, assetB, userAddress), toWithdraw),
-        ScriptTransfer(invoke.caller, toWithdraw, asset)
+        ScriptTransfer(i.caller, toWithdraw, asset)
     ]
 }
 
 #withdraws the collected commission to the manager's address
 @Callable(i)
 func withdrawFee(assetA: String, assetB: String) = {
-    strict checkCaller = invoke.mustManager()
+    strict checkCaller = i.mustManager()
 
     let toWithdrawA = collectTotalCommissionsCollectedDepositKey(assetA, assetB).getInteger().valueOrElse(0)
     let withdrawAssetA = assetA.value().fromBase58String()
@@ -179,9 +179,9 @@ func withdrawFee(assetA: String, assetB: String) = {
 
     [
         IntegerEntry(collectTotalCommissionsCollectedDepositKey(assetA, assetB), 0),
-        ScriptTransfer(invoke.caller, toWithdrawA, withdrawAssetA),
+        ScriptTransfer(i.caller, toWithdrawA, withdrawAssetA),
         IntegerEntry(collectTotalCommissionsCollectedWithdrawKey(assetA, assetB), 0),
-        ScriptTransfer(invoke.caller, toWithdrawB, withdrawAssetB)
+        ScriptTransfer(i.caller, toWithdrawB, withdrawAssetB)
     ]
 }
 
