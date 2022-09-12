@@ -129,7 +129,7 @@ func initializationSwapAssetsBToA(assetA: String, assetB: String) = {
 
     let assetLockHeight = height + collectWithdrawDelayKey(assetA, assetB).getInteger().valueOrElse(0)
 
-    let currentUserBalance = collectBalanceKey(assetA, assetB, userAddress).getInteger().valueOrErrorMessage("---")
+    let currentUserBalance = collectBalanceKey(assetA, assetB, userAddress).getInteger().valueOrErrorMessage("This user balance does not exist.")
 
     let totalCommissions = collectTotalCommissionsCollectedDepositKey(assetA, assetB).getInteger().valueOrElse(0)
 
