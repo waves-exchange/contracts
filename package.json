@@ -20,6 +20,7 @@
     "test-lp-stable": "mocha --parallel --require test/lp_stable/_hooks.mjs test/lp_stable",
     "test-referral": "mocha --parallel --require test/referral/_hooks.mjs test/referral",
     "test-boosting": "mocha --parallel --require test/boosting/_hooks.mjs test/boosting",
+    "test-gwx-reward": "mocha --parallel --require test/gwx_reward/_hooks.mjs test/gwx_reward",
     "ci-test": "concurrently --max-processes 8 --timings npm:test-*",
     "test": "API_NODE_URL=http://localhost:6869 npm run ci-test",
     "lint": "eslint . --ext .mjs --ext .js",
