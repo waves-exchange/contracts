@@ -71,7 +71,7 @@ func mustManager(i: Invocation) = {
 
 #registering a new pair of assets
 @Callable(i)
-func registerAsset(assetA: String, assetB: String, withdrawDelay: Int, depositFee: Int, withdrawFee: Int, minAmountDeposit: Int, minAmountWithdraw: Int) = {
+func registerAsset(assetA: String, assetB: String, withdrawDelay: Int, depositFee: Int, withdrawFee: Int, minAmountDeposit: Int, minAmountWithdraw: Int, pairStatus: Int) = {
     strict checkCaller = i.mustManager()
 
     let withdrawDelayKey = collectWithdrawDelayKey(assetA, assetB)
@@ -79,13 +79,15 @@ func registerAsset(assetA: String, assetB: String, withdrawDelay: Int, depositFe
     let withdrawFeePermilleKey = collectWithdrawFeePermilleKey(assetA, assetB)
     let minAmountDepositKey = collectMinAmountDepositKey(assetA, assetB)
     let minAmountWithdrawKey = collectMinAmountWithdrawKey(assetA, assetB)
+    let pairStatusKey = collectAssetsPairStatusKey(assetA, assetB)
 
     [
         IntegerEntry(withdrawDelayKey, withdrawDelay),
         IntegerEntry(depositFeePermilleKey, depositFee),
         IntegerEntry(withdrawFeePermilleKey, withdrawFee),
         IntegerEntry(minAmountDepositKey, minAmountDeposit),
-        IntegerEntry(minAmountWithdrawKey, minAmountWithdraw)
+        IntegerEntry(minAmountWithdrawKey, minAmountWithdraw),
+        IntegerEntry(pairStatusKey, pairStatus)
     ]
 }
 
@@ -108,7 +110,7 @@ func swapAssetsAToB(assetB: String) = {
 
     let asset = assetB.value().fromBase58String()
 
-    if (collectAssetsPairStatusKey(assetA, assetB).getInteger() != 0) then throw("The couple's deposit is blocked.") else
+    if (collectAssetsPairStatusKey(assetA, assetB).getInteger().value() != 0) then throw("The couple's deposit is blocked.") else
     if (payment.amount < minAmountDeposit) then throw("Swap amount fail, amount is to small.") else
 
     [
