@@ -476,7 +476,7 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
 
                   StringEntry(keyMappingPoolLPAssetToPoolContractAddress(lpAssetIdStr), poolAddress),
                   StringEntry(keyMappingPoolContractToLPAsset(poolAddress), lpAssetIdStr),
-                  IntegerEntry(keyPoolToWeight(poolAddress),poolWeight),
+                  IntegerEntry(keyPoolToWeight(poolAddress),poolWeight)
               ]
               , lpAssetIdStr
             )
