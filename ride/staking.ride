@@ -77,7 +77,7 @@ func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 func keyStablePoolAddonAddr() = "%s__stablePoolAddonAddr"
 func keyAddonAddr() = "%s__addonAddr"
 func keyFactoryLp2AssetsMapping(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
-func keyFactoryLpList()   = "%s__lpTokensList"
+func keyFactoryLpList()   = "%s__lpTokensList" # not used anymore
 func keyFactoryLpAssetToPoolContractAddress(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
 func keyFactoryPoolWeight(contractAddress: String) = { ["%s%s", "poolWeight", contractAddress].makeString(SEP) }
 
