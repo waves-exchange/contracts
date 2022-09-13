@@ -44,4 +44,32 @@ describe('put one tkn', /** @this {MochaSuiteModified} */() => {
     // 94519479
     console.log(JSON.stringify(response, null, 2));
   });
+
+  it('swap x', async function () {
+    const x = 100000000;
+    const X = '464684764848';
+    const Y = '8541956133770';
+    const amp = '1000';
+    const aPrecision = '100';
+    const targetXPrecision = '1';
+    const targetDPrecision = '1';
+    const expr = `calcSwapXToY("${x}", "${X}", "${Y}", "", "${amp}", "${aPrecision}", "${targetXPrecision}", "${targetDPrecision}")`;
+    const response = await api.utils.fetchEvaluate(address(this.accounts.math, chainId), expr);
+    // 104639984
+    console.log(JSON.stringify(response, null, 2));
+  });
+
+  it('swap y', async function () {
+    const y = 100000000;
+    const X = '8541956133770';
+    const Y = '464684764848';
+    const amp = '1000';
+    const aPrecision = '100';
+    const targetXPrecision = '1';
+    const targetDPrecision = '1';
+    const expr = `calcSwapXToY("${y}", "${X}", "${Y}", "", "${amp}", "${aPrecision}", "${targetXPrecision}", "${targetDPrecision}")`;
+    const response = await api.utils.fetchEvaluate(address(this.accounts.math, chainId), expr);
+    // 95563979
+    console.log(JSON.stringify(response, null, 2));
+  });
 });
