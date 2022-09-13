@@ -1019,26 +1019,26 @@ func getOneTknV2(outAmount: Int, outAssetId: String, slippage: Int) = {
     (true, totalGet.toBigInt())
   }
 
-  let (outAm, outPr)  = if(outAssetId == amId) then (finalRes._2.toInt(), 0) else (0, finalRes._2.toInt())
+  let (outAm, outPr) = if(outAssetId == amId) then (finalRes._2.toInt(), 0) else (0, finalRes._2.toInt())
   let totalAmount = outAm + outPr
 
   let curPrX18 = cpbi(prBalance.t1(prDcm), amBalance.t1(amDcm))
   let curPr = curPrX18.f1(scale8)
 
-  strict state =
-  [
+  strict state = [
     ScriptTransfer(userAddress, totalAmount, if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()),
     StringEntry(
-          gau(userAddress.toString(), txId58),
-          dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)),
+      gau(userAddress.toString(), txId58),
+      dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)),
     IntegerEntry(pl(), curPr),
     IntegerEntry(ph(height, lastBlock.timestamp), curPr)
   ]
 
   strict burn = invoke(fca,
-                                  "burn",
-                                  [pmtAmt],
-                                  [AttachedPayment(pmtAssetId, pmtAmt)])
+    "burn",
+    [pmtAmt],
+    [AttachedPayment(pmtAssetId, pmtAmt)]
+  )
   (state, totalAmount)
 }
 
