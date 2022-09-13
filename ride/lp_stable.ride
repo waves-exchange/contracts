@@ -738,94 +738,94 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
 # slippage in scale8
 @Callable(i)
 func putOneTknV2(outLp: Int, slippage: Int, autoStake: Boolean) = {
-    let cfg = gfc()
-    let stakingCntr = addressFromString(cfg[idxFactStakCntr]).valueOrErrorMessage("Wr st addr")
-    let slipCntr    = addressFromString(cfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
-    let gwxCntr     = addressFromString(cfg[idxFactGwxRewCntr]).valueOrErrorMessage("Wr gwx addr")
-    let poolCfg     = gpc()
-    let amId        = poolCfg[idxAmAsId]
-    let prId        = poolCfg[idxPrAsId]
-    let amDcm       = poolCfg[idxAmtAsDcm].parseIntValue()
-    let prDcm       = poolCfg[idxPriceAsDcm].parseIntValue()
+  let cfg = gfc()
+  let stakingCntr = addressFromString(cfg[idxFactStakCntr]).valueOrErrorMessage("Wr st addr")
+  let slipCntr    = addressFromString(cfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
+  let gwxCntr     = addressFromString(cfg[idxFactGwxRewCntr]).valueOrErrorMessage("Wr gwx addr")
+  let poolCfg     = gpc()
+  let amId        = poolCfg[idxAmAsId]
+  let prId        = poolCfg[idxPrAsId]
+  let amDcm       = poolCfg[idxAmtAsDcm].parseIntValue()
+  let prDcm       = poolCfg[idxPriceAsDcm].parseIntValue()
 
-    let addon       = this.getString(ada()).valueOrElse("")
-    let userAddress = if(addon == i.caller.toString()) then i.originCaller else i.caller
+  let addon       = this.getString(ada()).valueOrElse("")
+  let userAddress = if(addon == i.caller.toString()) then i.originCaller else i.caller
 
-    if (i.payments.size() != 1) then throw("1 pmnt expd") else
+  if (i.payments.size() != 1) then throw("1 pmnt expd") else
 
-    let pmt         = i.payments[0].value()
-    let pmtAssetId  = pmt.assetId.value().toBase58String()
-    let pmtAmt      = pmt.amount
-    
-    if(pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
+  let pmt         = i.payments[0].value()
+  let pmtAssetId  = pmt.assetId.value().toBase58String()
+  let pmtAmt      = pmt.amount
+  
+  if(pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
-    let amBalance = getAccBalance(amId)
-    let prBalance = getAccBalance(prId)
+  let amBalance = getAccBalance(amId)
+  let prBalance = getAccBalance(prId)
 
-    let (amBalanceNow, prBalanceNow) =
-      if (pmtAssetId == amId) then {
-        if (amBalance < pmtAmt) then "invalid payment amount".throw() else
-          (amBalance - pmtAmt, prBalance)
-      } else if (pmtAssetId == prId) then {
-        if (prBalance < pmtAmt) then "invalid payment amount".throw() else
-          (amBalance, prBalance - pmtAmt)
-      } else throw("wrong pmtAssetId")
+  let (amBalanceNow, prBalanceNow) =
+    if (pmtAssetId == amId) then {
+      if (amBalance < pmtAmt) then "invalid payment amount".throw() else
+        (amBalance - pmtAmt, prBalance)
+    } else if (pmtAssetId == prId) then {
+      if (prBalance < pmtAmt) then "invalid payment amount".throw() else
+        (amBalance, prBalance - pmtAmt)
+    } else throw("wrong pmtAssetId")
 
-    let (amBalanceForCalc, prBalanceForCalc) = if (pmtAssetId == amId) then (amBalanceNow, prBalanceNow) else (prBalanceNow, amBalanceNow)
+  let (amBalanceForCalc, prBalanceForCalc) = if (pmtAssetId == amId) then (amBalanceNow, prBalanceNow) else (prBalanceNow, amBalanceNow)
 
-    let xPrecision = 1
-    let result = gwxCntr.invoke("calcPutXOnly", [
-      pmtAmt.toString(), # paymentAmountBigIntStr
-      amBalanceForCalc.toString(), # amountAssetBalanceBigIntStr
-      prBalanceForCalc.toString(), # priceAssetBalanceBigIntStr
-      "", # dBigIntStr
-      A, # amplificatorBigIntStr
-      Amult, # amplificatorPrecisionBigIntStr
-      xPrecision.toString(), # targetXPrecisionBigIntStr
-      Dconv # targetDPrecisionBigIntStr
-    ], []).exactAs[(Int, Int)]
+  let xPrecision = 1
+  let result = gwxCntr.invoke("calcPutXOnly", [
+    pmtAmt.toString(), # paymentAmountBigIntStr
+    amBalanceForCalc.toString(), # amountAssetBalanceBigIntStr
+    prBalanceForCalc.toString(), # priceAssetBalanceBigIntStr
+    "", # dBigIntStr
+    A, # amplificatorBigIntStr
+    Amult, # amplificatorPrecisionBigIntStr
+    xPrecision.toString(), # targetXPrecisionBigIntStr
+    Dconv # targetDPrecisionBigIntStr
+  ], []).exactAs[(Int, Int)]
 
-    let (amAssetPart, prAssetPart) = if (pmtAssetId == amId) then result else (result._2, result._1)
+  let (amAssetPart, prAssetPart) = if (pmtAssetId == amId) then result else (result._2, result._1)
 
-    let estPut = cp(i.caller.toString(),
-      i.transactionId.toBase58String(),
-      AttachedPayment(amId.fromBase58String(), amAssetPart),
-      AttachedPayment(prId.fromBase58String(), prAssetPart),
-      slippage,
-      true,
-      true,
-      pmtAmt,
-      pmtAssetId
-    )
+  let estPut = cp(i.caller.toString(),
+    i.transactionId.toBase58String(),
+    AttachedPayment(amId.fromBase58String(), amAssetPart),
+    AttachedPayment(prId.fromBase58String(), prAssetPart),
+    slippage,
+    true,
+    true,
+    pmtAmt,
+    pmtAssetId
+  )
 
-    let estimLP   = estPut._2
-    let lpAssetId = estPut._7
-    let state     = estPut._9
-    let amDiff    = estPut._10
-    let prDiff    = estPut._11
+  let estimLP   = estPut._2
+  let lpAssetId = estPut._7
+  let state     = estPut._9
+  let amDiff    = estPut._10
+  let prDiff    = estPut._11
 
-    let emitLpAmt = if (outLp > 0) then {
-      let lpCalcRes = vad(estimLP.toBigInt(), outLp.toBigInt(), slippage.toBigInt())
-      lpCalcRes._2.toInt()
-    } else {
-      estimLP
-    }
+  let emitLpAmt = if (outLp > 0) then {
+    let lpCalcRes = vad(estimLP.toBigInt(), outLp.toBigInt(), slippage.toBigInt())
+    lpCalcRes._2.toInt()
+  } else {
+    estimLP
+  }
 
-    # emit lp on factory
-    strict e = fca.invoke("emit", [emitLpAmt], [])
-    # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
-    strict el = match (e) {
-      case legacy: Address => legacy.invoke("emit", [emitLpAmt], [])
-      case _ => unit
-    }
-    strict sa = if(amDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(amId.fromBase58String(), amDiff)])        else []
-    strict sp = if(prDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(prId.fromBase58String(), prDiff)])        else []
+  # emit lp on factory
+  strict e = fca.invoke("emit", [emitLpAmt], [])
+  # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
+  strict el = match (e) {
+    case legacy: Address => legacy.invoke("emit", [emitLpAmt], [])
+    case _ => unit
+  }
+  strict sa = if(amDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(amId.fromBase58String(), amDiff)])        else []
+  strict sp = if(prDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(prId.fromBase58String(), prDiff)])        else []
 
-    let lpTrnsfr =
-      if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
-      else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
+  let lpTrnsfr =
+    if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
+    else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
 
-    state ++ lpTrnsfr
+  state ++ lpTrnsfr
 }
 
 # Put without LP emission
