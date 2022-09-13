@@ -1,42 +1,38 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
+import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import {
-  nodeInteraction as ni,
-} from '@waves/waves-transactions';
-
 import { checkStateChanges } from '../utils.mjs';
-import {
-  otcMultiassetContract,
-} from './callables.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 const apiBase = process.env.API_NODE_URL;
-const chainId = 'R';
-
 const api = create(apiBase);
+const chainId = 'R';
 
 describe('otc_multiasset: swapAssetsAToB.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully swapAssetsAToB', async function () {
-    const notWaitTx = true;
     const amountAssetA = this.minAmountDeposit + 1;
 
     const expectedBalance = 4985001;
     const expectedTotalCommissionsCollectedDeposit = 15000;
     const expectedAmountAssetB = amountAssetA;
 
-    const swapAssetsAToBTx = await otcMultiassetContract.swapAssetsAToB(
-      address(this.accounts.otcMultiasset, chainId),
-      this.accounts.user1,
-      this.assetBId,
-      [{
+    const swapAssetsAToBTx = invokeScript({
+      dApp: address(this.accounts.otcMultiasset, chainId),
+      payment: [{
         assetId: this.assetAId,
         amount: amountAssetA,
       }],
-      notWaitTx,
-    );
+      call: {
+        function: 'swapAssetsAToB',
+        args: [
+          { type: 'string', value: this.assetBId },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
     await api.transactions.broadcast(swapAssetsAToBTx, {});
     const { stateChanges } = await ni.waitForTx(swapAssetsAToBTx.id, { apiBase });
 

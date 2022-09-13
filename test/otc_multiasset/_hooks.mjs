@@ -1,17 +1,13 @@
 import { address, publicKey, randomSeed } from '@waves/ts-lib-crypto';
 import {
-  data,
+  data, invokeScript,
   issue,
-  massTransfer,
+  massTransfer, nodeInteraction as ni,
   nodeInteraction,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { format } from 'path';
 import { setScriptFromFile } from '../utils.mjs';
-
-import {
-  otcMultiassetContract,
-} from './callables.mjs';
 
 const { waitForTx } = nodeInteraction;
 const apiBase = process.env.API_NODE_URL;
@@ -103,18 +99,26 @@ export const mochaHooks = {
     this.minAmountWithdraw = 1e6;
     this.pairStatus = 0;
 
-    await otcMultiassetContract.registerAsset(
-      address(this.accounts.otcMultiasset, chainId),
-      this.accounts.otcMultiasset,
-      this.assetAId,
-      this.assetBId,
-      this.withdrawDelay,
-      this.depositFee,
-      this.withdrawFee,
-      this.minAmountDeposit,
-      this.minAmountWithdraw,
-      this.pairStatus,
-    );
+    const registerAssetTx = invokeScript({
+      dApp: address(this.accounts.otcMultiasset, chainId),
+      payment: [],
+      call: {
+        function: 'registerAsset',
+        args: [
+          { type: 'string', value: this.assetAId },
+          { type: 'string', value: this.assetBId },
+          { type: 'integer', value: this.withdrawDelay },
+          { type: 'integer', value: this.depositFee },
+          { type: 'integer', value: this.withdrawFee },
+          { type: 'integer', value: this.minAmountDeposit },
+          { type: 'integer', value: this.minAmountWithdraw },
+          { type: 'integer', value: this.pairStatus },
+        ],
+      },
+      chainId,
+    }, this.accounts.otcMultiasset);
+    await api.transactions.broadcast(registerAssetTx, {});
+    await ni.waitForTx(registerAssetTx.id, { apiBase });
 
     const setManagerTx = data({
       additionalFee: 4e5,

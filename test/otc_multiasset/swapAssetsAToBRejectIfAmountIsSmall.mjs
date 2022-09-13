@@ -2,10 +2,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { create } from '@waves/node-api-js';
-
-import {
-  otcMultiassetContract,
-} from './callables.mjs';
+import { invokeScript } from '@waves/waves-transactions';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -16,21 +13,24 @@ const api = create(apiBase);
 
 describe('otc_multiasset: swapAssetsAToBRejectIfAmountIsSmall.mjs', /** @this {MochaSuiteModified} */() => {
   it('should reject swapAssetsAToB', async function () {
-    const notWaitTx = true;
     const amountAssetA = 1;
 
     const expectedRejectMessage = 'multiasset_otc.ride: Swap amount fail, amount is to small.';
 
-    const swapAssetsAToBTx = await otcMultiassetContract.swapAssetsAToB(
-      address(this.accounts.otcMultiasset, chainId),
-      this.accounts.user1,
-      this.assetBId,
-      [{
+    const swapAssetsAToBTx = invokeScript({
+      dApp: address(this.accounts.otcMultiasset, chainId),
+      payment: [{
         assetId: this.assetAId,
         amount: amountAssetA,
       }],
-      notWaitTx,
-    );
+      call: {
+        function: 'swapAssetsAToB',
+        args: [
+          { type: 'string', value: this.assetBId },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
 
     await expect(
       api.transactions.broadcast(swapAssetsAToBTx, {}),

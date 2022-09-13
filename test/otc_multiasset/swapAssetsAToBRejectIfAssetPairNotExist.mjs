@@ -3,12 +3,8 @@ import chaiAsPromised from 'chai-as-promised';
 import { address, publicKey } from '@waves/ts-lib-crypto';
 import { create } from '@waves/node-api-js';
 import {
-  data, issue, massTransfer, nodeInteraction,
+  data, invokeScript, issue, massTransfer, nodeInteraction,
 } from '@waves/waves-transactions';
-
-import {
-  otcMultiassetContract,
-} from './callables.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -21,7 +17,6 @@ const api = create(apiBase);
 
 describe('otc_multiasset: swapAssetsAToBRejectIfAssetPairNotExist.mjs', /** @this {MochaSuiteModified} */() => {
   it('should reject swapAssetsAToB', async function () {
-    const notWaitTx = true;
     const amountSomeAsset = 1;
 
     const expectedRejectMessage = 'multiasset_otc.ride: This asset pair does not exist.';
@@ -36,8 +31,6 @@ describe('otc_multiasset: swapAssetsAToBRejectIfAssetPairNotExist.mjs', /** @thi
     await api.transactions.broadcast(someAssetIssueTx, {});
     await waitForTx(someAssetIssueTx.id, { apiBase });
     const someAssetId = someAssetIssueTx.id;
-
-    console.log('someAssetId', someAssetId);
 
     const someAssetAmount = 100e6;
     const massTransferAssetATx = massTransfer({
@@ -63,16 +56,20 @@ describe('otc_multiasset: swapAssetsAToBRejectIfAssetPairNotExist.mjs', /** @thi
     await api.transactions.broadcast(setAssetsPairStatusTx, {});
     await waitForTx(setAssetsPairStatusTx.id, { apiBase });
 
-    const swapAssetsAToBTx = await otcMultiassetContract.swapAssetsAToB(
-      address(this.accounts.otcMultiasset, chainId),
-      this.accounts.user1,
-      this.assetBId,
-      [{
+    const swapAssetsAToBTx = invokeScript({
+      dApp: address(this.accounts.otcMultiasset, chainId),
+      payment: [{
         assetId: someAssetId,
         amount: amountSomeAsset,
       }],
-      notWaitTx,
-    );
+      call: {
+        function: 'swapAssetsAToB',
+        args: [
+          { type: 'string', value: this.assetBId },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
 
     await expect(
       api.transactions.broadcast(swapAssetsAToBTx, {}),
