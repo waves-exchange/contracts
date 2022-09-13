@@ -173,6 +173,11 @@ func gfc() = {
   strf(fca, fcfg()).split(SEP)
 }
 
+let factoryConfig = gfc()
+let stakingContract = factoryConfig[idxFactStakCntr].addressFromString().valueOrErrorMessage("Invalid staking contract address")
+let slipageContract = factoryConfig[idxFactSlippCntr].addressFromString().valueOrErrorMessage("Invalid slipage contract address")
+let gwxContract = factoryConfig[idxFactGwxRewCntr].addressFromString().valueOrErrorMessage("Invalid gwx contract address")
+
 func dataPutActionInfo(inAmtAssetAmt: Int, inPriceAssetAmt: Int, outLpAmt: Int, price: Int, slipByUser: Int, slippageReal: Int, txHeight: Int, txTimestamp: Int, slipageAmAmt: Int, slipagePrAmt: Int) = {
   makeString(["%d%d%d%d%d%d%d%d%d%d", inAmtAssetAmt.toString(), inPriceAssetAmt.toString(), outLpAmt.toString(), price.toString(), slipByUser.toString(), slippageReal.toString(), txHeight.toString(), txTimestamp.toString(), slipageAmAmt.toString(), slipagePrAmt.toString()], SEP)
 }
@@ -738,28 +743,24 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
 # slippage in scale8
 @Callable(i)
 func putOneTknV2(outLp: Int, slippage: Int, autoStake: Boolean) = {
-  let cfg = gfc()
-  let stakingCntr = addressFromString(cfg[idxFactStakCntr]).valueOrErrorMessage("Wr st addr")
-  let slipCntr    = addressFromString(cfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
-  let gwxCntr     = addressFromString(cfg[idxFactGwxRewCntr]).valueOrErrorMessage("Wr gwx addr")
-  let poolCfg     = gpc()
-  let amId        = poolCfg[idxAmAsId]
-  let prId        = poolCfg[idxPrAsId]
-  let amDcm       = poolCfg[idxAmtAsDcm].parseIntValue()
-  let prDcm       = poolCfg[idxPriceAsDcm].parseIntValue()
-
-  let userAddress = if(i.caller == this) then i.originCaller else i.caller
-
   if (i.payments.size() != 1) then throw("1 pmnt expd") else
 
-  let pmt         = i.payments[0].value()
-  let pmtAssetId  = pmt.assetId.value().toBase58String()
-  let pmtAmt      = pmt.amount
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let amDecimals = poolConfig[idxAmtAsDcm].parseIntValue()
+  let prDecimals = poolConfig[idxPriceAsDcm].parseIntValue()
+
+  let userAddress = if (i.caller == this) then i.originCaller else i.caller
+
+  let pmt = i.payments[0].value()
+  let pmtAssetId = pmt.assetId.value().toBase58String()
+  let pmtAmt = pmt.amount
   
   if (pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
-  let amBalance = getAccBalance(amId)
-  let prBalance = getAccBalance(prId)
+  let amBalance = amId.getAccBalance()
+  let prBalance = prId.getAccBalance()
 
   let (amBalanceNow, prBalanceNow) =
     if (pmtAssetId == amId) then {
@@ -773,7 +774,7 @@ func putOneTknV2(outLp: Int, slippage: Int, autoStake: Boolean) = {
   let (amBalanceForCalc, prBalanceForCalc) = if (pmtAssetId == amId) then (amBalanceNow, prBalanceNow) else (prBalanceNow, amBalanceNow)
 
   let xPrecision = 1
-  let result = gwxCntr.invoke("calcPutXOnly", [
+  let result = gwxContract.invoke("calcPutXOnly", [
     pmtAmt.toString(), # paymentAmountBigIntStr
     amBalanceForCalc.toString(), # amountAssetBalanceBigIntStr
     prBalanceForCalc.toString(), # priceAssetBalanceBigIntStr
@@ -817,11 +818,11 @@ func putOneTknV2(outLp: Int, slippage: Int, autoStake: Boolean) = {
     case legacy: Address => legacy.invoke("emit", [emitLpAmt], [])
     case _ => unit
   }
-  strict sa = if(amDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(amId.fromBase58String(), amDiff)])        else []
-  strict sp = if(prDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(prId.fromBase58String(), prDiff)])        else []
+  strict sa = if(amDiff > 0)      then slipageContract.invoke("put",[],[AttachedPayment(amId.fromBase58String(), amDiff)])        else []
+  strict sp = if(prDiff > 0)      then slipageContract.invoke("put",[],[AttachedPayment(prId.fromBase58String(), prDiff)])        else []
 
   let lpTrnsfr =
-    if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
+    if(autoStake) then strict ss = stakingContract.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
     else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
 
   state ++ lpTrnsfr
@@ -958,31 +959,28 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
 @Callable(i)
 func getOneTknV2(outAmount: Int, outAssetId: String, slippage: Int) = {
   if (i.payments.size() != 1) then throw("1 pmnt expd") else
-  #if(true) then throw("off") else
-  let cfg         = gpc()
-  let lpId        = cfg[idxLPAsId]
-  let amId        = cfg[idxAmAsId]
-  let prId        = cfg[idxPrAsId]
-  let amDcm       = cfg[idxAmtAsDcm].parseIntValue()
-  let prDcm       = cfg[idxPriceAsDcm].parseIntValue()
-  let sts         = cfg[idxPoolSt]
+  let poolConfig = gpc()
+  let lpId = poolConfig[idxLPAsId]
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let amDecimals = poolConfig[idxAmtAsDcm].parseIntValue()
+  let prDecimals = poolConfig[idxPriceAsDcm].parseIntValue()
+  let poolStatus = poolConfig[idxPoolSt]
 
-  let factCfg     = gfc()
-  let gwxCntr     = addressFromString(factCfg[idxFactGwxRewCntr]).valueOrErrorMessage("Wr sl addr")
+  let userAddress = if (i.caller == this) then i.originCaller else i.caller
 
-  let pmt         = i.payments[0].value()
-
-  let userAddress = if(i.caller == this) then i.originCaller else i.caller
-  let txId58      = i.transactionId.toBase58String()
-  let pmtAssetId  = pmt.assetId.value()
-  let pmtAmt      = pmt.amount
+  let pmt = i.payments[0].value()
+  let pmtAssetId = pmt.assetId.value()
+  let pmtAmt = pmt.amount
 
   if (pmtAmt < 10_00_000_000) then throw("Min pmt 10 LP") else
+
+  let txId58 = i.transactionId.toBase58String()
 
   if (slippage < 0) then throw("Wrong params") else
   if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
 
-  let r = ego(i.transactionId.toBase58String(), pmtAssetId.toBase58String(), pmtAmt, i.caller)
+  let r = ego(txId58, pmtAssetId.toBase58String(), pmtAmt, i.caller)
   let estimAmAmt = r._1
   let estimPrAmt = r._2
 
@@ -1000,7 +998,7 @@ func getOneTknV2(outAmount: Int, outAssetId: String, slippage: Int) = {
     } else throw("wrong outAssetId")
 
   let yPrecision = 1
-  let exchResult = gwxCntr.invoke("calcSwapXToY", [
+  let exchResult = gwxContract.invoke("calcSwapXToY", [
     amountToSwap.toString(), # amountAssetAmountBigIntStr
     amountBalanceForSwap.toString(), # amountAssetBalanceBigIntStr
     priceBalanceForSwap.toString(), # priceAssetBalanceBigIntStr
@@ -1022,7 +1020,7 @@ func getOneTknV2(outAmount: Int, outAssetId: String, slippage: Int) = {
   let (outAm, outPr) = if(outAssetId == amId) then (finalRes._2.toInt(), 0) else (0, finalRes._2.toInt())
   let totalAmount = outAm + outPr
 
-  let curPrX18 = cpbi(prBalance.t1(prDcm), amBalance.t1(amDcm))
+  let curPrX18 = cpbi(prBalance.t1(prDecimals), amBalance.t1(amDecimals))
   let curPr = curPrX18.f1(scale8)
 
   strict state = [
