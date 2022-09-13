@@ -748,8 +748,7 @@ func putOneTknV2(outLp: Int, slippage: Int, autoStake: Boolean) = {
   let amDcm       = poolCfg[idxAmtAsDcm].parseIntValue()
   let prDcm       = poolCfg[idxPriceAsDcm].parseIntValue()
 
-  let addon       = this.getString(ada()).valueOrElse("")
-  let userAddress = if(addon == i.caller.toString()) then i.originCaller else i.caller
+  let userAddress = if(i.caller == this) then i.originCaller else i.caller
 
   if (i.payments.size() != 1) then throw("1 pmnt expd") else
 
@@ -973,9 +972,7 @@ func getOneTknV2(outAmount: Int, outAssetId: String, slippage: Int) = {
 
   let pmt         = i.payments[0].value()
 
-  # todo: addon is a separate contract with unstake and get on tkn operation, should me merged with this contract once max script size is increased
-  let addon       = this.getString(ada()).valueOrElse("")
-  let userAddress = if(addon == i.caller.toString()) then i.originCaller else i.caller
+  let userAddress = if(i.caller == this) then i.originCaller else i.caller
   let txId58      = i.transactionId.toBase58String()
   let pmtAssetId  = pmt.assetId.value()
   let pmtAmt      = pmt.amount
@@ -1085,6 +1082,21 @@ func unstakeAndGet(amount: Int) = {
   strict burnA = invoke(fca, "burn", [amount], [AttachedPayment(lpAssetId, amount)])
 
   state
+}
+
+@Callable(i)
+func unstakeAndGetOneTkn(amount: Int, outAmount: Int, outAssetId: String, slippage: Int) = {
+  strict checkPayments = if (i.payments.size() != 0) then throw("No pmnts expd") else true
+
+  let cfg = gpc()
+  let factoryCfg = gfc()
+
+  let lpAssetId = cfg[idxLPAsId].fromBase58String()
+  let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
+
+  strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
+  strict getOneTkn = this.invoke("getOneTknV2", [outAmount, outAssetId, slippage],[AttachedPayment(lpAssetId, amount)] )
+  []
 }
 
 # purpose:
