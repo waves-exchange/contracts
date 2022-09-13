@@ -70,7 +70,7 @@ func mustManager(i: Invocation) = {
 }
 
 #exception handling
-func throwErr(msg: String) = ["referral.ride:", msg].makeString(" ").throw()
+func throwErr(msg: String) = ["multiasset_otc.ride:", msg].makeString(" ").throw()
 
 #registering a new pair of assets
 @Callable(i)
@@ -118,7 +118,7 @@ func swapAssetsAToB(assetB: String) = {
 
     let newBalance = currentUserBalance + toDeposit - fee
     if (newBalance < 0) then "Swap amount fail, amount is to small.".throwErr() else
-    
+
     [
         IntegerEntry(collectBalanceKey(assetA, assetB, userAddress), newBalance),
         IntegerEntry(collectTotalCommissionsCollectedDepositKey(assetA, assetB), totalCommissions + fee),
