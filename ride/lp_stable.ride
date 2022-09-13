@@ -756,7 +756,7 @@ func putOneTknV2(outLp: Int, slippage: Int, autoStake: Boolean) = {
   let pmtAssetId  = pmt.assetId.value().toBase58String()
   let pmtAmt      = pmt.amount
   
-  if(pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
+  if (pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
   let amBalance = getAccBalance(amId)
   let prBalance = getAccBalance(prId)
