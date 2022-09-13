@@ -1020,13 +1020,14 @@ func getOneTknV2(outAmount: Int, outAssetId: String, slippage: Int) = {
   }
 
   let (outAm, outPr)  = if(outAssetId == amId) then (finalRes._2.toInt(), 0) else (0, finalRes._2.toInt())
+  let totalAmount = outAm + outPr
 
   let curPrX18 = cpbi(prBalance.t1(prDcm), amBalance.t1(amDcm))
   let curPr = curPrX18.f1(scale8)
 
   strict state =
   [
-    ScriptTransfer(userAddress, outAm + outPr, if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()),
+    ScriptTransfer(userAddress, totalAmount, if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()),
     StringEntry(
           gau(userAddress.toString(), txId58),
           dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)),
@@ -1038,7 +1039,7 @@ func getOneTknV2(outAmount: Int, outAssetId: String, slippage: Int) = {
                                   "burn",
                                   [pmtAmt],
                                   [AttachedPayment(pmtAssetId, pmtAmt)])
-  state
+  (state, totalAmount)
 }
 
 @Callable(i)
@@ -1095,8 +1096,9 @@ func unstakeAndGetOneTkn(amount: Int, outAmount: Int, outAssetId: String, slippa
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
 
   strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
-  strict getOneTkn = this.invoke("getOneTknV2", [outAmount, outAssetId, slippage],[AttachedPayment(lpAssetId, amount)] )
-  []
+  strict outAmountResult = this.invoke("getOneTknV2", [outAmount, outAssetId, slippage], [AttachedPayment(lpAssetId, amount)]).as[Int]
+
+  ([], outAmountResult)
 }
 
 # purpose:
