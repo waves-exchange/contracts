@@ -69,6 +69,9 @@ func mustManager(i: Invocation) = {
   }
 }
 
+#exception handling
+func throwErr(msg: String) = ["referral.ride:", msg].makeString(" ").throw()
+
 #registering a new pair of assets
 @Callable(i)
 func registerAsset(assetA: String, assetB: String, withdrawDelay: Int, depositFee: Int, withdrawFee: Int, minAmountDeposit: Int, minAmountWithdraw: Int, pairStatus: Int) = {
@@ -98,11 +101,11 @@ func swapAssetsAToB(assetB: String) = {
     let assetA = payment.assetId.value().toBase58String()
 
     let userAddress = i.caller.toString()
-    let minAmountDeposit = collectMinAmountDepositKey(assetA, assetB).getInteger().valueOrErrorMessage("This asset pair does not exist.")
+    let minAmountDeposit = collectMinAmountDepositKey(assetA, assetB).getInteger().valueOrElse(0)
     let toDeposit = payment.amount
 
     let depositFeePermilleKey = collectDepositFeePermilleKey(assetA, assetB)
-    let depositFee = this.getInteger(depositFeePermilleKey).valueOrElse(0)
+    let depositFee = depositFeePermilleKey.getInteger().valueOrElse(0)
     let fee = toDeposit / 1000 * depositFee
     let currentUserBalance = collectBalanceKey(assetA, assetB, userAddress).getInteger().valueOrElse(0)
 
@@ -110,11 +113,14 @@ func swapAssetsAToB(assetB: String) = {
 
     let asset = assetB.value().fromBase58String()
 
-    if (collectAssetsPairStatusKey(assetA, assetB).getInteger().value() != 0) then throw("The couple's deposit is blocked.") else
-    if (payment.amount < minAmountDeposit) then throw("Swap amount fail, amount is to small.") else
+    if (collectAssetsPairStatusKey(assetA, assetB).getInteger().value() != 0) then "The couple's deposit is blocked.".throwErr() else
+    if (payment.amount < minAmountDeposit) then "Swap amount fail, amount is to small.".throwErr() else
 
+    let newBalance = currentUserBalance + toDeposit - fee
+    if (newBalance < 0) then "Swap amount fail, amount is to small.".throwErr() else
+    
     [
-        IntegerEntry(collectBalanceKey(assetA, assetB, userAddress), currentUserBalance + payment.amount - fee),
+        IntegerEntry(collectBalanceKey(assetA, assetB, userAddress), newBalance),
         IntegerEntry(collectTotalCommissionsCollectedDepositKey(assetA, assetB), totalCommissions + fee),
         ScriptTransfer(i.caller, toDeposit, asset)
     ]
@@ -158,7 +164,7 @@ func withdrawAsset(assetA: String, assetB: String, heightInKey: Int) = {
 
     let asset = assetA.value().fromBase58String()
 
-    if (assetLockTime < height) then throw("Withdrawal is possible after "+toString(heightInKey)+" height or you have already withdrawn.") else
+    if (assetLockTime < height) then ("Withdrawal is possible after "+toString(heightInKey)+" height or you have already withdrawn.").throwErr() else
 
     [
         DeleteEntry(collectProcessInProgressKey(userAddress, assetA, assetB, heightInKey)),
