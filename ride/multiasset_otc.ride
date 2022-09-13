@@ -101,7 +101,7 @@ func swapAssetsAToB(assetB: String) = {
     let assetA = payment.assetId.value().toBase58String()
 
     let userAddress = i.caller.toString()
-    let minAmountDeposit = collectMinAmountDepositKey(assetA, assetB).getInteger().valueOrElse(0)
+    let minAmountDeposit = collectMinAmountDepositKey(assetA, assetB).getInteger().value()
     let toDeposit = payment.amount
 
     let depositFeePermilleKey = collectDepositFeePermilleKey(assetA, assetB)
