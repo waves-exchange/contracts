@@ -116,8 +116,11 @@ func swapAssetsAToB(assetB: String) = {
     if (collectAssetsPairStatusKey(assetA, assetB).getInteger().value() != 0) then "The couple's deposit is blocked.".throwErr() else
     if (payment.amount < minAmountDeposit) then "Swap amount fail, amount is to small.".throwErr() else
 
+    let newBalance = currentUserBalance + toDeposit - fee
+    if (newBalance < 0) then "Swap amount fail, amount is to small.".throwErr() else
+    
     [
-        IntegerEntry(collectBalanceKey(assetA, assetB, userAddress), currentUserBalance + payment.amount - fee),
+        IntegerEntry(collectBalanceKey(assetA, assetB, userAddress), newBalance),
         IntegerEntry(collectTotalCommissionsCollectedDepositKey(assetA, assetB), totalCommissions + fee),
         ScriptTransfer(i.caller, toDeposit, asset)
     ]
