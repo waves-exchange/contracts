@@ -10,71 +10,92 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
+	"github.com/waves-exchange/contracts/deployer/pkg/contract"
 	"github.com/wavesplatform/gowaves/pkg/client"
 	"github.com/wavesplatform/gowaves/pkg/crypto"
 	"github.com/wavesplatform/gowaves/pkg/proto"
+	"golang.org/x/crypto/blake2b"
+	"golang.org/x/sync/errgroup"
 	"io"
 	"math"
 	"net/http"
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 )
 
+type compileCacheMap = map[string]func() (
+	base64Script string, scriptBytes []byte, setScriptFee uint64, err error,
+)
+
 type Syncer struct {
-	logger          zerolog.Logger
-	mode            config.Mode
-	client          *client.Client
-	contractsFolder string
-	contracts       []config.Contract
+	logger                            zerolog.Logger
+	network                           config.Network
+	client                            *client.Client
+	contractsFolder                   string
+	contractModel                     contract.Model
+	compareLpScriptAddress            proto.WavesAddress
+	compareLpStableScriptAddress      proto.WavesAddress
+	compareLpStableAddonScriptAddress proto.WavesAddress
+	compileCache                      compileCacheMap
+	mined                             errgroup.Group
 }
+
+const (
+	lpRide            = "lp.ride"
+	lpStableRide      = "lp_stable.ride"
+	lpStableAddonRide = "lp_stable_addon.ride"
+)
 
 func NewSyncer(
 	logger zerolog.Logger,
-	mode config.Mode,
-	testnetNode string,
-	mainnetNode string,
-	contracts []config.Contract,
-) (Syncer, error) {
-	var cl *client.Client
-	switch mode {
-	case config.DeployTestnet:
-		c, err := client.NewClient(
-			client.Options{BaseUrl: testnetNode, Client: &http.Client{Timeout: time.Minute}},
-		)
-		if err != nil {
-			return Syncer{}, fmt.Errorf("client.NewClient: %w", err)
-		}
-		cl = c
-	case config.CompareMainnet:
-		c, err := client.NewClient(
-			client.Options{BaseUrl: mainnetNode, Client: &http.Client{Timeout: time.Minute}},
-		)
-		if err != nil {
-			return Syncer{}, fmt.Errorf("client.NewClient: %w", err)
-		}
-		cl = c
-	default:
-		return Syncer{}, errors.New("unknown mode=" + string(mode))
+	network config.Network,
+	node string,
+	contractModel contract.Model,
+	compareLpScriptAddress, compareLpStableScriptAddress, compareLpStableAddonScriptAddress string,
+) (*Syncer, error) {
+	cl, err := client.NewClient(
+		client.Options{BaseUrl: node, Client: &http.Client{Timeout: time.Minute}},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("client.NewClient: %w", err)
+	}
+
+	compareLpScriptAddr, err := proto.NewAddressFromString(compareLpScriptAddress)
+	if err != nil {
+		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
+	}
+	compareLpStableScriptAddr, err := proto.NewAddressFromString(compareLpStableScriptAddress)
+	if err != nil {
+		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
+	}
+	compareLpStableAddonScriptAddr, err := proto.NewAddressFromString(compareLpStableAddonScriptAddress)
+	if err != nil {
+		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
 	}
 
 	logger.Info().
-		Str("mode", string(mode)).
+		Str("network", string(network)).
 		Msg("syncer init")
 
-	return Syncer{
-		logger:          logger,
-		mode:            mode,
-		client:          cl,
-		contracts:       contracts,
-		contractsFolder: path.Join("..", "ride"),
+	return &Syncer{
+		logger:                            logger,
+		network:                           network,
+		client:                            cl,
+		contractsFolder:                   path.Join("..", "ride"),
+		contractModel:                     contractModel,
+		compareLpScriptAddress:            compareLpScriptAddr,
+		compareLpStableScriptAddress:      compareLpStableScriptAddr,
+		compareLpStableAddonScriptAddress: compareLpStableAddonScriptAddr,
+		compileCache:                      make(compileCacheMap),
 	}, nil
 }
 
-func (s Syncer) ApplyChanges(c context.Context) error {
-	ctx, cancel := context.WithTimeout(c, time.Hour)
+func (s *Syncer) ApplyChanges(c context.Context) error {
+	ctx, cancel := context.WithTimeout(c, 8*time.Hour)
 	defer cancel()
 
 	files, err := os.ReadDir(s.contractsFolder)
@@ -82,18 +103,267 @@ func (s Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("os.ReadDir: %w", err)
 	}
 
+	contracts, err := s.contractModel.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("s.contractModel.GetAll: %w", err)
+	}
+
+	const (
+		keyAllowedLpScriptHash            = "%s__allowedLpScriptHash"
+		keyAllowedLpStableScriptHash      = "%s__allowedLpStableScriptHash"
+		keyAllowedLpStableAddonScriptHash = "%s__allowedLpStableAddonScriptHash"
+	)
+
+	factory, err := findFactory(contracts)
+	if err != nil {
+		return fmt.Errorf("findFactory: %w", err)
+	}
+
+	mainnetLpHashEmpty, err := s.doHash(
+		ctx,
+		factory,
+		lpRide,
+		keyAllowedLpScriptHash,
+		s.compareLpScriptAddress,
+	)
+	if err != nil {
+		return fmt.Errorf("s.doHash: %w", err)
+	}
+	mainnetLpStableHashEmpty, err := s.doHash(
+		ctx,
+		factory,
+		lpStableRide,
+		keyAllowedLpStableScriptHash,
+		s.compareLpStableScriptAddress,
+	)
+	if err != nil {
+		return fmt.Errorf("s.doHash: %w", err)
+	}
+	mainnetLpStableAddonHashEmpty, err := s.doHash(
+		ctx,
+		factory,
+		lpStableAddonRide,
+		keyAllowedLpStableAddonScriptHash,
+		s.compareLpStableAddonScriptAddress,
+	)
+	if err != nil {
+		return fmt.Errorf("s.doHash: %w", err)
+	}
+
 	for _, fl := range files {
-		er := s.doAction(ctx, fl.Name())
+		er := s.doFile(
+			ctx,
+			fl.Name(),
+			contracts,
+			mainnetLpHashEmpty,
+			mainnetLpStableHashEmpty,
+			mainnetLpStableAddonHashEmpty,
+		)
 		if er != nil {
-			return fmt.Errorf("s.doAction: %w", er)
+			return fmt.Errorf("s.doFile: %w", er)
 		}
+	}
+
+	s.logger.Info().Msg("waiting transactions is being mined...")
+	err = s.mined.Wait()
+	if err != nil {
+		return fmt.Errorf("s.mined.Wait: %w", err)
 	}
 
 	s.logger.Info().Msg("changes applied")
 	return nil
 }
 
-func (s Syncer) doAction(ctx context.Context, fileName string) error {
+func (s *Syncer) doHash(
+	ctx context.Context,
+	factory contract.Contract,
+	fileName string,
+	key string,
+	compareAddress proto.WavesAddress,
+) (
+	bool,
+	error,
+) {
+	f, err := os.Open(path.Join(s.contractsFolder, fileName))
+	if err != nil {
+		return false, fmt.Errorf("os.Open: %w", err)
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	bodyLpRide, err := io.ReadAll(f)
+	if err != nil {
+		return false, fmt.Errorf("io.ReadAll: %w", err)
+	}
+
+	scriptBase64, scriptBytes, _, err := s.compile(ctx, bodyLpRide, false)
+	if err != nil {
+		return false, fmt.Errorf("s.compile: %w", err)
+	}
+
+	lpRideHash := blake2b.Sum256(scriptBytes)
+	if err != nil {
+		return false, fmt.Errorf("blake2b.New256: %w", err)
+	}
+
+	newHashStr := base64.StdEncoding.EncodeToString(lpRideHash[:])
+
+	dataTxValue := &proto.StringDataEntry{
+		Key:   key,
+		Value: newHashStr,
+	}
+
+	var hashEmpty bool
+
+	pub, er2 := crypto.NewPublicKeyFromBase58(factory.BasePub)
+	if er2 != nil {
+		return false, fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", er2)
+	}
+
+	switch s.network {
+	case config.Testnet:
+		prvSigner, er := crypto.NewSecretKeyFromBase58(factory.SignerPrv)
+		if er != nil {
+			return false, fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er)
+		}
+
+		dataTx := proto.NewUnsignedDataWithProofs(2, pub, 500000, timestamp())
+		er = dataTx.AppendEntry(dataTxValue)
+		if er != nil {
+			return false, fmt.Errorf("dataTx.AppendEntry: %w", er)
+		}
+
+		addr, er := proto.NewAddressFromPublicKey(proto.TestNetScheme, pub)
+		if er != nil {
+			return false, fmt.Errorf("proto.NewAddressFromPublicKey: %w", er)
+		}
+
+		actualHash, er := s.getStringValue(ctx, addr, key)
+		if er != nil {
+			return false, fmt.Errorf("s.getStringValue: %w", er)
+		}
+
+		if actualHash != newHashStr {
+			e := s.validateSignBroadcastWait(ctx, proto.TestNetScheme, dataTx, prvSigner, false)
+			if e != nil {
+				return false, fmt.Errorf("validateSignBroadcastWait: %w", e)
+			}
+
+			s.logger.Info().
+				Str("file", fileName).
+				Str("actualHash", actualHash).
+				Str("newHash", newHashStr).
+				Msg("factory_v2 AllowedLpScriptHash data-tx done")
+		} else {
+			s.logger.Info().
+				Str("file", fileName).
+				Str("actualHash", actualHash).
+				Str("newHash", newHashStr).
+				Msg("factory_v2 AllowedLpScriptHash data-tx not needed")
+		}
+
+	case config.Mainnet:
+		addr, er := proto.NewAddressFromPublicKey(proto.MainNetScheme, pub)
+		if er != nil {
+			return false, fmt.Errorf("proto.NewAddressFromPublicKey: %w", er)
+		}
+
+		actualHash, er := s.getStringValue(ctx, addr, key)
+		if er != nil {
+			return false, fmt.Errorf("s.getStringValue: %w", er)
+		}
+
+		hashEmpty = actualHash == ""
+
+		dataTx := proto.NewUnsignedDataWithProofs(2, pub, 500000, timestamp())
+		er = dataTx.AppendEntry(dataTxValue)
+		if er != nil {
+			return false, fmt.Errorf("dataTx.AppendEntry: %w", er)
+		}
+
+		log := func() *zerolog.Event {
+			return s.logger.Info().
+				Str("file", fileName).
+				Str("actualHash", actualHash).
+				Str("newHash", newHashStr).
+				Str("key", key)
+		}
+
+		if actualHash != newHashStr {
+			tx, e := json.Marshal(dataTx)
+			if e != nil {
+				return false, fmt.Errorf("json.Marshal: %w", e)
+			}
+
+			blockchainBase64, e := s.getScript(ctx, compareAddress)
+			if e != nil {
+				return false, fmt.Errorf("s.getScript: %w", e)
+			}
+
+			s.logger.Info().
+				Str("address", compareAddress.String()).
+				Str("file", fileName).
+				Str("left", "blockchain").
+				Str("right", "local").
+				Msg("print diff")
+			e = s.printDiff(ctx, fileName, blockchainBase64, scriptBase64)
+			if e != nil {
+				return false, fmt.Errorf("s.printDiff: %w", e)
+			}
+
+			log().RawJSON("tx", tx).
+				Msg("we are about to set script as approved. " +
+					"sign and broadcast data-tx to continue...")
+
+			for {
+				value, er3 := s.getStringValue(ctx, addr, key)
+				if er3 != nil {
+					return false, fmt.Errorf("s.getStringValue: %w", er3)
+				}
+				if value == newHashStr {
+					log().Msg("data-tx done")
+					break
+				}
+
+				time.Sleep(3 * time.Second)
+			}
+		} else {
+			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, no need to update allowed script hash")
+		}
+	}
+
+	return hashEmpty, nil
+}
+
+func (s *Syncer) getStringValue(ctx context.Context, address proto.WavesAddress, key string) (string, error) {
+	data, _, err := s.client.Addresses.AddressesDataKey(ctx, address, key)
+	if err != nil {
+		if strings.Contains(err.Error(), "no data for this key") {
+			return "", nil
+		}
+
+		return "", fmt.Errorf("s.client.Addresses.AddressesDataKey: %w", err)
+	}
+
+	const invalidType = "data is not StringDataEntry: address: %s key: %s"
+	if data.GetValueType() == proto.DataString {
+		res, ok := data.(*proto.StringDataEntry)
+		if !ok {
+			return "", fmt.Errorf(invalidType, address.String(), key)
+		}
+		return res.Value, nil
+	}
+
+	return "", fmt.Errorf(invalidType, address.String(), key)
+}
+
+func (s *Syncer) doFile(
+	ctx context.Context,
+	fileName string,
+	contracts []contract.Contract,
+	mainnetLpHashEmpty, mainnetLpStableHashEmpty, mainnetLpStableAddonHashEmpty bool,
+) error {
 	const (
 		changed    = "contract changed"
 		notChanged = "contract didn't changed"
@@ -101,7 +371,7 @@ func (s Syncer) doAction(ctx context.Context, fileName string) error {
 		skip       = "skip"
 		deployed   = "deployed"
 		sign       = "sign"
-		address    = "address"
+		addressStr = "address"
 		fileStr    = "file"
 		tag        = "tag"
 	)
@@ -119,22 +389,22 @@ func (s Syncer) doAction(ctx context.Context, fileName string) error {
 		return fmt.Errorf("io.ReadAll: %w", err)
 	}
 
-	for _, cont := range s.contracts {
+	for _, cont := range contracts {
 		if fileName != cont.File {
 			continue
 		}
 
-		switch s.mode {
-		case config.DeployTestnet:
+		switch s.network {
+		case config.Testnet:
 			l := s.logger.Info().
 				Str(fileStr, fileName).
 				Str(tag, cont.Tag).
 				Str(action, skip)
-			if cont.TestnetPrv == "" {
+			if cont.BasePrv == "" {
 				l.Msg("no private key in config")
 				continue
 			}
-			if cont.TestnetSigner == "" {
+			if cont.SignerPrv == "" {
 				l.Msg("no signer private key in config")
 				continue
 			}
@@ -144,14 +414,14 @@ func (s Syncer) doAction(ctx context.Context, fileName string) error {
 				return fmt.Errorf("s.compile: %w", er2)
 			}
 
-			prv, er2 := crypto.NewSecretKeyFromBase58(cont.TestnetPrv)
+			prv, er2 := crypto.NewSecretKeyFromBase58(cont.BasePrv)
 			if er2 != nil {
 				return fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er2)
 			}
 
 			pub := crypto.GeneratePublicKey(prv)
 
-			prvSigner, er2 := crypto.NewSecretKeyFromBase58(cont.TestnetSigner)
+			prvSigner, er2 := crypto.NewSecretKeyFromBase58(cont.SignerPrv)
 			if er2 != nil {
 				return fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er2)
 			}
@@ -168,7 +438,7 @@ func (s Syncer) doAction(ctx context.Context, fileName string) error {
 
 			log := s.logger.Info().
 				Str(fileStr, fileName).
-				Str(address, addr.String()).
+				Str(addressStr, addr.String()).
 				Str(tag, cont.Tag)
 
 			if base64Script == fromBlockchainScript {
@@ -185,9 +455,10 @@ func (s Syncer) doAction(ctx context.Context, fileName string) error {
 					pub,
 					scriptBytes,
 					setScriptFee,
-					uint64(time.Now().UnixMilli()),
+					timestamp(),
 				),
 				prvSigner,
+				true,
 			)
 			if er2 != nil {
 				return fmt.Errorf(
@@ -201,13 +472,13 @@ func (s Syncer) doAction(ctx context.Context, fileName string) error {
 			log.Str(action, deployed).Msg(changed)
 			continue
 
-		case config.CompareMainnet:
+		case config.Mainnet:
 			base64Script, scriptBytes, setScriptFee, er2 := s.compile(ctx, body, cont.Compact)
 			if er2 != nil {
 				return fmt.Errorf("s.compile: %w", er2)
 			}
 
-			pub, er2 := crypto.NewPublicKeyFromBase58(cont.MainnetPub)
+			pub, er2 := crypto.NewPublicKeyFromBase58(cont.BasePub)
 			if er2 != nil {
 				return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", er2)
 			}
@@ -222,40 +493,62 @@ func (s Syncer) doAction(ctx context.Context, fileName string) error {
 				return fmt.Errorf("s.getScript: %w", er2)
 			}
 
-			log := s.logger.Info().
-				Str(fileStr, fileName).
-				Str(address, addr.String()).
-				Str(tag, cont.Tag)
+			log := func() *zerolog.Event {
+				return s.logger.Info().
+					Str(fileStr, fileName).
+					Str(addressStr, addr.String()).
+					Str(tag, cont.Tag)
+			}
 
 			if base64Script == fromBlockchainScript {
-				log.Str(action, skip).Msg(notChanged)
+				log().Str(action, skip).Msg(notChanged)
 				continue
 			}
 
-			setScriptTx, er2 := json.Marshal(proto.NewUnsignedSetScriptWithProofs(
+			unsignedSetScriptTx := proto.NewUnsignedSetScriptWithProofs(
 				1,
 				proto.MainNetScheme,
 				pub,
 				scriptBytes,
 				setScriptFee,
-				uint64(time.Now().UnixMilli()),
-			))
-			if er2 != nil {
-				return fmt.Errorf("s.validateSignBroadcastWait: %w", er2)
+				timestamp(),
+			)
+			doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
+			doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
+			doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
+			if doLpRide || doLpStableRide || doLpStableAddonRide {
+				er := s.validateSignBroadcastWait(
+					ctx,
+					proto.MainNetScheme,
+					unsignedSetScriptTx,
+					crypto.SecretKey{},
+					true,
+				)
+				if er != nil {
+					return fmt.Errorf("s.client.Transactions.Broadcast: %w", er)
+				}
+
+				log().Str(action, deployed).Msg(changed)
+			} else {
+				setScriptTx, er := json.Marshal(unsignedSetScriptTx)
+				if er != nil {
+					return fmt.Errorf("s.validateSignBroadcastWait: %w", er)
+				}
+
+				log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
+				er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
+				if er != nil {
+					return fmt.Errorf("s.printDiff: %w", er)
+				}
 			}
 
-			log.Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
-			er2 = s.printDiff(ctx, fromBlockchainScript, base64Script)
-			if er2 != nil {
-				return fmt.Errorf("s.printDiff: %w", er2)
-			}
 			continue
 		}
 	}
 	return nil
 }
 
-func (s Syncer) preparePathAndScript(ctx context.Context, base64Script string) (string, error) {
+func (s *Syncer) preparePathAndScript(ctx context.Context, fileName, base64Script string) (string, error) {
 	var script string
 	if base64Script != "" {
 		scr, err := s.apiDecompileScript(ctx, strings.NewReader(base64Script))
@@ -270,7 +563,7 @@ func (s Syncer) preparePathAndScript(ctx context.Context, base64Script string) (
 		return "", fmt.Errorf("uuid.NewRandom: %w", err)
 	}
 
-	p := path.Join("..", "tmp", u.String()+".ride")
+	p := path.Join("..", "tmp", fileName+" "+u.String())
 
 	f, err := os.Create(p)
 	if err != nil {
@@ -285,8 +578,8 @@ func (s Syncer) preparePathAndScript(ctx context.Context, base64Script string) (
 	return p, nil
 }
 
-func (s Syncer) printDiff(ctx context.Context, base64Str1, base64Str2 string) error {
-	path1, err := s.preparePathAndScript(ctx, base64Str1)
+func (s *Syncer) printDiff(ctx context.Context, fileName, base64Str1, base64Str2 string) error {
+	path1, err := s.preparePathAndScript(ctx, fileName, base64Str1)
 	defer func() {
 		_ = os.Remove(path1)
 	}()
@@ -294,7 +587,7 @@ func (s Syncer) printDiff(ctx context.Context, base64Str1, base64Str2 string) er
 		return fmt.Errorf("s.preparePathAndScript: %w", err)
 	}
 
-	path2, err := s.preparePathAndScript(ctx, base64Str2)
+	path2, err := s.preparePathAndScript(ctx, fileName, base64Str2)
 	defer func() {
 		_ = os.Remove(path2)
 	}()
@@ -318,7 +611,7 @@ func (s Syncer) printDiff(ctx context.Context, base64Str1, base64Str2 string) er
 	return nil
 }
 
-func (s Syncer) waitMined(ctx context.Context, txHash crypto.Digest) error {
+func (s *Syncer) waitMined(ctx context.Context, txHash crypto.Digest) error {
 	try := 0
 	for {
 		try += 1
@@ -333,13 +626,14 @@ func (s Syncer) waitMined(ctx context.Context, txHash crypto.Digest) error {
 	}
 }
 
-func (s Syncer) validateSignBroadcastWait(
+func (s *Syncer) validateSignBroadcastWait(
 	ctx context.Context,
 	networkByte proto.Scheme,
 	tx proto.Transaction,
 	prv crypto.SecretKey,
+	async bool,
 ) error {
-	_, err := tx.Validate()
+	_, err := tx.Validate(networkByte)
 	if err != nil {
 		return fmt.Errorf("tx.Validate: %w", err)
 	}
@@ -361,18 +655,29 @@ func (s Syncer) validateSignBroadcastWait(
 
 	_, err = s.client.Transactions.Broadcast(ctx, tx)
 	if err != nil {
-		return fmt.Errorf("testnetClient.Transactions.Broadcast: %w", err)
+		return fmt.Errorf("s.client.Transactions.Broadcast: %w", err)
 	}
 
-	err = s.waitMined(ctx, txHash)
-	if err != nil {
-		return fmt.Errorf("waitMined: %w", err)
+	fn := func() error {
+		err = s.waitMined(ctx, txHash)
+		if err != nil {
+			return fmt.Errorf("waitMined: %w", err)
+		}
+		return nil
+	}
+	if async {
+		s.mined.Go(fn)
+	} else {
+		err = fn()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (s Syncer) compileRaw(ctx context.Context, body []byte, compact bool) (string, error) {
+func (s *Syncer) compileRaw(ctx context.Context, body []byte, compact bool) (string, error) {
 	if compact {
 		resp, err := s.apiCompactScript(ctx, bytes.NewReader(body))
 		if err != nil {
@@ -389,7 +694,13 @@ func (s Syncer) compileRaw(ctx context.Context, body []byte, compact bool) (stri
 	}
 }
 
-func (s Syncer) compile(ctx context.Context, body []byte, compact bool) (string, []byte, uint64, error) {
+func (s *Syncer) compile(ctx context.Context, body []byte, compact bool) (string, []byte, uint64, error) {
+	key := base64.StdEncoding.EncodeToString(body) + strconv.FormatBool(compact)
+	val, ok := s.compileCache[key]
+	if ok {
+		return val()
+	}
+
 	base64Script, err := s.compileRaw(ctx, body, compact)
 	if err != nil {
 		return "", nil, 0, fmt.Errorf("s.compileRaw: %w", err)
@@ -401,10 +712,14 @@ func (s Syncer) compile(ctx context.Context, body []byte, compact bool) (string,
 	}
 	setScriptFee := calcSetScriptFee(scriptBytes)
 
-	return base64Script, scriptBytes, setScriptFee, nil
+	res := func() (string, []byte, uint64, error) {
+		return base64Script, scriptBytes, setScriptFee, nil
+	}
+	s.compileCache[key] = res
+	return res()
 }
 
-func (s Syncer) getScript(ctx context.Context, addr proto.Address) (string, error) {
+func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, error) {
 	type withScript struct {
 		Script *string `json:"script"`
 	}
@@ -445,7 +760,7 @@ func (s Syncer) getScript(ctx context.Context, addr proto.Address) (string, erro
 	return *info.Script, nil
 }
 
-func (s Syncer) apiCompactScript(c context.Context, body io.Reader) (string, error) {
+func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, error) {
 	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.client.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
@@ -473,7 +788,7 @@ func (s Syncer) apiCompactScript(c context.Context, body io.Reader) (string, err
 	return compileResult.Script, nil
 }
 
-func (s Syncer) apiDecompileScript(c context.Context, body io.Reader) (string, error) {
+func (s *Syncer) apiDecompileScript(c context.Context, body io.Reader) (string, error) {
 	u := fmt.Sprintf("%s/utils/script/decompile", s.client.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
@@ -507,4 +822,22 @@ func calcSetScriptFee(script []byte) uint64 {
 		return min
 	}
 	return res
+}
+
+func timestamp() uint64 {
+	return uint64(time.Now().UnixMilli())
+}
+
+func findFactory(conts []contract.Contract) (contract.Contract, error) {
+	const (
+		factoryRide = "factory_v2.ride"
+		factoryTag  = "factory_v2"
+	)
+
+	for _, cont := range conts {
+		if cont.File == factoryRide && cont.Tag == factoryTag {
+			return cont, nil
+		}
+	}
+	return contract.Contract{}, errors.New("factory not found")
 }
