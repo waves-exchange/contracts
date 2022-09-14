@@ -990,29 +990,7 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
   let amBalance = amId.getAccBalance()
   let prBalance = prId.getAccBalance()
 
-  let amBalanceNow = amBalance - estimAmAmt
-  let prBalanceNow = prBalance - estimPrAmt
-
-  let (amountBalanceForSwap, priceBalanceForSwap, amountToSwap) =
-    if (outAssetId == amId) then {
-      (prBalanceNow, amBalanceNow, estimPrAmt)
-    } else if (outAssetId == prId) then {
-      (amBalanceNow, prBalanceNow, estimAmAmt)
-    } else throw("wrong outAssetId")
-
-  let yPrecision = 1
-  let exchResult = gwxContract.invoke("calcSwapXToY", [
-    amountToSwap.toString(), # amountAssetAmountBigIntStr
-    amountBalanceForSwap.toString(), # amountAssetBalanceBigIntStr
-    priceBalanceForSwap.toString(), # priceAssetBalanceBigIntStr
-    "", # dBigIntStr
-    A, # amplificatorBigIntStr
-    Amult, # amplificatorPrecisionBigIntStr
-    yPrecision.toString(), # targetXPrecisionBigIntStr
-    Dconv # targetDPrecisionBigIntStr
-  ], []).exactAs[Int]
-
-  let totalGet = exchResult + if (outAssetId == amId) then estimAmAmt else estimPrAmt
+  let totalGet = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[Int]
 
   let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
@@ -1040,16 +1018,48 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
   (state, totalAmount)
 }
 
-# @Callable(i)
-# func getOneTknREADONLY(
-#   outAmount: Int,
-#   outAssetId: String,
-#   slippage: Int,
-#   lpAssetId: String,
-#   lpAmount: Int
-# ) = {
+@Callable(i)
+func getOneTknV2READONLY(
+  outAssetId: String,
+  lpAssetAmount: Int
+) = {
+  let poolConfig = gpc()
+  let lpId = poolConfig[idxLPAsId]
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let r = ego("", lpId, lpAssetAmount, this)
+  let estimAmAmt = r._1
+  let estimPrAmt = r._2
 
-# }
+  let amBalance = amId.getAccBalance()
+  let prBalance = prId.getAccBalance()
+
+  let amBalanceNow = amBalance - estimAmAmt
+  let prBalanceNow = prBalance - estimPrAmt
+
+  let (amountBalanceForSwap, priceBalanceForSwap, amountToSwap) =
+    if (outAssetId == amId) then {
+      (prBalanceNow, amBalanceNow, estimPrAmt)
+    } else if (outAssetId == prId) then {
+      (amBalanceNow, prBalanceNow, estimAmAmt)
+    } else throw("wrong outAssetId")
+
+  let yPrecision = 1
+  let exchResult = gwxContract.invoke("calcSwapXToY", [
+    amountToSwap.toString(), # amountAssetAmountBigIntStr
+    amountBalanceForSwap.toString(), # amountAssetBalanceBigIntStr
+    priceBalanceForSwap.toString(), # priceAssetBalanceBigIntStr
+    "", # dBigIntStr
+    A, # amplificatorBigIntStr
+    Amult, # amplificatorPrecisionBigIntStr
+    yPrecision.toString(), # targetXPrecisionBigIntStr
+    Dconv # targetDPrecisionBigIntStr
+  ], []).exactAs[Int]
+
+  let totalGet = exchResult + if (outAssetId == amId) then estimAmAmt else estimPrAmt
+
+  ([], totalGet)
+}
 
 @Callable(i)
 func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
