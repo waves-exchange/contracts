@@ -541,6 +541,67 @@ func cp(caller: String,
     r
 }
 
+func estimatePutOneTknV2(
+  pmtAmt: Int,
+  pmtAssetId: String,
+  userAddress: String,
+  txId: String
+) = {
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+
+  let amBalance = amId.getAccBalance()
+  let prBalance = prId.getAccBalance()
+
+  let (amBalanceNow, prBalanceNow) =
+    if (txId == "") then (amBalance, prBalance) else {
+      if (pmtAssetId == amId) then {
+        if (amBalance < pmtAmt) then "invalid payment amount".throw() else
+          (amBalance - pmtAmt, prBalance)
+      } else if (pmtAssetId == prId) then {
+        if (prBalance < pmtAmt) then "invalid payment amount".throw() else
+          (amBalance, prBalance - pmtAmt)
+      } else throw("wrong pmtAssetId")
+    }
+
+  let (amBalanceForCalc, prBalanceForCalc) = if (pmtAssetId == amId) then (amBalanceNow, prBalanceNow) else (prBalanceNow, amBalanceNow)
+
+  let xPrecision = 1
+  let result = gwxContract.invoke("calcPutXOnly", [
+    pmtAmt.toString(), # paymentAmountBigIntStr
+    amBalanceForCalc.toString(), # amountAssetBalanceBigIntStr
+    prBalanceForCalc.toString(), # priceAssetBalanceBigIntStr
+    "", # dBigIntStr
+    A, # amplificatorBigIntStr
+    Amult, # amplificatorPrecisionBigIntStr
+    xPrecision.toString(), # targetXPrecisionBigIntStr
+    Dconv # targetDPrecisionBigIntStr
+  ], []).exactAs[(Int, Int)]
+
+  let (amAssetPart, prAssetPart) = if (pmtAssetId == amId) then result else (result._2, result._1)
+
+  let estPut = cp(userAddress,
+    txId,
+    AttachedPayment(amId.fromBase58String(), amAssetPart),
+    AttachedPayment(prId.fromBase58String(), prAssetPart),
+    0,
+    true,
+    true,
+    false,
+    pmtAmt,
+    pmtAssetId
+  )
+
+  let estimLP   = estPut._2
+  let lpAssetId = estPut._7
+  let state     = estPut._9
+  let amDiff    = estPut._10
+  let prDiff    = estPut._11
+
+  (estimLP, lpAssetId, state, amDiff, prDiff)
+}
+
 # managerPublicKeyOrUnit
 func m() = match mpk().getString() {
   case s: String => s.fromBase58String()
@@ -764,51 +825,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   
   if (pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
-
-  let (amBalanceNow, prBalanceNow) =
-    if (pmtAssetId == amId) then {
-      if (amBalance < pmtAmt) then "invalid payment amount".throw() else
-        (amBalance - pmtAmt, prBalance)
-    } else if (pmtAssetId == prId) then {
-      if (prBalance < pmtAmt) then "invalid payment amount".throw() else
-        (amBalance, prBalance - pmtAmt)
-    } else throw("wrong pmtAssetId")
-
-  let (amBalanceForCalc, prBalanceForCalc) = if (pmtAssetId == amId) then (amBalanceNow, prBalanceNow) else (prBalanceNow, amBalanceNow)
-
-  let xPrecision = 1
-  let result = gwxContract.invoke("calcPutXOnly", [
-    pmtAmt.toString(), # paymentAmountBigIntStr
-    amBalanceForCalc.toString(), # amountAssetBalanceBigIntStr
-    prBalanceForCalc.toString(), # priceAssetBalanceBigIntStr
-    "", # dBigIntStr
-    A, # amplificatorBigIntStr
-    Amult, # amplificatorPrecisionBigIntStr
-    xPrecision.toString(), # targetXPrecisionBigIntStr
-    Dconv # targetDPrecisionBigIntStr
-  ], []).exactAs[(Int, Int)]
-
-  let (amAssetPart, prAssetPart) = if (pmtAssetId == amId) then result else (result._2, result._1)
-
-  let estPut = cp(i.caller.toString(),
-    i.transactionId.toBase58String(),
-    AttachedPayment(amId.fromBase58String(), amAssetPart),
-    AttachedPayment(prId.fromBase58String(), prAssetPart),
-    0,
-    true,
-    true,
-    false,
-    pmtAmt,
-    pmtAssetId
-  )
-
-  let estimLP   = estPut._2
-  let lpAssetId = estPut._7
-  let state     = estPut._9
-  let amDiff    = estPut._10
-  let prDiff    = estPut._11
+  let (estimLP, lpAssetId, state, amDiff, prDiff) = estimatePutOneTknV2(pmtAmt, pmtAssetId, userAddress.toString(), i.transactionId.toBase58String())
 
   let emitLpAmt = if (minOutAmount > 0 && estimLP < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
@@ -828,7 +845,17 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
     if(autoStake) then strict ss = stakingContract.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
     else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
 
-  state ++ lpTrnsfr
+  (state ++ lpTrnsfr, emitLpAmt)
+}
+
+@Callable(i)
+func putOneTknV2READONLY(
+  paymentAmount: Int,
+  paymentAssetId: String
+) = {
+  let (estimLP, lpAssetId, state, amDiff, prDiff) = estimatePutOneTknV2(paymentAmount, paymentAssetId, "", "")
+
+  ([], estimLP)
 }
 
 # Put without LP emission
@@ -982,10 +1009,6 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
   let txId58 = i.transactionId.toBase58String()
 
   if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
-
-  let r = ego(txId58, pmtAssetId.toBase58String(), pmtAmt, i.caller)
-  let estimAmAmt = r._1
-  let estimPrAmt = r._2
 
   let amBalance = amId.getAccBalance()
   let prBalance = prId.getAccBalance()
