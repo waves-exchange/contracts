@@ -599,7 +599,7 @@ func estimatePutOneTknV2(
   let amDiff    = estPut._10
   let prDiff    = estPut._11
 
-  (estimLP, lpAssetId, state, amDiff, prDiff)
+  estPut
 }
 
 # managerPublicKeyOrUnit
@@ -825,7 +825,12 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   
   if (pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
-  let (estimLP, lpAssetId, state, amDiff, prDiff) = estimatePutOneTknV2(pmtAmt, pmtAssetId, userAddress.toString(), i.transactionId.toBase58String())
+  let r = estimatePutOneTknV2(pmtAmt, pmtAssetId, userAddress.toString(), i.transactionId.toBase58String())
+  let estimLP   = r._2
+  let lpAssetId = r._7
+  let state     = r._9
+  let amDiff    = r._10
+  let prDiff    = r._11
 
   let emitLpAmt = if (minOutAmount > 0 && estimLP < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
@@ -853,9 +858,54 @@ func putOneTknV2READONLY(
   paymentAmount: Int,
   paymentAssetId: String
 ) = {
-  let (estimLP, lpAssetId, state, amDiff, prDiff) = estimatePutOneTknV2(paymentAmount, paymentAssetId, "", "")
+  let r = estimatePutOneTknV2(paymentAmount, paymentAssetId, "", "")
+  let estimLP   = r._2
+  let lpAssetId = r._7
+  let state     = r._9
+  let amDiff    = r._10
+  let prDiff    = r._11
 
   ([], estimLP)
+}
+
+@Callable(i)
+func putOneTknV2WithBonusREADONLY(
+  paymentAmount: Int,
+  paymentAssetId: String
+) = {
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+
+  let amBalance = amId.getAccBalance()
+  let prBalance = prId.getAccBalance()
+
+  let r = estimatePutOneTknV2(paymentAmount, paymentAssetId, "", "")
+  let estimLP = r._2
+  let curPrice = r._3
+  let lpAssetEmission = r._6
+  let lpAssetId = r._7
+
+  let (amountAssetAmount, priceAssetAmount) = if (paymentAssetId == amId) then {
+    let priceAssetAmount = fraction(paymentAmount, curPrice, scale8)
+    (paymentAmount, priceAssetAmount)
+  } else {
+    let amountAssetAmount = fraction(paymentAmount, scale8, curPrice)
+    (amountAssetAmount, paymentAmount)
+  }
+  
+  let lpAmtBoth = fraction(lpAssetEmission, priceAssetAmount, prBalance)
+  
+  let lpAssetPriceOne = if (paymentAssetId == amId) then {
+    fraction(amountAssetAmount, scale8, estimLP)
+  } else {
+    fraction(priceAssetAmount, scale8, estimLP)
+  }
+
+  let lpAssetPriceBoth = fraction((priceAssetAmount + amountAssetAmount), scale8, lpAmtBoth)
+  let bonus = fraction((lpAssetPriceBoth - lpAssetPriceOne), scale8, lpAssetPriceOne)
+
+  ([], bonus)
 }
 
 # Put without LP emission
