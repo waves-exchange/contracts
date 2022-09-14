@@ -316,6 +316,7 @@ func epo(txId58: String,
                           isEval: Boolean,
                           emitLp: Boolean,
                           isOneAsset: Boolean,
+                          validateSlippage: Boolean,
                           pmtAmt: Int,
                           pmtId: String) = {
     # data from pool config
@@ -379,7 +380,7 @@ func epo(txId58: String,
             let slippageRealX18 = fraction(abs(curPriceX18 - userPriceX18), scale18, curPriceX18)
             let slippageX18 = slippage.t1(scale8)
             # validate slippage
-            if (curPriceX18 != zeroBigInt && slippageRealX18 > slippageX18) then throw("Price slippage " + slippageRealX18.toString() + " > " + slippageX18.toString()) else
+            if (validateSlippage && curPriceX18 != zeroBigInt && slippageRealX18 > slippageX18) then throw("Price slippage " + slippageRealX18.toString() + " > " + slippageX18.toString()) else
 
             let lpEmissionX18 = lpEm.t1(scale8)
             # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
@@ -517,6 +518,7 @@ func cp(caller: String,
               slippage: Int,
               emitLp: Boolean,
               isOneAsset: Boolean,
+              validateSlippage: Boolean,
               pmtAmt: Int,
               pmtId: String) = {
 
@@ -530,6 +532,7 @@ func cp(caller: String,
                       false,
                       emitLp,
                       isOneAsset,
+                      validateSlippage,
                       pmtAmt,
                       pmtId)
 
@@ -619,6 +622,7 @@ func put(slip: Int, autoStake: Boolean) = {
                           slip,
                           true,
                           false,
+                          true,
                           0,
                           "")
 
@@ -710,6 +714,7 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
                           slippage,
                           true,
                           true,
+                          true,
                           pmtAmt,
                           pmtAssetId)
 
@@ -742,7 +747,7 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
 
 # slippage in scale8
 @Callable(i)
-func putOneTknV2(outLp: Int, slippage: Int, autoStake: Boolean) = {
+func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   if (i.payments.size() != 1) then throw("1 pmnt expd") else
 
   let poolConfig = gpc()
@@ -791,9 +796,10 @@ func putOneTknV2(outLp: Int, slippage: Int, autoStake: Boolean) = {
     i.transactionId.toBase58String(),
     AttachedPayment(amId.fromBase58String(), amAssetPart),
     AttachedPayment(prId.fromBase58String(), prAssetPart),
-    slippage,
+    0,
     true,
     true,
+    false,
     pmtAmt,
     pmtAssetId
   )
@@ -804,12 +810,9 @@ func putOneTknV2(outLp: Int, slippage: Int, autoStake: Boolean) = {
   let amDiff    = estPut._10
   let prDiff    = estPut._11
 
-  let emitLpAmt = if (outLp > 0) then {
-    let lpCalcRes = vad(estimLP.toBigInt(), outLp.toBigInt(), slippage.toBigInt())
-    lpCalcRes._2.toInt()
-  } else {
-    estimLP
-  }
+  let emitLpAmt = if (minOutAmount > 0 && estimLP < minOutAmount) then {
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+  } else estimLP
 
   # emit lp on factory
   strict e = fca.invoke("emit", [emitLpAmt], [])
@@ -840,6 +843,7 @@ func putForFree(maxSlpg: Int) = {
                           maxSlpg,
                           false,
                           false,
+                          true,
                           0,
                           "")
     estPut._9
@@ -957,7 +961,7 @@ func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String
 }
 
 @Callable(i)
-func getOneTknV2(outAmount: Int, outAssetId: String, slippage: Int) = {
+func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
   if (i.payments.size() != 1) then throw("1 pmnt expd") else
   let poolConfig = gpc()
   let lpId = poolConfig[idxLPAsId]
@@ -977,7 +981,6 @@ func getOneTknV2(outAmount: Int, outAssetId: String, slippage: Int) = {
 
   let txId58 = i.transactionId.toBase58String()
 
-  if (slippage < 0) then throw("Wrong params") else
   if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
 
   let r = ego(txId58, pmtAssetId.toBase58String(), pmtAmt, i.caller)
@@ -1009,16 +1012,13 @@ func getOneTknV2(outAmount: Int, outAssetId: String, slippage: Int) = {
     Dconv # targetDPrecisionBigIntStr
   ], []).exactAs[Int]
 
-  let totalGet = if (outAssetId == amId) then estimAmAmt + exchResult else estimPrAmt + exchResult
+  let totalGet = exchResult + if (outAssetId == amId) then estimAmAmt else estimPrAmt
 
-  let finalRes = if (outAmount > 0) then {
-    vad(totalGet.toBigInt(), outAmount.toBigInt(), slippage.toBigInt())
-  } else {
-    (true, totalGet.toBigInt())
-  }
+  let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+  } else totalGet
 
-  let (outAm, outPr) = if(outAssetId == amId) then (finalRes._2.toInt(), 0) else (0, finalRes._2.toInt())
-  let totalAmount = outAm + outPr
+  let (outAm, outPr) = if(outAssetId == amId) then (totalAmount, 0) else (0, totalAmount)
 
   let curPrX18 = cpbi(prBalance.t1(prDecimals), amBalance.t1(amDecimals))
   let curPr = curPrX18.f1(scale8)
@@ -1039,6 +1039,17 @@ func getOneTknV2(outAmount: Int, outAssetId: String, slippage: Int) = {
   )
   (state, totalAmount)
 }
+
+# @Callable(i)
+# func getOneTknREADONLY(
+#   outAmount: Int,
+#   outAssetId: String,
+#   slippage: Int,
+#   lpAssetId: String,
+#   lpAmount: Int
+# ) = {
+
+# }
 
 @Callable(i)
 func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
@@ -1217,6 +1228,7 @@ func estimatePutOperationWrapperREADONLY(
       usrAddr,
       isEval,
       emitLp,
+      true,
       false,
       0,
       ""
