@@ -1,0 +1,22 @@
+{
+  "dApp": "3MvXnAcEtL9x3i499UcvTQZPufrT5ZZUEd5",
+  "fee": 500000,
+  "proofs": [],
+  "senderPublicKey": "EsqRXDXnACFAdXz6EPhF1SbKyeV7MVuoyDqmXsMz7ySv",
+  "timestamp": 0,
+  "type": 16,
+  "version": 1,
+  "payment": [{
+    "assetId": "5Sh9KghfkZyhjwuodovDhB6PghDUGBHiAPZ4MkrPgKtX",
+    "amount": 11000000
+  }],
+  "call": {
+    "function": "swapAssetsAToB",
+    "args": [
+      {
+        "type": "string",
+        "value": "25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT"
+      }
+    ]
+  }
+}
