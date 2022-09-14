@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { waitForHeight } from '../api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -16,16 +17,17 @@ const api = create(apiBase);
  * Mocha.Suite & {accounts: Object.<string, number>, votingDuration: number, wxAssetId: string}
  * } MochaSuiteModified
  * */
-describe('vesting_multiasset: createFixedDepositFor.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should successfully createFixedDepositFor', async function () {
+describe('vesting_multiasset: claim.mjs', /** @this {MochaSuiteModified} */() => {
+  it('should successfully createDepositFor and claim', async function () {
     const vesting = address(this.accounts.vesting_multiasset, chainId);
     const user1 = address(this.accounts.user1, chainId);
 
     const currentHeight = await api.blocks.fetchHeight();
-    const releaseBlock = currentHeight.height + 10;
+    const releaseBlock = currentHeight.height + 1;
+
     const amount = 10000;
 
-    const invokeTx = invokeScript({
+    const createFixedDepositFor = invokeScript({
       dApp: vesting,
       payment: [{
         assetId: this.wxAssetId,
@@ -40,14 +42,15 @@ describe('vesting_multiasset: createFixedDepositFor.mjs', /** @this {MochaSuiteM
       },
       chainId,
     }, this.accounts.user3);
-    await api.transactions.broadcast(invokeTx, {});
-    await ni.waitForTx(invokeTx.id, { apiBase });
+    await api.transactions.broadcast(createFixedDepositFor, {});
+    await ni.waitForTx(createFixedDepositFor.id, { apiBase });
 
-    const { stateChanges } = await api.transactions.fetchInfo(invokeTx.id);
-    expect(stateChanges.data).to.eql([{
-      type: 'integer',
-      key: `%s%s%s%d__fixedDeposit__${this.wxAssetId}__${user1}__${releaseBlock}`,
-      value: amount,
-    }]);
+    await waitForHeight(releaseBlock + 1);
+
+    const expr = `claimFixedREADONLY(\"${this.wxAssetId}\", \"${user1}\", ${releaseBlock})`; /* eslint-disable-line */
+    const response = await api.utils.fetchEvaluate(vesting, expr);
+    const checkData = response.result.value._2.value;  /* eslint-disable-line */
+
+    expect(checkData).to.eql(amount); /* eslint-disable-line */
   });
 });
