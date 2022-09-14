@@ -59,7 +59,7 @@ export const mochaHooks = {
 
     const assetAAmount = 100e6;
     const massTransferAssetATx = massTransfer({
-      transfers: names.slice(-1).map((name) => ({
+      transfers: names.slice(-2).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: assetAAmount,
       })),
       assetId: this.assetAId,

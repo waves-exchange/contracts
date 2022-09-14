@@ -15,7 +15,7 @@ describe('otc_multiasset: swapAssetsAToBRejectIfFeeNegative.mjs', /** @this {Moc
   it('should reject swapAssetsAToB', async function () {
     const amountAssetA = this.minAmountDeposit + 1;
 
-    const expectedRejectMessage = 'multiasset_otc.ride: Swap amount fail, amount is to small.';
+    const expectedRejectMessage = 'otc_multiasset.ride: Swap amount fail, amount is to small.';
 
     const setDepositFeePermilleTx = data({
       additionalFee: 4e5,

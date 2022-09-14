@@ -15,7 +15,7 @@ describe('otc_multiasset: swapAssetsAToBRejectIfAmountIsSmall.mjs', /** @this {M
   it('should reject swapAssetsAToB', async function () {
     const amountAssetA = 1;
 
-    const expectedRejectMessage = 'multiasset_otc.ride: Swap amount fail, amount is to small.';
+    const expectedRejectMessage = 'otc_multiasset.ride: Swap amount fail, amount is to small.';
 
     const swapAssetsAToBTx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),

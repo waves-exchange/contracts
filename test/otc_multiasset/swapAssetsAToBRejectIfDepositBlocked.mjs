@@ -18,7 +18,7 @@ describe('otc_multiasset: swapAssetsAToBRejectIfDepositBlocked.mjs', /** @this {
   it('should reject swapAssetsAToB', async function () {
     const amountAssetA = 1;
 
-    const expectedRejectMessage = 'multiasset_otc.ride: The couple\'s deposit is blocked.';
+    const expectedRejectMessage = 'otc_multiasset.ride: The couple\'s deposit is blocked.';
 
     const setAssetsPairStatusTx = data({
       additionalFee: 4e5,

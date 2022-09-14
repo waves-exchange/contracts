@@ -43,7 +43,7 @@ describe('otc_multiasset: swapAssetsAToB.mjs', /** @this {MochaSuiteModified} */
       type: 'integer',
       value: expectedBalance,
     }, {
-      key: `%s%s%s%s__totalCommissionsCollected__deposit__${this.assetAId}__${this.assetBId}`,
+      key: `%s%s%s%s__totalFeeCollected__deposit__${this.assetAId}__${this.assetBId}`,
       type: 'integer',
       value: expectedTotalCommissionsCollectedDeposit,
     }]);

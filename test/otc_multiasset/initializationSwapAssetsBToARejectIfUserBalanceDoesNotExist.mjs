@@ -11,7 +11,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('otc_multiasset: initializationSwapAssetsBToARejectIfAssetPairNotExist.mjs', /** @this {MochaSuiteModified} */() => {
+describe('otc_multiasset: initializationSwapAssetsBToARejectIfUserBalanceDoesNotExist.mjs', /** @this {MochaSuiteModified} */() => {
   it('should reject initializationSwapAssetsBToA', async function () {
     const amountAssetB = this.minAmountDeposit + 1;
 
@@ -27,7 +27,6 @@ describe('otc_multiasset: initializationSwapAssetsBToARejectIfAssetPairNotExist.
         function: 'initializationSwapAssetsBToA',
         args: [
           { type: 'string', value: this.assetAId },
-          { type: 'string', value: this.assetBId },
         ],
       },
       chainId,

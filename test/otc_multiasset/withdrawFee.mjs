@@ -23,7 +23,7 @@ describe('otc_multiasset: withdrawFee.mjs', /** @this {MochaSuiteModified} */() 
       additionalFee: 4e5,
       senderPublicKey: publicKey(this.accounts.otcMultiasset),
       data: [{
-        key: `%s%s%s%s__totalCommissionsCollected__deposit__${this.assetAId}__${this.assetBId}`,
+        key: `%s%s%s%s__totalFeeCollected__deposit__${this.assetAId}__${this.assetBId}`,
         type: 'integer',
         value: toWithdrawA,
       }],
@@ -36,7 +36,7 @@ describe('otc_multiasset: withdrawFee.mjs', /** @this {MochaSuiteModified} */() 
       additionalFee: 4e5,
       senderPublicKey: publicKey(this.accounts.otcMultiasset),
       data: [{
-        key: `%s%s%s%s__totalCommissionsCollected__withdraw__${this.assetAId}__${this.assetBId}`,
+        key: `%s%s%s%s__totalFeeCollected__withdraw__${this.assetAId}__${this.assetBId}`,
         type: 'integer',
         value: toWithdrawB,
       }],
@@ -63,11 +63,11 @@ describe('otc_multiasset: withdrawFee.mjs', /** @this {MochaSuiteModified} */() 
     expect(await checkStateChanges(stateChanges, 2, 2, 0, 0, 0, 0, 0, 0, 0)).to.eql(true);
 
     expect(stateChanges.data).to.eql([{
-      key: `%s%s%s%s__totalCommissionsCollected__deposit__${this.assetAId}__${this.assetBId}`,
+      key: `%s%s%s%s__totalFeeCollected__deposit__${this.assetAId}__${this.assetBId}`,
       type: 'integer',
       value: expectedTotalCommissionsCollectedDeposit,
     }, {
-      key: `%s%s%s%s__totalCommissionsCollected__withdraw__${this.assetAId}__${this.assetBId}`,
+      key: `%s%s%s%s__totalFeeCollected__withdraw__${this.assetAId}__${this.assetBId}`,
       type: 'integer',
       value: expectedTotalCommissionsCollectedWithdraw,
     }]);
