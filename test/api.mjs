@@ -8,8 +8,7 @@ export const api = create(apiBase);
 
 export const broadcastAndWait = async (tx) => {
   await api.transactions.broadcast(tx, {});
-  await nodeInteraction.waitForTx(tx.id, { apiBase });
-  return api.transactions.fetchInfo(tx.id);
+  return nodeInteraction.waitForTx(tx.id, { apiBase });
 };
 
 export const waitForTx = (txId) => nodeInteraction.waitForTx(txId, { apiBase });
