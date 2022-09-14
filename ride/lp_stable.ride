@@ -905,7 +905,7 @@ func putOneTknV2WithBonusREADONLY(
   let lpAssetPriceBoth = fraction((priceAssetAmount + amountAssetAmount), scale8, lpAmtBoth)
   let bonus = fraction((lpAssetPriceBoth - lpAssetPriceOne), scale8, lpAssetPriceOne)
 
-  ([], bonus)
+  ([], (estimLP, bonus))
 }
 
 # Put without LP emission
