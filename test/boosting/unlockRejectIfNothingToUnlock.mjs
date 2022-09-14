@@ -1,12 +1,9 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address, publicKey } from '@waves/ts-lib-crypto';
-import {
-  data,
-  invokeScript,
-  nodeInteraction as ni,
-} from '@waves/waves-transactions';
+import { data, invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { waitForHeight } from '../api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -16,67 +13,60 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: increaseLockRejectIfLockDurationNewIsLessThenMinLockDuration.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: unlockRejectIfNothingToUnlock.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should reject increaseLock',
+    'should reject unlock',
     async function () {
-      const deltaDuration = 1;
-      const duration = this.maxDuration - 1;
+      const duration = 3;
       const assetAmount = this.minLockAmount;
-      const referrer = '';
-      const signature = 'base64:';
 
-      const expectedRejectMessage = `lockDurationNew is less then minLockDuration=${this.minDuration}`;
-
-      const lockRefTx = invokeScript({
+      const lockTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
         call: {
-          function: 'lockRef',
+          function: 'lock',
           args: [
             { type: 'integer', value: duration },
-            { type: 'string', value: referrer },
-            { type: 'binary', value: signature },
           ],
         },
         chainId,
       }, this.accounts.user1);
-      await api.transactions.broadcast(lockRefTx, {});
-      await ni.waitForTx(lockRefTx.id, { apiBase });
+      await api.transactions.broadcast(lockTx, {});
+      const { height } = await ni.waitForTx(lockTx.id, { apiBase });
+
+      const expectedRejectMessage = 'nothing to unlock';
 
       const setLockTx = data({
         additionalFee: 4e5,
         senderPublicKey: publicKey(this.accounts.boosting),
-        data: [
-          {
-            key: `%s%s__lock__${address(this.accounts.user1, chainId)}`,
-            type: 'string',
-            value: '%d%d%d%d%d%d%d%d__0__0__0__0__0__0__0__0',
-          },
-        ],
+        data: [{
+          key: `%s%s__lock__${address(this.accounts.user1, chainId)}`,
+          type: 'string',
+          value: '%d%d%d%d%d%d%d%d__0__0__0__0__0__0__0__0',
+        }],
         chainId,
       }, this.accounts.manager);
       await api.transactions.broadcast(setLockTx, {});
       await ni.waitForTx(setLockTx.id, { apiBase });
 
-      const increaseLockTx = invokeScript({
+      await waitForHeight(height + duration);
+
+      const unlockTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
-        payment: [
-          { assetId: this.wxAssetId, amount: assetAmount },
-        ],
+        payment: [],
         call: {
-          function: 'increaseLock',
+          function: 'unlock',
           args: [
-            { type: 'integer', value: deltaDuration },
+            { type: 'string', value: address(this.accounts.user1, chainId) },
           ],
         },
         chainId,
       }, this.accounts.user1);
 
       await expect(
-        api.transactions.broadcast(increaseLockTx, {}),
+        api.transactions.broadcast(unlockTx, {}),
       ).to.be.rejectedWith(
         `Error while executing account-script: ${expectedRejectMessage}`,
       );

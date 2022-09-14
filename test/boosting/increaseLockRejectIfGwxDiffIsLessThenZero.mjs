@@ -16,17 +16,17 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: increaseLockRejectIfLockDurationNewIsLessThenMinLockDuration.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: increaseLockRejectIfGwxDiffIsLessThenZero.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should reject increaseLock',
     async function () {
-      const deltaDuration = 1;
+      const deltaDuration = 0;
       const duration = this.maxDuration - 1;
       const assetAmount = this.minLockAmount;
       const referrer = '';
       const signature = 'base64:';
-
-      const expectedRejectMessage = `lockDurationNew is less then minLockDuration=${this.minDuration}`;
+      const userAmount = -10000000000000;
+      const lockEnd = this.maxDuration - 1;
 
       const lockRefTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
@@ -53,13 +53,37 @@ describe('boosting: increaseLockRejectIfLockDurationNewIsLessThenMinLockDuration
           {
             key: `%s%s__lock__${address(this.accounts.user1, chainId)}`,
             type: 'string',
-            value: '%d%d%d%d%d%d%d%d__0__0__0__0__0__0__0__0',
+            value: `%d%d%d%d%d%d%d%d__0__${userAmount}__${lockEnd}__0__0__0__0__0`,
           },
         ],
         chainId,
       }, this.accounts.manager);
       await api.transactions.broadcast(setLockTx, {});
       await ni.waitForTx(setLockTx.id, { apiBase });
+
+      const { value: config } = await api.addresses.fetchDataKey(
+        address(this.accounts.boosting, chainId),
+        '%s__config',
+      );
+
+      const configList = config.split('__');
+      configList[3] = '-2';
+      const newConfig = configList.join('__');
+
+      const setConfigTx = data({
+        additionalFee: 4e5,
+        senderPublicKey: publicKey(this.accounts.boosting),
+        data: [
+          {
+            key: '%s__config',
+            type: 'string',
+            value: newConfig,
+          },
+        ],
+        chainId,
+      }, this.accounts.manager);
+      await api.transactions.broadcast(setConfigTx, {});
+      await ni.waitForTx(setConfigTx.id, { apiBase });
 
       const increaseLockTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
@@ -74,6 +98,15 @@ describe('boosting: increaseLockRejectIfLockDurationNewIsLessThenMinLockDuration
         },
         chainId,
       }, this.accounts.user1);
+
+      const { height: currentHeight } = await api.blocks.fetchHeight();
+      const remainingDuration = lockEnd - currentHeight;
+      const lockDurationNew = remainingDuration + deltaDuration;
+      const MULT8 = 100000000;
+      const coeffX8 = Math.floor((lockDurationNew * MULT8) / this.maxDuration);
+      const userAmountNew = userAmount + this.minLockAmount;
+      const expectedGwxDiff = Math.floor((userAmountNew * coeffX8) / MULT8);
+      const expectedRejectMessage = `gwxDiff is less then 0: ${expectedGwxDiff}`;
 
       await expect(
         api.transactions.broadcast(increaseLockTx, {}),
