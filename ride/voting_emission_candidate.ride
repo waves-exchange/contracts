@@ -173,7 +173,6 @@ func suggest(amountAssetId: String, priceAssetId: String) = {
     info.scripted == false || "asset is smart".throw(),
     payment.assetId.value().toBase58String() == keyWxAssetId.getString().value() || "invalid fee asset".throw(),
     payment.amount == keyFeeAmount.getInteger().value() || "invalid fee amount".throw(),
-    i.isManager() || priceAssetId == keyUsdnAssetId.getString().value() || "priceAssetId is not USDN".throw(),
     keyInListAssetId(amountAssetId, priceAssetId).getInteger() == unit || "already in voting list".throw(),
     !votingEmissionContract.getBoolean(pool.keyInList()).valueOrElse(false) || "pool is in emission voting list".throw()
   ]

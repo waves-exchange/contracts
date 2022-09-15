@@ -77,7 +77,6 @@ func mustManager(i: Invocation) = {
   }
 }
 
-#exception handling
 func throwErr(msg: String) = ["otc_multiasset.ride:", msg].makeString(" ").throw()
 
 #registering a new pair of assets
@@ -225,6 +224,7 @@ func confirmManager() = {
     DeleteEntry(keyPendingManagerPublicKey())
   ]
 }
+
 @Verifier(tx)
 func verify () = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
@@ -232,4 +232,3 @@ func verify () = {
     case _: Unit => tx.senderPublicKey
   }
   sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
-}
