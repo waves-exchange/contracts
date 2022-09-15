@@ -11,7 +11,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('otc_multiasset: swapAssetsAToBRejectIfAmountIsSmall.mjs', /** @this {MochaSuiteModified} */() => {
+describe('otc_multiasset: swapAssetsAToBRejectIfDepositAmountLessThanMinimum.mjs', /** @this {MochaSuiteModified} */() => {
   it('should reject swapAssetsAToB', async function () {
     const amountAssetA = 1;
 
