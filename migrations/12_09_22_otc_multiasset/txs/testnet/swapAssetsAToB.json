@@ -7,8 +7,8 @@
   "type": 16,
   "version": 1,
   "payment": [{
-    "assetId": "5Sh9KghfkZyhjwuodovDhB6PghDUGBHiAPZ4MkrPgKtX",
-    "amount": 11000000
+    "assetId": "A7Ksh7fXyqm1KhKAiK3bAB2aiPSitQQF6v1pyu9SS3FR",
+    "amount": 5000000
   }],
   "call": {
     "function": "swapAssetsAToB",
