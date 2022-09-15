@@ -159,7 +159,7 @@ func initializationSwapAssetsBToA(assetA: String) = {
     let newBalance = currentUserBalance - (toWithdraw + fee)
 
     strict checkBalance = newBalance >= 0 || "Swap amount fail, amount is to small.".throwErr()
-    strict checkPayment = toWithdraw > minAmountWithdraw || "Swap amount fail, amount is to small.".throwErr()
+    strict checkPayment = toWithdraw >= minAmountWithdraw || "The withdraw amount is less than the minimum.".throwErr()
     strict checkProcess = keyProcessInProgress(userAddress, assetA, assetB, assetLockHeight).getInteger().valueOrElse(0) == 0 || "At this height, there is already an exchange of this pair.".throwErr()
 
     [
