@@ -77,8 +77,7 @@ func mustManager(i: Invocation) = {
   }
 }
 
-#exception handling
-func throwErr(msg: String) = ["multiasset_otc.ride:", msg].makeString(" ").throw()
+func throwErr(msg: String) = ["otc_multiasset.ride:", msg].makeString(" ").throw()
 
 #registering a new pair of assets
 @Callable(i)
@@ -120,9 +119,9 @@ func swapAssetsAToB(assetB: String) = {
     let totalCommissions = keyTotalFeeCollectedDeposit(assetA, assetB).getInteger().valueOrElse(0)
 
     let pairStaus = keyAssetsPairStatus(assetA, assetB).getInteger().value()
-    
+
     strict checkPairStatus = pairStaus == 0 || "The couple's deposit is blocked.".throwErr()
-    strict checkPayment = payment.amount < minAmountDeposit || "Swap amount fail, amount is to small.".throwErr()
+    strict checkPayment = toDeposit > minAmountDeposit || "Swap amount fail, amount is to small.".throwErr()
 
     let newBalance = currentUserBalance + toDeposit - fee
     strict checkBalance = newBalance > 0 || "Swap amount fail, amount is to small.".throwErr()
