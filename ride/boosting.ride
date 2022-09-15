@@ -64,7 +64,7 @@ let IdxFactoryCfgBirdsDapp      = 11
 
 func keyFactoryCfg()      = "%s__factoryConfig"
 func keyFactoryLp2AssetsMapping(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
-func keyFactoryLpList()   = "%s__lpTokensList"
+func keyFactoryLpList()   = "%s__lpTokensList" # not used anymore
 func keyFactoryLpAssetToPoolContractAddress(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
 func keyFactoryPoolWeight(contractAddress: String) = { ["%s%s", "poolWeight", contractAddress].makeString(SEP) }
 func keyFactoryPoolWeightHistory(poolAddress: String, num: Int) = {"%s%s__poolWeight__" + poolAddress + "__" + num.toString()}

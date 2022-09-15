@@ -1,7 +1,7 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
-import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import { address, publicKey } from '@waves/ts-lib-crypto';
+import { data, invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 
 chai.use(chaiAsPromised);
@@ -12,30 +12,51 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should successfully putOneTkn with autoStake true', async function () {
+describe('lp_stable: putOneTknFee.mjs', /** @this {MochaSuiteModified} */() => {
+  const feePerMille = 1;
+  let usdtAssetId;
+
+  before(async function () {
+    usdtAssetId = this.usdtAssetId;
+
+    const setFeePerMilleTx = data({
+      additionalFee: 4e5,
+      senderPublicKey: publicKey(this.accounts.lpStable),
+      data: [{
+        key: '%s__feePermille',
+        type: 'integer',
+        value: feePerMille,
+      }],
+      chainId,
+    }, this.accounts.manager);
+    await api.transactions.broadcast(setFeePerMilleTx, {});
+    await ni.waitForTx(setFeePerMilleTx.id, { apiBase });
+  });
+
+  it('should successfully putOneTkn with autoStake false', async function () {
     const amAssetPart = 1e8;
     const prAssetPart = 1e8;
-    const outLp = 1e10;
-    const slipByUser = 1e3;
-    const autoStake = true;
-    const usdtAmount = 1e8;
+    const outLp = 1e7;
+    const slipByUser = 1e11;
+    const autoStake = false;
+    const usdtAmount = 1e10;
 
-    const expectedPrice = 1e8;
-    const expectedPriceHistory = 1e8;
-    const expectedInAmtAssetAmt = 1e8;
+    const expectedPrice = 90909090;
+    const expectedPriceHistory = 90909090;
+    const expectedInAmtAssetAmt = 9990000000;
     const expectedInPriceAssetAmt = 0;
     const expectedOutLpAmt = 1e10;
     const expectedSlippageReal = 0;
     const expectedSlipageAmAmt = 0;
     const expectedSlipagePrAmt = 0;
+    const expectedFee = (usdtAmount * feePerMille) / 1000;
 
     const lpStable = address(this.accounts.lpStable, chainId);
 
     const putOneTkn = invokeScript({
       dApp: lpStable,
       payment: [
-        { assetId: this.usdtAssetId, amount: usdtAmount },
+        { assetId: usdtAssetId, amount: usdtAmount },
       ],
       call: {
         function: 'putOneTkn',
@@ -69,12 +90,21 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
       value: `%d%d%d%d%d%d%d%d%d%d__${expectedInAmtAssetAmt}__${expectedInPriceAssetAmt}__${expectedOutLpAmt}__${expectedPrice}__${slipByUser}__${expectedSlippageReal}__${height}__${timestamp}__${expectedSlipageAmAmt}__${expectedSlipagePrAmt}`,
     }]);
 
+    expect(stateChanges.transfers).to.eql([{
+      address: address(this.accounts.user1, chainId),
+      asset: this.lpStableAssetId,
+      amount: outLp,
+    }, {
+      address: address(this.accounts.matcher, chainId),
+      asset: this.usdtAssetId,
+      amount: expectedFee,
+    }]);
+
     expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
       .to.deep.include.members([
         [address(this.accounts.gwxReward, chainId), 'calcD'],
         [address(this.accounts.gwxReward, chainId), 'calcD'],
         [address(this.accounts.factoryV2, chainId), 'emit'],
-        [address(this.accounts.staking, chainId), 'stake'],
       ]);
   });
 });
