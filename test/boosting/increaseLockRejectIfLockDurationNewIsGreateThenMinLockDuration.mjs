@@ -16,17 +16,17 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: increaseLockRejectIfLockDurationNewIsLessThenMinLockDuration.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: increaseLockRejectIfLockDurationNewIsGreateThenMinLockDuration.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should reject increaseLock',
     async function () {
-      const deltaDuration = 1;
+      const deltaDuration = this.maxDuration + 1;
       const duration = this.maxDuration - 1;
       const assetAmount = this.minLockAmount;
       const referrer = '';
       const signature = 'base64:';
 
-      const expectedRejectMessage = `lockDurationNew is less then minLockDuration=${this.minDuration}`;
+      const expectedRejectMessage = `deltaDuration + existedLockDuration is greater then maxLockDuration=${this.maxDuration}`;
 
       const lockRefTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
