@@ -14,10 +14,11 @@ const chainId = 'R';
 describe('otc_multiasset: swapAssetsAToB.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully swapAssetsAToB', async function () {
     const amountAssetA = this.minAmountDeposit + 1;
+    const fee = Math.floor(amountAssetA / 1000) * this.depositFee;
 
-    const expectedBalance = 4985001;
+    const expectedBalance = amountAssetA - fee;
     const expectedTotalCommissionsCollectedDeposit = 15000;
-    const expectedAmountAssetB = amountAssetA;
+    const expectedAmountAssetB = amountAssetA - fee;
 
     const swapAssetsAToBTx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),

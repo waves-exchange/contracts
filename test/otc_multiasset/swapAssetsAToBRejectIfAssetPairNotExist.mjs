@@ -19,7 +19,7 @@ describe('otc_multiasset: swapAssetsAToBRejectIfAssetPairNotExist.mjs', /** @thi
   it('should reject swapAssetsAToB', async function () {
     const amountSomeAsset = 1;
 
-    const expectedRejectMessage = 'This asset pair does not exist.';
+    const expectedRejectMessage = 'otc_multiasset.ride: This asset pair does not exist.';
 
     const someAssetIssueTx = issue({
       name: 'someAsset',
