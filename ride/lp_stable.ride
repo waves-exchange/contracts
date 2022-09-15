@@ -1135,6 +1135,39 @@ func getOneTknV2READONLY(
 }
 
 @Callable(i)
+func getOneTknV2WithBonusREADONLY(
+  outAssetId: String,
+  lpAssetAmount: Int
+) = {
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let lpId = poolConfig[idxLPAsId]
+
+  let amBalance = amId.getAccBalance()
+  let prBalance = prId.getAccBalance()
+
+  let totalGet = this.invoke("getOneTknV2READONLY", [outAssetId, lpAssetAmount], []).exactAs[Int]
+
+  let r = ego(
+    "",
+    lpId,
+    lpAssetAmount,
+    this
+  )
+
+  let outAmAmt = r._1
+  let outPrAmt = r._2
+  
+  let lpAssetPriceOne = fraction(totalGet, scale8, lpAssetAmount)
+
+  let lpAssetPriceBoth = fraction((outAmAmt + outPrAmt), scale8, lpAssetAmount)
+  let bonus = fraction((lpAssetPriceOne - lpAssetPriceBoth), scale8, lpAssetPriceBoth)
+
+  ([], (totalGet, bonus))
+}
+
+@Callable(i)
 func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
   let r = cg(i)
   let outAmAmt    = r._1
