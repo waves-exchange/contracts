@@ -232,3 +232,4 @@ func verify () = {
     case _: Unit => tx.senderPublicKey
   }
   sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}
