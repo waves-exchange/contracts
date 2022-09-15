@@ -78,7 +78,10 @@ func mustManager(i: Invocation) = {
 }
 
 #exception handling
-func throwErr(msg: String) = ["otc_multiasset.ride:", msg].makeString(" ").throw()
+func fmtErr(msg: String) = ["otc_multiasset.ride:", msg].makeString(" ")
+
+func throwErr(msg: String) = msg.fmtErr().throw()
+
 
 #registering a new pair of assets
 @Callable(i)
@@ -110,7 +113,7 @@ func swapAssetsAToB(assetB: String) = {
     let asset = assetB.value().fromBase58String()
     let userAddress = i.caller.toString()
 
-    let minAmountDeposit = keyMinAmountDeposit(assetA, assetB).getInteger().valueOrErrorMessage("This asset pair does not exist.")
+    let minAmountDeposit = keyMinAmountDeposit(assetA, assetB).getInteger().valueOrErrorMessage("This asset pair does not exist.".fmtErr())
     let toDeposit = payment.amount
 
     let depositFee = keyDepositFeePermille(assetA, assetB).getInteger().valueOrElse(0)
@@ -122,15 +125,15 @@ func swapAssetsAToB(assetB: String) = {
     let pairStaus = keyAssetsPairStatus(assetA, assetB).getInteger().value()
 
     strict checkPairStatus = pairStaus == 0 || "The couple's deposit is blocked.".throwErr()
-    strict checkPayment = toDeposit > minAmountDeposit || "Swap amount fail, amount is to small.".throwErr()
+    strict checkPayment = toDeposit >= minAmountDeposit || "The deposit amount is less than the minimum.".throwErr()
 
     let newBalance = currentUserBalance + toDeposit - fee
-    strict checkBalance = newBalance > 0 || "Swap amount fail, amount is to small.".throwErr()
+    strict checkBalance = newBalance > 0 || "The final balance is less than or equal to 0.".throwErr()
 
     [
         IntegerEntry(keyBalance(assetA, assetB, userAddress), newBalance),
         IntegerEntry(keyTotalFeeCollectedDeposit(assetA, assetB), totalCommissions + fee),
-        ScriptTransfer(i.caller, toDeposit, asset)
+        ScriptTransfer(i.caller, toDeposit - fee, asset)
     ]
 }
 
@@ -138,30 +141,31 @@ func swapAssetsAToB(assetB: String) = {
 @Callable(i)
 func initializationSwapAssetsBToA(assetA: String) = {
     let payment = i.payments[0].value()
-    let amount = payment.amount
+    let toWithdraw = payment.amount
     let assetB = payment.assetId.value().toBase58String()
     let userAddress = i.caller.toString()
 
-    let minAmountDeposit = keyMinAmountWithdraw(assetA, assetB).getInteger().valueOrErrorMessage("This asset pair does not exist.")
+    let minAmountWithdraw = keyMinAmountWithdraw(assetA, assetB).getInteger().valueOrErrorMessage("The minimum withdrawal amount for this pair of assets is not set.".fmtErr())
 
     let assetLockHeight = height + keyWithdrawDelay(assetA, assetB).getInteger().valueOrElse(0)
 
-    let currentUserBalance = keyBalance(assetA, assetB, userAddress).getInteger().valueOrErrorMessage("This user balance does not exist.")
+    let currentUserBalance = keyBalance(assetA, assetB, userAddress).getInteger().valueOrErrorMessage("This user balance does not exist.".fmtErr())
 
     let totalCommissions = keyTotalFeeCollectedDeposit(assetA, assetB).getInteger().valueOrElse(0)
 
     let withdrawFeePermilleKey = keyWithdrawFeePermille(assetA, assetB)
     let withdrawFee = withdrawFeePermilleKey.getInteger().valueOrElse(0)
-    let fee = amount / 1000 * withdrawFee
-    let newBalance = currentUserBalance - amount - fee
+    let fee = toWithdraw / 1000 * withdrawFee
+    let newBalance = currentUserBalance - (toWithdraw + fee)
 
-    strict checkBalance = newBalance > 0 || "Swap amount fail, amount is to small.".throwErr()
+    strict checkBalance = newBalance >= 0 || "Swap amount fail, amount is to small.".throwErr()
+    strict checkPayment = toWithdraw > minAmountWithdraw || "Swap amount fail, amount is to small.".throwErr()
     strict checkProcess = keyProcessInProgress(userAddress, assetA, assetB, assetLockHeight).getInteger().valueOrElse(0) == 0 || "At this height, there is already an exchange of this pair.".throwErr()
 
     [
         IntegerEntry(keyAssetLockTime(assetA, assetB, userAddress), assetLockHeight),
         IntegerEntry(keyBalance(assetA, assetB, userAddress), newBalance),
-        IntegerEntry(keyProcessInProgress(userAddress, assetA, assetB, assetLockHeight), amount - fee),
+        IntegerEntry(keyProcessInProgress(userAddress, assetA, assetB, assetLockHeight), toWithdraw - fee),
         IntegerEntry(keyTotalFeeCollectedWithdraw(assetA, assetB), totalCommissions + fee)
     ]
 }
@@ -225,6 +229,7 @@ func confirmManager() = {
     DeleteEntry(keyPendingManagerPublicKey())
   ]
 }
+
 @Verifier(tx)
 func verify () = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
