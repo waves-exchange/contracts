@@ -17,13 +17,13 @@ const api = create(apiBase);
  * Mocha.Suite & {accounts: Object.<string, number>, votingDuration: number, wxAssetId: string}
  * } MochaSuiteModified
  * */
-describe('vesting_multiasset: claim.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should successfully createDepositFor and claim', async function () {
+describe('vesting_multiasset: claimFixedFor.mjs', /** @this {MochaSuiteModified} */() => {
+  it('should successfully createDepositFor and claimFixedFor', async function () {
     const vesting = address(this.accounts.vesting_multiasset, chainId);
     const user1 = address(this.accounts.user1, chainId);
 
     const currentHeight = await api.blocks.fetchHeight();
-    const releaseBlock = currentHeight.height + 1;
+    const releaseBlock = currentHeight.height + 10;
 
     const amount = 10000;
 
