@@ -76,7 +76,7 @@ export const mochaHooks = {
     const lockAssetIdStr = this.wxAssetId;
 
     this.minLockAmount = 500000000;
-    this.minDuration = 10;
+    this.minDuration = 2;
     this.maxDuration = 2102400;
     const mathContract = address(this.accounts.mathContract, chainId);
 

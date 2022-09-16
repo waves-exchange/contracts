@@ -12,7 +12,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: lockRef.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: lockRefIfRefferAndSignatureExist.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully lockRef',
     async function () {

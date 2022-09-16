@@ -12,33 +12,30 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: lockRefRejectIfInvalidPayment.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: claimWxBoostRejectIfCallerIsNotStakingContract.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should reject lockRef',
+    'should reject claimWxBoost',
     async function () {
-      const boosting = address(this.accounts.boosting, chainId);
-      const duration = 0;
-      const referrer = '';
-      const signature = 'base64:';
+      const lpAssetIdStr = '';
+      const userAddressStr = '';
 
-      const expectedRejectMessage = 'invalid payment - exact one payment must be attached';
+      const expectedRejectMessage = 'permissions denied';
 
-      const lockRefTx = invokeScript({
-        dApp: boosting,
+      const claimWxBoostTx = invokeScript({
+        dApp: address(this.accounts.boosting, chainId),
         payment: [],
         call: {
-          function: 'lockRef',
+          function: 'claimWxBoost',
           args: [
-            { type: 'integer', value: duration },
-            { type: 'string', value: referrer },
-            { type: 'string', value: signature },
+            { type: 'string', value: lpAssetIdStr },
+            { type: 'string', value: userAddressStr },
           ],
         },
         chainId,
       }, this.accounts.user1);
 
       await expect(
-        api.transactions.broadcast(lockRefTx, {}),
+        api.transactions.broadcast(claimWxBoostTx, {}),
       ).to.be.rejectedWith(
         `Error while executing account-script: ${expectedRejectMessage}`,
       );

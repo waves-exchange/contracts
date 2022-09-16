@@ -164,6 +164,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		}
 	}
 
+	s.logger.Info().Msg("waiting transactions is being mined...")
 	err = s.mined.Wait()
 	if err != nil {
 		return fmt.Errorf("s.mined.Wait: %w", err)
@@ -289,7 +290,7 @@ func (s *Syncer) doHash(
 				Str("key", key)
 		}
 
-		if actualHash != newHashStr && actualHash != "" {
+		if actualHash != newHashStr {
 			tx, e := json.Marshal(dataTx)
 			if e != nil {
 				return false, fmt.Errorf("json.Marshal: %w", e)
@@ -306,13 +307,13 @@ func (s *Syncer) doHash(
 				Str("left", "blockchain").
 				Str("right", "local").
 				Msg("print diff")
-			e = s.printDiff(ctx, blockchainBase64, scriptBase64)
+			e = s.printDiff(ctx, fileName, blockchainBase64, scriptBase64)
 			if e != nil {
 				return false, fmt.Errorf("s.printDiff: %w", e)
 			}
 
 			log().RawJSON("tx", tx).
-				Msg("we are about to set script above as approved. " +
+				Msg("we are about to set script as approved. " +
 					"sign and broadcast data-tx to continue...")
 
 			for {
@@ -325,7 +326,7 @@ func (s *Syncer) doHash(
 					break
 				}
 
-				time.Sleep(5 * time.Second)
+				time.Sleep(3 * time.Second)
 			}
 		} else {
 			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, no need to update allowed script hash")
@@ -535,7 +536,7 @@ func (s *Syncer) doFile(
 				}
 
 				log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
-				er = s.printDiff(ctx, fromBlockchainScript, base64Script)
+				er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
 				if er != nil {
 					return fmt.Errorf("s.printDiff: %w", er)
 				}
@@ -547,7 +548,7 @@ func (s *Syncer) doFile(
 	return nil
 }
 
-func (s *Syncer) preparePathAndScript(ctx context.Context, base64Script string) (string, error) {
+func (s *Syncer) preparePathAndScript(ctx context.Context, fileName, base64Script string) (string, error) {
 	var script string
 	if base64Script != "" {
 		scr, err := s.apiDecompileScript(ctx, strings.NewReader(base64Script))
@@ -562,7 +563,7 @@ func (s *Syncer) preparePathAndScript(ctx context.Context, base64Script string) 
 		return "", fmt.Errorf("uuid.NewRandom: %w", err)
 	}
 
-	p := path.Join("..", "tmp", u.String()+".ride")
+	p := path.Join("..", "tmp", fileName+" "+u.String())
 
 	f, err := os.Create(p)
 	if err != nil {
@@ -577,8 +578,8 @@ func (s *Syncer) preparePathAndScript(ctx context.Context, base64Script string) 
 	return p, nil
 }
 
-func (s *Syncer) printDiff(ctx context.Context, base64Str1, base64Str2 string) error {
-	path1, err := s.preparePathAndScript(ctx, base64Str1)
+func (s *Syncer) printDiff(ctx context.Context, fileName, base64Str1, base64Str2 string) error {
+	path1, err := s.preparePathAndScript(ctx, fileName, base64Str1)
 	defer func() {
 		_ = os.Remove(path1)
 	}()
@@ -586,7 +587,7 @@ func (s *Syncer) printDiff(ctx context.Context, base64Str1, base64Str2 string) e
 		return fmt.Errorf("s.preparePathAndScript: %w", err)
 	}
 
-	path2, err := s.preparePathAndScript(ctx, base64Str2)
+	path2, err := s.preparePathAndScript(ctx, fileName, base64Str2)
 	defer func() {
 		_ = os.Remove(path2)
 	}()
