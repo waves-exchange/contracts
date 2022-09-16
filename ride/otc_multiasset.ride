@@ -156,11 +156,11 @@ func initializationSwapAssetsBToA(assetA: String) = {
     let withdrawFeePermilleKey = keyWithdrawFeePermille(assetA, assetB)
     let withdrawFee = withdrawFeePermilleKey.getInteger().valueOrElse(0)
     let fee = toWithdraw / 1000 * withdrawFee
-    let newBalance = currentUserBalance - (toWithdraw + fee)
+    let newBalance = currentUserBalance - toWithdraw
 
     strict checkBalance = newBalance >= 0 || "Swap amount fail, amount is to small.".throwErr()
     strict checkPayment = toWithdraw >= minAmountWithdraw || "The withdraw amount is less than the minimum.".throwErr()
-    strict checkProcess = keyProcessInProgress(userAddress, assetA, assetB, assetLockHeight).getInteger().valueOrElse(0) == 0 || "At this height, there is already an exchange of this pair.".throwErr()
+    strict checkAssetLockHeight = keyAssetLockTime(assetA, assetB, userAddress).getInteger().valueOrElse(0) != assetLockHeight || "At this height, there is already an exchange of this pair.".throwErr()
 
     [
         IntegerEntry(keyAssetLockTime(assetA, assetB, userAddress), assetLockHeight),
