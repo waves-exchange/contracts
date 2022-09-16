@@ -247,6 +247,11 @@ func calculatePrices(amAmt: Int, prAmt: Int, lpAmt: Int) = {
         p[2].f1(scale8)]
 }
 
+func takeFee(amount: Int) = {
+  let fee = fraction(amount, feePermille, thousand)
+  (amount - fee, fee)
+}
+
 # estimateGetOperation
 func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address) = {
   # data from pool config
@@ -544,7 +549,7 @@ func cp(caller: String,
 }
 
 func estimatePutOneTknV2(
-  pmtAmt: Int,
+  pmtAmtRaw: Int,
   pmtAssetId: String,
   userAddress: String,
   txId: String
@@ -556,14 +561,16 @@ func estimatePutOneTknV2(
   let amBalance = amId.getAccBalance()
   let prBalance = prId.getAccBalance()
 
+  let (pmtAmt, feeAmount) = pmtAmtRaw.takeFee()
+
   let (amBalanceNow, prBalanceNow) =
     if (txId == "") then (amBalance, prBalance) else {
       if (pmtAssetId == amId) then {
-        if (amBalance < pmtAmt) then "invalid payment amount".throw() else
-          (amBalance - pmtAmt, prBalance)
+        if (amBalance < pmtAmtRaw) then "invalid payment amount".throw() else
+          (amBalance - pmtAmtRaw, prBalance)
       } else if (pmtAssetId == prId) then {
-        if (prBalance < pmtAmt) then "invalid payment amount".throw() else
-          (amBalance, prBalance - pmtAmt)
+        if (prBalance < pmtAmtRaw) then "invalid payment amount".throw() else
+          (amBalance, prBalance - pmtAmtRaw)
       } else throw("wrong pmtAssetId")
     }
 
@@ -602,11 +609,6 @@ func estimatePutOneTknV2(
   let prDiff    = estPut._11
 
   estPut
-}
-
-func takeFee(amount: Int) = {
-  let fee = fraction(amount, feePermille, thousand)
-  (amount - fee, fee)
 }
 
 # managerPublicKeyOrUnit
@@ -908,8 +910,9 @@ func putOneTknV2WithBonusREADONLY(
 
   let lpAssetPriceBoth = fraction((priceAssetAmount + amountAssetAmount), scale8, lpAmtBoth)
   let bonus = fraction((lpAssetPriceBoth - lpAssetPriceOne), scale8, lpAssetPriceOne)
+  let feeAmount = paymentAmount.takeFee()._2
 
-  ([], (estimLP, bonus))
+  ([], (estimLP, feeAmount, bonus))
 }
 
 # Put without LP emission
@@ -1134,9 +1137,10 @@ func getOneTknV2READONLY(
     Dconv # targetDPrecisionBigIntStr
   ], []).exactAs[Int]
 
-  let totalGet = exchResult + if (outAssetId == amId) then estimAmAmt else estimPrAmt
+  let totalGetRaw = exchResult + if (outAssetId == amId) then estimAmAmt else estimPrAmt
+  let (totalGet, feeAmount) = totalGetRaw.takeFee()
 
-  ([], totalGet)
+  ([], (totalGet, feeAmount))
 }
 
 @Callable(i)
@@ -1152,7 +1156,7 @@ func getOneTknV2WithBonusREADONLY(
   let amBalance = amId.getAccBalance()
   let prBalance = prId.getAccBalance()
 
-  let totalGet = this.invoke("getOneTknV2READONLY", [outAssetId, lpAssetAmount], []).exactAs[Int]
+  let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, lpAssetAmount], []).exactAs[(Int, Int)]
 
   let r = ego(
     "",
@@ -1169,7 +1173,7 @@ func getOneTknV2WithBonusREADONLY(
   let lpAssetPriceBoth = fraction((outAmAmt + outPrAmt), scale8, lpAssetAmount)
   let bonus = fraction((lpAssetPriceOne - lpAssetPriceBoth), scale8, lpAssetPriceBoth)
 
-  ([], (totalGet, bonus))
+  ([], (totalGet, feeAmount, bonus))
 }
 
 @Callable(i)
