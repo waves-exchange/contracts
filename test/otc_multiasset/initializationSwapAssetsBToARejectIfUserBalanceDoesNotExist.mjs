@@ -15,7 +15,7 @@ describe('otc_multiasset: initializationSwapAssetsBToARejectIfUserBalanceDoesNot
   it('should reject initializationSwapAssetsBToA', async function () {
     const amountAssetB = this.minAmountDeposit + 1;
 
-    const expectedRejectMessage = 'This user balance does not exist.';
+    const expectedRejectMessage = 'otc_multiasset.ride: This user balance does not exist.';
 
     const initializationSwapAssetsBToATx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),

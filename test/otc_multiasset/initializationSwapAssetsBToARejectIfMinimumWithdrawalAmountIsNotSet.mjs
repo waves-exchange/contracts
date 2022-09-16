@@ -15,11 +15,12 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('otc_multiasset: swapAssetsAToBRejectIfAssetPairNotExist.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should reject swapAssetsAToB', async function () {
-    const amountSomeAsset = 1;
+describe('otc_multiasset: initializationSwapAssetsBToARejectIfMinimumWithdrawalAmountIsNotSet.mjs', /** @this {MochaSuiteModified} */() => {
+  it('should reject initializationSwapAssetsBToA', async function () {
+    const amountSomeAsset = this.minAmountDeposit + 1;
 
-    const expectedRejectMessage = 'otc_multiasset.ride: This asset pair does not exist.';
+    const expectedRejectMessage = 'otc_multiasset.ride: '
+      + 'The minimum withdrawal amount for this pair of assets is not set.';
 
     const someAssetIssueTx = issue({
       name: 'someAsset',
@@ -43,36 +44,40 @@ describe('otc_multiasset: swapAssetsAToBRejectIfAssetPairNotExist.mjs', /** @thi
     await api.transactions.broadcast(massTransferAssetATx, {});
     await waitForTx(massTransferAssetATx.id, { apiBase });
 
-    const setAssetsPairStatusTx = data({
+    const setKeysTx = data({
       additionalFee: 4e5,
       senderPublicKey: publicKey(this.accounts.otcMultiasset),
       data: [{
         key: `%s%s%s__assetsPairStatus__${someAssetId}__${this.assetBId}`,
         type: 'integer',
         value: 0,
+      }, {
+        key: `%s%s%s%s__balance__${this.assetAId}__${someAssetId}__${address(this.accounts.user1, chainId)}`,
+        type: 'integer',
+        value: amountSomeAsset,
       }],
       chainId,
     }, this.accounts.manager);
-    await api.transactions.broadcast(setAssetsPairStatusTx, {});
-    await waitForTx(setAssetsPairStatusTx.id, { apiBase });
+    await api.transactions.broadcast(setKeysTx, {});
+    await waitForTx(setKeysTx.id, { apiBase });
 
-    const swapAssetsAToBTx = invokeScript({
+    const initializationSwapAssetsBToATx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),
       payment: [{
         assetId: someAssetId,
         amount: amountSomeAsset,
       }],
       call: {
-        function: 'swapAssetsAToB',
+        function: 'initializationSwapAssetsBToA',
         args: [
-          { type: 'string', value: this.assetBId },
+          { type: 'string', value: this.assetAId },
         ],
       },
       chainId,
     }, this.accounts.user1);
 
     await expect(
-      api.transactions.broadcast(swapAssetsAToBTx, {}),
+      api.transactions.broadcast(initializationSwapAssetsBToATx, {}),
     ).to.be.rejectedWith(
       new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
     );
