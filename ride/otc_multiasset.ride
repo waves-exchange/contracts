@@ -49,11 +49,11 @@ func keyAssetLockTime(assetA: String, assetB: String, userAddress: String) = {
 }
 
 func keyProcessInProgress(userAddress: String, assetA: String, assetB: String, heightInKey: Int) = {
-    makeString(["%s%s%s%s%s%s", "withdrawProcess", "inProgress", userAddress, assetA, assetB, heightInKey.toString()], SEP)
+    makeString(["%s%s%s%s%s%d", "withdrawProcess", "inProgress", userAddress, assetA, assetB, heightInKey.toString()], SEP)
 }
 
 func keyProcessDone(userAddress: String, assetA: String, assetB: String, heightInKey: Int) = {
-    makeString(["%s%s%s%s%s%s", "withdrawProcess", "done", userAddress, assetA, assetB, heightInKey.toString()], SEP)
+    makeString(["%s%s%s%s%s%d", "withdrawProcess", "done", userAddress, assetA, assetB, heightInKey.toString()], SEP)
 }
 
 #converting a manager's public key to a ByteVector
