@@ -177,7 +177,7 @@ func withdrawAsset(assetA: String, assetB: String, heightInKey: Int) = {
 
     let assetLockHeight = keyAssetLockTime(assetA, assetB, userAddress).getInteger().valueOrErrorMessage("An asset pair or height is specified incorrectly.".fmtErr())
 
-    let toWithdraw = keyProcessInProgress(userAddress, assetA, assetB, heightInKey).getInteger().valueOrErrorMessage("".fmtErr())
+    let toWithdraw = keyProcessInProgress(userAddress, assetA, assetB, heightInKey).getInteger().valueOrErrorMessage("At this height, withdraw was not initialized with this pair of assets.".fmtErr())
 
     let asset = assetA.value().fromBase58String()
 
