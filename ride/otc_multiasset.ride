@@ -122,9 +122,9 @@ func swapAssetsAToB(assetB: String) = {
 
     let totalCommissions = keyTotalFeeCollectedDeposit(assetA, assetB).getInteger().valueOrElse(0)
 
-    let pairStaus = keyAssetsPairStatus(assetA, assetB).getInteger().value()
+    let pairStatus = keyAssetsPairStatus(assetA, assetB).getInteger().valueOrErrorMessage("The asset pair status for this pair of assets is not set.".fmtErr())
 
-    strict checkPairStatus = pairStaus == 0 || "The couple's deposit is blocked.".throwErr()
+    strict checkPairStatus = pairStatus == 0 || "The couple's deposit is blocked.".throwErr()
     strict checkPayment = toDeposit >= minAmountDeposit || "The deposit amount is less than the minimum.".throwErr()
 
     let newBalance = currentUserBalance + toDeposit - fee
