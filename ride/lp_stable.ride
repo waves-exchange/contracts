@@ -1071,7 +1071,7 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
   let amBalance = amId.getAccBalance()
   let prBalance = prId.getAccBalance()
 
-  let totalGet = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[Int]
+  let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
 
   let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
