@@ -1220,7 +1220,7 @@ func unstakeAndGet(amount: Int) = {
 }
 
 @Callable(i)
-func unstakeAndGetOneTkn(amount: Int, outAmount: Int, outAssetId: String, slippage: Int) = {
+func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
   strict checkPayments = if (i.payments.size() != 0) then throw("No pmnts expd") else true
 
   let cfg = gpc()
@@ -1229,8 +1229,8 @@ func unstakeAndGetOneTkn(amount: Int, outAmount: Int, outAssetId: String, slippa
   let lpAssetId = cfg[idxLPAsId].fromBase58String()
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
 
-  strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
-  strict outAmountResult = this.invoke("getOneTknV2", [outAmount, outAssetId, slippage], [AttachedPayment(lpAssetId, amount)]).as[Int]
+  strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), unstakeAmount], [])
+  strict outAmountResult = this.invoke("getOneTknV2", [outAssetId, minOutAmount], [AttachedPayment(lpAssetId, unstakeAmount)]).as[Int]
 
   ([], outAmountResult)
 }
