@@ -73,10 +73,7 @@ describe('otc_multiasset: withdrawAssetRejectIfAssetPairOrHeightIncorrectly.mjs'
 
     const withdrawAssetTx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),
-      payment: [{
-        assetId: this.assetBId,
-        amount: amountAssetB,
-      }],
+      payment: [],
       call: {
         function: 'withdrawAsset',
         args: [
