@@ -69,7 +69,7 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
 
 #checking on the manager
 func mustManager(i: Invocation) = {
-  let pd = "Permission denied".throw()
+  let pd = "Permission denied.".throw()
 
   match managerPublicKeyOrUnit() {
     case pk: ByteVector => i.callerPublicKey == pk || pd
@@ -220,8 +220,8 @@ func setManager(pendingManagerPublicKey: String) = {
 @Callable(i)
 func confirmManager() = {
   let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM    = pm.isDefined() || "no pending manager".throwErr()
-  strict checkPM  = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
+  strict hasPM    = pm.isDefined() || "No pending manager.".throwErr()
+  strict checkPM  = i.callerPublicKey == pm.value() || "You are not pending manager.".throwErr()
 
   [
     StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
