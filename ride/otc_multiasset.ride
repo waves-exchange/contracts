@@ -186,7 +186,6 @@ func withdrawAsset(assetA: String, assetB: String, heightInKey: Int) = {
     [
         DeleteEntry(keyProcessInProgress(userAddress, assetA, assetB, heightInKey)),
         IntegerEntry(keyProcessDone(userAddress, assetA, assetB, heightInKey), toWithdraw),
-        IntegerEntry(keyBalance(assetA, assetB, userAddress), toWithdraw),
         ScriptTransfer(i.caller, toWithdraw, asset)
     ]
 }
