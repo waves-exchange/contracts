@@ -91,6 +91,9 @@ describe('vesting_multiasset: allowAssetClaim.mjs', /** @this {MochaSuiteModifie
     }, this.accounts.admin);
     await api.transactions.broadcast(allowAssetClaim, {});
     await ni.waitForTx(allowAssetClaim.id, { apiBase });
+    const currentHeight = await api.blocks.fetchHeight();
+
+    await waitForHeight(currentHeight.height + 1);
 
     const claim3 = invokeScript({
       dApp: vesting,

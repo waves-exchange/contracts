@@ -24,7 +24,7 @@ describe('otc_multiasset: initializationSwapAssetsBToA.mjs', /** @this {MochaSui
     const feeWithdraw = Math.floor(amountAssetB / 1000) * this.withdrawFee;
     const expectedBalance = 0;
     const expectedWithdrawProcessInProgress = amountAssetB - feeWithdraw;
-    const expectedtotalFeeCollectedWithdraw = fee + feeWithdraw;
+    const expectedtotalFeeCollectedWithdraw = feeWithdraw;
 
     const swapAssetsAToBTx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),
