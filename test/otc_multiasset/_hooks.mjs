@@ -24,6 +24,7 @@ export const mochaHooks = {
       'manager',
       'otcMultiasset',
       'user1',
+      'user2',
     ];
     this.accounts = Object.fromEntries(
       names.map((item) => [item, randomSeed(seedWordsCount)]),
@@ -59,7 +60,7 @@ export const mochaHooks = {
 
     const assetAAmount = 100e6;
     const massTransferAssetATx = massTransfer({
-      transfers: names.slice(-2).map((name) => ({
+      transfers: names.slice(-3).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: assetAAmount,
       })),
       assetId: this.assetAId,
@@ -83,7 +84,7 @@ export const mochaHooks = {
 
     const assetBAmount = 100e6;
     const massTransferAssetBTx = massTransfer({
-      transfers: names.slice(-2).map((name) => ({
+      transfers: names.slice(-3).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: assetBAmount,
       })),
       assetId: this.assetBId,
