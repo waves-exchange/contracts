@@ -1,0 +1,17 @@
+{
+  "type": 16,
+  "version": 2,
+  "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+  "dApp": "",
+  "call": {
+    "args": [],
+    "function": "confirmManager"
+  },
+  "payment": [],
+  "fee": ,
+  "feeAssetId": null,
+  "timestamp": ,
+  "chainId": ,
+  "proofs": [],
+  "id": ""
+}
