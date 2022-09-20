@@ -49,6 +49,18 @@ describe('otc_multiasset: initializationSwapAssetsBToARejectIfAlreadyExchangeThi
         key: `%s%s%s%s__assetLockTime__${this.assetAId}__${this.assetBId}__${address(this.accounts.user1, chainId)}`,
         type: 'integer',
         value: delay + this.withdrawDelay,
+      }, {
+        key: `%s%s%s%s__assetLockTime__${this.assetAId}__${this.assetBId}__${address(this.accounts.user1, chainId)}`,
+        type: 'integer',
+        value: delay + this.withdrawDelay + 1,
+      }, {
+        key: `%s%s%s%s__assetLockTime__${this.assetAId}__${this.assetBId}__${address(this.accounts.user1, chainId)}`,
+        type: 'integer',
+        value: delay + this.withdrawDelay + 2,
+      }, {
+        key: `%s%s%s%s__assetLockTime__${this.assetAId}__${this.assetBId}__${address(this.accounts.user1, chainId)}`,
+        type: 'integer',
+        value: delay + this.withdrawDelay + 3,
       }],
       chainId,
     }, this.accounts.manager);
