@@ -141,15 +141,17 @@ func claimInternal(assetId: String, address: String) = {
 }
 
 func claimFixedInternal(assetId: String, address: String, releaseBlock: Int) = {
+  let userFixedDeposit = keyUserFixedDeposit(assetId, address, releaseBlock).getInteger()
+
   strict checks = [
     keyClaimDenied(assetId).getBoolean().valueOrElse(false) == false || "asset claim denied".throwErr(),
     height > releaseBlock || "current height must be more than releaseBlock for fixed deposit".throwErr(),
-    keyUserFixedDeposit(assetId, address, releaseBlock).getInteger().valueOrElse(0) != 0 || "no fixed deposit for assetId/address/height".throwErr()
+    userFixedDeposit.valueOrElse(0) != 0 || "no fixed deposit for assetId/address/height".throwErr()
   ]
 
   let addr = address.addressFromStringValue()
   let asset = assetId.fromBase58String()
-  let amount = keyUserFixedDeposit(assetId, address, releaseBlock).getInteger().value()
+  let amount = userFixedDeposit.value()
 
   [
     ScriptTransfer(addr, amount, asset),
@@ -279,14 +281,15 @@ func claimREADONLY(assetId: String, address: String) = {
 func createFixedDepositFor(address: String, releaseBlock: Int) = {
   let amount = i.payments[0].amount
   let assetId = i.payments[0].assetId.value().toBase58String()
+  let userFixedDeposit = keyUserFixedDeposit(assetId, address, releaseBlock)
 
   strict checks = [
     releaseBlock > height || "releaseBlock must be more than height".throwErr(),
-	keyUserFixedDeposit(assetId, address, releaseBlock).getInteger() == unit || "deposit for this height for user already exists".throwErr()
+	  userFixedDeposit.getInteger() == unit || "deposit for this height for user already exists".throwErr()
   ]
 
   [
-	IntegerEntry(keyUserFixedDeposit(assetId, address, releaseBlock), amount)
+	  IntegerEntry(userFixedDeposit, amount)
   ]
 }
 
@@ -310,7 +313,7 @@ func claimFixedREADONLY(assetId: String, address: String, releaseBlock: Int) = {
 func revokeFixedDepositFor(assetId: String, address: String, releaseBlock: Int) = {
   strict checks = [
     i.mustAdmin(),
-    releaseBlock < height || "can't revoke deposit in past".throwErr(),
+    releaseBlock > height || "can't revoke deposit in past".throwErr(),
 	keyUserFixedDeposit(assetId, address, releaseBlock).getInteger().valueOrElse(0) != 0 || "deposit for this height for user not exists".throwErr()
   ]
 
