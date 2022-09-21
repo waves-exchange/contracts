@@ -28,7 +28,6 @@ describe('User Pools - Constructor', /** @this {MochaSuiteModified} */() => {
         args: [
           { type: 'string', value: address(this.accounts.factory, chainId) }, // factoryV2Address
           { type: 'string', value: address(this.accounts.store, chainId) }, // assetsStoreAddress
-          { type: 'list', value: [{ type: 'string', value: this.usdnAssetId }] }, // priceAssetIds: List[String]
           { type: 'list', value: [{ type: 'string', value: '1000' }] }, // priceAssetsMinAmount: List[String]
           { type: 'integer', value: 1000 }, // amountAssetMinAmount
           { type: 'string', value: this.wxAssetId }, // feeAssetId
@@ -48,7 +47,6 @@ describe('User Pools - Constructor', /** @this {MochaSuiteModified} */() => {
         args: [
           { type: 'string', value: address(this.accounts.factory, chainId) }, // factoryV2Address
           { type: 'string', value: address(this.accounts.store, chainId) }, // assetsStoreAddress
-          { type: 'list', value: [{ type: 'string', value: this.usdnAssetId }] }, // priceAssetIds: List[String]
           { type: 'list', value: [{ type: 'string', value: '1000' }] }, // priceAssetsMinAmount: List[String]
           { type: 'integer', value: 1000 }, // amountAssetMinAmount
           { type: 'string', value: this.wxAssetId }, // feeAssetId
