@@ -597,7 +597,7 @@ func estimatePutOneTknV2(
     true,
     true,
     false,
-    pmtAmt,
+    pmtAmtRaw,
     pmtAssetId
   )
 
