@@ -1401,6 +1401,11 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
   )
 }
 
+@Callable(i)
+func getFeeREADONLY() = {
+  ([], fee)
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match m() {
