@@ -39,7 +39,6 @@
 let scale8 = 100_000_000
 let scale8BigInt = 100_000_000.toBigInt()
 let scale18 = 1_000_000_000_000_000_000.toBigInt()
-let thousand = 1000
 let zeroBigInt = 0.toBigInt()
 let oneBigInt = 1.toBigInt()
 let slippage4D = (scale8 - scale8 * 1 / scale8).toBigInt() # 9999999 or error of 0.0000001
@@ -68,7 +67,7 @@ let idxFactStakCntr      = 1
 let idxFactSlippCntr     = 7
 let idxFactGwxRewCntr    = 10
 
-let feePermilleDefault = 0
+let feeDefault = fraction(5, scale8, 10_000)
 #-------------------------
 # WX COMMON LIBRARY
 #-------------------------
@@ -98,8 +97,8 @@ func pa() = {"%s__priceAsset"}
 func amp() = {"%s__amp"}
 func ada() = "%s__addonAddr"
 
-let keyFeePermille = "%s__feePermille"
-let feePermille = this.getInteger(keyFeePermille).valueOrElse(feePermilleDefault)
+let keyFee = "%s__fee"
+let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
 
 #------------------------
 # KEYS ON OTHER CONTRACTS
@@ -248,8 +247,8 @@ func calculatePrices(amAmt: Int, prAmt: Int, lpAmt: Int) = {
 }
 
 func takeFee(amount: Int) = {
-  let fee = fraction(amount, feePermille, thousand)
-  (amount - fee, fee)
+  let feeAmount = fraction(amount, fee, scale8)
+  (amount - feeAmount, feeAmount)
 }
 
 # estimateGetOperation
