@@ -553,7 +553,7 @@ func calcPutXOnly(
   let S = amountAssetAmountBigIntStr.parseBigIntValue()
 
   let ann = amp * nCoins
-  let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+  let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
   func calc(acc: (BigInt, BigInt|Unit), cur: Int) = {
     let (x, xPrev) = acc
     let newX = X + S - x
@@ -562,7 +562,7 @@ func calcPutXOnly(
     let xNext = x + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (-ann * (-1.toBigInt() - Y / X) / aPrecision + dp / newX + Y * dp / (X * newY))
     (xNext, x)
   }
-  let (xNext, xPrev) = FOLD<15>(arr, (zeroBigInt, unit), calc)
+  let (xNext, xPrev) = FOLD<12>(arr, (zeroBigInt, unit), calc)
   let xDiff = absBigInt(xNext - xPrev.value())
   if (xDiff <= targetPrecision) then {
     ([], (xNext.toInt(), xNext.fraction(Y, X).toInt()))
