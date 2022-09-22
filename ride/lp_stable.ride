@@ -653,14 +653,17 @@ func getOneTknV2Internal(
   let curPrX18 = cpbi(prBalance.t1(prDecimals), amBalance.t1(amDecimals))
   let curPr = curPrX18.f1(scale8)
 
+  let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
+  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetIdOrWaves)] else []
+
   strict state = [
-    ScriptTransfer(userAddress, totalAmount, if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()),
+    ScriptTransfer(userAddress, totalAmount, outAssetIdOrWaves),
     StringEntry(
       gau(userAddress.toString(), txId58),
       dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)),
     IntegerEntry(pl(), curPr),
     IntegerEntry(ph(height, lastBlock.timestamp), curPr)
-  ]
+  ] ++ sendFeeToMatcher
 
   strict burn = invoke(fca,
     "burn",
@@ -915,7 +918,10 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
     if(autoStake) then strict ss = stakingContract.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
     else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
 
-  (state ++ lpTrnsfr, emitLpAmt)
+  let feeAmount = pmtAmt.takeFee()._2
+  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, pmtAssetId.fromBase58String())] else []
+
+  (state ++ lpTrnsfr ++ sendFeeToMatcher, emitLpAmt)
 }
 
 @Callable(i)
