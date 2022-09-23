@@ -35,3 +35,28 @@ export const setScriptFromFile = async (
   await api.transactions.broadcast(ssTx, {});
   await waitForTx(ssTx.id, { apiBase });
 };
+
+export const checkStateChanges = async (
+  stateChanges,
+  countData,
+  countTransfers,
+  countIssues,
+  countReissues,
+  countBurns,
+  countSponsorFees,
+  countLeases,
+  countLeaseCancels,
+  countInvokes,
+) => {
+  if (stateChanges.data.length !== countData) return false;
+  if (stateChanges.transfers.length !== countTransfers) return false;
+  if (stateChanges.issues.length !== countIssues) return false;
+  if (stateChanges.reissues.length !== countReissues) return false;
+  if (stateChanges.burns.length !== countBurns) return false;
+  if (stateChanges.sponsorFees.length !== countSponsorFees) return false;
+  if (stateChanges.leases.length !== countLeases) return false;
+  if (stateChanges.leaseCancels.length !== countLeaseCancels) return false;
+  if (stateChanges.invokes.length !== countInvokes) return false;
+
+  return true;
+};

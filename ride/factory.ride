@@ -47,7 +47,7 @@ let idxPoolType                                 = 11
 func keyFactoryConfig()
       = {"%s__factoryConfig"}
 func keyLpTokensList()
-      = {"%s__lpTokensList"}
+      = {"%s__lpTokensList"} # not used anymore
 func keyPoolScriptHash()
       = "%s%s__pool__scriptHash"
 func keyMatcherPub()

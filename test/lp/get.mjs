@@ -63,7 +63,9 @@ describe('lp: get.mjs', /** @this {MochaSuiteModified} */() => {
       const { timestamp } = await api.blocks.fetchHeadersAt(height);
       const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
-      expect(await checkStateChanges(stateChanges, 2, 1, 0, 0, 0, 0, 0, 0, 0)).to.eql(true);
+      expect(
+        await checkStateChanges(stateChanges, 3, 2, 0, 0, 0, 0, 0, 0, 1),
+      ).to.eql(true);
 
       expect(stateChanges.data).to.eql([{
         key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${id}`,
@@ -97,13 +99,12 @@ describe('lp: get.mjs', /** @this {MochaSuiteModified} */() => {
       expect(invokes[0].call.args).to.eql([
         {
           type: 'Int',
-          value: expectedLpAmount,
+          value: lpAmount,
         }]);
-      expect(invokes[0].stateChanges.transfers).to.eql([
+      expect(invokes[0].stateChanges.burns).to.eql([
         {
-          address: address(this.accounts.lp, chainId),
-          asset: this.lpAssetId,
-          amount: expectedLpAmount,
+          assetId: this.lpAssetId,
+          quantity: lpAmount,
         }]);
     },
   );

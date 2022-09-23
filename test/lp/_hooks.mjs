@@ -69,7 +69,7 @@ export const mochaHooks = {
     await waitForTx(usdnIssueTx.id, { apiBase });
     this.usdnAssetId = usdnIssueTx.id;
 
-    console.log('  usdnAssetId', this.usdnAssetId);
+    console.log('   usdnAssetId', this.usdnAssetId);
 
     const usdnAmount = 100e6;
     const massTransferTxUSDN = massTransfer({
@@ -93,7 +93,7 @@ export const mochaHooks = {
     await waitForTx(shibIssueTx.id, { apiBase });
     this.shibAssetId = shibIssueTx.id;
 
-    console.log('  shibAssetId', this.shibAssetId);
+    console.log('   shibAssetId', this.shibAssetId);
 
     const shibAmount = 100e2;
     const massTransferTxSHIB = massTransfer({
@@ -265,7 +265,7 @@ export const mochaHooks = {
     const { stateChanges } = await waitForTx(activateNewPoolTx.id, { apiBase });
     this.lpAssetId = stateChanges.issues[0].assetId;
 
-    console.log('  lpAssetId', this.lpAssetId);
+    console.log('   lpAssetId', this.lpAssetId);
 
     const setManagerLpTx = data({
       additionalFee: 4e5,
