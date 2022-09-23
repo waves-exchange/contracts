@@ -26,7 +26,15 @@ const assetsStorePath = format({ dir: mockRidePath, base: 'assets_store.mock.rid
 
 export const mochaHooks = {
   async beforeAll() {
-    const names = ['lp', 'factoryV2', 'staking', 'slippage', 'manager', 'store', 'user1'];
+    const names = [
+      'lp',
+      'factoryV2',
+      'staking',
+      'slippage',
+      'manager',
+      'store',
+      'user1',
+    ];
     this.accounts = Object.fromEntries(
       names.map((item) => [item, randomSeed(seedWordsCount)]),
     );
@@ -61,6 +69,8 @@ export const mochaHooks = {
     await waitForTx(usdnIssueTx.id, { apiBase });
     this.usdnAssetId = usdnIssueTx.id;
 
+    console.log('  usdnAssetId', this.usdnAssetId);
+
     const usdnAmount = 100e6;
     const massTransferTxUSDN = massTransfer({
       transfers: names.slice(-1).map((name) => ({
@@ -82,6 +92,8 @@ export const mochaHooks = {
     await api.transactions.broadcast(shibIssueTx, {});
     await waitForTx(shibIssueTx.id, { apiBase });
     this.shibAssetId = shibIssueTx.id;
+
+    console.log('  shibAssetId', this.shibAssetId);
 
     const shibAmount = 100e2;
     const massTransferTxSHIB = massTransfer({
@@ -181,13 +193,13 @@ export const mochaHooks = {
     const teamContract = '';
     const emissionContract = '';
     const restContract = '';
-    const slpipageContract = address(this.accounts.slippage, chainId);
+    const slippageContract = address(this.accounts.slippage, chainId);
     const daoContract = '';
     const marketingContract = '';
     const gwxRewardsContract = '';
     const birdsContract = '';
 
-    const factoryV2Config = `%s%s%s%s%s%s%s%s%s%s%s__${stakingContract}__${boostingContract}__${idoContract}__${teamContract}__${emissionContract}__${restContract}__${slpipageContract}__${daoContract}__${marketingContract}__${gwxRewardsContract}__${birdsContract}`;
+    const factoryV2Config = `%s%s%s%s%s%s%s%s%s%s%s__${stakingContract}__${boostingContract}__${idoContract}__${teamContract}__${emissionContract}__${restContract}__${slippageContract}__${daoContract}__${marketingContract}__${gwxRewardsContract}__${birdsContract}`;
 
     const setFactoryV2ConfigTx = data({
       additionalFee: 4e5,
@@ -252,6 +264,8 @@ export const mochaHooks = {
     await api.transactions.broadcast(activateNewPoolTx, {});
     const { stateChanges } = await waitForTx(activateNewPoolTx.id, { apiBase });
     this.lpAssetId = stateChanges.issues[0].assetId;
+
+    console.log('  lpAssetId', this.lpAssetId);
 
     const setManagerLpTx = data({
       additionalFee: 4e5,
