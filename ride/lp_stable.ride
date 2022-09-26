@@ -957,23 +957,23 @@ func putOneTknV2WithBonusREADONLY(
   let lpAssetEmission = r._6
   let lpAssetId = r._7
 
-  let (amountAssetAmount, priceAssetAmount) = if (paymentAssetId == amId) then {
-    let priceAssetAmount = fraction(paymentAmount, curPrice, scale8)
-    (paymentAmount, priceAssetAmount)
+  let (amountAssetPart, priceAssetPart) = if (paymentAssetId == amId) then {
+    let priceAssetPart = fraction(paymentAmount, curPrice, scale8)
+    (paymentAmount - priceAssetPart, priceAssetPart)
   } else {
-    let amountAssetAmount = fraction(paymentAmount, scale8, curPrice)
-    (amountAssetAmount, paymentAmount)
+    let amountAssetPart = fraction(paymentAmount, scale8, curPrice)
+    (amountAssetPart, paymentAmount - amountAssetPart)
   }
   
-  let lpAmtBoth = fraction(lpAssetEmission, priceAssetAmount, prBalance)
+  let lpAmtBoth = fraction(lpAssetEmission, priceAssetPart, prBalance)
   
   let lpAssetPriceOne = if (paymentAssetId == amId) then {
-    fraction(amountAssetAmount, scale8, estimLP)
+    fraction(amountAssetPart, scale8, estimLP)
   } else {
-    fraction(priceAssetAmount, scale8, estimLP)
+    fraction(priceAssetPart, scale8, estimLP)
   }
 
-  let lpAssetPriceBoth = fraction((priceAssetAmount + amountAssetAmount), scale8, lpAmtBoth)
+  let lpAssetPriceBoth = fraction((priceAssetPart + amountAssetPart), scale8, lpAmtBoth)
   # let bonus = fraction((lpAssetPriceBoth - lpAssetPriceOne), scale8, lpAssetPriceOne)
   let bonus = fraction(estimLP - lpAmtBoth, scale8, lpAmtBoth)
   let feeAmount = paymentAmount.takeFee()._2
