@@ -957,24 +957,19 @@ func putOneTknV2WithBonusREADONLY(
   let lpAssetEmission = r._6
   let lpAssetId = r._7
 
-  let (amountAssetPart, priceAssetPart) = if (paymentAssetId == amId) then {
-    let priceAssetPart = fraction(paymentAmount, curPrice, scale8)
-    (paymentAmount - priceAssetPart, priceAssetPart)
-  } else {
-    let amountAssetPart = fraction(paymentAmount, scale8, curPrice)
-    (amountAssetPart, paymentAmount - amountAssetPart)
-  }
-  
-  let lpAmtBoth = fraction(lpAssetEmission, priceAssetPart, prBalance)
-  
-  let lpAssetPriceOne = if (paymentAssetId == amId) then {
-    fraction(amountAssetPart, scale8, estimLP)
-  } else {
-    fraction(priceAssetPart, scale8, estimLP)
-  }
+  let amountAssetPart = fraction(paymentAmount, scale8, curPrice)
+  let priceAssetPart = paymentAmount - amountAssetPart
 
-  let lpAssetPriceBoth = fraction((priceAssetPart + amountAssetPart), scale8, lpAmtBoth)
-  # let bonus = fraction((lpAssetPriceBoth - lpAssetPriceOne), scale8, lpAssetPriceOne)
+  let prViaAm = fraction(amountAssetPart, curPrice, scale8)
+  let amViaPr = fraction(priceAssetPart, scale8, curPrice)
+
+  let expectedAmts = if (prViaAm > priceAssetPart)
+    then (amViaPr, priceAssetPart)
+    else (amountAssetPart, prViaAm)
+
+  let expPriceAssetAmt = expectedAmts._2
+  let lpAmtBoth = fraction(lpAssetEmission, expPriceAssetAmt, prBalance)
+  
   let bonus = fraction(estimLP - lpAmtBoth, scale8, lpAmtBoth)
   let feeAmount = paymentAmount.takeFee()._2
 
