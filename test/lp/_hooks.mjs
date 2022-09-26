@@ -47,11 +47,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
 
-    console.log('account addresses:');
-    for (const [key, value] of Object.entries(this.accounts)) {
-      console.log('  ', key, address(value, chainId));
-    }
-
     await setScriptFromFile(lpPath, this.accounts.lp);
     await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
     await setScriptFromFile(stakingPath, this.accounts.staking);
@@ -68,8 +63,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(usdnIssueTx, {});
     await waitForTx(usdnIssueTx.id, { apiBase });
     this.usdnAssetId = usdnIssueTx.id;
-
-    console.log('   usdnAssetId', this.usdnAssetId);
 
     const usdnAmount = 100e6;
     const massTransferTxUSDN = massTransfer({
@@ -92,8 +85,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(shibIssueTx, {});
     await waitForTx(shibIssueTx.id, { apiBase });
     this.shibAssetId = shibIssueTx.id;
-
-    console.log('   shibAssetId', this.shibAssetId);
 
     const shibAmount = 100e2;
     const massTransferTxSHIB = massTransfer({
@@ -265,7 +256,17 @@ export const mochaHooks = {
     const { stateChanges } = await waitForTx(activateNewPoolTx.id, { apiBase });
     this.lpAssetId = stateChanges.issues[0].assetId;
 
-    console.log('   lpAssetId', this.lpAssetId);
+    const setManagerFactoryV2Tx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__managerPublicKey',
+        type: 'string',
+        value: publicKey(this.accounts.manager),
+      }],
+      chainId,
+    }, this.accounts.factoryV2);
+    await api.transactions.broadcast(setManagerFactoryV2Tx, {});
+    await waitForTx(setManagerFactoryV2Tx.id, { apiBase });
 
     const setManagerLpTx = data({
       additionalFee: 4e5,
