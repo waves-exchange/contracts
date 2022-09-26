@@ -565,7 +565,7 @@ func calcPutXOnly(
     let newY = Y - x * Y / X
     let dp = d * d * d / (newX * newY * nCoins * nCoins)
     let xNext = x + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (-ann * (-1.toBigInt() - Y / X) / aPrecision + dp / newX + Y * dp / (X * newY))
-    (xNext, x, results :+ x)
+    (xNext, x, results :+ x.toString())
   }
   let (xNext, xPrev, results) = FOLD<20>(arr, (zeroBigInt, unit, []), calc)
   strict logInv = this.invoke("logger", [results.makeString(" ")], [])
