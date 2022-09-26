@@ -567,7 +567,7 @@ func calcPutXOnly(
     let xNext = x + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (-ann * (-1.toBigInt() - Y / X) / aPrecision + dp / newX + Y * dp / (X * newY))
     (xNext, x, results :+ x.toString())
   }
-  let (xNext, xPrev, results) = FOLD<12>(arr, (zeroBigInt, unit, []), calc)
+  let (xNext, xPrev, results) = FOLD<20>(arr, (zeroBigInt, unit, []), calc)
   strict logInv = this.invoke("logger", [results.makeString(" ")], [])
   let xDiff = absBigInt(xNext - xPrev.value())
   if (xDiff <= targetPrecision) then {
