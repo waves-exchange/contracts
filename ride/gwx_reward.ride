@@ -520,11 +520,6 @@ func calcD(
 }
 
 @Callable(i)
-func logger(str: String) = {
-  (nil, unit)
-}
-
-@Callable(i)
 func calcPutXOnly(
   amountAssetAmountBigIntStr: String,
   amountAssetBalanceBigIntStr: String,
@@ -559,19 +554,18 @@ func calcPutXOnly(
 
   let ann = amp * nCoins
   let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-  func calc(acc: (BigInt, BigInt|Unit, List[String]), cur: Int) = {
-    let (x, xPrev, results) = acc
+  func calc(acc: (BigInt, BigInt|Unit), cur: Int) = {
+    let (x, xPrev) = acc
     let newX = X + S - x
     let newY = Y - x * Y / X
     let dp = d * d * d / (newX * newY * nCoins * nCoins)
     let xNext = x + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (-ann * (-1.toBigInt() - Y / X) / aPrecision + dp / newX + Y * dp / (X * newY))
-    (xNext, x, results :+ x.toString())
+    (xNext, x)
   }
-  let (xNext, xPrev, results) = FOLD<20>(arr, (zeroBigInt, unit, []), calc)
-  strict logInv = this.invoke("logger", [results.makeString(" ")], [])
+  let (xNext, xPrev) = FOLD<20>(arr, (zeroBigInt, unit), calc)
   let xDiff = absBigInt(xNext - xPrev.value())
   if (xDiff <= targetPrecision) then {
-    ([], (xNext.toInt(), xNext.fraction(Y, X).toInt(), results))
+    ([], (xNext.toInt(), xNext.fraction(Y, X).toInt()))
   } else throw("X calculation error, xDiff = " + xDiff.toString() + ", xNext = " + xNext.toString() + ", xPrev = " + xPrev.value().toString())
 }
 
