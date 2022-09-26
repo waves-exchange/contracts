@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { checkStateChanges } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -46,6 +47,10 @@ describe('lp: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
+    expect(
+      await checkStateChanges(stateChanges, 3, 0, 0, 0, 0, 0, 0, 0, 2),
+    ).to.eql(true);
+
     expect(stateChanges.data).to.eql([{
       key: '%s%s__price__last',
       type: 'integer',
@@ -70,10 +75,27 @@ describe('lp: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'Int',
         value: expectedLpAmount,
       }]);
+    expect(
+      await checkStateChanges(invokes[0].stateChanges, 0, 1, 0, 1, 0, 0, 0, 0, 0),
+    ).to.eql(true);
+
+    expect(invokes[0].stateChanges.transfers).to.eql([{
+      address: address(this.accounts.lp, chainId),
+      asset: this.lpAssetId,
+      amount: expectedLpAmount,
+    }]);
+    expect(invokes[0].stateChanges.reissues).to.eql([{
+      assetId: this.lpAssetId,
+      isReissuable: true,
+      quantity: expectedLpAmount,
+    }]);
 
     expect(invokes[1].dApp).to.eql(address(this.accounts.staking, chainId));
     expect(invokes[1].call.function).to.eql('stake');
     expect(invokes[1].call.args).to.eql([]);
+    expect(
+      await checkStateChanges(invokes[1].stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    ).to.eql(true);
 
     expect(invokes[1].payment).to.eql([
       {

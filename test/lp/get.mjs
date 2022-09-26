@@ -101,6 +101,10 @@ describe('lp: get.mjs', /** @this {MochaSuiteModified} */() => {
           type: 'Int',
           value: lpAmount,
         }]);
+      expect(
+        await checkStateChanges(invokes[0].stateChanges, 0, 0, 0, 0, 1, 0, 0, 0, 0),
+      ).to.eql(true);
+
       expect(invokes[0].stateChanges.burns).to.eql([
         {
           assetId: this.lpAssetId,

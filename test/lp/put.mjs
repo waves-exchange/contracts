@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { checkStateChanges } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -46,6 +47,10 @@ describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
+    expect(
+      await checkStateChanges(stateChanges, 3, 1, 0, 0, 0, 0, 0, 0, 1),
+    ).to.eql(true);
+
     expect(stateChanges.data).to.eql([{
       key: '%s%s__price__last',
       type: 'integer',
@@ -76,6 +81,10 @@ describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'Int',
         value: expectedLpAmount,
       }]);
+    expect(
+      await checkStateChanges(invokes[0].stateChanges, 0, 1, 0, 1, 0, 0, 0, 0, 0),
+    ).to.eql(true);
+
     expect(invokes[0].stateChanges.transfers).to.eql([
       {
         address: address(this.accounts.lp, chainId),
