@@ -948,16 +948,15 @@ func putOneTknV2WithBonusREADONLY(
   let amId = poolConfig[idxAmAsId]
   let prId = poolConfig[idxPrAsId]
 
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
-
   let r = estimatePutOneTknV2(paymentAmount, paymentAssetId, "", "")
   let estimLP = r._2
   let curPrice = r._3
   let lpAssetEmission = r._6
   let lpAssetId = r._7
+  let amBalance = r._4
+  let prBalance = r._5
 
-  let amountAssetPart = fraction(paymentAmount, curPrice - scale8, scale8)
+  let amountAssetPart = fraction(paymentAmount, scale8, curPrice - scale8)
   let priceAssetPart = paymentAmount - amountAssetPart
 
   let prViaAm = fraction(amountAssetPart, curPrice, scale8)
