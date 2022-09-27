@@ -957,7 +957,7 @@ func putOneTknV2WithBonusREADONLY(
   let lpAssetEmission = r._6
   let lpAssetId = r._7
 
-  let amountAssetPart = fraction(paymentAmount, scale8, curPrice)
+  let amountAssetPart = fraction(paymentAmount, curPrice - scale8, scale8)
   let priceAssetPart = paymentAmount - amountAssetPart
 
   let prViaAm = fraction(amountAssetPart, curPrice, scale8)
