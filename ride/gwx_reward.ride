@@ -604,7 +604,7 @@ func calcSwapXToY(
   let S = amountAssetAmountBigIntStr.parseBigIntValue()
 
   let ann = amp * nCoins
-  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
   func calc(acc: (BigInt, BigInt|Unit), cur: Int) = {
     let (y, yPrev) = acc
     let newX = X + x
@@ -613,7 +613,7 @@ func calcSwapXToY(
     let yNext = y + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (ann / aPrecision + dp / newY)
     (yNext, y)
   }
-  let (yNext, yPrev) = FOLD<10>(arr, (zeroBigInt, unit), calc)
+  let (yNext, yPrev) = FOLD<20>(arr, (zeroBigInt, unit), calc)
   let xDiff = absBigInt(yNext - yPrev.value())
   if (xDiff <= targetPrecision) then {
     ([], yNext.toInt())
