@@ -953,26 +953,21 @@ func putOneTknV2WithBonusREADONLY(
   let curPrice = r._3
   let lpAssetEmission = r._6
   let lpAssetId = r._7
-  let amBalance = r._4
-  let prBalance = r._5
+  # let amBalance = r._4
+  # let prBalance = r._5
 
-  let amountAssetPart = fraction(paymentAmount, scale8, curPrice + scale8)
+  let amBalance = amId.getAccBalance()
+  let prBalance = prId.getAccBalance()
+  let poolProportion = prBalance.fraction(scale8, amBalance)
+  let amountAssetPart = fraction(paymentAmount, scale8, poolProportion + scale8)
   let priceAssetPart = paymentAmount - amountAssetPart
 
-  let prViaAm = fraction(amountAssetPart, curPrice, scale8)
-  let amViaPr = fraction(priceAssetPart, scale8, curPrice)
-
-  let expectedAmts = if (prViaAm > priceAssetPart)
-    then (amViaPr, priceAssetPart)
-    else (amountAssetPart, prViaAm)
-
-  let expPriceAssetAmt = expectedAmts._2
   let lpAmtBoth = fraction(lpAssetEmission, priceAssetPart, prBalance)
   
   let bonus = fraction(estimLP - lpAmtBoth, scale8, lpAmtBoth)
   let feeAmount = paymentAmount.takeFee()._2
 
-  ([], (estimLP, feeAmount, bonus, lpAmtBoth, amountAssetPart, priceAssetPart, expectedAmts))
+  ([], (estimLP, feeAmount, bonus, lpAmtBoth, amountAssetPart, priceAssetPart))
 }
 
 # Put without LP emission
