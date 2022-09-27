@@ -160,10 +160,9 @@ func initializationSwapAssetsBToA(assetA: String) = {
 
     strict checkBalance = newBalance >= 0 || "Swap amount fail, amount is to small.".throwErr()
     strict checkPayment = toWithdraw >= minAmountWithdraw || "The withdraw amount is less than the minimum.".throwErr()
-    strict checkAssetLockHeight = keyAssetLockTime(assetA, assetB, userAddress).getInteger().valueOrElse(0) != assetLockHeight || "At this height, there is already an exchange of this pair.".throwErr()
+    strict checkProcessInProgress = keyProcessInProgress(userAddress, assetA, assetB, assetLockHeight).getInteger().valueOrElse(0) == 0 || "At this height, there is already an exchange of this pair.".throwErr()
 
     [
-        IntegerEntry(keyAssetLockTime(assetA, assetB, userAddress), assetLockHeight),
         IntegerEntry(keyBalance(assetA, assetB, userAddress), newBalance),
         IntegerEntry(keyProcessInProgress(userAddress, assetA, assetB, assetLockHeight), toWithdraw - fee),
         IntegerEntry(keyTotalFeeCollectedWithdraw(assetA, assetB), totalCommissions + fee)
@@ -175,13 +174,11 @@ func initializationSwapAssetsBToA(assetA: String) = {
 func withdrawAsset(assetA: String, assetB: String, heightInKey: Int) = {
     let userAddress = i.caller.toString()
 
-    let assetLockHeight = keyAssetLockTime(assetA, assetB, userAddress).getInteger().valueOrErrorMessage("An asset pair or height is specified incorrectly.".fmtErr())
-
     let toWithdraw = keyProcessInProgress(userAddress, assetA, assetB, heightInKey).getInteger().valueOrErrorMessage("At this height, withdraw was not initialized with this pair of assets.".fmtErr())
 
     let asset = assetA.value().fromBase58String()
 
-    strict checkHeight = assetLockHeight <= height || ("Withdrawal is possible after "+toString(heightInKey)+" height or you have already withdrawn.").throwErr()
+    strict checkHeight = heightInKey <= height || ("Withdrawal is possible after "+toString(heightInKey)+" height or you have already withdrawn.").throwErr()
 
     [
         DeleteEntry(keyProcessInProgress(userAddress, assetA, assetB, heightInKey)),
