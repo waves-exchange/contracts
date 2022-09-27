@@ -59,7 +59,7 @@ describe('otc_multiasset: userStory.mjs', /** @this {MochaSuiteModified} */() =>
     await api.transactions.broadcast(swapUser2AssetsAToBTx, {});
     await waitForTx(swapUser2AssetsAToBTx.id, { apiBase });
 
-    // user1 cannot make the init less than the allowed withdraw
+    // user1 cannot make the init less than the allowed to withdraw
     // ___________________________________________________________________________________________
     let initializationSwapAssetsBToATx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),
@@ -84,7 +84,7 @@ describe('otc_multiasset: userStory.mjs', /** @this {MochaSuiteModified} */() =>
       new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
     );
 
-    // user1  makes an init in order to withdraw some of his funds
+    // user1 makes an init in order to withdraw some of his funds
     // ___________________________________________________________________________________________
     const partAmountAssetAUser1 = amountAssetAUser1 / 2;
 
