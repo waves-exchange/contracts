@@ -1182,11 +1182,9 @@ func getOneTknV2WithBonusREADONLY(
 
   let outAmAmt = r._1
   let outPrAmt = r._2
+  let sumOfGetAssets = outAmAmt + outPrAmt
   
-  let lpAssetPriceOne = fraction(totalGet, scale8, lpAssetAmount)
-
-  let lpAssetPriceBoth = fraction((outAmAmt + outPrAmt), scale8, lpAssetAmount)
-  let bonus = fraction((lpAssetPriceOne - lpAssetPriceBoth), scale8, lpAssetPriceBoth)
+  let bonus = fraction((totalGet - sumOfGetAssets), scale8, sumOfGetAssets)
 
   ([], (totalGet, feeAmount, bonus))
 }
