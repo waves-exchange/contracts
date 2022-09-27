@@ -1133,11 +1133,11 @@ func getOneTknV2READONLY(
   let amBalanceNow = amBalance - estimAmAmt
   let prBalanceNow = prBalance - estimPrAmt
 
-  let (amountBalanceForSwap, priceBalanceForSwap, amountToSwap) =
+  let (amountBalanceForSwap, priceBalanceForSwap, amountToSwap, amountToAdd) =
     if (outAssetId == amId) then {
-      (prBalanceNow, amBalanceNow, estimPrAmt)
+      (prBalanceNow, amBalanceNow, estimPrAmt, estimAmAmt)
     } else if (outAssetId == prId) then {
-      (amBalanceNow, prBalanceNow, estimAmAmt)
+      (amBalanceNow, prBalanceNow, estimAmAmt, estimPrAmt)
     } else throw("wrong outAssetId")
 
   let yPrecision = 1
@@ -1152,10 +1152,10 @@ func getOneTknV2READONLY(
     Dconv # targetDPrecisionBigIntStr
   ], []).exactAs[Int]
 
-  let totalGetRaw = exchResult + if (outAssetId == amId) then estimAmAmt else estimPrAmt
+  let totalGetRaw = exchResult + amountToAdd
   let (totalGet, feeAmount) = totalGetRaw.takeFee()
 
-  ([], (totalGet, feeAmount))
+  ([], (totalGet, feeAmount, estimAmAmt, estimPrAmt, amountToSwap, exchResult))
 }
 
 @Callable(i)
