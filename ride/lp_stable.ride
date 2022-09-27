@@ -1154,8 +1154,9 @@ func getOneTknV2READONLY(
 
   let totalGetRaw = exchResult + amountToAdd
   let (totalGet, feeAmount) = totalGetRaw.takeFee()
+  if true then [totalGet.toString(), feeAmount.toString(), estimAmAmt.toString(), estimPrAmt.toString(), amountToSwap.toString(), exchResult.toString()].makeString(" ").throw() else
 
-  ([], (totalGet, feeAmount, estimAmAmt, estimPrAmt, amountToSwap, exchResult))
+  ([], (totalGet, feeAmount))
 }
 
 @Callable(i)
