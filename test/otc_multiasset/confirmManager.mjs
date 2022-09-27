@@ -12,18 +12,17 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: confirmManagerRejectIfYouAreNotPendingManager.mjs', /** @this {MochaSuiteModified} */() => {
+describe('otc_multiasset: confirmManager.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should reject confirmManager',
+    'should successfully confirmManager',
     async function () {
-      const anotherPublicKeyManager = publicKey(this.accounts.factoryV2);
-      const anotherInvalidPublicKeyManager = this.accounts.user1;
-      const boosting = address(this.accounts.boosting, chainId);
+      const anotherPublicKeyManager = publicKey(this.accounts.user1);
+      const otcMultiasset = address(this.accounts.otcMultiasset, chainId);
 
-      const expectedRejectMessage = 'You are not pending manager';
+      const expectedPendingManagerPublicKey = null;
 
       const setManagerTx = invokeScript({
-        dApp: boosting,
+        dApp: otcMultiasset,
         payment: [],
         call: {
           function: 'setManager',
@@ -37,20 +36,25 @@ describe('boosting: confirmManagerRejectIfYouAreNotPendingManager.mjs', /** @thi
       await ni.waitForTx(setManagerTx.id, { apiBase });
 
       const confirmManagerTx = invokeScript({
-        dApp: boosting,
+        dApp: otcMultiasset,
         payment: [],
         call: {
           function: 'confirmManager',
           args: [],
         },
         chainId,
-      }, anotherInvalidPublicKeyManager);
+      }, this.accounts.user1);
+      await api.transactions.broadcast(confirmManagerTx, {});
+      const { stateChanges } = await ni.waitForTx(confirmManagerTx.id, { apiBase });
 
-      await expect(
-        api.transactions.broadcast(confirmManagerTx, {}),
-      ).to.be.rejectedWith(
-        `Error while executing account-script: ${expectedRejectMessage}`,
-      );
+      expect(stateChanges.data).to.eql([{
+        key: '%s__managerPublicKey',
+        type: 'string',
+        value: anotherPublicKeyManager,
+      }, {
+        key: '%s__pendingManagerPublicKey',
+        value: expectedPendingManagerPublicKey,
+      }]);
     },
   );
 });

@@ -16,7 +16,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: increaseLockRejectIfDurationIsLessThenZero.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: increaseLockRejectIfLockDurationNewIsLessThenMinLockDuration.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should reject increaseLock',
     async function () {

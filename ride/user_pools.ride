@@ -45,6 +45,7 @@ func keyCreateCaller(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "
 func keyAmountAssetAmount(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "amountAssetAmount", amountAssetId, priceAssetId].makeString(SEP)
 func keyPriceAssetAmount(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "priceAssetAmount", amountAssetId, priceAssetId].makeString(SEP)
 func keyHeight(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "height", amountAssetId, priceAssetId].makeString(SEP)
+func keyActivationHeight(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "activationHeight", amountAssetId, priceAssetId].makeString(SEP)
 
 func keyFeeAssetId() = ["%s", "feeAssetId"].makeString(SEP)
 func keyFeeAmount() = ["%s", "feeAmount"].makeString(SEP)
@@ -225,6 +226,7 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
 
   [
     StringEntry(keyStatus(amountAssetId, priceAssetId), statusActive),
+    IntegerEntry(keyActivationHeight(amountAssetId, priceAssetId), height),
     ScriptTransfer(user, afterPut-beforePut, lpAssetId.fromBase58String())
   ]
 }

@@ -15,16 +15,16 @@ const chainId = 'R';
 const api = create(apiBase);
 
 const ridePath = 'ride';
-const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
+const otcMultiassetPath = format({ dir: ridePath, base: 'otc_multiasset.ride' });
 
-describe('boosting: verifyIfRejectIfCallerIsNotManager.mjs', /** @this {MochaSuiteModified} */() => {
+describe('otc_multiasset: verifyRejectIfCallerIsNotManager.mjs', /** @this {MochaSuiteModified} */() => {
   let someAccount;
   let managerAccount;
 
   before(async function () {
-    someAccount = this.accounts.factoryV2;
+    someAccount = this.accounts.user1;
     managerAccount = this.accounts.manager;
-    await setScriptFromFile(boostingPath, someAccount);
+    await setScriptFromFile(otcMultiassetPath, someAccount);
   });
   it(
     'should reject verify',

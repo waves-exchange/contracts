@@ -12,7 +12,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: lockRefRejectIfInvalidPayment.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should reject lockRef',
     async function () {
