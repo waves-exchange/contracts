@@ -160,7 +160,7 @@ func initializationSwapAssetsBToA(assetA: String) = {
 
     strict checkBalance = newBalance >= 0 || "Swap amount fail, amount is to small.".throwErr()
     strict checkPayment = toWithdraw >= minAmountWithdraw || "The withdraw amount is less than the minimum.".throwErr()
-    strict checkProcessInProgress = keyProcessInProgress(userAddress, assetA, assetB, assetLockHeight).getInteger().valueOrElse(0) == 0 || "At this height, there is already an exchange of this pair.".throwErr()
+    strict checkProcessInProgress = keyProcessInProgress(userAddress, assetA, assetB, assetLockHeight).getInteger() == unit || "At this height, there is already an exchange of this pair.".throwErr()
 
     [
         IntegerEntry(keyBalance(assetA, assetB, userAddress), newBalance),
