@@ -93,6 +93,10 @@ describe('lp: unstakeAndGet.mjs', /** @this {MochaSuiteModified} */() => {
       const { invokes } = stateChanges;
       expect(invokes.length).to.eql(expectedInvokesCount);
 
+      expect(
+        await checkStateChanges(invokes[0].stateChanges, 0, 1, 0, 0, 0, 0, 0, 0, 0),
+      ).to.eql(true);
+
       expect(invokes[0].dApp).to.eql(address(this.accounts.staking, chainId));
       expect(invokes[0].call.function).to.eql('unstake');
       expect(invokes[0].call.args).to.eql([
@@ -103,16 +107,17 @@ describe('lp: unstakeAndGet.mjs', /** @this {MochaSuiteModified} */() => {
           type: 'Int',
           value: lpAmount,
         }]);
-      expect(
-        await checkStateChanges(invokes[0].stateChanges, 0, 1, 0, 0, 0, 0, 0, 0, 0),
-      ).to.eql(true);
-
+      expect(invokes[0].payment).to.eql([]);
       expect(invokes[0].stateChanges.transfers).to.eql([
         {
           address: address(this.accounts.lp, chainId),
           asset: this.lpAssetId,
           amount: lpAmount,
         }]);
+
+      expect(
+        await checkStateChanges(invokes[1].stateChanges, 0, 0, 0, 0, 1, 0, 0, 0, 0),
+      ).to.eql(true);
 
       expect(invokes[1].dApp).to.eql(address(this.accounts.factoryV2, chainId));
       expect(invokes[1].call.function).to.eql('burn');
@@ -121,10 +126,12 @@ describe('lp: unstakeAndGet.mjs', /** @this {MochaSuiteModified} */() => {
           type: 'Int',
           value: lpAmount,
         }]);
-      expect(
-        await checkStateChanges(invokes[1].stateChanges, 0, 0, 0, 0, 1, 0, 0, 0, 0),
-      ).to.eql(true);
-
+      expect(invokes[1].payment).to.eql([
+        {
+          amount: lpAmount,
+          assetId: this.lpAssetId,
+        },
+      ]);
       expect(invokes[1].stateChanges.burns).to.eql([
         {
           assetId: this.lpAssetId,

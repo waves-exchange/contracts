@@ -74,6 +74,10 @@ describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
     const { invokes } = stateChanges;
     expect(invokes.length).to.eql(expectedInvokesCount);
 
+    expect(
+      await checkStateChanges(invokes[0].stateChanges, 0, 1, 0, 1, 0, 0, 0, 0, 0),
+    ).to.eql(true);
+
     expect(invokes[0].dApp).to.eql(address(this.accounts.factoryV2, chainId));
     expect(invokes[0].call.function).to.eql('emit');
     expect(invokes[0].call.args).to.eql([
@@ -81,10 +85,7 @@ describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'Int',
         value: expectedLpAmount,
       }]);
-    expect(
-      await checkStateChanges(invokes[0].stateChanges, 0, 1, 0, 1, 0, 0, 0, 0, 0),
-    ).to.eql(true);
-
+    expect(invokes[0].payment).to.eql([]);
     expect(invokes[0].stateChanges.transfers).to.eql([
       {
         address: address(this.accounts.lp, chainId),
