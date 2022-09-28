@@ -25,7 +25,7 @@ describe('lp: putIfPrViaAmX18MoreThanInPrAssetAmtX18.mjs', /** @this {MochaSuite
     const expectedPriceHistory = 1e8;
     const expectedInvokesCount = 2;
     const expectedSlippageToleranceReal = 5e7;
-    const expectedSlipageAmtAssetAmt = 1e3;
+    const expectedSlippageAmtAssetAmt = 1e3;
 
     const lp = address(this.accounts.lp, chainId);
 
@@ -83,7 +83,7 @@ describe('lp: putIfPrViaAmX18MoreThanInPrAssetAmtX18.mjs', /** @this {MochaSuite
     }, {
       key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
-      value: `%d%d%d%d%d%d%d%d%d%d__${shibAmount}__${usdnAmount}__${expectedLpAmount}__${expectedPriceLast}__${slippageTolerance}__${expectedSlippageToleranceReal}__${height}__${timestamp}__${expectedSlipageAmtAssetAmt}__0`,
+      value: `%d%d%d%d%d%d%d%d%d%d__${shibAmount}__${usdnAmount}__${expectedLpAmount}__${expectedPriceLast}__${slippageTolerance}__${expectedSlippageToleranceReal}__${height}__${timestamp}__${expectedSlippageAmtAssetAmt}__0`,
     }]);
 
     expect(stateChanges.transfers).to.eql([{
@@ -95,6 +95,9 @@ describe('lp: putIfPrViaAmX18MoreThanInPrAssetAmtX18.mjs', /** @this {MochaSuite
     const { invokes } = stateChanges;
     expect(invokes.length).to.eql(expectedInvokesCount);
 
+    expect(
+      await checkStateChanges(invokes[0].stateChanges, 0, 1, 0, 1, 0, 0, 0, 0, 0),
+    ).to.eql(true);
     expect(invokes[0].dApp).to.eql(address(this.accounts.factoryV2, chainId));
     expect(invokes[0].call.function).to.eql('emit');
     expect(invokes[0].call.args).to.eql([
@@ -103,10 +106,6 @@ describe('lp: putIfPrViaAmX18MoreThanInPrAssetAmtX18.mjs', /** @this {MochaSuite
         value: expectedLpAmount,
       }]);
     expect(invokes[0].payment).to.eql([]);
-    expect(
-      await checkStateChanges(invokes[0].stateChanges, 0, 1, 0, 1, 0, 0, 0, 0, 0),
-    ).to.eql(true);
-
     expect(invokes[0].stateChanges.transfers).to.eql([
       {
         address: address(this.accounts.lp, chainId),
@@ -114,17 +113,17 @@ describe('lp: putIfPrViaAmX18MoreThanInPrAssetAmtX18.mjs', /** @this {MochaSuite
         amount: expectedLpAmount,
       }]);
 
+    expect(
+      await checkStateChanges(invokes[1].stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    ).to.eql(true);
     expect(invokes[1].dApp).to.eql(address(this.accounts.slippage, chainId));
     expect(invokes[1].call.function).to.eql('put');
     expect(invokes[1].call.args).to.eql([]);
     expect(invokes[1].payment).to.eql([
       {
         assetId: this.shibAssetId,
-        amount: expectedSlipageAmtAssetAmt,
+        amount: expectedSlippageAmtAssetAmt,
       },
     ]);
-    expect(
-      await checkStateChanges(invokes[1].stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-    ).to.eql(true);
   });
 });
