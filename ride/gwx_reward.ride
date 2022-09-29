@@ -649,7 +649,7 @@ func calcSwapXToY(
   let amp = amplificatorBigIntStr.parseBigIntValue() * aPrecision
   let S = X + Y
   let ann = amp * nCoins
-  let c = fraction(D * D * D * D, aPrecision, X * Y * nCoins * nCoins * nCoins * ann)
+  let c = D * D / (X * nCoins) * D / (Y * nCoins) * D * aPrecision / (ann * nCoins)
   let b = S + D * aPrecision / ann
 
   let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
