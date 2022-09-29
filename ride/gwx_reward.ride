@@ -570,7 +570,7 @@ func calcPutXOnly(
 }
 
 @Callable(i)
-func calcSwapXToY(
+func calcSwapXToYOld(
   amountAssetAmountBigIntStr: String,
   amountAssetBalanceBigIntStr: String,
   priceAssetBalanceBigIntStr: String,
@@ -601,7 +601,6 @@ func calcSwapXToY(
     ],[]).exactAs[String].parseBigIntValue()
   } else dBigIntStr.parseBigIntValue()
   let amp = amplificatorBigIntStr.parseBigIntValue() * aPrecision
-  let S = amountAssetAmountBigIntStr.parseBigIntValue()
 
   let ann = amp * nCoins
   let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
@@ -613,11 +612,57 @@ func calcSwapXToY(
     let yNext = y + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (ann / aPrecision + dp / newY)
     (yNext, y)
   }
-  let (yNext, yPrev) = FOLD<17>(arr, (zeroBigInt, unit), calc)
-  let xDiff = absBigInt(yNext - yPrev.value())
-  if (xDiff <= targetPrecision) then {
+  let (yNext, yPrev) = FOLD<17>(arr, (d, unit), calc)
+  let yDiff = absBigInt(yNext - yPrev.value())
+  if (yDiff <= targetPrecision) then {
     ([], yNext.toInt())
-  } else throw("Y calculation error, yDiff = " + xDiff.toString() + ", yNext = " + yNext.toString() + ", yPrev = " + yPrev.value().toString())
+  } else throw("Y calculation error, yDiff = " + yDiff.toString() + ", yNext = " + yNext.toString() + ", yPrev = " + yPrev.value().toString())
+}
+
+@Callable(i)
+func calcSwapXToY(
+  amountAssetAmountBigIntStr: String,
+  amountAssetBalanceBigIntStr: String,
+  priceAssetBalanceBigIntStr: String,
+  dBigIntStr: String,
+  amplificatorBigIntStr: String,
+  amplificatorPrecisionBigIntStr: String,
+  targetXPrecisionBigIntStr: String,
+  targetDPrecisionBigIntStr: String
+) = {
+  let nCoins = 2.toBigInt()
+  let aPrecision = amplificatorPrecisionBigIntStr.parseBigIntValue()
+  let targetPrecision = targetXPrecisionBigIntStr.parseBigIntValue()
+  let oldX = amountAssetBalanceBigIntStr.parseBigIntValue()
+  let Y = priceAssetBalanceBigIntStr.parseBigIntValue()
+  let x = amountAssetAmountBigIntStr.parseBigIntValue()
+  let X = oldX + x
+  let D = if (dBigIntStr == "") then {
+    this.invoke("calcD", [
+      amountAssetBalanceBigIntStr,
+      priceAssetBalanceBigIntStr,
+      amplificatorBigIntStr,
+      amplificatorPrecisionBigIntStr,
+      targetDPrecisionBigIntStr
+    ],[]).exactAs[String].parseBigIntValue()
+  } else dBigIntStr.parseBigIntValue()
+  let amp = amplificatorBigIntStr.parseBigIntValue() * aPrecision
+  let S = X + Y
+  let ann = amp * nCoins
+  let c = fraction(D * D * D * D, aPrecision, X * Y * nCoins * nCoins * nCoins * ann)
+  let b = S + D * aPrecision / ann
+
+  let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+  func calc(acc: (BigInt, BigInt|Unit), cur: Int) = {
+    let (y, yPrev) = acc
+    let yNext = (y * y + c) / (2.toBigInt() * y + b - D)
+    (yNext, y)
+  }
+  let (yNext, yPrev) = FOLD<15>(arr, (D, unit), calc)
+  let yDiff = absBigInt(yNext - yPrev.value())
+  if (yDiff <= targetPrecision) then {
+    ([], {Y - yNext}.toInt())
+  } else throw("Y calculation error, yDiff = " + yDiff.toString() + ", yNext = " + yNext.toString() + ", yPrev = " + yPrev.value().toString())
 }
 
 @Callable(i)
