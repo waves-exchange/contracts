@@ -570,7 +570,7 @@ func calcPutXOnly(
 }
 
 @Callable(i)
-func calcSwapXToY(
+func calcSwapXToYOld(
   amountAssetAmountBigIntStr: String,
   amountAssetBalanceBigIntStr: String,
   priceAssetBalanceBigIntStr: String,
@@ -620,7 +620,7 @@ func calcSwapXToY(
 }
 
 @Callable(i)
-func calcSwapXToYCurve(
+func calcSwapXToY(
   amountAssetAmountBigIntStr: String,
   amountAssetBalanceBigIntStr: String,
   priceAssetBalanceBigIntStr: String,
