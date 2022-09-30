@@ -650,12 +650,12 @@ func calcSwapXToY(
   let S = X + Y
   let ann = amp * nCoins
   let c = D * D / (X * nCoins) * D / (Y * nCoins) * D * aPrecision / (ann * nCoins)
-  let b = S + D * aPrecision / ann
+  let b = S + D * aPrecision / ann - D
 
   let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
   func calc(acc: (BigInt, BigInt|Unit), cur: Int) = {
     let (y, yPrev) = acc
-    let yNext = (y * y + c) / (2.toBigInt() * y + b - D)
+    let yNext = (y * y + c) / (2.toBigInt() * y + b)
     (yNext, y)
   }
   let (yNext, yPrev) = FOLD<15>(arr, (D, unit), calc)
