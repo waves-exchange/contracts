@@ -676,7 +676,7 @@ func calcSwapXToY(
   let amp = amplificatorBigIntStr.parseBigIntValue() * aPrecision
   let S = X
   let ann = amp * nCoins
-  let scale8 = 100_000_000.toBigInt()
+  let scale = 1_000_000_000_000_000_000.toBigInt()
   let c = D * D / (X * nCoins) * D * aPrecision / (ann * nCoins)
   let b = S + D * aPrecision / ann - D
 

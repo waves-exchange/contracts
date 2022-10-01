@@ -535,7 +535,7 @@ func cp(caller: String,
                       prAsPmt.value().amount,
                       prAsPmt.value().assetId,
                       caller,     #i.caller.toString()
-                      false,
+                      txId == "",
                       emitLp,
                       isOneAsset,
                       validateSlippage,
