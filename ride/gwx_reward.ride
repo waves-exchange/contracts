@@ -501,21 +501,30 @@ func calcD(
     ([], zeroBigInt.toString())
   } else {
     let ann = amp * nCoins
-    let arr = [1, 2, 3, 4, 5, 6, 7]
-    func calc(acc: (BigInt, BigInt|Unit), cur: Int) = {
-      let (d, dPrev) = acc
-      # dp0 = d
-      # dp1 = dp0 * d / (x1 * nCoins)
-      # dp2 = dp1 * d / (x2 * nCoins) = (dp0 * d / (x1 * nCoins)) * d / (x2 * nCoins) = d^3 / (x1 * x2 * nCoins^2)
-      let dp = d * d * d / (x1 * x2 * nCoins * nCoins)
-      let dNext = (ann * s / aPrecision + dp * nCoins) * d / ((ann - aPrecision) * d / aPrecision + (nCoins + 1.toBigInt()) * dp)
-      (dNext, d)
+    let arr = [0, 1, 2, 3, 4, 5, 6]
+    func calc(acc: (BigInt, BigInt|Unit, Int|Unit), cur: Int) = {
+      let (d, dPrev, found) = acc
+      if (found != unit) then acc else {
+        # dp0 = d
+        # dp1 = dp0 * d / (x1 * nCoins)
+        # dp2 = dp1 * d / (x2 * nCoins) = (dp0 * d / (x1 * nCoins)) * d / (x2 * nCoins) = d^3 / (x1 * x2 * nCoins^2)
+        let dp = d * d * d / (x1 * x2 * nCoins * nCoins)
+        let dNext = (ann * s / aPrecision + dp * nCoins) * d / ((ann - aPrecision) * d / aPrecision + (nCoins + 1.toBigInt()) * dp)
+        let dDiff = absBigInt(dNext - d.value())
+        if (dDiff <= targetPrecision) then {
+          (dNext, d, cur)
+        } else {
+          (dNext, d, unit)
+        }
+      }
     }
-    let (dNext, dPrev) = FOLD<7>(arr, (s, unit), calc)
-    let dDiff = absBigInt(dNext - dPrev.value())
-    if (dDiff <= targetPrecision) then {
+    let (dNext, dPrev, found) = FOLD<7>(arr, (s, unit, unit), calc)
+    if (found != unit) then {
       ([], dNext.toString())
-    } else throw("D calculation error, dDiff = " + dDiff.toString())
+    } else {
+      let dDiff = { dNext - dPrev.value() }.absBigInt()
+      { "D calculation error, dDiff = " + dDiff.toString() }.throw()
+    }
   }
 }
 
@@ -553,20 +562,29 @@ func calcPutXOnly(
   let S = amountAssetAmountBigIntStr.parseBigIntValue()
 
   let ann = amp * nCoins
-  let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-  func calc(acc: (BigInt, BigInt|Unit), cur: Int) = {
-    let (x, xPrev) = acc
-    let newX = X + S - x
-    let newY = Y - x * Y / X
-    let dp = d * d * d / (newX * newY * nCoins * nCoins)
-    let xNext = x + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (-ann * (-1.toBigInt() - Y / X) / aPrecision + dp / newX + Y * dp / (X * newY))
-    (xNext, x)
+  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+  func calc(acc: (BigInt, BigInt|Unit, Int|Unit), cur: Int) = {
+    let (x, xPrev, found) = acc
+    if (found != unit) then acc else {
+      let newX = X + S - x
+      let newY = Y - x * Y / X
+      let dp = d * d * d / (newX * newY * nCoins * nCoins)
+      let xNext = x + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (-ann * (-1.toBigInt() - Y / X) / aPrecision + dp / newX + Y * dp / (X * newY))
+      let xDiff = absBigInt(xNext - x.value())
+      if (xDiff <= targetPrecision) then {
+        (xNext, x, cur)
+      } else {
+        (xNext, x, unit)
+      }
+    }
   }
-  let (xNext, xPrev) = FOLD<20>(arr, (zeroBigInt, unit), calc)
-  let xDiff = absBigInt(xNext - xPrev.value())
-  if (xDiff <= targetPrecision) then {
+  let (xNext, xPrev, found) = FOLD<20>(arr, (zeroBigInt, unit, unit), calc)
+  if (found != unit) then {
     ([], (xNext.toInt(), xNext.fraction(Y, X).toInt()))
-  } else throw("X calculation error, xDiff = " + xDiff.toString() + ", xNext = " + xNext.toString() + ", xPrev = " + xPrev.value().toString())
+  } else {
+    let xDiff = { xNext - xPrev.value() }.absBigInt()
+    { "X calculation error, xDiff = " + xDiff.toString() }.throw()
+  }
 }
 
 @Callable(i)
@@ -603,20 +621,29 @@ func calcSwapXToYOld(
   let amp = amplificatorBigIntStr.parseBigIntValue() * aPrecision
 
   let ann = amp * nCoins
-  let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
-  func calc(acc: (BigInt, BigInt|Unit), cur: Int) = {
-    let (y, yPrev) = acc
-    let newX = X + x
-    let newY = Y - y
-    let dp = d * d * d / (newX * newY * nCoins * nCoins)
-    let yNext = y + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (ann / aPrecision + dp / newY)
-    (yNext, y)
+  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+  func calc(acc: (BigInt, BigInt|Unit, Int|Unit), cur: Int) = {
+    let (y, yPrev, found) = acc
+    if (found != unit) then acc else {
+      let newX = X + x
+      let newY = Y - y
+      let dp = d * d * d / (newX * newY * nCoins * nCoins)
+      let yNext = y + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (ann / aPrecision + dp / newY)
+      let yDiff = absBigInt(yNext - y.value())
+      if (yDiff <= targetPrecision) then {
+        (yNext, y, cur)
+      } else {
+        (yNext, y, unit)
+      }
+    }
   }
-  let (yNext, yPrev) = FOLD<17>(arr, (d, unit), calc)
-  let yDiff = absBigInt(yNext - yPrev.value())
-  if (yDiff <= targetPrecision) then {
+  let (yNext, yPrev, found) = FOLD<17>(arr, (d, unit, unit), calc)
+  if (found != unit) then {
     ([], yNext.toInt())
-  } else throw("Y calculation error, yDiff = " + yDiff.toString() + ", yNext = " + yNext.toString() + ", yPrev = " + yPrev.value().toString())
+  } else {
+    let yDiff = { yNext - yPrev.value() }.absBigInt()
+    { "Y calculation error, yDiff = " + yDiff.toString() }.throw()
+  }
 }
 
 @Callable(i)
@@ -647,22 +674,32 @@ func calcSwapXToY(
     ],[]).exactAs[String].parseBigIntValue()
   } else dBigIntStr.parseBigIntValue()
   let amp = amplificatorBigIntStr.parseBigIntValue() * aPrecision
-  let S = X + Y
+  let S = X
   let ann = amp * nCoins
-  let c = D * D / (X * nCoins) * D / (Y * nCoins) * D * aPrecision / (ann * nCoins)
+  let scale8 = 100_000_000.toBigInt()
+  let c = D * D / (X * nCoins) * D * aPrecision / (ann * nCoins)
   let b = S + D * aPrecision / ann - D
 
-  let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-  func calc(acc: (BigInt, BigInt|Unit), cur: Int) = {
-    let (y, yPrev) = acc
-    let yNext = (y * y + c) / (2.toBigInt() * y + b)
-    (yNext, y)
+  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  func calc(acc: (BigInt, BigInt|Unit, Int|Unit), cur: Int) = {
+    let (y, yPrev, found) = acc
+    if (found != unit) then acc else {
+      let yNext = (y * y + c) / (2.toBigInt() * y + b)
+      let yDiff = absBigInt(yNext - y.value())
+      if (yDiff <= targetPrecision) then {
+        (yNext, y, cur)
+      } else {
+        (yNext, y, unit)
+      }
+    }
   }
-  let (yNext, yPrev) = FOLD<15>(arr, (D, unit), calc)
-  let yDiff = absBigInt(yNext - yPrev.value())
-  if (yDiff <= targetPrecision) then {
+  let (yNext, yPrev, found) = FOLD<15>(arr, (D, unit, unit), calc)
+  if (found != unit) then {
     ([], {Y - yNext}.toInt())
-  } else throw("Y calculation error, yDiff = " + yDiff.toString() + ", yNext = " + yNext.toString() + ", yPrev = " + yPrev.value().toString())
+  } else {
+    let yDiff = { yNext - yPrev.value() }.absBigInt()
+    { "Y calculation error, yDiff = " + yDiff.toString() }.throw()
+  }
 }
 
 @Callable(i)
