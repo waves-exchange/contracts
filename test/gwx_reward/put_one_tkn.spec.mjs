@@ -48,7 +48,7 @@ describe('put one tkn', /** @this {MochaSuiteModified} */() => {
   it('swap x', async function () {
     const x = 100000000;
     const X = '464684764848';
-    const Y = '8541956133770';
+    const Y = '8541956133797';
     const amp = '1000';
     const aPrecision = '100';
     const targetXPrecision = '1';
@@ -61,8 +61,8 @@ describe('put one tkn', /** @this {MochaSuiteModified} */() => {
 
   it('swap y', async function () {
     const y = 100000000;
-    const X = '8541956133770';
-    const Y = '464684764848';
+    const X = '8541956133797';
+    const Y = '464584864848';
     const amp = '1000';
     const aPrecision = '100';
     const targetXPrecision = '1';
@@ -71,5 +71,17 @@ describe('put one tkn', /** @this {MochaSuiteModified} */() => {
     const response = await api.utils.fetchEvaluate(address(this.accounts.math, chainId), expr);
     // 95563979
     console.log(JSON.stringify(response, null, 2));
+  });
+
+  it('calc D', async function () {
+    const X = '464584864848';
+    const Y = '8541956133797';
+    const amp = '1000';
+    const aPrecision = '100';
+    const targetDPrecision = '1';
+    const expr = `calcD("${X}", "${Y}", "${amp}", "${aPrecision}", "${targetDPrecision}")`;
+    const response = await api.utils.fetchEvaluate(address(this.accounts.math, chainId), expr);
+    console.log(JSON.stringify(response, null, 2));
+    // works well! 8988163273281
   });
 });
