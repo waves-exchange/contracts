@@ -64,13 +64,9 @@ describe('otc_multiasset: initializationSwapAssetsBToA.mjs', /** @this {MochaSui
       stateChanges,
     } = await waitForTx(initializationSwapAssetsBToATx.id, { apiBase });
 
-    expect(await checkStateChanges(stateChanges, 4, 0, 0, 0, 0, 0, 0, 0, 0)).to.eql(true);
+    expect(await checkStateChanges(stateChanges, 3, 0, 0, 0, 0, 0, 0, 0, 0)).to.eql(true);
 
     expect(stateChanges.data).to.eql([{
-      key: `%s%s%s%s__assetLockTime__${this.assetAId}__${this.assetBId}__${address(this.accounts.user1, chainId)}`,
-      type: 'integer',
-      value: height + this.withdrawDelay,
-    }, {
       key: `%s%s%s%s__balance__${this.assetAId}__${this.assetBId}__${address(this.accounts.user1, chainId)}`,
       type: 'integer',
       value: expectedBalance,

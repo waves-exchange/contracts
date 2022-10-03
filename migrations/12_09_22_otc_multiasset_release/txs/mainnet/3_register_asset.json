@@ -1,8 +1,8 @@
 {
-  "dApp": "3MvXnAcEtL9x3i499UcvTQZPufrT5ZZUEd5",
-  "fee": 500000,
+  "dApp": "",
+  "fee": ,
   "proofs": [],
-  "senderPublicKey": "EsqRXDXnACFAdXz6EPhF1SbKyeV7MVuoyDqmXsMz7ySv",
+  "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
   "timestamp": 0,
   "type": 16,
   "version": 1,
@@ -12,31 +12,31 @@
     "args": [
       {
         "type": "string",
-        "value": "5Sh9KghfkZyhjwuodovDhB6PghDUGBHiAPZ4MkrPgKtX"
+        "value": "6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ"
       },
       {
         "type": "string",
-        "value": "25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT"
+        "value": "DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p"
       },
       {
         "type": "integer",
-        "value": 3
+        "value": 
       },
       {
         "type": "integer",
-        "value": 0
+        "value": 
       },
       {
         "type": "integer",
-        "value": 2
+        "value": 
       },
       {
         "type": "integer",
-        "value": 1000000
+        "value": 
       },
       {
         "type": "integer",
-        "value": 1000000
+        "value": 
       },
       {
         "type": "integer",
