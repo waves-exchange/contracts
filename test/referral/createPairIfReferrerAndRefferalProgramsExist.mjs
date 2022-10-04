@@ -1,7 +1,9 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
-import { invokeScript, libs, nodeInteraction as ni } from '@waves/waves-transactions';
+import { address, publicKey } from '@waves/ts-lib-crypto';
+import {
+  data, invokeScript, libs, nodeInteraction as ni,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { checkStateChanges } from '../utils.mjs';
 
@@ -13,11 +15,12 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: createPairIfReferrerAndRefferalProgramsExist.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully createPair',
     async function () {
       const programName = 'ReferralProgram';
+      const programNameFirst = 'ReferralProgramFirst';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
@@ -47,6 +50,23 @@ describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
       }, this.accounts.manager);
       await api.transactions.broadcast(createReferralProgramTx, {});
       await ni.waitForTx(createReferralProgramTx.id, { apiBase });
+
+      const setKeysTx = data({
+        additionalFee: 4e5,
+        senderPublicKey: publicKey(this.accounts.referral),
+        data: [{
+          key: `%s%s__allReferralPrograms__${referrerAddress}`,
+          type: 'string',
+          value: programNameFirst,
+        }, {
+          key: `%s%s__allReferralPrograms__${referralAddress}`,
+          type: 'string',
+          value: programNameFirst,
+        }],
+        chainId,
+      }, this.accounts.manager);
+      await api.transactions.broadcast(setKeysTx, {});
+      await ni.waitForTx(setKeysTx.id, { apiBase });
 
       const createPairTx = invokeScript({
         dApp: referral,
@@ -87,11 +107,11 @@ describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
       }, {
         key: `%s%s__allReferralPrograms__${referrerAddress}`,
         type: 'string',
-        value: programName,
+        value: `${programNameFirst}__${programName}`,
       }, {
         key: `%s%s__allReferralPrograms__${referralAddress}`,
         type: 'string',
-        value: programName,
+        value: `${programNameFirst}__${programName}`,
       },
       ]);
     },
