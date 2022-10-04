@@ -12,22 +12,22 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: incUnclaimed.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully createPair',
+    'should successfully incUnclaimed',
     async function () {
       const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
-
-      const expectedTotalReferralCount = 1;
+      const referrerReward = 1e4;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
       );
       const signature = libs.crypto.signBytes(this.accounts.backend, bytes);
+
       const referral = address(this.accounts.referral, chainId);
 
       const createReferralProgramTx = invokeScript({
@@ -65,30 +65,32 @@ describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
         chainId,
       }, this.accounts.manager);
       await api.transactions.broadcast(createPairTx, {});
-      const { stateChanges } = await ni.waitForTx(createPairTx.id, { apiBase });
+      await ni.waitForTx(createPairTx.id, { apiBase });
 
-      expect(stateChanges.data).to.eql([{
-        key: `%s%s%s%s__existsReferrerToReferral__${programName}__${referrerAddress}__${referralAddress}`,
-        type: 'boolean',
-        value: true,
-      }, {
-        key: `%s%s%s__totalReferralCount__${programName}__${referrerAddress}`,
+      const incUnclaimedWithPaymentTx = invokeScript({
+        dApp: referral,
+        payment: [{ assetId: this.wxAssetId, amount: referrerReward }],
+        call: {
+          function: 'incUnclaimedWithPayment',
+          args: [
+            { type: 'string', value: programName },
+            { type: 'list', value: [{ type: 'string', value: referrerAddress }] },
+          ],
+        },
+        chainId,
+      }, this.accounts.implementation);
+      await api.transactions.broadcast(incUnclaimedWithPaymentTx, {});
+      const { stateChanges } = await ni.waitForTx(incUnclaimedWithPaymentTx.id, { apiBase });
+
+      expect(stateChanges.invokes[0].stateChanges.data).to.eql([{
+        key: `%s%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
         type: 'integer',
-        value: expectedTotalReferralCount,
+        value: referrerReward,
       }, {
-        key: `%s%s%s__referrer__${programName}__${referralAddress}`,
-        type: 'string',
-        value: referrerAddress,
-      }, {
-        key: `%s%s__allReferralPrograms__${referrerAddress}`,
-        type: 'string',
-        value: programName,
-      }, {
-        key: `%s%s__allReferralPrograms__${referralAddress}`,
-        type: 'string',
-        value: programName,
-      },
-      ]);
+        key: `%s%s__rewardsTotal__${programName}`,
+        type: 'integer',
+        value: referrerReward,
+      }]);
     },
   );
 });

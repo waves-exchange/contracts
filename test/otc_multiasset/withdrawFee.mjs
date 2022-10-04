@@ -1,9 +1,10 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address, publicKey } from '@waves/ts-lib-crypto';
-import { data, invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import { address } from '@waves/ts-lib-crypto';
+import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { checkStateChanges } from '../utils.mjs';
+import { waitForHeight } from '../api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -13,37 +14,68 @@ const chainId = 'R';
 
 describe('otc_multiasset: withdrawFee.mjs', /** @this {MochaSuiteModified} */() => {
   it('should reject withdrawFee', async function () {
-    const toWithdrawA = 123;
-    const toWithdrawB = 345;
+    const amountAssetA = this.minAmountDeposit + 1;
+    const feeDeposit = Math.floor(amountAssetA / 1000) * this.depositFee;
+    const amountAssetB = amountAssetA - feeDeposit;
 
-    const expectedTotalCommissionsCollectedDeposit = 0;
-    const expectedTotalCommissionsCollectedWithdraw = 0;
+    const feeWithdraw = Math.floor(amountAssetB / 1000) * this.withdrawFee;
+    const expectedTotalFeeCollectedDeposit = feeDeposit;
+    const expectedTotalFeeCollectedWithdraw = feeWithdraw;
 
-    const setTotalCommissionsCollectedDepositTx = data({
-      additionalFee: 4e5,
-      senderPublicKey: publicKey(this.accounts.otcMultiasset),
-      data: [{
-        key: `%s%s%s%s__totalFeeCollected__deposit__${this.assetAId}__${this.assetBId}`,
-        type: 'integer',
-        value: toWithdrawA,
+    const swapAssetsAToBTx = invokeScript({
+      dApp: address(this.accounts.otcMultiasset, chainId),
+      payment: [{
+        assetId: this.assetAId,
+        amount: amountAssetA,
       }],
+      call: {
+        function: 'swapAssetsAToB',
+        args: [
+          { type: 'string', value: this.assetBId },
+        ],
+      },
       chainId,
-    }, this.accounts.manager);
-    await api.transactions.broadcast(setTotalCommissionsCollectedDepositTx, {});
-    await ni.waitForTx(setTotalCommissionsCollectedDepositTx.id, { apiBase });
+    }, this.accounts.user1);
+    await api.transactions.broadcast(swapAssetsAToBTx, {});
+    await ni.waitForTx(swapAssetsAToBTx.id, { apiBase });
 
-    const setTotalCommissionsCollectedWithdrawTx = data({
-      additionalFee: 4e5,
-      senderPublicKey: publicKey(this.accounts.otcMultiasset),
-      data: [{
-        key: `%s%s%s%s__totalFeeCollected__withdraw__${this.assetAId}__${this.assetBId}`,
-        type: 'integer',
-        value: toWithdrawB,
+    const initializationSwapAssetsBToATx = invokeScript({
+      dApp: address(this.accounts.otcMultiasset, chainId),
+      payment: [{
+        assetId: this.assetBId,
+        amount: amountAssetB,
       }],
+      call: {
+        function: 'initializationSwapAssetsBToA',
+        args: [
+          { type: 'string', value: this.assetAId },
+        ],
+      },
       chainId,
-    }, this.accounts.manager);
-    await api.transactions.broadcast(setTotalCommissionsCollectedWithdrawTx, {});
-    await ni.waitForTx(setTotalCommissionsCollectedWithdrawTx.id, { apiBase });
+    }, this.accounts.user1);
+
+    await api.transactions.broadcast(initializationSwapAssetsBToATx, {});
+    const {
+      height: heightInKey,
+    } = await ni.waitForTx(initializationSwapAssetsBToATx.id, { apiBase });
+
+    await waitForHeight(heightInKey + this.withdrawDelay);
+
+    const withdrawAssetTx = invokeScript({
+      dApp: address(this.accounts.otcMultiasset, chainId),
+      payment: [],
+      call: {
+        function: 'withdrawAsset',
+        args: [
+          { type: 'string', value: this.assetAId },
+          { type: 'string', value: this.assetBId },
+          { type: 'integer', value: heightInKey + this.withdrawDelay },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
+    await api.transactions.broadcast(withdrawAssetTx, {});
+    await ni.waitForTx(withdrawAssetTx.id, { apiBase });
 
     const withdrawFeeTx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),
@@ -65,21 +97,21 @@ describe('otc_multiasset: withdrawFee.mjs', /** @this {MochaSuiteModified} */() 
     expect(stateChanges.data).to.eql([{
       key: `%s%s%s%s__totalFeeCollected__deposit__${this.assetAId}__${this.assetBId}`,
       type: 'integer',
-      value: expectedTotalCommissionsCollectedDeposit,
+      value: 0,
     }, {
       key: `%s%s%s%s__totalFeeCollected__withdraw__${this.assetAId}__${this.assetBId}`,
       type: 'integer',
-      value: expectedTotalCommissionsCollectedWithdraw,
+      value: 0,
     }]);
 
     expect(stateChanges.transfers).to.eql([{
       address: address(this.accounts.manager, chainId),
       asset: this.assetAId,
-      amount: toWithdrawA,
+      amount: expectedTotalFeeCollectedWithdraw,
     }, {
       address: address(this.accounts.manager, chainId),
       asset: this.assetBId,
-      amount: toWithdrawB,
+      amount: expectedTotalFeeCollectedDeposit,
     }]);
   });
 });

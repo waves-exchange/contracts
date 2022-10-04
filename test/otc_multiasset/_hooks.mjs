@@ -24,6 +24,7 @@ export const mochaHooks = {
       'manager',
       'otcMultiasset',
       'user1',
+      'user2',
     ];
     this.accounts = Object.fromEntries(
       names.map((item) => [item, randomSeed(seedWordsCount)]),
@@ -36,11 +37,6 @@ export const mochaHooks = {
     }, seed);
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
-
-    console.log('account addresses:');
-    for (const [key, value] of Object.entries(this.accounts)) {
-      console.log('  ', key, address(value, chainId));
-    }
 
     await setScriptFromFile(otcMultiassetPath, this.accounts.otcMultiasset);
 
@@ -55,11 +51,9 @@ export const mochaHooks = {
     await waitForTx(assetAIssueTx.id, { apiBase });
     this.assetAId = assetAIssueTx.id;
 
-    console.log('assetAId', this.assetAId);
-
     const assetAAmount = 100e6;
     const massTransferAssetATx = massTransfer({
-      transfers: names.slice(-2).map((name) => ({
+      transfers: names.slice(-3).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: assetAAmount,
       })),
       assetId: this.assetAId,
@@ -79,11 +73,9 @@ export const mochaHooks = {
     await waitForTx(assetBIssueTx.id, { apiBase });
     this.assetBId = assetBIssueTx.id;
 
-    console.log('assetBId', this.assetBId);
-
     const assetBAmount = 100e6;
     const massTransferAssetBTx = massTransfer({
-      transfers: names.slice(-2).map((name) => ({
+      transfers: names.slice(-3).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: assetBAmount,
       })),
       assetId: this.assetBId,
