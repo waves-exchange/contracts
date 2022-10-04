@@ -1,7 +1,7 @@
 {
     "senderPublicKey": "MuJFxUBAQVpXXraxYbYJEzWYG8NukYhQEQFm7CaZLcT",
-    "amount": 0,
-    "fee": 701928000000,
+    "amount": 701928000000,
+    "fee": 500000,
     "type": 4,
     "version": 1,
     "feeAssetId": null,
@@ -9,4 +9,4 @@
     "assetId": "DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p",
     "recipient": "3P2K8CWUGqJU9mP147xnjWpSQn1q1zFX3GA",
     "feeAsset": null
-  }
+}
