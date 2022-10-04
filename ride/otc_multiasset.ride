@@ -44,10 +44,6 @@ func keyTotalFeeCollectedWithdraw(assetA: String, assetB: String) = {
     makeString(["%s%s%s%s", "totalFeeCollected", "withdraw", assetA, assetB], SEP)
 }
 
-func keyAssetLockTime(assetA: String, assetB: String, userAddress: String) = {
-    makeString(["%s%s%s%s", "assetLockTime", assetA, assetB, userAddress], SEP)
-}
-
 func keyProcessInProgress(userAddress: String, assetA: String, assetB: String, heightInKey: Int) = {
     makeString(["%s%s%s%s%s%d", "withdrawProcess", "inProgress", userAddress, assetA, assetB, heightInKey.toString()], SEP)
 }

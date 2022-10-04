@@ -1,31 +1,9 @@
-{-# STDLIB_VERSION 6 #-}
+{-# STDLIB_VERSION 5 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-let decimalPartUSDN = 1000000
-let decimalPartUSDT = 1000000
-
-func keyWithdrawDelay() = "%s__withdrawDelay"
-
-func withdrawDelay() = keyWithdrawDelay().getInteger().value()
-
-func keyMinimalAmountToSwapUsdt() = "%s__minimalAmountToSwapUsdt"
-func keyMinimalAmountToSwapUsdn() = "%s__minimalAmountToSwapUsdn"
-
-func minUsdt() = keyMinimalAmountToSwapUsdt().getInteger().value()
-func minUsdn() = keyMinimalAmountToSwapUsdn().getInteger().value()
-
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
-
-func keyUsdtAssetId() = "%s__usdtAssetId"
-func keyUsdnAssetId() = "%s__usdnAssetId"
-
-func keyDepositFee() = "%s__depositFee"
-func keyWithdrawFee() = "%s__withdrawFee"
-
-func usdt() = keyUsdtAssetId().getString().value().fromBase58String()
-func usdn() = keyUsdnAssetId().getString().value().fromBase58String()
 
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
   case s: String => s.fromBase58String()
@@ -37,57 +15,6 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
   case _: Unit => unit
 }
 
-func collectKey(address: String, amountToSwapInKey:Int, allowToWithdrawHeight:Int) = {
-  makeString([address, "WITHDRAW", toString(amountToSwapInKey), "HEIGHT", toString(allowToWithdrawHeight)], "_")
-}
-
-func collectBalanceKey(address: String) = {
-  makeString([address, "balance"], "_")
-}
-
-func collectBalanceKeyWithFee(address: String) = {
-  makeString([address, "balance_with_fee"], "_")
-}
-
-func usdtToUsdnAssetError() = {
-  throw("To swap USDT to USDN you need attach payment in USDT")
-}
-
-func usdnToUsdtAssetError() = {
-  throw("To swap USDN to USDT you need attach payment in USDN")
-}
-
-func usdtToUsdnLowLimitError() = {
-  throw("you can swap at least " + toString(minUsdt() / decimalPartUSDT) + " tokens")
-}
-
-func abs(n: Int) = {
-  if (n < 0) then n * -1 else n
-}
-
-func getWithoutFeeWithdraw(amount: Int, balanceWithoutFee: Int) = min([amount, balanceWithoutFee])
-
-func getListElementOrDefault(list: List[String], index: Int, default: String) = {
-  if (size(list) > index) then getElement(list, index) else default
-}
-
-func currentWithdrawals(address: String, amount: Int) = {
-  let balanceKey = collectBalanceKey(address)
-  let balanceWithFeeKey = collectBalanceKeyWithFee(address)
-
-  let currentClientBalance = this.getInteger(balanceKey).valueOrElse(0)
-  let currentClientBalanceWithFee  = this.getInteger(balanceWithFeeKey).valueOrElse(0)
-  let userBalance = currentClientBalance + currentClientBalanceWithFee
-
-  if (userBalance < amount || amount < minUsdn()) then throw("Swap amount fail, amount is to small or to big.") else
-
-  let toWithdrawWithoutFee = getWithoutFeeWithdraw(amount, currentClientBalance)
-  let toWithdrawWithFee = amount - toWithdrawWithoutFee
-  let fee = toWithdrawWithFee / 100 * keyWithdrawFee().getInteger().value()
-
-  [toWithdrawWithoutFee, toWithdrawWithFee, fee]
-}
-
 func mustManager(i: Invocation) = {
   let pd = "Permission denied".throw()
 
@@ -95,123 +22,6 @@ func mustManager(i: Invocation) = {
     case pk: ByteVector => i.callerPublicKey == pk || pd
     case _: Unit => i.caller == this || pd
   }
-}
-
-@Callable(i)
-func setWithdrawDelay(newWithdrawDelay: Int) = {
-  strict checkCaller = i.mustManager()
-  [
-      IntegerEntry(keyWithdrawDelay(), newWithdrawDelay)
-  ]
-}
-
-@Callable(i)
-func setMinimalAmountToSwapUsdt(newMinimalAmount: Int) = {
-  strict checkCaller = i.mustManager()
-  [
-      IntegerEntry(keyMinimalAmountToSwapUsdt(), newMinimalAmount)
-  ]
-}
-
-@Callable(i)
-func setMinimalAmountToSwapUsdn(newMinimalAmount: Int) = {
-  strict checkCaller = i.mustManager()
-  [
-      IntegerEntry(keyMinimalAmountToSwapUsdn(), newMinimalAmount)
-  ]
-}
-
-@Callable(i)
-func setWithdrawFee(newFee: Int) = {
-  strict checkCaller = i.mustManager()
-  [
-    IntegerEntry(keyWithdrawFee(), newFee)
-  ]
-}
-
-@Callable(i)
-func setDepositFee(newFee: Int) = {
-  strict checkCaller = i.mustManager()
-  [
-    IntegerEntry(keyDepositFee(), newFee)
-  ]
-}
-
-
-@Callable(i)
-func constructor(usdtAssetId: String, usdnAssetId: String) = {
-  strict checkCaller = i.mustManager()
-  [
-    StringEntry(keyUsdtAssetId(), usdtAssetId),
-    StringEntry(keyUsdnAssetId(), usdnAssetId)
-  ]
-}
-
-@Callable(invoke)
-func swapUSDTtoUSDN() = {
-  let balanceKey = collectBalanceKeyWithFee(invoke.caller.toString())
-  let payment = value(invoke.payments[0])
-
-  if (payment.assetId != usdt()) then usdtToUsdnAssetError() else
-
-  let amount = payment.amount
-  let fee = amount / 100 * keyDepositFee().getInteger().value()
-  let currentClientBalanceUSDT = this.getInteger(balanceKey).valueOrElse(0)
-
-  if (amount < minUsdt()) then usdtToUsdnLowLimitError() else
-
-  [
-      IntegerEntry(balanceKey, currentClientBalanceUSDT + amount),
-      ScriptTransfer(invoke.caller, amount - fee, usdn())
-  ]
-}
-
-@Callable(invoke)
-func initializationUSDNtoUSDTswap() = {
-  let payment = value(invoke.payments[0])
-  let address = invoke.caller.toString()
-
-  if (payment.assetId != usdn()) then usdnToUsdtAssetError() else
-
-  let amount = payment.amount
-
-  let balanceKey = collectBalanceKey(address)
-  let balanceWithFeeKey = collectBalanceKeyWithFee(address)
-
-  let currentClientBalance = this.getInteger(balanceKey).valueOrElse(0)
-  let currentClientBalanceWithFee  = this.getInteger(balanceWithFeeKey).valueOrElse(0)
-  let userBalance = currentClientBalance + currentClientBalanceWithFee
-
-  let data = currentWithdrawals(invoke.caller.toString(), amount)
-  let toWithdrawWithoutFee = getElement(data, 0).valueOrErrorMessage("Wrong 'currentWithdrawals' method!")
-  let toWithdrawWithFee = getElement(data, 1).valueOrErrorMessage("Wrong 'currentWithdrawals' method!")
-  let fee = getElement(data, 2).valueOrErrorMessage("Wrong 'currentWithdrawals' method!")
-  let total = toWithdrawWithFee + toWithdrawWithoutFee - fee
-
-  let allowToWithDrawHeight = height + withdrawDelay()
-
-  if this.getString(collectKey(invoke.caller.toString(), amount, allowToWithDrawHeight)).isDefined() then throw("You have already started withdrawal process, wait next block.") else
-
-  [
-      IntegerEntry(balanceKey, currentClientBalance - toWithdrawWithoutFee),
-      IntegerEntry(balanceWithFeeKey, currentClientBalanceWithFee - toWithdrawWithFee),
-      StringEntry(collectKey(invoke.caller.toString(), amount, allowToWithDrawHeight), makeString(["not_withdrawn", toString(amount - fee)], "_"))
-  ]
-}
-
-@Callable(invoke)
-func swapUSDNtoUSDT(amount: Int, heightInKey: Int) = {
-  let key = collectKey(invoke.caller.toString(), amount, heightInKey)
-  let withdrawnInfo = this.getString(key).valueOrErrorMessage("This key doesn't exists "+ key + " at address  " + toString(this))
-  let toWithdraw = getListElementOrDefault(split(withdrawnInfo, "_"), 2, toString(amount))
-
-  if height >= heightInKey && contains(withdrawnInfo, "not_withdrawn") then
-      [
-          DeleteEntry(key),
-          ScriptTransfer(invoke.caller, parseInt(toWithdraw).valueOrErrorMessage("Wrong withdraw data!"), usdt())
-      ]
-
-  else throw("Withdrawal is possible after "+toString(heightInKey)+" height or you have already withdrawn USDT.")
 }
 
 @Callable(i)
@@ -235,7 +45,7 @@ func confirmManager() = {
 }
 
 @Verifier(tx)
-func verify () = {
+func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
     case pk: ByteVector => pk
     case _: Unit => tx.senderPublicKey
