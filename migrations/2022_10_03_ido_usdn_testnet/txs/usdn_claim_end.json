@@ -1,7 +1,16 @@
 {
   "senderPublicKey": "5195SwZ4ifX6bBstZ6tN31kEQFVHaKpFYLc1GCa3Myrh",
   "data": [
-    // TODO later
+    {
+      "key": "%s__usdnClaimDisabled",
+      "type": "boolean",
+      "value": false
+    },
+    {
+      "key": "%s__usdnClaimEndHeight",
+      "type": "integer",
+      "value": 2783284
+    }
   ],
   "feeAssetId": null,
   "proofs": [],
