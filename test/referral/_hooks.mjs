@@ -29,7 +29,9 @@ export const mochaHooks = {
       'referrerAccount',
       'referralAccount',
       'implementation',
+      'implementationSecond',
       'treasury',
+      'treasurySecond',
     ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
@@ -43,6 +45,7 @@ export const mochaHooks = {
 
     await setScriptFromFile(referralPath, this.accounts.referral);
     await setScriptFromFile(treasuryPath, this.accounts.treasury);
+    await setScriptFromFile(treasuryPath, this.accounts.treasurySecond);
 
     const wxIssueTx = issue({
       name: 'WX Token',
@@ -57,7 +60,7 @@ export const mochaHooks = {
 
     const wxAmount = 1e16;
     const massTransferTxWX = massTransfer({
-      transfers: names.slice(names.length - 2).map((name) => ({
+      transfers: names.slice(names.length - 4).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: wxAmount,
       })),
       assetId: this.wxAssetId,
@@ -65,6 +68,42 @@ export const mochaHooks = {
     }, seed);
     await api.transactions.broadcast(massTransferTxWX, {});
     await waitForTx(massTransferTxWX.id, { apiBase });
+
+    const setWxAssetIdTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__wxAssetId',
+        type: 'string',
+        value: this.wxAssetId,
+      }],
+      chainId,
+    }, this.accounts.referral);
+    await api.transactions.broadcast(setWxAssetIdTx, {});
+    await waitForTx(setWxAssetIdTx.id, { apiBase });
+
+    const setWxAssetIdOnTreasuryTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__wxAssetId',
+        type: 'string',
+        value: this.wxAssetId,
+      }],
+      chainId,
+    }, this.accounts.treasury);
+    await api.transactions.broadcast(setWxAssetIdOnTreasuryTx, {});
+    await waitForTx(setWxAssetIdOnTreasuryTx.id, { apiBase });
+
+    const setWxAssetIdOnTreasurySecondTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__wxAssetId',
+        type: 'string',
+        value: this.wxAssetId,
+      }],
+      chainId,
+    }, this.accounts.treasurySecond);
+    await api.transactions.broadcast(setWxAssetIdOnTreasurySecondTx, {});
+    await waitForTx(setWxAssetIdOnTreasurySecondTx.id, { apiBase });
 
     this.backendPublicKey = publicKey(this.accounts.backend);
     const setBackendPublicKeyTx = data({
