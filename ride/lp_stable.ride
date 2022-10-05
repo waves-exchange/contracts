@@ -1314,11 +1314,11 @@ func putOneTknV2READONLY(amount: Int, asset: String) = {
     (0, paymentAmount)
   } else "invalid payment".throw()
 
-  let amBalanceNew = amId.getAccBalance()
-  let prBalanceNew = prId.getAccBalance()
+  let amBalanceOld = amId.getAccBalance()
+  let prBalanceOld = prId.getAccBalance()
 
-  let amBalanceOld = amBalanceNew - amAmount
-  let prBalanceOld = prBalanceNew - prAmount
+  let amBalanceNew = amBalanceOld + amAmount
+  let prBalanceNew = amBalanceOld + prAmount
 
   let D0 = [amBalanceOld.toBigInt(), prBalanceOld.toBigInt()].getD()
   let D1 = [amBalanceNew.toBigInt(), prBalanceNew.toBigInt()].getD()
