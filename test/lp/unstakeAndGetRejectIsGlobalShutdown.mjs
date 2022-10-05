@@ -16,10 +16,13 @@ describe('lp: unstakeAndGetRejectIsGlobalShutdown.mjs', /** @this {MochaSuiteMod
   it(
     'should reject unstakeAndGet if isGlobalShutdown is true',
     async function () {
-      const usdnAmount = 1e16 / 10;
-      const shibAmount = 1e8 / 10;
-      const lpAmount = 1e12;
+      const usdnAmount = 10e6;
+      const shibAmount = 10e2;
+      const lpAmount = 1e9;
       const shouldAutoStake = true;
+
+      const expectedRejectMessage = 'Get operation is blocked by admin. Status = 1';
+
       const lp = address(this.accounts.lp, chainId);
 
       const put = invokeScript({
@@ -64,8 +67,10 @@ describe('lp: unstakeAndGetRejectIsGlobalShutdown.mjs', /** @this {MochaSuiteMod
         chainId,
       }, this.accounts.user1);
 
-      await expect(api.transactions.broadcast(unstakeAndGet, {})).to.be.rejectedWith(
-        /^Error while executing account-script: Get operation is blocked by admin. Status = 1$/,
+      await expect(
+        api.transactions.broadcast(unstakeAndGet, {}),
+      ).to.be.rejectedWith(
+        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
       );
     },
   );
