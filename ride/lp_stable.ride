@@ -962,7 +962,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
 }
 
 @Callable(i)
-func putOneTknV2READONLY(
+func putOneTknV2OldREADONLY(
   paymentAmount: Int,
   paymentAssetId: String
 ) = {
@@ -1293,7 +1293,7 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetId: String, minOutAmount: I
 }
 
 @Callable(i)
-func putOneTknV3(amount: Int, asset: String) = {
+func putOneTknV2READONLY(amount: Int, asset: String) = {
   let poolConfig = gpc()
   let amId = poolConfig[idxAmAsId]
   let prId = poolConfig[idxPrAsId]
