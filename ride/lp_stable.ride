@@ -1293,15 +1293,17 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetId: String, minOutAmount: I
 }
 
 @Callable(i)
-func putOneTknV3() = {
+func putOneTknV3(amount: Int, asset: String) = {
   let poolConfig = gpc()
   let amId = poolConfig[idxAmAsId]
   let prId = poolConfig[idxPrAsId]
   let lpId = poolConfig[idxLPAsId]
 
-  let payment = i.payments[0]
-  let paymentAsset = payment.assetId.value().toBase58String()
-  let paymentAmountRaw = payment.amount
+  # let payment = i.payments[0]
+  # let paymentAsset = payment.assetId.value().toBase58String()
+  # let paymentAmountRaw = payment.amount
+  let paymentAsset = asset
+  let paymentAmountRaw = amount
   let (paymentAmount, feeAmount) = paymentAmountRaw.takeFee()
 
   let (amAmount, prAmount) = if (i.payments.size() == 1) then {
