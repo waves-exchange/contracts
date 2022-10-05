@@ -13,7 +13,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
+describe('lp: putIfLpEmissionNotZero.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully put with shouldAutoStake false', async function () {
     const usdnAmount = 10e6;
     const shibAmount = 10e2;
@@ -42,7 +42,25 @@ describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(put, {});
-    const { height, stateChanges, id } = await ni.waitForTx(put.id, { apiBase });
+    await ni.waitForTx(put.id, { apiBase });
+
+    const putSecond = invokeScript({
+      dApp: lp,
+      payment: [
+        { assetId: this.shibAssetId, amount: shibAmount },
+        { assetId: this.usdnAssetId, amount: usdnAmount },
+      ],
+      call: {
+        function: 'put',
+        args: [
+          { type: 'integer', value: 0 },
+          { type: 'boolean', value: shouldAutoStake },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
+    await api.transactions.broadcast(putSecond, {});
+    const { height, stateChanges, id } = await ni.waitForTx(putSecond.id, { apiBase });
 
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
