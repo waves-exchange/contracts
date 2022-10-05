@@ -1306,13 +1306,13 @@ func putOneTknV3(amount: Int, asset: String) = {
   let paymentAmountRaw = amount
   let (paymentAmount, feeAmount) = paymentAmountRaw.takeFee()
 
-  let (amAmount, prAmount) = if (i.payments.size() == 1) then {
-    if (paymentAsset == amId) then {
-      (paymentAmount, 0)
-    } else if (paymentAsset == prId) then {
-      (0, paymentAmount)
-    } else "invalid payment".throw()
-  } else "invalid payments size".throw()
+  # TODO: check payments size
+
+  let (amAmount, prAmount) = if (paymentAsset == amId) then {
+    (paymentAmount, 0)
+  } else if (paymentAsset == prId) then {
+    (0, paymentAmount)
+  } else "invalid payment".throw()
 
   let amBalanceNew = amId.getAccBalance()
   let prBalanceNew = prId.getAccBalance()
