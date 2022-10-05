@@ -56,7 +56,7 @@ describe('referral: claimRejectIfNothingToClaim.mjs', /** @this {MochaSuiteModif
       await expect(
         api.transactions.broadcast(claimTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing account-script: ${expectedRejectMessage}`,
+        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
       );
     },
   );

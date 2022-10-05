@@ -33,7 +33,7 @@ describe('referral: confirmManagerRejectIfNoPendingManager.mjs', /** @this {Moch
       await expect(
         api.transactions.broadcast(confirmManagerTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing account-script: ${expectedRejectMessage}`,
+        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
       );
     },
   );
