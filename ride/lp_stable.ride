@@ -40,7 +40,8 @@ let scale8 = 100_000_000
 let scale8BigInt = 100_000_000.toBigInt()
 let scale18 = 1_000_000_000_000_000_000.toBigInt()
 let zeroBigInt = 0.toBigInt()
-let oneBigInt = 1.toBigInt()
+let big0 = 0.toBigInt()
+let big1 = 1.toBigInt()
 let slippage4D = (scale8 - scale8 * 1 / scale8).toBigInt() # 9999999 or error of 0.0000001
 
 let Amult = "100"
@@ -78,6 +79,7 @@ func f1(val: BigInt, resultScaleMult: Int)       = fraction(val, resultScaleMult
 func ts(amt: Int, resScale: Int, curScale: Int)  = fraction(amt, resScale, curScale)
 
 func abs(val: BigInt) = if (val < zeroBigInt) then -val else val
+func absBigInt(val: BigInt) = if (val < zeroBigInt) then -val else val
 
 #-------------------------
 # KEYS ON CURRENT CONTRACT
@@ -673,6 +675,41 @@ func getOneTknV2Internal(
   (state, totalAmount)
 }
 
+func getD(xp: List[BigInt]) = {
+  let n = 2.toBigInt()
+  let xp0 = xp[0]
+  let xp1 = xp[1]
+  # TODO: A in state should be multiplied
+  let aPrecision = Amult.parseBigIntValue()
+  let a = A.parseBigIntValue() * aPrecision
+  let s = xp0 + xp1
+  if (s == big0) then {
+    big0
+  } else {
+    let ann = a * n
+    func calc(acc: (BigInt, Int|Unit), cur: Int) = {
+      let (d, found) = acc
+      if (found != unit) then acc else {
+        let dp = d * d * d / (xp0 * xp1 * n * n)
+        let dNext = (ann * s / aPrecision + dp * n) * d / ((ann - aPrecision) * d / aPrecision + (n + 1.toBigInt()) * dp)
+        let dDiff = absBigInt(dNext - d.value())
+        if (dDiff <= big1) then {
+          (dNext, cur)
+        } else {
+          (dNext, unit)
+        }
+      }
+    }
+    let arr = [0, 1, 2, 3, 4, 5, 6, 7]
+    let (d, found) = FOLD<7>(arr, (s, unit), calc)
+    if (found != unit) then {
+      d
+    } else {
+      { "D calculation error, D = " + d.toString() }.throw()
+    }
+  }
+}
+
 # managerPublicKeyOrUnit
 func m() = match mpk().getString() {
   case s: String => s.fromBase58String()
@@ -1253,6 +1290,41 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetId: String, minOutAmount: I
   )
 
   (state, totalAmount)
+}
+
+@Callable(i)
+func putOneTknV3() = {
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let lpId = poolConfig[idxLPAsId]
+
+  let payment = i.payments[0]
+  let paymentAsset = payment.assetId.value().toBase58String()
+  let paymentAmountRaw = payment.amount
+  let (paymentAmount, feeAmount) = paymentAmountRaw.takeFee()
+
+  let (amAmount, prAmount) = if (i.payments.size() == 1) then {
+    if (paymentAsset == amId) then {
+      (paymentAmount, 0)
+    } else if (paymentAsset == prId) then {
+      (0, paymentAmount)
+    } else "invalid payment".throw()
+  } else "invalid payments size".throw()
+
+  let amBalanceNew = amId.getAccBalance()
+  let prBalanceNew = prId.getAccBalance()
+
+  let amBalanceOld = amBalanceNew - amAmount
+  let prBalanceOld = prBalanceNew - prAmount
+
+  let D0 = [amBalanceOld.toBigInt(), prBalanceOld.toBigInt()].getD()
+  let D1 = [amBalanceNew.toBigInt(), prBalanceNew.toBigInt()].getD()
+
+  let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
+  let lpAmount = lpEmission * (D1 - D0) / D0
+
+  (nil, lpAmount.toInt())
 }
 
 # purpose:
