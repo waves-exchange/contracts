@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, libs, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { checkStateChanges } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -84,6 +85,10 @@ describe('referral: incUnclaimed.mjs', /** @this {MochaSuiteModified} */() => {
       }, this.accounts.implementation);
       await api.transactions.broadcast(incUnclaimedTx, {});
       const { stateChanges } = await ni.waitForTx(incUnclaimedTx.id, { apiBase });
+
+      expect(
+        await checkStateChanges(stateChanges, 3, 0, 0, 0, 0, 0, 0, 0, 0),
+      ).to.eql(true);
 
       expect(stateChanges.data).to.eql([{
         key: `%s%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
