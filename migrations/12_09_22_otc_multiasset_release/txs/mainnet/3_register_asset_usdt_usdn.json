@@ -1,6 +1,6 @@
 {
-  "dApp": "",
-  "fee": ,
+  "dApp": "3P2K8CWUGqJU9mP147xnjWpSQn1q1zFX3GA",
+  "fee": 900000,
   "proofs": [],
   "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
   "timestamp": 0,
@@ -12,7 +12,7 @@
     "args": [
       {
         "type": "string",
-        "value": "6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ"
+        "value": "34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ"
       },
       {
         "type": "string",
@@ -20,23 +20,23 @@
       },
       {
         "type": "integer",
-        "value": 
+        "value": 0
       },
       {
         "type": "integer",
-        "value": 
+        "value": 0
       },
       {
         "type": "integer",
-        "value": 
+        "value": 0
       },
       {
         "type": "integer",
-        "value": 
+        "value": 0
       },
       {
         "type": "integer",
-        "value": 
+        "value": 0
       },
       {
         "type": "integer",
