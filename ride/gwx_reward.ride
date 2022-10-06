@@ -528,6 +528,7 @@ func calcD(
   }
 }
 
+# unused
 @Callable(i)
 func calcPutXOnly(
   amountAssetAmountBigIntStr: String,
@@ -584,121 +585,6 @@ func calcPutXOnly(
   } else {
     let xDiff = { xNext - xPrev.value() }.absBigInt()
     { "X calculation error, xDiff = " + xDiff.toString() }.throw()
-  }
-}
-
-@Callable(i)
-func calcSwapXToYOld(
-  amountAssetAmountBigIntStr: String,
-  amountAssetBalanceBigIntStr: String,
-  priceAssetBalanceBigIntStr: String,
-  dBigIntStr: String,
-  amplificatorBigIntStr: String,
-  amplificatorPrecisionBigIntStr: String,
-  targetXPrecisionBigIntStr: String,
-  targetDPrecisionBigIntStr: String
-) = {
-  # y + (-D*an + D + an*(newX + newY) - dp)/(an + dp/newY)
-  # ann = A * n
-  # newX = X + x
-  # newY = Y - y
-  # dp = D ** (n + 1) * n ** (-n) / (newX * newY)
-  let nCoins = 2.toBigInt()
-  let aPrecision = amplificatorPrecisionBigIntStr.parseBigIntValue()
-  let targetPrecision = targetXPrecisionBigIntStr.parseBigIntValue()
-  let X = amountAssetBalanceBigIntStr.parseBigIntValue()
-  let Y = priceAssetBalanceBigIntStr.parseBigIntValue()
-  let x = amountAssetAmountBigIntStr.parseBigIntValue()
-  let d = if (dBigIntStr == "") then {
-    this.invoke("calcD", [
-      amountAssetBalanceBigIntStr,
-      priceAssetBalanceBigIntStr,
-      amplificatorBigIntStr,
-      amplificatorPrecisionBigIntStr,
-      targetDPrecisionBigIntStr
-    ],[]).exactAs[String].parseBigIntValue()
-  } else dBigIntStr.parseBigIntValue()
-  let amp = amplificatorBigIntStr.parseBigIntValue() * aPrecision
-
-  let ann = amp * nCoins
-  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-  func calc(acc: (BigInt, BigInt|Unit, Int|Unit), cur: Int) = {
-    let (y, yPrev, found) = acc
-    if (found != unit) then acc else {
-      let newX = X + x
-      let newY = Y - y
-      let dp = d * d * d / (newX * newY * nCoins * nCoins)
-      let yNext = y + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (ann / aPrecision + dp / newY)
-      let yDiff = absBigInt(yNext - y.value())
-      if (yDiff <= targetPrecision) then {
-        (yNext, y, cur)
-      } else {
-        (yNext, y, unit)
-      }
-    }
-  }
-  let (yNext, yPrev, found) = FOLD<17>(arr, (d, unit, unit), calc)
-  if (found != unit) then {
-    ([], yNext.toInt())
-  } else {
-    let yDiff = { yNext - yPrev.value() }.absBigInt()
-    { "Y calculation error, yDiff = " + yDiff.toString() }.throw()
-  }
-}
-
-@Callable(i)
-func calcSwapXToY(
-  amountAssetAmountBigIntStr: String,
-  amountAssetBalanceBigIntStr: String,
-  priceAssetBalanceBigIntStr: String,
-  dBigIntStr: String,
-  amplificatorBigIntStr: String,
-  amplificatorPrecisionBigIntStr: String,
-  targetXPrecisionBigIntStr: String,
-  targetDPrecisionBigIntStr: String
-) = {
-  let nCoins = 2.toBigInt()
-  let aPrecision = amplificatorPrecisionBigIntStr.parseBigIntValue()
-  let targetPrecision = targetXPrecisionBigIntStr.parseBigIntValue()
-  let oldX = amountAssetBalanceBigIntStr.parseBigIntValue()
-  let Y = priceAssetBalanceBigIntStr.parseBigIntValue()
-  let x = amountAssetAmountBigIntStr.parseBigIntValue()
-  let X = oldX + x
-  let D = if (dBigIntStr == "") then {
-    this.invoke("calcD", [
-      amountAssetBalanceBigIntStr,
-      priceAssetBalanceBigIntStr,
-      amplificatorBigIntStr,
-      amplificatorPrecisionBigIntStr,
-      targetDPrecisionBigIntStr
-    ],[]).exactAs[String].parseBigIntValue()
-  } else dBigIntStr.parseBigIntValue()
-  let amp = amplificatorBigIntStr.parseBigIntValue() * aPrecision
-  let S = X
-  let ann = amp * nCoins
-  let scale = 1_000_000_000_000_000_000.toBigInt()
-  let c = D * D / (X * nCoins) * D * aPrecision / (ann * nCoins)
-  let b = S + D * aPrecision / ann - D
-
-  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-  func calc(acc: (BigInt, BigInt|Unit, Int|Unit), cur: Int) = {
-    let (y, yPrev, found) = acc
-    if (found != unit) then acc else {
-      let yNext = (y * y + c) / (2.toBigInt() * y + b)
-      let yDiff = absBigInt(yNext - y.value())
-      if (yDiff <= targetPrecision) then {
-        (yNext, y, cur)
-      } else {
-        (yNext, y, unit)
-      }
-    }
-  }
-  let (yNext, yPrev, found) = FOLD<15>(arr, (D, unit, unit), calc)
-  if (found != unit) then {
-    ([], {Y - yNext}.toInt())
-  } else {
-    let yDiff = { yNext - yPrev.value() }.absBigInt()
-    { "Y calculation error, yDiff = " + yDiff.toString() }.throw()
   }
 }
 
