@@ -1356,7 +1356,7 @@ func putOneTknV2WithBonusREADONLY(amount: Int, asset: String) = {
   let prBalanceOld = prId.getAccBalance()
 
   let amBalanceNew = amBalanceOld + amAmount
-  let prBalanceNew = amBalanceOld + prAmount
+  let prBalanceNew = prBalanceOld + prAmount
 
   # check D1 > D0
   let D0 = [amBalanceOld.toBigInt(), prBalanceOld.toBigInt()].getD()
