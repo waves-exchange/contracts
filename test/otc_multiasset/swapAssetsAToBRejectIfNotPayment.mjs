@@ -13,25 +13,25 @@ const chainId = 'R';
 const api = create(apiBase);
 
 describe('otc_multiasset: swapAssetsAToBRejectIfNotPayment.mjs', /** @this {MochaSuiteModified} */() => {
-    it('should reject swapAssetsAToB', async function () {
-        const expectedRejectMessage = 'Index 0 out of bounds for length 0';
+  it('should reject swapAssetsAToB', async function () {
+    const expectedRejectMessage = 'Index 0 out of bounds for length 0';
 
-        const swapAssetsAToBTx = invokeScript({
-            dApp: address(this.accounts.otcMultiasset, chainId),
-            payment: [],
-            call: {
-                function: 'swapAssetsAToB',
-                args: [
-                    { type: 'string', value: this.assetBId },
-                ],
-            },
-            chainId,
-        }, this.accounts.user1);
+    const swapAssetsAToBTx = invokeScript({
+      dApp: address(this.accounts.otcMultiasset, chainId),
+      payment: [],
+      call: {
+        function: 'swapAssetsAToB',
+        args: [
+          { type: 'string', value: this.assetBId },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
 
-        await expect(
-            api.transactions.broadcast(swapAssetsAToBTx, {}),
-        ).to.be.rejectedWith(
-            new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
-        );
-    });
+    await expect(
+      api.transactions.broadcast(swapAssetsAToBTx, {}),
+    ).to.be.rejectedWith(
+      new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+    );
+  });
 });

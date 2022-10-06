@@ -18,41 +18,41 @@ const ridePath = 'ride';
 const otcMultiassetPath = format({ dir: ridePath, base: 'otc_multiasset.ride' });
 
 describe('otc_multiasset: verifyIfCallerIsАccount.mjs', /** @this {MochaSuiteModified} */() => {
-    let someAccount;
+  let someAccount;
 
-    before(async function () {
-        someAccount = this.accounts.user1;
-        await setScriptFromFile(otcMultiassetPath, someAccount);
-    });
+  before(async function () {
+    someAccount = this.accounts.user1;
+    await setScriptFromFile(otcMultiassetPath, someAccount);
+  });
 
-    it(
-        'should successfully verify if caller is account',
-        async () => {
-            const dummyKey = 'dummyKey';
-            const dummyValue = 'dummyValue';
-            const setDummyKeyTx = data({
-                additionalFee: 4e5,
-                data: [
-                    {
-                        key: dummyKey,
-                        type: 'string',
-                        value: dummyValue,
-                    },
-                ],
-                chainId,
-            }, someAccount);
-            await api.transactions.broadcast(setDummyKeyTx, {});
-            await ni.waitForTx(setDummyKeyTx.id, { apiBase });
+  it(
+    'should successfully verify if caller is account',
+    async () => {
+      const dummyKey = 'dummyKey';
+      const dummyValue = 'dummyValue';
+      const setDummyKeyTx = data({
+        additionalFee: 4e5,
+        data: [
+          {
+            key: dummyKey,
+            type: 'string',
+            value: dummyValue,
+          },
+        ],
+        chainId,
+      }, someAccount);
+      await api.transactions.broadcast(setDummyKeyTx, {});
+      await ni.waitForTx(setDummyKeyTx.id, { apiBase });
 
-            const dataFromNode = await api.addresses.fetchDataKey(
-                address(someAccount, chainId),
-                dummyKey,
-            );
-            expect(dataFromNode).to.eql({
-                key: dummyKey,
-                type: 'string',
-                value: dummyValue,
-            });
-        },
-    );
+      const dataFromNode = await api.addresses.fetchDataKey(
+        address(someAccount, chainId),
+        dummyKey,
+      );
+      expect(dataFromNode).to.eql({
+        key: dummyKey,
+        type: 'string',
+        value: dummyValue,
+      });
+    },
+  );
 });

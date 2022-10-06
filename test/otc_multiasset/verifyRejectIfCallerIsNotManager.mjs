@@ -18,38 +18,38 @@ const ridePath = 'ride';
 const otcMultiassetPath = format({ dir: ridePath, base: 'otc_multiasset.ride' });
 
 describe('otc_multiasset: verifyRejectIfCallerIsNotManager.mjs', /** @this {MochaSuiteModified} */() => {
-    let someAccount;
-    let managerAccount;
+  let someAccount;
+  let managerAccount;
 
-    before(async function () {
-        someAccount = this.accounts.user1;
-        managerAccount = this.accounts.manager;
-        await setScriptFromFile(otcMultiassetPath, someAccount);
-    });
-    it(
-        'should reject verify',
-        async () => {
-            const dummyKey = 'dummyKey';
-            const dummyValue = 'dummyValue';
+  before(async function () {
+    someAccount = this.accounts.user1;
+    managerAccount = this.accounts.manager;
+    await setScriptFromFile(otcMultiassetPath, someAccount);
+  });
+  it(
+    'should reject verify',
+    async () => {
+      const dummyKey = 'dummyKey';
+      const dummyValue = 'dummyValue';
 
-            const expectedRejectMessage = 'Transaction is not allowed by account-script';
+      const expectedRejectMessage = 'Transaction is not allowed by account-script';
 
-            const setDummyKeyTx = data({
-                additionalFee: 4e5,
-                senderPublicKey: publicKey(someAccount),
-                data: [
-                    {
-                        key: dummyKey,
-                        type: 'string',
-                        value: dummyValue,
-                    },
-                ],
-                chainId,
-            }, managerAccount);
+      const setDummyKeyTx = data({
+        additionalFee: 4e5,
+        senderPublicKey: publicKey(someAccount),
+        data: [
+          {
+            key: dummyKey,
+            type: 'string',
+            value: dummyValue,
+          },
+        ],
+        chainId,
+      }, managerAccount);
 
-            await expect(api.transactions.broadcast(setDummyKeyTx, {})).to.be.rejectedWith(
-                expectedRejectMessage,
-            );
-        },
-    );
+      await expect(api.transactions.broadcast(setDummyKeyTx, {})).to.be.rejectedWith(
+        expectedRejectMessage,
+      );
+    },
+  );
 });
