@@ -1365,7 +1365,7 @@ func putOneTknV2WithBonusREADONLY(amount: Int, asset: String) = {
   let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   let lpAmount = lpEmission * (D1 - D0) / D0
 
-  (nil, (lpAmount.toInt(), feeAmount, 0, D0.toString(), D1.toString()))
+  (nil, (lpAmount.toInt(), feeAmount, 0))
 }
 
 # purpose:
