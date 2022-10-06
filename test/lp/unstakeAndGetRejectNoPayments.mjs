@@ -16,10 +16,13 @@ describe('lp: unstakeAndGetRejectNoPayments.mjs', /** @this {MochaSuiteModified}
   it(
     'should reject unstakeAndGet with payments',
     async function () {
-      const usdnAmount = 1e16 / 10;
-      const shibAmount = 1e8 / 10;
-      const lpAmount = 1e12;
+      const usdnAmount = 10e6;
+      const shibAmount = 10e2;
+      const lpAmount = 1e9;
       const shouldAutoStake = true;
+
+      const expectedRejectMessage = 'No payments are expected';
+
       const lp = address(this.accounts.lp, chainId);
 
       const put = invokeScript({
@@ -54,8 +57,10 @@ describe('lp: unstakeAndGetRejectNoPayments.mjs', /** @this {MochaSuiteModified}
         chainId,
       }, this.accounts.user1);
 
-      await expect(api.transactions.broadcast(unstakeAndGet, {})).to.be.rejectedWith(
-        /^Error while executing account-script: No payments are expected$/,
+      await expect(
+        api.transactions.broadcast(unstakeAndGet, {}),
+      ).to.be.rejectedWith(
+        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
       );
     },
   );
