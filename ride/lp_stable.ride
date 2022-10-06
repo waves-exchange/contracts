@@ -42,6 +42,7 @@ let scale18 = 1_000_000_000_000_000_000.toBigInt()
 let zeroBigInt = 0.toBigInt()
 let big0 = 0.toBigInt()
 let big1 = 1.toBigInt()
+let big2 = 2.toBigInt()
 let slippage4D = (scale8 - scale8 * 1 / scale8).toBigInt() # 9999999 or error of 0.0000001
 
 let Amult = "100"
@@ -676,7 +677,7 @@ func getOneTknV2Internal(
 }
 
 func getD(xp: List[BigInt]) = {
-  let n = 2.toBigInt()
+  let n = big2
   let xp0 = xp[0]
   let xp1 = xp[1]
   # TODO: A in state should be multiplied
@@ -711,7 +712,7 @@ func getD(xp: List[BigInt]) = {
 }
 
 func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
-  let n = 2.toBigInt()
+  let n = big2
   let x = xp[if (i == 0) then 1 else 0]
   let aPrecision = Amult.parseBigIntValue()
   let a = A.parseBigIntValue() * aPrecision
@@ -722,7 +723,7 @@ func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
   func calc(acc: (BigInt, Int|Unit), cur: Int) = {
     let (y, found) = acc
     if (found != unit) then acc else {
-      let yNext = (y * y + c) / (2.toBigInt() * y + b)
+      let yNext = (y * y + c) / (big2 * y + b)
       let yDiff = absBigInt(yNext - y.value())
       if (yDiff <= big1) then {
         (yNext, cur)
@@ -1237,7 +1238,7 @@ func getOneTknV2READONLY(
   let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
   let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   let D0 = xp.getD()
-  let D1 = D0 - lpAssetAmount.toBigInt() * D0 / lpEmission
+  let D1 = D0 - fraction(lpAssetAmount.toBigInt(), D0, lpEmission)
   let index = if (outAssetId == amId) then 0 else 1
   let newY = xp.getYD(index, D1)
   let dy = xp[index] - newY
