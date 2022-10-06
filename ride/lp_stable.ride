@@ -993,22 +993,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
 }
 
 @Callable(i)
-func putOneTknV2OldREADONLY(
-  paymentAmount: Int,
-  paymentAssetId: String
-) = {
-  let r = estimatePutOneTknV2(paymentAmount, paymentAssetId, "", "")
-  let estimLP   = r._2
-  let lpAssetId = r._7
-  let state     = r._9
-  let amDiff    = r._10
-  let prDiff    = r._11
-
-  ([], estimLP)
-}
-
-@Callable(i)
-func putOneTknV2WithBonusREADONLY(
+func putOneTknV2WithBonusOldREADONLY(
   paymentAmount: Int,
   paymentAssetId: String
 ) = {
@@ -1346,7 +1331,7 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetId: String, minOutAmount: I
 }
 
 @Callable(i)
-func putOneTknV2READONLY(amount: Int, asset: String) = {
+func putOneTknV2WithBonusREADONLY(amount: Int, asset: String) = {
   let poolConfig = gpc()
   let amId = poolConfig[idxAmAsId]
   let prId = poolConfig[idxPrAsId]
@@ -1379,7 +1364,7 @@ func putOneTknV2READONLY(amount: Int, asset: String) = {
   let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   let lpAmount = lpEmission * (D1 - D0) / D0
 
-  (nil, lpAmount.toInt())
+  (nil, (lpAmount.toInt(), feeAmount, 0))
 }
 
 # purpose:
