@@ -1362,10 +1362,16 @@ func putOneTknV2WithBonusREADONLY(amount: Int, asset: String) = {
   let D0 = [amBalanceOld.toBigInt(), prBalanceOld.toBigInt()].getD()
   let D1 = [amBalanceNew.toBigInt(), prBalanceNew.toBigInt()].getD()
 
-  let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
-  let lpAmount = lpEmission * (D1 - D0) / D0
+  let lpAssetEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
+  let lpAmount = lpAssetEmission * (D1 - D0) / D0
 
-  (nil, (lpAmount.toInt(), feeAmount, 0))
+  let poolProportion = prBalanceOld.fraction(scale8, amBalanceOld)
+  let amountAssetPart = fraction(paymentAmount, scale8, poolProportion + scale8)
+  let priceAssetPart = paymentAmount - amountAssetPart
+  let lpAmtBoth = fraction(lpAssetEmission, priceAssetPart.toBigInt(), prBalanceOld.toBigInt())
+  let bonus = fraction(lpAmount - lpAmtBoth, scale8BigInt, lpAmtBoth)
+
+  (nil, (lpAmount.toInt(), feeAmount, bonus.toInt()))
 }
 
 # purpose:
