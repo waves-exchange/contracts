@@ -17,7 +17,7 @@ describe('otc_multiasset: swapAssetsAToB.mjs', /** @this {MochaSuiteModified} */
     const fee = Math.floor(amountAssetA / 1000) * this.depositFee;
 
     const expectedBalance = amountAssetA - fee;
-    const expectedTotalCommissionsCollectedDeposit = 15000;
+    const expectedTotalCommissionsCollectedDeposit = fee;
     const expectedAmountAssetB = amountAssetA - fee;
 
     const swapAssetsAToBTx = invokeScript({
