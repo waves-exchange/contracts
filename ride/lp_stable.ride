@@ -710,6 +710,36 @@ func getD(xp: List[BigInt]) = {
   }
 }
 
+func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
+  let n = 2.toBigInt()
+  let x = xp[if (i == 0) then 1 else 0]
+  let aPrecision = Amult.parseBigIntValue()
+  let a = A.parseBigIntValue() * aPrecision
+  let s = x
+  let ann = a * n
+  let c = D * D / (x * n) * D * aPrecision / (ann * n)
+  let b = s + D * aPrecision / ann - D
+  func calc(acc: (BigInt, Int|Unit), cur: Int) = {
+    let (y, found) = acc
+    if (found != unit) then acc else {
+      let yNext = (y * y + c) / (2.toBigInt() * y + b)
+      let yDiff = absBigInt(yNext - y.value())
+      if (yDiff <= big1) then {
+        (yNext, cur)
+      } else {
+        (yNext, unit)
+      }
+    }
+  }
+  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  let (y, found) = FOLD<15>(arr, (s, unit), calc)
+  if (found != unit) then {
+    y
+  } else {
+    { "Y calculation error, Y = " + y.toString() }.throw()
+  }
+}
+
 # managerPublicKeyOrUnit
 func m() = match mpk().getString() {
   case s: String => s.fromBase58String()
@@ -1152,7 +1182,7 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
 }
 
 @Callable(i)
-func getOneTknV2READONLY(
+func getOneTknV2OldREADONLY(
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
@@ -1193,6 +1223,28 @@ func getOneTknV2READONLY(
   let (totalGet, feeAmount) = totalGetRaw.takeFee()
 
   ([], (totalGet, feeAmount))
+}
+
+@Callable(i)
+func getOneTknV2READONLY(
+  outAssetId: String,
+  lpAssetAmount: Int
+) = {
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let lpId = poolConfig[idxLPAsId]
+  let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
+  let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
+  let D0 = xp.getD()
+  let D1 = D0 - lpAssetAmount.toBigInt() * D0 / lpEmission
+  let index = if (outAssetId == amId) then 0 else 1
+  let newY = xp.getYD(index, D1)
+  let dy = xp[index] - newY
+  let totalGetRaw = { dy - big1 }.toInt()
+  let (totalGet, feeAmount) = totalGetRaw.takeFee()
+
+  (nil, (totalGet, feeAmount))
 }
 
 @Callable(i)
