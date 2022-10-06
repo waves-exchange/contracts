@@ -692,7 +692,7 @@ func getD(xp: List[BigInt]) = {
       let (d, found) = acc
       if (found != unit) then acc else {
         let dp = d * d * d / (xp0 * xp1 * n * n)
-        let dNext = (ann * s / aPrecision + dp * n) * d / ((ann - aPrecision) * d / aPrecision + (n + 1.toBigInt()) * dp)
+        let dNext = (ann * s / aPrecision + dp * n) * d / ((ann - aPrecision) * d / aPrecision + (n + big1) * dp)
         let dDiff = absBigInt(dNext - d.value())
         if (dDiff <= big1) then {
           (dNext, cur)
@@ -1358,13 +1358,14 @@ func putOneTknV2WithBonusREADONLY(amount: Int, asset: String) = {
   let amBalanceNew = amBalanceOld + amAmount
   let prBalanceNew = amBalanceOld + prAmount
 
+  # check D1 > D0
   let D0 = [amBalanceOld.toBigInt(), prBalanceOld.toBigInt()].getD()
   let D1 = [amBalanceNew.toBigInt(), prBalanceNew.toBigInt()].getD()
 
   let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   let lpAmount = lpEmission * (D1 - D0) / D0
 
-  (nil, (lpAmount.toInt(), feeAmount, 0))
+  (nil, (lpAmount.toInt(), feeAmount, 0, D0.toString(), D1.toString()))
 }
 
 # purpose:
