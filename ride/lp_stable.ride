@@ -670,7 +670,7 @@ func calcPutOneTkn(
     fraction(lpAssetEmission, D1 - D0, D0)
   } else "initial deposit requires all coins".throw()
 
-  let curPrice = cpbi(prBalance.t1(priceDcm), amBalance.t1(amtDcm)).f1(scale8)
+  let curPrice = cpbi(prBalanceNew.t1(priceDcm), amBalanceNew.t1(amtDcm)).f1(scale8)
 
   let commonState = [
     IntegerEntry(pl(), curPrice),
@@ -728,15 +728,15 @@ func getOneTknV2Internal(
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
   } else totalGet
 
-  let (outAm, outPr) = if (outAssetId == amId) then {
-    (totalAmount, 0)
+  let (outAm, outPr, amBalanceNew, prBalanceNew) = if (outAssetId == amId) then {
+    (totalAmount, 0, amBalance - totalAmount - feeAmount, prBalance)
   } else if (outAssetId == prId) then {
-    (0, totalAmount)
+    (0, totalAmount, amBalance, prBalance - totalAmount - feeAmount)
   } else {
     "invalid out asset id".throw()
   }
 
-  let curPrX18 = cpbi(prBalance.t1(prDecimals), amBalance.t1(amDecimals))
+  let curPrX18 = cpbi(prBalanceNew.t1(prDecimals), amBalanceNew.t1(amDecimals))
   let curPr = curPrX18.f1(scale8)
 
   let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
