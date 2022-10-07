@@ -528,66 +528,6 @@ func calcD(
   }
 }
 
-# unused
-@Callable(i)
-func calcPutXOnly(
-  amountAssetAmountBigIntStr: String,
-  amountAssetBalanceBigIntStr: String,
-  priceAssetBalanceBigIntStr: String,
-  dBigIntStr: String,
-  amplificatorBigIntStr: String,
-  amplificatorPrecisionBigIntStr: String,
-  targetXPrecisionBigIntStr: String,
-  targetDPrecisionBigIntStr: String
-) = {
-  # x + (-D*ann + D + ann*(newX + newY) - dp)/(-ann*(-1 - Y/X) + dp/newX + Y*dp/(X*newY))
-  # ann = A * n
-  # newX = X + S - x
-  # newY = Y - x * Y / X
-  # dp = D ** (n + 1) * n ** (-n) / (newX * newY)
-  let nCoins = 2.toBigInt()
-  let aPrecision = amplificatorPrecisionBigIntStr.parseBigIntValue()
-  let targetPrecision = targetXPrecisionBigIntStr.parseBigIntValue()
-  let X = amountAssetBalanceBigIntStr.parseBigIntValue()
-  let Y = priceAssetBalanceBigIntStr.parseBigIntValue()
-  let d = if (dBigIntStr == "") then {
-    this.invoke("calcD", [
-      amountAssetBalanceBigIntStr,
-      priceAssetBalanceBigIntStr,
-      amplificatorBigIntStr,
-      amplificatorPrecisionBigIntStr,
-      targetDPrecisionBigIntStr
-    ],[]).exactAs[String].parseBigIntValue()
-  } else dBigIntStr.parseBigIntValue()
-  let amp = amplificatorBigIntStr.parseBigIntValue() * aPrecision
-  let S = amountAssetAmountBigIntStr.parseBigIntValue()
-
-  let ann = amp * nCoins
-  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
-  func calc(acc: (BigInt, BigInt|Unit, Int|Unit), cur: Int) = {
-    let (x, xPrev, found) = acc
-    if (found != unit) then acc else {
-      let newX = X + S - x
-      let newY = Y - x * Y / X
-      let dp = d * d * d / (newX * newY * nCoins * nCoins)
-      let xNext = x + (-d * ann / aPrecision + d + ann * (newX + newY) / aPrecision - dp) / (-ann * (-1.toBigInt() - Y / X) / aPrecision + dp / newX + Y * dp / (X * newY))
-      let xDiff = absBigInt(xNext - x.value())
-      if (xDiff <= targetPrecision) then {
-        (xNext, x, cur)
-      } else {
-        (xNext, x, unit)
-      }
-    }
-  }
-  let (xNext, xPrev, found) = FOLD<20>(arr, (zeroBigInt, unit, unit), calc)
-  if (found != unit) then {
-    ([], (xNext.toInt(), xNext.fraction(Y, X).toInt()))
-  } else {
-    let xDiff = { xNext - xPrev.value() }.absBigInt()
-    { "X calculation error, xDiff = " + xDiff.toString() }.throw()
-  }
-}
-
 @Callable(i)
 func setManager(pendingManagerPublicKey: String) = {
   strict checkCaller = i.mustManager()
