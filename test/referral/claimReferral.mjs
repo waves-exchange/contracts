@@ -94,6 +94,8 @@ describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
       const expectedNewClaimerClaimed = 100;
       const expectedNewClaimedTotal = 100;
       const expectedUnclaimed = 0;
+      const expectedNewClaimedTotalAddress = 100;
+      const expectedNewUnclaimedTotalAddress = 0;
       const expectedClaimerUnclaimed = 100;
       const expectedClaimerUnclaimedHistory = 100;
 
@@ -186,18 +188,26 @@ describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
         value: 'ReferralProgram',
       }]);
 
-      expect(invokes[0].stateChanges.data).to.eql([{
-        key: `%s%s%s%s__claimedReferral__${programName}__${referralAddress}`,
+      expect(invokes[0].stateChanges.invokes[0].stateChanges.data).to.eql([{
+        key: `%s%s%s__claimedReferral__${programName}__${referralAddress}`,
         type: 'integer',
         value: expectedNewClaimerClaimed,
+      }, {
+        key: `%s%s%s__unclaimedReferral__${programName}__${referralAddress}`,
+        type: 'integer',
+        value: expectedUnclaimed,
       }, {
         key: `%s%s__claimedTotal__${programName}`,
         type: 'integer',
         value: expectedNewClaimedTotal,
       }, {
-        key: `%s%s%s%s__unclaimedReferral__${programName}__${referralAddress}`,
+        key: `%s%s__claimedTotalAddress__${referralAddress}`,
         type: 'integer',
-        value: expectedUnclaimed,
+        value: expectedNewClaimedTotalAddress,
+      }, {
+        key: `%s%s__unclaimedTotalAddress__${referralAddress}`,
+        type: 'integer',
+        value: expectedNewUnclaimedTotalAddress,
       }, {
         key: `%s%s%s%s%s__history__claimReferral__${programName}__${referralAddress}__${claimTx.id}`,
         type: 'string',

@@ -85,19 +85,28 @@ describe('referral: incUnclaimed.mjs', /** @this {MochaSuiteModified} */() => {
       await api.transactions.broadcast(incUnclaimedTx, {});
       const { stateChanges } = await ni.waitForTx(incUnclaimedTx.id, { apiBase });
 
-      expect(stateChanges.data).to.eql([{
-        key: `%s%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
-        type: 'integer',
-        value: referrerReward,
-      }, {
-        key: `%s%s%s%s__unclaimedReferral__${programName}__${referralAddress}`,
-        type: 'integer',
-        value: referralReward,
-      }, {
-        key: `%s%s__rewardsTotal__${programName}`,
-        type: 'integer',
-        value: referrerReward + referralReward,
-      }]);
+      expect(stateChanges.data).to.eql([
+        {
+          key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
+          type: 'integer',
+          value: referrerReward,
+        }, {
+          key: `%s%s__unclaimedTotalAddress__${referralAddress}`,
+          type: 'integer',
+          value: referralReward,
+        }, {
+          key: `%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
+          type: 'integer',
+          value: referrerReward,
+        }, {
+          key: `%s%s%s__unclaimedReferral__${programName}__${referralAddress}`,
+          type: 'integer',
+          value: referralReward,
+        }, {
+          key: `%s%s__rewardsTotal__${programName}`,
+          type: 'integer',
+          value: referrerReward + referralReward,
+        }]);
     },
   );
 });
