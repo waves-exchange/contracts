@@ -12,25 +12,26 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp: putRejectSlippageTolerance.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should reject put with negative slippageTolerance', async function () {
-    const usdnAmount = 10e6;
+describe('lp: putRejectIfInvalidPriceOrAmount.mjs', /** @this {MochaSuiteModified} */() => {
+  it('should reject put', async function () {
     const shibAmount = 10e2;
-    const slippageTolerance = -1;
+    const shouldAutoStake = false;
 
-    const expectedRejectMessage = 'Invalid slippageTolerance passed';
+    const expectedRejectMessage = 'Invalid amt or price asset passed.';
+
+    const lp = address(this.accounts.lp, chainId);
 
     const put = invokeScript({
-      dApp: address(this.accounts.lp, chainId),
+      dApp: lp,
       payment: [
         { assetId: this.shibAssetId, amount: shibAmount },
-        { assetId: this.usdnAssetId, amount: usdnAmount },
+        { assetId: this.shibAssetId, amount: shibAmount },
       ],
       call: {
         function: 'put',
         args: [
-          { type: 'integer', value: slippageTolerance },
-          { type: 'boolean', value: false },
+          { type: 'integer', value: 0 },
+          { type: 'boolean', value: shouldAutoStake },
         ],
       },
       chainId,
