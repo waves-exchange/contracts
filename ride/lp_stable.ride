@@ -562,11 +562,15 @@ func getD(xp: List[BigInt]) = {
     big0
   } else {
     let ann = a * n
+    let xp0_xp1_n_n = xp0 * xp1 * n * n
+    let ann_s_aPrecision = ann * s / aPrecision
+    let ann_aPrecision = ann - aPrecision
+    let n1 = n + big1
     func calc(acc: (BigInt, Int|Unit), cur: Int) = {
       let (d, found) = acc
       if (found != unit) then acc else {
-        let dp = d * d * d / (xp0 * xp1 * n * n)
-        let dNext = (ann * s / aPrecision + dp * n) * d / ((ann - aPrecision) * d / aPrecision + (n + big1) * dp)
+        let dp = d * d * d / xp0_xp1_n_n
+        let dNext = (ann_s_aPrecision + dp * n) * d / (ann_aPrecision * d / aPrecision + n1 * dp)
         let dDiff = absBigInt(dNext - d.value())
         if (dDiff <= big1) then {
           (dNext, cur)
@@ -575,8 +579,8 @@ func getD(xp: List[BigInt]) = {
         }
       }
     }
-    let arr = [0, 1, 2, 3, 4, 5, 6]
-    let (d, found) = FOLD<7>(arr, (s, unit), calc)
+    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    let (d, found) = FOLD<15>(arr, (s, unit), calc)
     if (found != unit) then {
       d
     } else {
@@ -631,8 +635,6 @@ func calcPutOneTkn(
   let amBalance = amId.getAccBalance()
   let prBalance = prId.getAccBalance()
 
-  let (pmtAmt, feeAmount) = pmtAmtRaw.takeFee()
-
   let (amBalanceOld, prBalanceOld) =
     if (txId == "") then (amBalance, prBalance) else {
       if (pmtAssetId == amId) then {
@@ -644,11 +646,15 @@ func calcPutOneTkn(
       } else throw("wrong pmtAssetId")
     }
   
-  let (amAmount, prAmount) = if (pmtAssetId == amId) then {
-    (pmtAmt, 0)
+  let (amAmountRaw, prAmountRaw) = if (pmtAssetId == amId) then {
+    (pmtAmtRaw, 0)
   } else if (pmtAssetId == prId) then {
-    (0, pmtAmt)
+    (0, pmtAmtRaw)
   } else "invalid payment".throw()
+
+  let amAmount = amAmountRaw.takeFee()._1
+  let prAmount = prAmountRaw.takeFee()._1
+  let feeAmount = pmtAmtRaw.takeFee()._2
 
   let amBalanceNew = amBalanceOld + amAmount
   let prBalanceNew = prBalanceOld + prAmount
@@ -671,13 +677,13 @@ func calcPutOneTkn(
     IntegerEntry(ph(height, lastBlock.timestamp), curPrice),
     StringEntry(
       pau(userAddress, txId),
-      dataPutActionInfo(amAmount, prAmount, lpAmount.toInt(), curPrice, 0, 0, height, lastBlock.timestamp, 0, 0)
+      dataPutActionInfo(amAmountRaw, prAmountRaw, lpAmount.toInt(), curPrice, 0, 0, height, lastBlock.timestamp, 0, 0)
     )
   ]
 
   let poolProportion = prBalanceOld.fraction(scale8, amBalanceOld)
-  let amountAssetPart = fraction(pmtAmt, scale8, poolProportion + scale8)
-  let priceAssetPart = pmtAmt - amountAssetPart
+  let amountAssetPart = fraction(pmtAmtRaw, scale8, poolProportion + scale8)
+  let priceAssetPart = pmtAmtRaw - amountAssetPart
   let lpAmtBoth = fraction(lpAssetEmission, priceAssetPart.toBigInt(), prBalanceOld.toBigInt())
   let bonus = fraction(lpAmount - lpAmtBoth, scale8BigInt, lpAmtBoth).toInt()
   
@@ -722,7 +728,13 @@ func getOneTknV2Internal(
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
   } else totalGet
 
-  let (outAm, outPr) = if(outAssetId == amId) then (totalAmount, 0) else (0, totalAmount)
+  let (outAm, outPr) = if (outAssetId == amId) then {
+    (totalAmount, 0)
+  } else if (outAssetId == prId) then {
+    (0, totalAmount)
+  } else {
+    "invalid out asset id".throw()
+  }
 
   let curPrX18 = cpbi(prBalance.t1(prDecimals), amBalance.t1(amDecimals))
   let curPr = curPrX18.f1(scale8)
@@ -1147,7 +1159,13 @@ func getOneTknV2READONLY(
   let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   let D0 = xp.getD()
   let D1 = D0 - fraction(lpAssetAmount.toBigInt(), D0, lpEmission)
-  let index = if (outAssetId == amId) then 0 else 1
+  let index = if (outAssetId == amId) then {
+    0
+  } else if (outAssetId == prId) then {
+    1
+  } else {
+    "invalid out asset id".throw()
+  }
   let newY = xp.getYD(index, D1)
   let dy = xp[index] - newY
   let totalGetRaw = { dy - big1 }.toInt()
