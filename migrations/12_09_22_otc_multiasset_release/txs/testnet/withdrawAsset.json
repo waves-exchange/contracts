@@ -1,0 +1,27 @@
+{
+  "dApp": "3MvXnAcEtL9x3i499UcvTQZPufrT5ZZUEd5",
+  "fee": 500000,
+  "proofs": [],
+  "senderPublicKey": "EsqRXDXnACFAdXz6EPhF1SbKyeV7MVuoyDqmXsMz7ySv",
+  "timestamp": 0,
+  "type": 16,
+  "version": 1,
+  "payment": [],
+  "call": {
+    "function": "withdrawAsset",
+    "args": [
+      {
+        "type": "string",
+        "value": "A7Ksh7fXyqm1KhKAiK3bAB2aiPSitQQF6v1pyu9SS3FR"
+      },
+      {
+        "type": "string",
+        "value": "25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT"
+      },
+      {
+        "type": "integer",
+        "value": 2230443
+      }
+    ]
+  }
+}
