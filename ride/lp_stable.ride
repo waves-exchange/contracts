@@ -550,132 +550,6 @@ func cp(caller: String,
     r
 }
 
-func estimatePutOneTknV2(
-  pmtAmtRaw: Int,
-  pmtAssetId: String,
-  userAddress: String,
-  txId: String
-) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
-
-  let (pmtAmt, feeAmount) = pmtAmtRaw.takeFee()
-
-  let (amBalanceNow, prBalanceNow) =
-    if (txId == "") then (amBalance, prBalance) else {
-      if (pmtAssetId == amId) then {
-        if (amBalance < pmtAmtRaw) then "invalid payment amount".throw() else
-          (amBalance - pmtAmtRaw, prBalance)
-      } else if (pmtAssetId == prId) then {
-        if (prBalance < pmtAmtRaw) then "invalid payment amount".throw() else
-          (amBalance, prBalance - pmtAmtRaw)
-      } else throw("wrong pmtAssetId")
-    }
-
-  let (amBalanceForCalc, prBalanceForCalc) = if (pmtAssetId == amId) then (amBalanceNow, prBalanceNow) else (prBalanceNow, amBalanceNow)
-
-  let xPrecision = 1
-  let result = gwxContract.invoke("calcPutXOnly", [
-    pmtAmt.toString(), # paymentAmountBigIntStr
-    amBalanceForCalc.toString(), # amountAssetBalanceBigIntStr
-    prBalanceForCalc.toString(), # priceAssetBalanceBigIntStr
-    "", # dBigIntStr
-    A, # amplificatorBigIntStr
-    Amult, # amplificatorPrecisionBigIntStr
-    xPrecision.toString(), # targetXPrecisionBigIntStr
-    Dconv # targetDPrecisionBigIntStr
-  ], []).exactAs[(Int, Int)]
-
-  let (amAssetPart, prAssetPart) = if (pmtAssetId == amId) then result else (result._2, result._1)
-
-  let estPut = cp(userAddress,
-    txId,
-    AttachedPayment(amId.fromBase58String(), amAssetPart),
-    AttachedPayment(prId.fromBase58String(), prAssetPart),
-    0,
-    true,
-    true,
-    false,
-    pmtAmtRaw,
-    pmtAssetId
-  )
-
-  let estimLP   = estPut._2
-  let lpAssetId = estPut._7
-  let state     = estPut._9
-  let amDiff    = estPut._10
-  let prDiff    = estPut._11
-
-  estPut
-}
-
-func getOneTknV2Internal(
-  outAssetId: String,
-  minOutAmount: Int,
-  payments: List[AttachedPayment],
-  caller: Address,
-  originCaller: Address,
-  transactionId: ByteVector
-) = {
-  if (payments.size() != 1) then throw("1 pmnt expd") else
-  let poolConfig = gpc()
-  let lpId = poolConfig[idxLPAsId]
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let amDecimals = poolConfig[idxAmtAsDcm].parseIntValue()
-  let prDecimals = poolConfig[idxPriceAsDcm].parseIntValue()
-  let poolStatus = poolConfig[idxPoolSt]
-
-  let userAddress = if (caller == this) then originCaller else caller
-
-  let pmt = payments[0].value()
-  let pmtAssetId = pmt.assetId.value()
-  let pmtAmt = pmt.amount
-
-  if (pmtAmt < 10_00_000_000) then throw("Min pmt 10 LP") else
-
-  let txId58 = transactionId.toBase58String()
-
-  if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
-
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
-
-  let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
-
-  let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
-    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
-  } else totalGet
-
-  let (outAm, outPr) = if(outAssetId == amId) then (totalAmount, 0) else (0, totalAmount)
-
-  let curPrX18 = cpbi(prBalance.t1(prDecimals), amBalance.t1(amDecimals))
-  let curPr = curPrX18.f1(scale8)
-
-  let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
-  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetIdOrWaves)] else []
-
-  strict state = [
-    ScriptTransfer(userAddress, totalAmount, outAssetIdOrWaves),
-    StringEntry(
-      gau(userAddress.toString(), txId58),
-      dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)),
-    IntegerEntry(pl(), curPr),
-    IntegerEntry(ph(height, lastBlock.timestamp), curPr)
-  ] ++ sendFeeToMatcher
-
-  strict burn = invoke(fca,
-    "burn",
-    [pmtAmt],
-    [AttachedPayment(pmtAssetId, pmtAmt)]
-  )
-  (state, totalAmount)
-}
-
 func getD(xp: List[BigInt]) = {
   let n = big2
   let xp0 = xp[0]
@@ -739,6 +613,142 @@ func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
   } else {
     { "Y calculation error, Y = " + y.toString() }.throw()
   }
+}
+
+func calcPutOneTkn(
+  pmtAmtRaw: Int,
+  pmtAssetId: String,
+  userAddress: String,
+  txId: String
+) = {
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let lpId = poolConfig[idxLPAsId]
+  let amtDcm = poolConfig[idxAmtAsDcm].parseIntValue()
+  let priceDcm = poolConfig[idxPriceAsDcm].parseIntValue()
+
+  let amBalance = amId.getAccBalance()
+  let prBalance = prId.getAccBalance()
+
+  let (pmtAmt, feeAmount) = pmtAmtRaw.takeFee()
+
+  let (amBalanceOld, prBalanceOld) =
+    if (txId == "") then (amBalance, prBalance) else {
+      if (pmtAssetId == amId) then {
+        if (amBalance < pmtAmtRaw) then "invalid payment amount".throw() else
+          (amBalance - pmtAmtRaw, prBalance)
+      } else if (pmtAssetId == prId) then {
+        if (prBalance < pmtAmtRaw) then "invalid payment amount".throw() else
+          (amBalance, prBalance - pmtAmtRaw)
+      } else throw("wrong pmtAssetId")
+    }
+  
+  let (amAmount, prAmount) = if (pmtAssetId == amId) then {
+    (pmtAmt, 0)
+  } else if (pmtAssetId == prId) then {
+    (0, pmtAmt)
+  } else "invalid payment".throw()
+
+  let amBalanceNew = amBalanceOld + amAmount
+  let prBalanceNew = prBalanceOld + prAmount
+
+  # check D1 > D0
+  let D0 = [amBalanceOld.toBigInt(), prBalanceOld.toBigInt()].getD()
+  let D1 = [amBalanceNew.toBigInt(), prBalanceNew.toBigInt()].getD()
+
+  strict checkD = D1 > D0 || throw()
+
+  let lpAssetEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
+  let lpAmount = if (lpAssetEmission > big0) then {
+    fraction(lpAssetEmission, D1 - D0, D0)
+  } else "initial deposit requires all coins".throw()
+
+  let curPrice = {
+    let amBalanceX18 = amBalance.t1(amtDcm)
+    let prBalanceX18 = prBalance.t1(priceDcm)
+    cpbi(prBalanceX18, amBalanceX18).f1(scale8)
+  }
+
+  let commonState = [
+    IntegerEntry(pl(), curPrice),
+    IntegerEntry(ph(height, lastBlock.timestamp), curPrice),
+    StringEntry(
+      pau(userAddress, txId),
+      dataPutActionInfo(amAmount, prAmount, lpAmount.toInt(), curPrice, 0, 0, height, lastBlock.timestamp, 0, 0)
+    )
+  ]
+
+  let poolProportion = prBalanceOld.fraction(scale8, amBalanceOld)
+  let amountAssetPart = fraction(pmtAmt, scale8, poolProportion + scale8)
+  let priceAssetPart = pmtAmt - amountAssetPart
+  let lpAmtBoth = fraction(lpAssetEmission, priceAssetPart.toBigInt(), prBalanceOld.toBigInt())
+  let bonus = fraction(lpAmount - lpAmtBoth, scale8BigInt, lpAmtBoth).toInt()
+  
+  (lpAmount.toInt(), commonState, feeAmount, bonus)
+}
+
+func getOneTknV2Internal(
+  outAssetId: String,
+  minOutAmount: Int,
+  payments: List[AttachedPayment],
+  caller: Address,
+  originCaller: Address,
+  transactionId: ByteVector
+) = {
+  if (payments.size() != 1) then throw("1 pmnt expd") else
+  let poolConfig = gpc()
+  let lpId = poolConfig[idxLPAsId]
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let amDecimals = poolConfig[idxAmtAsDcm].parseIntValue()
+  let prDecimals = poolConfig[idxPriceAsDcm].parseIntValue()
+  let poolStatus = poolConfig[idxPoolSt]
+
+  let userAddress = if (caller == this) then originCaller else caller
+
+  let pmt = payments[0].value()
+  let pmtAssetId = pmt.assetId.value()
+  let pmtAmt = pmt.amount
+
+  if (pmtAmt < 10_00_000_000) then throw("Min pmt 10 LP") else
+
+  let txId58 = transactionId.toBase58String()
+
+  if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
+
+  let amBalance = amId.getAccBalance()
+  let prBalance = prId.getAccBalance()
+
+  let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
+
+  let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+  } else totalGet
+
+  let (outAm, outPr) = if(outAssetId == amId) then (totalAmount, 0) else (0, totalAmount)
+
+  let curPrX18 = cpbi(prBalance.t1(prDecimals), amBalance.t1(amDecimals))
+  let curPr = curPrX18.f1(scale8)
+
+  let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
+  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetIdOrWaves)] else []
+
+  strict state = [
+    ScriptTransfer(userAddress, totalAmount, outAssetIdOrWaves),
+    StringEntry(
+      gau(userAddress.toString(), txId58),
+      dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)),
+    IntegerEntry(pl(), curPr),
+    IntegerEntry(ph(height, lastBlock.timestamp), curPr)
+  ] ++ sendFeeToMatcher
+
+  strict burn = invoke(fca,
+    "burn",
+    [pmtAmt],
+    [AttachedPayment(pmtAssetId, pmtAmt)]
+  )
+  (state, totalAmount)
 }
 
 # managerPublicKeyOrUnit
@@ -942,7 +952,6 @@ func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, au
     state ++ lpTrnsfr ++ sendFeeToMatcher
 }
 
-# slippage in scale8
 @Callable(i)
 func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   if (i.payments.size() != 1) then throw("1 pmnt expd") else
@@ -950,6 +959,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   let poolConfig = gpc()
   let amId = poolConfig[idxAmAsId]
   let prId = poolConfig[idxPrAsId]
+  let lpId = poolConfig[idxLPAsId].fromBase58String()
   let amDecimals = poolConfig[idxAmtAsDcm].parseIntValue()
   let prDecimals = poolConfig[idxPriceAsDcm].parseIntValue()
 
@@ -961,12 +971,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   
   if (pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
-  let r = estimatePutOneTknV2(pmtAmt, pmtAssetId, userAddress.toString(), i.transactionId.toBase58String())
-  let estimLP   = r._2
-  let lpAssetId = r._7
-  let state     = r._9
-  let amDiff    = r._10
-  let prDiff    = r._11
+  let (estimLP, state, feeAmount) = calcPutOneTkn(pmtAmt, pmtAssetId, userAddress.toString(), i.transactionId.toBase58String())
 
   let emitLpAmt = if (minOutAmount > 0 && estimLP < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
@@ -979,48 +984,14 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
     case legacy: Address => legacy.invoke("emit", [emitLpAmt], [])
     case _ => unit
   }
-  strict sa = if(amDiff > 0)      then slipageContract.invoke("put",[],[AttachedPayment(amId.fromBase58String(), amDiff)])        else []
-  strict sp = if(prDiff > 0)      then slipageContract.invoke("put",[],[AttachedPayment(prId.fromBase58String(), prDiff)])        else []
 
   let lpTrnsfr =
-    if(autoStake) then strict ss = stakingContract.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
-    else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
+    if (autoStake) then strict ss = stakingContract.invoke("stake", [], [AttachedPayment(lpId, emitLpAmt)]); []
+    else [ScriptTransfer(i.caller, emitLpAmt, lpId)]
 
-  let feeAmount = pmtAmt.takeFee()._2
   let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, pmtAssetId.fromBase58String())] else []
 
   (state ++ lpTrnsfr ++ sendFeeToMatcher, emitLpAmt)
-}
-
-@Callable(i)
-func putOneTknV2WithBonusOldREADONLY(
-  paymentAmount: Int,
-  paymentAssetId: String
-) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-
-  let r = estimatePutOneTknV2(paymentAmount, paymentAssetId, "", "")
-  let estimLP = r._2
-  let curPrice = r._3
-  let lpAssetEmission = r._6
-  let lpAssetId = r._7
-  # let amBalance = r._4
-  # let prBalance = r._5
-
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
-  let poolProportion = prBalance.fraction(scale8, amBalance)
-  let amountAssetPart = fraction(paymentAmount, scale8, poolProportion + scale8)
-  let priceAssetPart = paymentAmount - amountAssetPart
-
-  let lpAmtBoth = fraction(lpAssetEmission, priceAssetPart, prBalance)
-  
-  let bonus = fraction(estimLP - lpAmtBoth, scale8, lpAmtBoth)
-  let feeAmount = paymentAmount.takeFee()._2
-
-  ([], (estimLP, feeAmount, bonus))
 }
 
 # Put without LP emission
@@ -1331,47 +1302,15 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetId: String, minOutAmount: I
 }
 
 @Callable(i)
-func putOneTknV2WithBonusREADONLY(amount: Int, asset: String) = {
+func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
   let poolConfig = gpc()
   let amId = poolConfig[idxAmAsId]
   let prId = poolConfig[idxPrAsId]
   let lpId = poolConfig[idxLPAsId]
 
-  # let payment = i.payments[0]
-  # let paymentAsset = payment.assetId.value().toBase58String()
-  # let paymentAmountRaw = payment.amount
-  let paymentAsset = asset
-  let paymentAmountRaw = amount
-  let (paymentAmount, feeAmount) = paymentAmountRaw.takeFee()
+  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "")
 
-  # TODO: check payments size
-
-  let (amAmount, prAmount) = if (paymentAsset == amId) then {
-    (paymentAmount, 0)
-  } else if (paymentAsset == prId) then {
-    (0, paymentAmount)
-  } else "invalid payment".throw()
-
-  let amBalanceOld = amId.getAccBalance()
-  let prBalanceOld = prId.getAccBalance()
-
-  let amBalanceNew = amBalanceOld + amAmount
-  let prBalanceNew = prBalanceOld + prAmount
-
-  # check D1 > D0
-  let D0 = [amBalanceOld.toBigInt(), prBalanceOld.toBigInt()].getD()
-  let D1 = [amBalanceNew.toBigInt(), prBalanceNew.toBigInt()].getD()
-
-  let lpAssetEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
-  let lpAmount = lpAssetEmission * (D1 - D0) / D0
-
-  let poolProportion = prBalanceOld.fraction(scale8, amBalanceOld)
-  let amountAssetPart = fraction(paymentAmount, scale8, poolProportion + scale8)
-  let priceAssetPart = paymentAmount - amountAssetPart
-  let lpAmtBoth = fraction(lpAssetEmission, priceAssetPart.toBigInt(), prBalanceOld.toBigInt())
-  let bonus = fraction(lpAmount - lpAmtBoth, scale8BigInt, lpAmtBoth)
-
-  (nil, (lpAmount.toInt(), feeAmount, bonus.toInt()))
+  (nil, (lpAmount, feeAmount, bonus))
 }
 
 # purpose:
