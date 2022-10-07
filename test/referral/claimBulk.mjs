@@ -97,11 +97,19 @@ describe('referral: claimBulk.mjs', /** @this {MochaSuiteModified} */() => {
       const firstIncUnclaimed = await ni.waitForTx(incUnclaimedTx.id, { apiBase });
 
       expect(firstIncUnclaimed.stateChanges.data).to.eql([{
-        key: `%s%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
+        key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
         type: 'integer',
         value: referrerReward,
       }, {
-        key: `%s%s%s%s__unclaimedReferral__${programName}__${referralAddress}`,
+        key: `%s%s__unclaimedTotalAddress__${referralAddress}`,
+        type: 'integer',
+        value: referralReward,
+      }, {
+        key: `%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
+        type: 'integer',
+        value: referrerReward,
+      }, {
+        key: `%s%s%s__unclaimedReferral__${programName}__${referralAddress}`,
         type: 'integer',
         value: referralReward,
       }, {
@@ -165,11 +173,19 @@ describe('referral: claimBulk.mjs', /** @this {MochaSuiteModified} */() => {
       const secondIncUnclaimed = await ni.waitForTx(incUnclaimedTxSecondProgram.id, { apiBase });
 
       expect(secondIncUnclaimed.stateChanges.data).to.eql([{
-        key: `%s%s%s%s__unclaimedReferrer__${programNameSecond}__${referrerAddress}`,
+        key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
+        type: 'integer',
+        value: referrerReward * 2,
+      }, {
+        key: `%s%s__unclaimedTotalAddress__${referralAddress}`,
+        type: 'integer',
+        value: referralReward * 2,
+      }, {
+        key: `%s%s%s__unclaimedReferrer__${programNameSecond}__${referrerAddress}`,
         type: 'integer',
         value: referrerReward,
       }, {
-        key: `%s%s%s%s__unclaimedReferral__${programNameSecond}__${referralAddress}`,
+        key: `%s%s%s__unclaimedReferral__${programNameSecond}__${referralAddress}`,
         type: 'integer',
         value: referralReward,
       }, {
@@ -190,7 +206,13 @@ describe('referral: claimBulk.mjs', /** @this {MochaSuiteModified} */() => {
       await api.transactions.broadcast(claimBulkTx, {});
       const { stateChanges } = await ni.waitForTx(claimBulkTx.id, { apiBase });
 
-      const invokeStateChanges = stateChanges.invokes[0].stateChanges;
+      const balance = await api.assets.fetchBalanceAddressAssetId(
+        address(this.accounts.referrerAccount, chainId),
+        this.wxAssetId,
+      );
+      expect(balance.balance).to.be.equal(referrerReward * 2);
+
+      const invokeStateChanges = stateChanges.invokes[0].stateChanges.invokes[0].stateChanges.invokes[1].stateChanges;  /* eslint-disable-line */
       const firstTransfer = invokeStateChanges.transfers[0];
       const secondTransfer = invokeStateChanges.invokes[0].stateChanges.transfers[0];
 

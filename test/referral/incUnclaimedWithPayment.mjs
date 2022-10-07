@@ -12,9 +12,9 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: incUnclaimed.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: incUnclaimedWithPayment.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully incUnclaimed',
+    'should successfully incUnclaimedWithPayment',
     async function () {
       const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
@@ -83,7 +83,11 @@ describe('referral: incUnclaimed.mjs', /** @this {MochaSuiteModified} */() => {
       const { stateChanges } = await ni.waitForTx(incUnclaimedWithPaymentTx.id, { apiBase });
 
       expect(stateChanges.invokes[0].stateChanges.data).to.eql([{
-        key: `%s%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
+        key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
+        type: 'integer',
+        value: referrerReward,
+      }, {
+        key: `%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
         type: 'integer',
         value: referrerReward,
       }, {
