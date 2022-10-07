@@ -20,7 +20,7 @@ describe('otc_multiasset: initializationSwapAssetsBToARejectIfWithdrawalDelayNot
     const amountAssetB = this.minAmountWithdraw + 1;
 
     const expectedRejectMessage = 'otc_multiasset.ride: '
-      + 'Withdrawal delay is not set for the specified pair.';
+            + 'Withdrawal delay is not set for the specified pair.';
 
     const swapAssetsAToBTx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),

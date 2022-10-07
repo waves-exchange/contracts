@@ -23,7 +23,7 @@ describe('otc_multiasset: withdrawAssetRejectIfWithdrawWasNotInitForPair.mjs', /
     const amountAssetB = amountAssetA - fee;
 
     const expectedRejectMessage = 'otc_multiasset.ride: '
-      + 'At this height, withdraw was not initialized with this pair of assets.';
+            + 'At this height, withdraw was not initialized with this pair of assets.';
 
     const swapAssetsAToBTx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),

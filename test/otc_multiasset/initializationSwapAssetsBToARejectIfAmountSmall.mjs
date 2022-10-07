@@ -19,7 +19,7 @@ describe('otc_multiasset: initializationSwapAssetsBToARejectIfAmountSmall.mjs', 
     const amountAssetB = this.minAmountWithdraw + 1;
 
     const expectedRejectMessage = 'otc_multiasset.ride: '
-      + 'Swap amount fail, amount is to small.';
+            + 'Swap amount fail, amount is to small.';
 
     const setKeysTx = data({
       additionalFee: 4e5,

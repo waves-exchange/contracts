@@ -329,12 +329,12 @@ describe('otc_multiasset: userStory.mjs', /** @this {MochaSuiteModified} */() =>
 
     const expectedTotalFeeCollectedDeposit = (
       Math.floor(amountAssetAUser1 / 1000) * this.depositFee
-      + Math.floor(amountAssetAUser2 / 1000) * this.depositFee
+            + Math.floor(amountAssetAUser2 / 1000) * this.depositFee
     );
     const expectedTotalFeeCollectedWithdraw = (
       Math.floor(partAmountAssetAUser1 / 1000) * this.withdrawFee
-      + Math.floor(restOfAmountAssetAUser1 / 1000) * this.withdrawFee
-      + Math.floor(allAmountAssetAUser2 / 1000) * this.withdrawFee
+            + Math.floor(restOfAmountAssetAUser1 / 1000) * this.withdrawFee
+            + Math.floor(allAmountAssetAUser2 / 1000) * this.withdrawFee
     );
 
     expect(stateChangesWithdrawFee.transfers).to.eql([{

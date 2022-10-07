@@ -20,7 +20,7 @@ describe('otc_multiasset: initializationSwapAssetsBToARejectIfWithdrawalFeeNotSe
     const amountAssetB = this.minAmountWithdraw + 1;
 
     const expectedRejectMessage = 'otc_multiasset.ride: '
-      + 'The withdrawal fee for this pair of assets is not set.';
+            + 'The withdrawal fee for this pair of assets is not set.';
 
     const swapAssetsAToBTx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),

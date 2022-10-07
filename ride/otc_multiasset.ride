@@ -78,7 +78,6 @@ func fmtErr(msg: String) = ["otc_multiasset.ride:", msg].makeString(" ")
 
 func throwErr(msg: String) = msg.fmtErr().throw()
 
-
 #registering a new pair of assets
 @Callable(i)
 func registerAsset(assetA: String, assetB: String, withdrawDelay: Int, depositFee: Int, withdrawFee: Int, minAmountDeposit: Int, minAmountWithdraw: Int, pairStatus: Int) = {
@@ -229,4 +228,8 @@ func verify () = {
     case _: Unit => tx.senderPublicKey
   }
   sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 271a8c1e8bdf2808f1bf712f89dee3d42a43f1ba

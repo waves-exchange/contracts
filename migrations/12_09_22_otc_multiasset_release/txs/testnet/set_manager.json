@@ -3,7 +3,7 @@
   "data": [
     {
       "key": "%s__managerPublicKey",
-       "type": "string",
+      "type": "string",
       "value": "EsqRXDXnACFAdXz6EPhF1SbKyeV7MVuoyDqmXsMz7ySv"
     }
   ],

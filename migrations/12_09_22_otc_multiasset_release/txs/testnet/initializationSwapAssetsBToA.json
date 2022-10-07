@@ -16,8 +16,8 @@
     "function": "initializationSwapAssetsBToA",
     "args": [
       {
-          "type": "string",
-          "value": "A7Ksh7fXyqm1KhKAiK3bAB2aiPSitQQF6v1pyu9SS3FR"
+        "type": "string",
+        "value": "A7Ksh7fXyqm1KhKAiK3bAB2aiPSitQQF6v1pyu9SS3FR"
       }
     ]
   }

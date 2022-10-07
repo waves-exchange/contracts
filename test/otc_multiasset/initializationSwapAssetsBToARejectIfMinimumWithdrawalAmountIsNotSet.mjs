@@ -20,7 +20,7 @@ describe('otc_multiasset: initializationSwapAssetsBToARejectIfMinimumWithdrawalA
     const amountSomeAsset = this.minAmountDeposit + 1;
 
     const expectedRejectMessage = 'otc_multiasset.ride: '
-      + 'The minimum withdrawal amount for this pair of assets is not set.';
+            + 'The minimum withdrawal amount for this pair of assets is not set.';
 
     const someAssetIssueTx = issue({
       name: 'someAsset',

@@ -83,7 +83,7 @@ describe('otc_multiasset: withdrawAssetRejectIfAssetLockHeightLessHeight.mjs', /
     }, this.accounts.user1);
 
     const expectedRejectMessage = 'otc_multiasset.ride: '
-      + `Withdrawal is possible after ${heightInKey + this.withdrawDelay} height or you have already withdrawn.`;
+            + `Withdrawal is possible after ${heightInKey + this.withdrawDelay} height or you have already withdrawn.`;
 
     await expect(
       api.transactions.broadcast(withdrawAssetTx, {}),

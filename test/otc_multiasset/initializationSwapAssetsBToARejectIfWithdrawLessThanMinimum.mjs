@@ -20,7 +20,7 @@ describe('otc_multiasset: initializationSwapAssetsBToARejectIfWithdrawLessThanMi
     const amountAssetBLessThanMinAmountWithdraw = this.minAmountWithdraw - 1;
 
     const expectedRejectMessage = 'otc_multiasset.ride: '
-      + 'The withdraw amount is less than the minimum.';
+            + 'The withdraw amount is less than the minimum.';
 
     const setKeysTx = data({
       additionalFee: 4e5,

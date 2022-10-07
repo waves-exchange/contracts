@@ -2,16 +2,15 @@
   "type": 16,
   "version": 2,
   "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
-  "dApp": "",
+  "dApp": "3P2K8CWUGqJU9mP147xnjWpSQn1q1zFX3GA",
   "call": {
-    "args": [],
-    "function": "confirmManager"
+    "function": "confirmManager",
+    "args": []
   },
   "payment": [],
-  "fee": ,
+  "fee": 900000,
   "feeAssetId": null,
-  "timestamp": ,
-  "chainId": ,
-  "proofs": [],
-  "id": ""
+  "timestamp": 0,
+  "chainId": 87,
+  "proofs": []
 }
