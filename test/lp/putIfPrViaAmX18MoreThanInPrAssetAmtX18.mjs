@@ -13,16 +13,19 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
+describe('lp: putIfPrViaAmX18MoreThanInPrAssetAmtX18.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully put with shouldAutoStake false', async function () {
     const usdnAmount = 10e6;
     const shibAmount = 10e2;
     const shouldAutoStake = false;
+    const slippageTolerance = 1e8;
 
     const expectedLpAmount = 1e9;
     const expectedPriceLast = 1e8;
     const expectedPriceHistory = 1e8;
-    const expectedInvokesCount = 1;
+    const expectedInvokesCount = 2;
+    const expectedSlippageToleranceReal = 5e7;
+    const expectedSlippageAmtAssetAmt = 1e3;
 
     const lp = address(this.accounts.lp, chainId);
 
@@ -42,13 +45,31 @@ describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(put, {});
-    const { height, stateChanges, id } = await ni.waitForTx(put.id, { apiBase });
+    await ni.waitForTx(put.id, { apiBase });
+
+    const putSecond = invokeScript({
+      dApp: lp,
+      payment: [
+        { assetId: this.shibAssetId, amount: shibAmount * 2 },
+        { assetId: this.usdnAssetId, amount: usdnAmount },
+      ],
+      call: {
+        function: 'put',
+        args: [
+          { type: 'integer', value: slippageTolerance },
+          { type: 'boolean', value: shouldAutoStake },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
+    await api.transactions.broadcast(putSecond, {});
+    const { height, stateChanges, id } = await ni.waitForTx(putSecond.id, { apiBase });
 
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
     expect(
-      await checkStateChanges(stateChanges, 3, 1, 0, 0, 0, 0, 0, 0, 1),
+      await checkStateChanges(stateChanges, 3, 1, 0, 0, 0, 0, 0, 0, 2),
     ).to.eql(true);
 
     expect(stateChanges.data).to.eql([{
@@ -62,7 +83,7 @@ describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
     }, {
       key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
-      value: `%d%d%d%d%d%d%d%d%d%d__${shibAmount}__${usdnAmount}__${expectedLpAmount}__${expectedPriceLast}__0__0__${height}__${timestamp}__0__0`,
+      value: `%d%d%d%d%d%d%d%d%d%d__${shibAmount}__${usdnAmount}__${expectedLpAmount}__${expectedPriceLast}__${slippageTolerance}__${expectedSlippageToleranceReal}__${height}__${timestamp}__${expectedSlippageAmtAssetAmt}__0`,
     }]);
 
     expect(stateChanges.transfers).to.eql([{
@@ -77,7 +98,6 @@ describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
     expect(
       await checkStateChanges(invokes[0].stateChanges, 0, 1, 0, 1, 0, 0, 0, 0, 0),
     ).to.eql(true);
-
     expect(invokes[0].dApp).to.eql(address(this.accounts.factoryV2, chainId));
     expect(invokes[0].call.function).to.eql('emit');
     expect(invokes[0].call.args).to.eql([
@@ -92,5 +112,18 @@ describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
         asset: this.lpAssetId,
         amount: expectedLpAmount,
       }]);
+
+    expect(
+      await checkStateChanges(invokes[1].stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    ).to.eql(true);
+    expect(invokes[1].dApp).to.eql(address(this.accounts.slippage, chainId));
+    expect(invokes[1].call.function).to.eql('put');
+    expect(invokes[1].call.args).to.eql([]);
+    expect(invokes[1].payment).to.eql([
+      {
+        assetId: this.shibAssetId,
+        amount: expectedSlippageAmtAssetAmt,
+      },
+    ]);
   });
 });
