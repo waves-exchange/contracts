@@ -664,11 +664,7 @@ func calcPutOneTkn(
     fraction(lpAssetEmission, D1 - D0, D0)
   } else "initial deposit requires all coins".throw()
 
-  let curPrice = {
-    let amBalanceX18 = amBalance.t1(amtDcm)
-    let prBalanceX18 = prBalance.t1(priceDcm)
-    cpbi(prBalanceX18, amBalanceX18).f1(scale8)
-  }
+  let curPrice = cpbi(prBalance.t1(priceDcm), amBalance.t1(amtDcm)).f1(scale8)
 
   let commonState = [
     IntegerEntry(pl(), curPrice),
@@ -1136,50 +1132,6 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
   )
 
   (state, totalAmount)
-}
-
-@Callable(i)
-func getOneTknV2OldREADONLY(
-  outAssetId: String,
-  lpAssetAmount: Int
-) = {
-  let poolConfig = gpc()
-  let lpId = poolConfig[idxLPAsId]
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let r = ego("", lpId, lpAssetAmount, this)
-  let estimAmAmt = r._1
-  let estimPrAmt = r._2
-
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
-
-  let amBalanceNow = amBalance - estimAmAmt
-  let prBalanceNow = prBalance - estimPrAmt
-
-  let (amountBalanceForSwap, priceBalanceForSwap, amountToSwap, amountToAdd) =
-    if (outAssetId == amId) then {
-      (prBalanceNow, amBalanceNow, estimPrAmt, estimAmAmt)
-    } else if (outAssetId == prId) then {
-      (amBalanceNow, prBalanceNow, estimAmAmt, estimPrAmt)
-    } else throw("wrong outAssetId")
-
-  let yPrecision = 1
-  let exchResult = gwxContract.invoke("calcSwapXToY", [
-    amountToSwap.toString(), # amountAssetAmountBigIntStr
-    amountBalanceForSwap.toString(), # amountAssetBalanceBigIntStr
-    priceBalanceForSwap.toString(), # priceAssetBalanceBigIntStr
-    "", # dBigIntStr
-    A, # amplificatorBigIntStr
-    Amult, # amplificatorPrecisionBigIntStr
-    yPrecision.toString(), # targetXPrecisionBigIntStr
-    Dconv # targetDPrecisionBigIntStr
-  ], []).exactAs[Int]
-
-  let totalGetRaw = exchResult + amountToAdd
-  let (totalGet, feeAmount) = totalGetRaw.takeFee()
-
-  ([], (totalGet, feeAmount))
 }
 
 @Callable(i)
