@@ -89,20 +89,6 @@ describe('referral: incUnclaimedWithPayment.mjs', /** @this {MochaSuiteModified}
         await checkStateChanges(stateChanges, 0, 1, 0, 0, 0, 0, 0, 0, 1),
       ).to.eql(true);
 
-      expect(stateChanges.invokes[0].stateChanges.data).to.eql([{
-        key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
-        type: 'integer',
-        value: referrerReward,
-      }, {
-        key: `%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
-        type: 'integer',
-        value: referrerReward,
-      }, {
-        key: `%s%s__rewardsTotal__${programName}`,
-        type: 'integer',
-        value: referrerReward,
-      }]);
-
       expect(stateChanges.transfers).to.eql([{
         address: treasuryContract,
         asset: this.wxAssetId,
@@ -113,7 +99,7 @@ describe('referral: incUnclaimedWithPayment.mjs', /** @this {MochaSuiteModified}
       expect(invokes.length).to.eql(expectedInvokesCount);
 
       expect(
-        await checkStateChanges(invokes[0].stateChanges, 2, 0, 0, 0, 0, 0, 0, 0, 1),
+        await checkStateChanges(invokes[0].stateChanges, 3, 0, 0, 0, 0, 0, 0, 0, 1),
       ).to.eql(true);
 
       expect(invokes[0].dApp).to.eql(address(this.accounts.referral, chainId));
@@ -148,7 +134,11 @@ describe('referral: incUnclaimedWithPayment.mjs', /** @this {MochaSuiteModified}
       expect(invokes[0].payment).to.eql([]);
 
       expect(invokes[0].stateChanges.data).to.eql([{
-        key: `%s%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
+        key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
+        type: 'integer',
+        value: referrerReward,
+      }, {
+        key: `%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
         type: 'integer',
         value: referrerReward,
       }, {
