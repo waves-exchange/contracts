@@ -15,7 +15,7 @@ const api = create(apiBase);
 
 describe('referral: incUnclaimedWithPayment.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully incUnclaimed',
+    'should successfully incUnclaimedWithPayment',
     async function () {
       const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
@@ -88,6 +88,20 @@ describe('referral: incUnclaimedWithPayment.mjs', /** @this {MochaSuiteModified}
       expect(
         await checkStateChanges(stateChanges, 0, 1, 0, 0, 0, 0, 0, 0, 1),
       ).to.eql(true);
+
+      expect(stateChanges.invokes[0].stateChanges.data).to.eql([{
+        key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
+        type: 'integer',
+        value: referrerReward,
+      }, {
+        key: `%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
+        type: 'integer',
+        value: referrerReward,
+      }, {
+        key: `%s%s__rewardsTotal__${programName}`,
+        type: 'integer',
+        value: referrerReward,
+      }]);
 
       expect(stateChanges.transfers).to.eql([{
         address: treasuryContract,

@@ -53,10 +53,11 @@ describe('referral: claimRejectIfNothingToClaim.mjs', /** @this {MochaSuiteModif
         chainId,
       }, this.accounts.referrerAccount);
 
+      const exp = new RegExp(`/*${expectedRejectMessage}/*`);
       await expect(
         api.transactions.broadcast(claimTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        exp,
       );
     },
   );
