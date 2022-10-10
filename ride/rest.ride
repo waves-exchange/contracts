@@ -586,8 +586,8 @@ func gwxUserInfoREADONLY(userAddress: String) = {
 }
 
 @Callable(i)
-func unstakeAndGetOneTkn(poolAddress: String, amount: Int, exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String, slippage: Int) = {
-  strict inv = poolAddress.addressFromStringValue().getString(keyAddonAddr()).value().addressFromStringValue().invoke("unstakeAndGetOneTkn", [amount, exchResult, notUsed, outAmount, outAssetId, slippage], [])
+func unstakeAndGetOneTknV2(poolAddress: String, unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
+  strict inv = poolAddress.addressFromStringValue().invoke("unstakeAndGetOneTkn", [unstakeAmount, outAssetId, minOutAmount], [])
   ([], unit)
 }
 

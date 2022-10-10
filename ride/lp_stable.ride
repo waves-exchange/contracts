@@ -869,97 +869,6 @@ func put(slip: Int, autoStake: Boolean) = {
     state++lpTrnsfr
 }
 
-# slippage in scale8
-@Callable(i)
-func putOneTkn(amAssetPart: Int, prAssetPart: Int, outLp: Int, slippage: Int, autoStake: Boolean) = {
-    let cfg = gfc()
-    #if(true) then throw("off") else
-    let stakingCntr = addressFromString(cfg[idxFactStakCntr]).valueOrErrorMessage("Wr st addr")
-    let slipCntr    = addressFromString(cfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
-    let gwxCntr     = addressFromString(cfg[idxFactGwxRewCntr]).valueOrErrorMessage("Wr gwx addr")
-    let poolCfg     = gpc()
-    let amId        = poolCfg[idxAmAsId]
-    let prId        = poolCfg[idxPrAsId]
-    let amDcm       = poolCfg[idxAmtAsDcm].parseIntValue()
-    let prDcm       = poolCfg[idxPriceAsDcm].parseIntValue()
-
-    let addon       = this.getString(ada()).valueOrElse("")
-    let userAddress = if(addon == i.caller.toString()) then i.originCaller else i.caller
-
-    if(slippage <= 0 || amAssetPart<=0 || prAssetPart<=0 || outLp <= 0) then throw("Wrong params") else
-    if (i.payments.size() != 1) then throw("1 pmnt expd") else
-
-    let pmt         = i.payments[0].value()
-    let pmtAssetId  = pmt.assetId.value().toBase58String()
-    let paymentAmountRaw = pmt.amount
-    let (pmtAmt, feeAmount) = paymentAmountRaw.takeFee()
-
-    if (paymentAmountRaw < 10_000_000) then throw("Wrong pmt amt") else
-
-    let amBalance = getAccBalance(amId)
-    let prBalance = getAccBalance(prId)
-
-    let (amBalanceNow, prBalanceNow, virtSwapInAm, virtSwapOutPr, virtSwapInPr, virtSwapOutAm) =
-      if (pmtAssetId == amId) then {
-        if (amBalance < paymentAmountRaw || pmtAmt < amAssetPart) then "invalid payment amount".throw() else
-          (amBalance - paymentAmountRaw, prBalance, pmtAmt - amAssetPart, prAssetPart, 0, 0)
-      } else if (pmtAssetId == prId) then {
-        if (prBalance < paymentAmountRaw || pmtAmt < prAssetPart) then "invalid payment amount".throw() else
-          (amBalance, prBalance - paymentAmountRaw, 0, 0, pmtAmt - prAssetPart, amAssetPart)
-      } else throw("wrong pmtAssetId")
-
-    let D0 = gwxCntr.invoke("calcD", [
-                    amBalanceNow.toString(),
-                    prBalanceNow.toString(),
-                    A, Amult, Dconv],[])
-
-    let D1 = gwxCntr.invoke("calcD", [
-                    (amBalanceNow + virtSwapInAm - virtSwapOutAm).toBigInt().toString(),
-                    (prBalanceNow + virtSwapInPr - virtSwapOutPr).toBigInt().toString(),
-                    A, Amult, Dconv],[])
-
-    strict D0vsD1 = vd(D1.str().parseBigIntValue(), D0.str().parseBigIntValue(), slippage4D)
-
-    let estPut = cp(i.caller.toString(),
-                          i.transactionId.toBase58String(),
-                          AttachedPayment(amId.fromBase58String(), amAssetPart),
-                          AttachedPayment(prId.fromBase58String(), prAssetPart),
-                          slippage,
-                          true,
-                          true,
-                          true,
-                          pmtAmt,
-                          pmtAssetId)
-
-    let estimLP   = estPut._2
-    let lpAssetId = estPut._7
-    let state     = estPut._9
-    let amDiff    = estPut._10
-    let prDiff    = estPut._11
-
-    let lpCalcRes = vad(estimLP.toBigInt(), outLp.toBigInt(), slippage.toBigInt())
-
-    let emitLpAmt = lpCalcRes._2.toInt()
-
-    # emit lp on factory
-    strict e = fca.invoke("emit", [emitLpAmt], [])
-    # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
-    strict el = match (e) {
-      case legacy: Address => legacy.invoke("emit", [emitLpAmt], [])
-      case _ => unit
-    }
-    strict sa = if(amDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(amId.fromBase58String(), amDiff)])        else []
-    strict sp = if(prDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(prId.fromBase58String(), prDiff)])        else []
-
-    let lpTrnsfr =
-      if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
-      else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
-    
-    let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, pmtAssetId.fromBase58String())] else []
-
-    state ++ lpTrnsfr ++ sendFeeToMatcher
-}
-
 @Callable(i)
 func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   if (i.payments.size() != 1) then throw("1 pmnt expd") else
@@ -1044,92 +953,6 @@ func get() = {
                     [pmtAmt],
                     [AttachedPayment(pmtAssetId, pmtAmt)])
   state
-}
-
-@Callable(i)
-func getOneTkn(exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String, slippage: Int) = {
-  if (i.payments.size() != 1) then throw("1 pmnt expd") else
-  #if(true) then throw("off") else
-  let cfg         = gpc()
-  let lpId        = cfg[idxLPAsId]
-  let amId        = cfg[idxAmAsId]
-  let prId        = cfg[idxPrAsId]
-  let amDcm       = cfg[idxAmtAsDcm].parseIntValue()
-  let prDcm       = cfg[idxPriceAsDcm].parseIntValue()
-  let sts         = cfg[idxPoolSt]
-
-  let factCfg     = gfc()
-  let gwxCntr     = addressFromString(factCfg[idxFactGwxRewCntr]).valueOrErrorMessage("Wr sl addr")
-
-  let pmt         = i.payments[0].value()
-
-  # todo: addon is a separate contract with unstake and get on tkn operation, should me merged with this contract once max script size is increased
-  let addon       = this.getString(ada()).valueOrElse("")
-  let userAddress = if(addon == i.caller.toString()) then i.originCaller else i.caller
-  let txId58      = i.transactionId.toBase58String()
-  let pmtAssetId  = pmt.assetId.value()
-  let pmtAmt      = pmt.amount
-
-  if(pmtAmt < 10_00_000_000) then throw("Min pmt 10 LP") else
-
-  if(slippage < 0 || exchResult < 0 || outAmount < 0) then throw("Wrong params") else
-  if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
-
-  let r = ego(i.transactionId.toBase58String(), pmtAssetId.toBase58String(), pmtAmt, i.caller)
-  let estimAmAmt    = r._1
-  let estimPrAmt    = r._2
-
-  let amBalance = getAccBalance(amId)
-  let prBalance = getAccBalance(prId)
-
-  let (amBalanceNow, prBalanceNow, virtSwapInAm, virtSwapOutPr, virtSwapInPr, virtSwapOutAm, totalGetRaw) =
-        if (outAssetId == amId) then {
-          (amBalance - estimAmAmt, prBalance - estimPrAmt, exchResult, estimPrAmt, 0, 0, estimAmAmt + exchResult)
-        } else if (outAssetId == prId) then {
-          (amBalance - estimAmAmt, prBalance - estimPrAmt, 0, 0, exchResult, estimAmAmt,  estimPrAmt + exchResult)
-        } else throw("wrong outAssetId")
-
-  if(virtSwapInAm < 0 || virtSwapInPr < 0) then throw("Wrong calc") else
-
-  let D0 = gwxCntr.invoke("calcD", [
-                                        amBalanceNow.toString(),
-                                        prBalanceNow.toString(), A, Amult, Dconv],[]);
-
-  let D1 = gwxCntr.invoke("calcD", [
-                                        (amBalanceNow - virtSwapInAm + virtSwapOutAm).toString(),
-                                        (prBalanceNow + virtSwapOutPr - virtSwapInPr).toString(), A, Amult, Dconv],[]);
-
-  strict D0vsD1 = vd(D1.str().parseBigIntValue(), D0.str().parseBigIntValue(), slippage4D)
-
-  let totalGet = totalGetRaw.takeFee()._1
-  strict finalRes = vad(totalGet.toBigInt(), outAmount.toBigInt(), slippage.toBigInt())
-
-  let (outAm, outPr)  = if(outAssetId == amId) then (finalRes._2.toInt(), 0) else (0, finalRes._2.toInt())
-  let totalAmount = outAm + outPr
-  let feeAmount = totalGetRaw - totalGet
-
-  let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
-
-  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetIdOrWaves)] else []
-
-  let curPrX18 = cpbi(prBalance.t1(prDcm), amBalance.t1(amDcm))
-  let curPr = curPrX18.f1(scale8)
-
-  strict state =
-  [
-    ScriptTransfer(userAddress, totalAmount, outAssetIdOrWaves),
-    StringEntry(
-          gau(userAddress.toString(), txId58),
-          dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)),
-    IntegerEntry(pl(), curPr),
-    IntegerEntry(ph(height, lastBlock.timestamp), curPr)
-  ]
-
-  strict burn = invoke(fca,
-                                  "burn",
-                                  [pmtAmt],
-                                  [AttachedPayment(pmtAssetId, pmtAmt)])
-  state ++ sendFeeToMatcher
 }
 
 @Callable(i)
@@ -1249,7 +1072,7 @@ func unstakeAndGet(amount: Int) = {
 }
 
 @Callable(i)
-func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
+func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
   strict checkPayments = if (i.payments.size() != 0) then throw("No pmnts expd") else true
 
   let cfg = gpc()
