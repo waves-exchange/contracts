@@ -582,7 +582,7 @@ func putForFree(maxSlippage: Int) = {
 
 # issued = supply * (√(1 + deposit / balance) - 1)
 @Callable(i)
-func putOneToken(slippage: Int, autoStake: Boolean) = {
+func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   let (
     poolAddress,
     poolStatus,
@@ -597,8 +597,7 @@ func putOneToken(slippage: Int, autoStake: Boolean) = {
 
   strict checks = [
     !isPutDisabled || "put operation is blocked by admin".throwErr(),
-    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr(),
-    slippage >= 0 || "invalid slippage passed".throwErr()
+    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
   let payment = i.payments[0]
@@ -615,7 +614,7 @@ func putOneToken(slippage: Int, autoStake: Boolean) = {
 
 # amount = balance * (1 - (1 - redeemed / supply)^2)
 @Callable(i)
-func getOneToken(minimumToReceive: Int, unstakeAmount: Int) = {
+func getOneToken(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
   ([], unit)
 }
 
