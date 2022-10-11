@@ -95,6 +95,7 @@ describe('referral: claimREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
       const response = await api.utils.fetchEvaluate(referral, expr);
       const checkData = response.result.value._2.value;  /* eslint-disable-line */
 
+      expect(checkData.length).to.eql(2);
       expect(checkData[0]).to.eql(expected1); /* eslint-disable-line */
       expect(checkData[1]).to.eql(expected2); /* eslint-disable-line */
     },
