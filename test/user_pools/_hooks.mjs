@@ -1,5 +1,10 @@
 import { address, randomSeed } from '@waves/ts-lib-crypto';
-import { issue, massTransfer, nodeInteraction } from '@waves/waves-transactions';
+import {
+  data,
+  issue,
+  massTransfer,
+  nodeInteraction,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { format } from 'path';
 import ora from 'ora';
@@ -61,6 +66,19 @@ export const mochaHooks = {
     await api.transactions.broadcast(usdnIssueTx, {});
     await waitForTx(usdnIssueTx.id, { apiBase });
     this.usdnAssetId = usdnIssueTx.id;
+
+    const setPriceAssetsTx = data({
+      dApp: address(this.accounts.factory, chainId),
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__priceAssets',
+        type: 'string',
+        value: this.usdnAssetId,
+      }],
+      chainId,
+    }, this.accounts.factory);
+    await api.transactions.broadcast(setPriceAssetsTx, {});
+    await waitForTx(setPriceAssetsTx.id, { apiBase });
 
     spinner.succeed('Initialized');
   },

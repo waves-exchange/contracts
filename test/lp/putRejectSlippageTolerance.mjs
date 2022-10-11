@@ -14,9 +14,11 @@ const api = create(apiBase);
 
 describe('lp: putRejectSlippageTolerance.mjs', /** @this {MochaSuiteModified} */() => {
   it('should reject put with negative slippageTolerance', async function () {
-    const usdnAmount = 1e16 / 10;
-    const shibAmount = 1e8 / 10;
+    const usdnAmount = 10e6;
+    const shibAmount = 10e2;
     const slippageTolerance = -1;
+
+    const expectedRejectMessage = 'Invalid slippageTolerance passed';
 
     const put = invokeScript({
       dApp: address(this.accounts.lp, chainId),
@@ -33,9 +35,11 @@ describe('lp: putRejectSlippageTolerance.mjs', /** @this {MochaSuiteModified} */
       },
       chainId,
     }, this.accounts.user1);
-    // await api.transactions.broadcast(put, {});
-    await expect(api.transactions.broadcast(put, {})).to.be.rejectedWith(
-      /^Error while executing account-script: Invalid slippageTolerance passed$/,
+
+    await expect(
+      api.transactions.broadcast(put, {}),
+    ).to.be.rejectedWith(
+      new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
     );
   });
 });

@@ -67,7 +67,7 @@ let IdxFactoryCfgGwxRewardDapp  = 8
 
 func keyFactoryCfg()      = "%s__factoryConfig"
 func keyFactoryLp2AssetsMapping(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
-func keyFactoryLpList()   = "%s__lpTokensList"
+func keyFactoryLpList()   = "%s__lpTokensList" # not used anymore
 func keyFactoryLpAssetToPoolContractAddress(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
 func keyFactoryPoolWeight(contractAddress: String) = { ["%s%s", "poolWeight", contractAddress].makeString(SEP) }
 
@@ -222,29 +222,6 @@ func currentUserRewardRateREADONLY(lpAssetId: String, userAddress: String) = {
         boostingPower.toString(),
         debug],
     SEP))
-}
-
-#let resultOneLp = "%s%d%d%d%s%s__${lp1}__${minRewardClaimed1}__${boostRewardClaimed1}__${gFeeClaimed1}__end__${user}"
-#let resultTwoLp = "%s%d%d%d%s%s%d%d%d%s%s__${lp1}__${minRewardClaimed1}__${boostRewardClaimed1}__${gFeeClaimed1}__end__${lp2}__${minRewardClaimed2}__${boostRewardClaimed2}__${gFeeClaimed2}__end__${user}"
-@Callable(i)
-func claimedRewardREADONLY(userAddress: String) = {
-  let lpList = readLpList()
-  let prefix = "%s%d%d%d%s"
-
-  func claimedRewardByLpAggregator(resultStr: String, nextLp: String) = {
-    let claimedByUserMinRewardKEY = keyClaimedByUserMinReward(nextLp, userAddress)
-    let claimedByUserBoostRewardKEY = keyClaimedByUserBoostReward(nextLp, userAddress)
-
-    let minRewardClaimed    = stakingDapp.getInteger(claimedByUserMinRewardKEY).valueOrElse(0)
-    let boostRewardClaimed  = stakingDapp.getInteger(claimedByUserBoostRewardKEY).valueOrElse(0)
-    let gFeeClaimed         = 0
-
-    makeString([prefix + resultStr, nextLp, minRewardClaimed.toString(), boostRewardClaimed.toString(), gFeeClaimed.toString(), "end"], SEP)
-  }
-
-  let result = FOLD<10>(lpList, "%s", claimedRewardByLpAggregator)
-
-  ([], result + SEP + userAddress)
 }
 
 @Callable(i)
