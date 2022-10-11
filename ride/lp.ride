@@ -45,6 +45,9 @@ let scale8 = 100_000_000
 let scale8BigInt = 100_000_000.toBigInt()
 let scale18 = 1_000_000_000_000_000_000.toBigInt()
 let zeroBigInt = 0.toBigInt()
+let big0 = 0.toBigInt()
+let big1 = 1.toBigInt()
+let wavesString = "WAVES"
 
 let SEP = "__"
 let PoolActive               = 1   # ACTIVE, pool without restrictions
@@ -152,7 +155,11 @@ func getPoolConfig() = {
 }
 
 func parseAssetId(input: String) = {
-  if (input == "WAVES") then unit else input.fromBase58String()
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
 }
 
 func parsePoolConfig(poolConfig: List[String]) = {
@@ -486,6 +493,39 @@ func commonPut(i: Invocation, slippageTolerance: Int, emitLp: Boolean) = {
     estPut
 }
 
+func calcPutOneToken(
+  paymentAmountRaw: Int,
+  paymentAssetId: ByteVector|Unit,
+  userAddress: Address|Unit,
+  txId: ByteVector|Unit
+) = {
+  let isEval = txId == unit
+
+  let (
+    poolAddress,
+    poolStatus,
+    lpAssetId,
+    amountAssetId,
+    priceAssetId,
+    amountAssetDecimals,
+    priceAssetDecimals
+  ) = getPoolConfig().parsePoolConfig()
+
+  let paymentAmount = paymentAmountRaw
+
+  let balanceBigInt = if (paymentAssetId == amountAssetId) then {
+    amountAssetId.assetIdToString().getAccBalance().toBigInt()
+  } else if (paymentAssetId == priceAssetId) then {
+    priceAssetId.assetIdToString().getAccBalance().toBigInt()
+  } else "invalid asset".throwErr()
+
+  let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
+  let depositBigInt = paymentAmount.toBigInt()
+  let issueAmount = supplyBigInt * (sqrt(scale8BigInt + (depositBigInt * scale8BigInt) / balanceBigInt, 8, 8, DOWN) - scale8BigInt) / scale8BigInt
+
+  issueAmount
+}
+
 func managerPublicKeyOrUnit() = match mpk().getString() {
   case s: String => s.fromBase58String()
   case _: Unit => unit
@@ -582,7 +622,7 @@ func putForFree(maxSlippage: Int) = {
 
 # issued = supply * (√(1 + deposit / balance) - 1)
 @Callable(i)
-func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
+func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   let (
     poolAddress,
     poolStatus,
@@ -602,19 +642,20 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
 
   let payment = i.payments[0]
   let paymentAssetId = payment.assetId
-  let paymentAmount = payment.amount
+  let paymentAmountRaw = payment.amount
+  let paymentAmount = paymentAmountRaw
 
-  let isPaymentAssetIdValid = paymentAssetId == amountAssetId || paymentAssetId == priceAssetId
-  strict checkPaymentAssetId = isPaymentAssetIdValid || "invalid asset".throwErr()
+  let userAddress = i.caller
+  let txId = i.transactionId
 
-  let lpEmission = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity
+  let issueAmount = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
 
-  ([], unit)
+  ([], issueAmount)
 }
 
 # amount = balance * (1 - (1 - redeemed / supply)^2)
 @Callable(i)
-func getOneToken(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
+func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
   ([], unit)
 }
 
