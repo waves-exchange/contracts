@@ -45,6 +45,10 @@ let scale8 = 100_000_000
 let scale8BigInt = 100_000_000.toBigInt()
 let scale18 = 1_000_000_000_000_000_000.toBigInt()
 let zeroBigInt = 0.toBigInt()
+let big0 = 0.toBigInt()
+let big1 = 1.toBigInt()
+let big2 = 1.toBigInt()
+let wavesString = "WAVES"
 
 let SEP = "__"
 let PoolActive               = 1   # ACTIVE, pool without restrictions
@@ -129,6 +133,8 @@ func throwOrderError(orderValid: Boolean, senderValid: Boolean, matcherValid: Bo
 func getStringOrFail(address: Address, key: String) = address.getString(key).valueOrErrorMessage(makeString(["mandatory ", address.toString(), ".", key, " is not defined"], ""))
 func getIntOrFail(address: Address, key: String) = address.getInteger(key).valueOrErrorMessage(makeString(["mandatory ", address.toString(), ".", key, " is not defined"], ""))
 
+func throwErr(msg: String) = ["lp.ride:", msg].makeString(" ").throw()
+
 let factoryContract = addressFromStringValue(getStringOrFail(this, fc()))
 
 # check that global shutdown is take place
@@ -149,9 +155,33 @@ func getPoolConfig() = {
   getStringOrFail(factoryContract, keyPoolConfig(iAmtAsset.toString(), iPriceAsset.toString())).split(SEP)
 }
 
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
+func parsePoolConfig(poolConfig: List[String]) = {
+  (
+    poolConfig[idxPoolAddress].addressFromStringValue(),
+    poolConfig[idxPoolStatus].parseIntValue(),
+    poolConfig[idxPoolLPAssetId].fromBase58String(),
+    poolConfig[idxAmtAssetId].parseAssetId(),
+    poolConfig[idxPriceAssetId].parseAssetId(),
+    poolConfig[idxAmtAssetDcm].parseIntValue(),
+    poolConfig[idxPriceAssetDcm].parseIntValue()
+  )
+}
+
 func getFactoryConfig() = {
   getStringOrFail(factoryContract, keyFactoryConfig()).split(SEP)
 }
+
+let stakingContract = getFactoryConfig()[idxFactoryStakingContract].addressFromString().valueOrErrorMessage("incorrect staking address")
+
+let slippageContract = getFactoryConfig()[idxFactorySlippageContract].addressFromString().valueOrErrorMessage("incorrect staking address")
 
 func dataPutActionInfo(inAmtAssetAmt: Int, inPriceAssetAmt: Int, outLpAmt: Int, price: Int, slippageTolerancePassedByUser: Int, slippageToleranceReal: Int, txHeight: Int, txTimestamp: Int, slipageAmtAssetAmt: Int, slipagePriceAssetAmt: Int) = {
   makeString(["%d%d%d%d%d%d%d%d%d%d", inAmtAssetAmt.toString(), inPriceAssetAmt.toString(), outLpAmt.toString(), price.toString(), slippageTolerancePassedByUser.toString(), slippageToleranceReal.toString(), txHeight.toString(), txTimestamp.toString(), slipageAmtAssetAmt.toString(), slipagePriceAssetAmt.toString()], SEP)
@@ -464,6 +494,90 @@ func commonPut(i: Invocation, slippageTolerance: Int, emitLp: Boolean) = {
     estPut
 }
 
+func emit(amount: Int) = {
+  # emit lp on factory
+  strict emitInv = factoryContract.invoke("emit", [amount], [])
+  # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
+  strict emitInvLegacy = match emitInv {
+    case legacyFactoryContract: Address => legacyFactoryContract.invoke("emit", [amount], [])
+    case _ => unit
+  }
+
+  amount
+}
+
+func calcPutOneToken(
+  paymentAmountRaw: Int,
+  paymentAssetId: ByteVector|Unit,
+  userAddress: Address|Unit,
+  txId: ByteVector|Unit
+) = {
+  let isEval = txId == unit
+
+  let (
+    poolAddress,
+    poolStatus,
+    lpAssetId,
+    amountAssetId,
+    priceAssetId,
+    amountAssetDecimals,
+    priceAssetDecimals
+  ) = getPoolConfig().parsePoolConfig()
+
+  let paymentAmount = paymentAmountRaw
+
+  let balanceRaw = if (paymentAssetId == amountAssetId) then {
+    amountAssetId.assetIdToString().getAccBalance()
+  } else if (paymentAssetId == priceAssetId) then {
+    priceAssetId.assetIdToString().getAccBalance()
+  } else "invalid asset".throwErr()
+  let amountToSubtract = if (isEval) then 0 else paymentAmount
+  let balance = balanceRaw - amountToSubtract
+  let balanceBigInt = balance.toBigInt()
+
+  let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
+  let depositBigInt = paymentAmount.toBigInt()
+  let issueAmount = supplyBigInt * (sqrt(scale8BigInt + (depositBigInt * scale8BigInt) / balanceBigInt, 8, 8, DOWN) - scale8BigInt) / scale8BigInt
+
+  issueAmount.toInt()
+}
+
+func calcGetOneToken(
+  outAssetId: ByteVector|Unit,
+  paymentAmount: Int,
+  paymentAssetId: ByteVector|Unit,
+  userAddress: Address|Unit,
+  txId: ByteVector|Unit
+) = {
+  let isEval = txId == unit
+
+  let (
+    poolAddress,
+    poolStatus,
+    lpAssetId,
+    amountAssetId,
+    priceAssetId,
+    amountAssetDecimals,
+    priceAssetDecimals
+  ) = getPoolConfig().parsePoolConfig()
+
+  strict checks = [
+    paymentAssetId == lpAssetId || "invalid lp asset".throw()
+  ]
+
+  let balanceBigInt = if (outAssetId == amountAssetId) then {
+    amountAssetId.assetIdToString().getAccBalance().toBigInt()
+  } else if (outAssetId == priceAssetId) then {
+    priceAssetId.assetIdToString().getAccBalance().toBigInt()
+  } else "invalid asset".throwErr()
+
+  let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
+  let redeemedBigInt = paymentAmount.toBigInt()
+  let amount = balanceBigInt * (scale8BigInt - pow(scale8BigInt - redeemedBigInt * scale8BigInt / supplyBigInt, 8, big2, 0, 8, DOWN)) / scale8BigInt
+
+  amount.toInt()
+}
+
 func managerPublicKeyOrUnit() = match mpk().getString() {
   case s: String => s.fromBase58String()
   case _: Unit => unit
@@ -481,14 +595,6 @@ func mustManager(i: Invocation) = {
     case pk: ByteVector => i.callerPublicKey == pk || pd
     case _: Unit => i.caller == this || pd
   }
-}
-
-@Callable(i)
-# ido, team, emission, staking, locking (boosting), rest
-func constructor(factoryContract: String) = {
-  strict checkCaller = i.mustManager()
-
-  [StringEntry(fc(), factoryContract)]
 }
 
 @Callable(i)
@@ -528,9 +634,6 @@ func confirmManager() = {
 #    transfer LP tokens based on deposit share
 @Callable(i)
 func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
-    let factoryCfg = getFactoryConfig()
-    let stakingContract = addressFromString(factoryCfg[idxFactoryStakingContract]).valueOrErrorMessage("Error. Incorrect staking address.")
-    let slippageContract = addressFromString(factoryCfg[idxFactorySlippageContract]).valueOrErrorMessage("Error. Incorrect slippage contract address.")
     if(slippageTolerance < 0) then throw("Invalid slippageTolerance passed") else
     let estPut = commonPut(i, slippageTolerance, true)
 
@@ -563,11 +666,99 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
 
 # Put without LP emission
 @Callable(i)
- func putForFree(maxSlippage: Int) = {
-   if(maxSlippage < 0) then throw("Invalid value passed") else
-     let estPut = commonPut(i, maxSlippage, false)
-     estPut._9
- }
+func putForFree(maxSlippage: Int) = {
+  if(maxSlippage < 0) then throw("Invalid value passed") else
+    let estPut = commonPut(i, maxSlippage, false)
+    estPut._9
+}
+
+# issued = supply * (√(1 + deposit / balance) - 1)
+@Callable(i)
+func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
+  let (
+    poolAddress,
+    poolStatus,
+    lpAssetId,
+    amountAssetId,
+    priceAssetId,
+    amountAssetDecimals,
+    priceAssetDecimals
+  ) = getPoolConfig().parsePoolConfig()
+
+  let isPutDisabled = isGlobalShutdown() || poolStatus == PoolPutDisabled || poolStatus == PoolShutdown
+
+  strict checks = [
+    !isPutDisabled || "put operation is blocked by admin".throwErr(),
+    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
+  ]
+
+  let payment = i.payments[0]
+  let paymentAssetId = payment.assetId
+  let paymentAmountRaw = payment.amount
+  let paymentAmount = paymentAmountRaw
+
+  let userAddress = i.caller
+  let txId = i.transactionId
+
+  let emitAmount = {
+    let emitAmountEstimated = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
+    if (minOutAmount > 0 && emitAmountEstimated < minOutAmount) then {
+      ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+    } else emitAmountEstimated
+  }
+
+  strict emitInv = emitAmount.emit()
+
+  let lpTransfer = if (autoStake) then {
+    strict stakeInv = stakingContract.invoke("stake", [], [AttachedPayment(lpAssetId, emitAmount)])
+    []
+  } else {
+    [ScriptTransfer(i.caller, emitAmount, lpAssetId)]
+  }
+
+  (lpTransfer, emitAmount)
+}
+
+# amount = balance * (1 - (1 - redeemed / supply)^2)
+@Callable(i)
+func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
+  let (
+    poolAddress,
+    poolStatus,
+    lpAssetId,
+    amountAssetId,
+    priceAssetId,
+    amountAssetDecimals,
+    priceAssetDecimals
+  ) = getPoolConfig().parsePoolConfig()
+
+  let isGetDisabled = isGlobalShutdown() || poolStatus == PoolShutdown
+
+  strict checks = [
+    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
+  ]
+
+  let payment = i.payments[0]
+  let paymentAssetId = payment.assetId
+  let paymentAmount = payment.amount
+
+  let userAddress = i.caller
+  let txId = i.transactionId
+
+  let amount = {
+    let amountEstimated = calcGetOneToken(outAssetId.parseAssetId(), paymentAmount, paymentAssetId, userAddress, txId)
+    if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
+      ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+    } else amountEstimated
+  }
+
+  strict burnInv = factoryContract.invoke("burn", [paymentAmount], [AttachedPayment(paymentAssetId, paymentAmount)])
+
+  let assetTransfer = [ScriptTransfer(userAddress, amount, outAssetId.parseAssetId())]
+
+  (assetTransfer, amount)
+}
 
 # Called by: LP
 #
@@ -619,10 +810,8 @@ func unstakeAndGet(amount: Int) = {
   strict checkPayments = if (i.payments.size() != 0) then throw("No payments are expected") else true
 
   let cfg = getPoolConfig()
-  let factoryCfg = getFactoryConfig()
 
   let lpAssetId = cfg[idxPoolLPAssetId].fromBase58String()
-  let stakingContract = factoryCfg[idxFactoryStakingContract].addressFromString().valueOrErrorMessage("Error. Incorrect staking address.")
 
   # negative amount will not pass
   strict unstakeInv = stakingContract.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
