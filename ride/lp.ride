@@ -526,11 +526,14 @@ func calcPutOneToken(
 
   let paymentAmount = paymentAmountRaw
 
-  let balanceBigInt = if (paymentAssetId == amountAssetId) then {
-    amountAssetId.assetIdToString().getAccBalance().toBigInt()
+  let balanceRaw = if (paymentAssetId == amountAssetId) then {
+    amountAssetId.assetIdToString().getAccBalance()
   } else if (paymentAssetId == priceAssetId) then {
-    priceAssetId.assetIdToString().getAccBalance().toBigInt()
+    priceAssetId.assetIdToString().getAccBalance()
   } else "invalid asset".throwErr()
+  let amountToSubtract = if (isEval) then 0 else paymentAmount
+  let balance = balanceRaw - amountToSubtract
+  let balanceBigInt = balance.toBigInt()
 
   let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
   let depositBigInt = paymentAmount.toBigInt()
