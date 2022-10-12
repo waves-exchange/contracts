@@ -125,23 +125,6 @@ func setAdmins(adminPubKeys: List[String]) = {
   [StringEntry(keyAdminPubKeys(), adminPubKeys.makeString(SEP))]
 }
 
-# Unstake LP tokens and exit from pool
-@Callable(i)
-func unstakeAndGetOneTkn(amount: Int, exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String, slippage: Int) = {
-  strict checkPayments = if (i.payments.size() != 0) then throw("No pmnts expd") else true
-
-  let cfg = getPoolConfig()
-  let factoryCfg = getFactoryConfig()
-
-  let lpAssetId = cfg[idxLPAsId].fromBase58String()
-  let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
-
-  # negative amount will not pass
-  strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
-  strict getOneTkn = poolContract.invoke("getOneTkn", [exchResult, notUsed, outAmount, outAssetId, slippage],[AttachedPayment(lpAssetId, amount)] )
-  []
-}
-
 @Callable(i)
 func setAmp(amp: String) = {
   strict checkCaller = i.mustAdmin()

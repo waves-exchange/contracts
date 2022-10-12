@@ -25,8 +25,10 @@ describe('referral: claimReferrer.mjs', /** @this {MochaSuiteModified} */() => {
       const referralReward = 1e2;
 
       const expectedClaimed = 10000;
-      const expectedClaimedTotal = 10000;
       const expectedUnclaimed = 0;
+      const expectedClaimedTotal = 10000;
+      const expectedNewClaimedTotalAddress = 10000;
+      const expectedNewUnclaimedTotalAddress = 0;
       const expectedClaimerUnclaimedHistory = 10000;
 
       const bytes = libs.crypto.stringToBytes(
@@ -106,34 +108,45 @@ describe('referral: claimReferrer.mjs', /** @this {MochaSuiteModified} */() => {
 
       const { timestamp } = await api.blocks.fetchHeadersAt(height);
 
-      expect(stateChanges.data).to.eql([{
-        key: `%s%s%s%s__claimedReferrer__${programName}__${referrerAddress}`,
+      expect(stateChanges.invokes[0].stateChanges.data).to.eql([{
+        key: `%s%s%s__claimedReferrer__${programName}__${referrerAddress}`,
         type: 'integer',
         value: expectedClaimed,
+      }, {
+        key: `%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
+        type: 'integer',
+        value: expectedUnclaimed,
       }, {
         key: `%s%s__claimedTotal__${programName}`,
         type: 'integer',
         value: expectedClaimedTotal,
       }, {
-        key: `%s%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
+        key: `%s%s__claimedTotalAddress__${referrerAddress}`,
         type: 'integer',
-        value: expectedUnclaimed,
+        value: expectedNewClaimedTotalAddress,
+      }, {
+        key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
+        type: 'integer',
+        value: expectedNewUnclaimedTotalAddress,
       }, {
         key: `%s%s%s%s%s__history__claimReferrer__${programName}__${referrerAddress}__${claimTx.id}`,
         type: 'string',
         value: `%d%d%d__${height}__${timestamp}__${expectedClaimerUnclaimedHistory}`,
       }]);
 
-      expect(stateChanges.transfers).to.eql([{
+      expect(stateChanges.invokes[0].stateChanges.transfers).to.eql([{
         address: referrerAddress,
         asset: this.wxAssetId,
         amount: expectedClaimed,
       }]);
 
-      expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
-        .to.deep.include.members([
-          [treasuryContract, 'withdrawReferralReward'],
-        ]);
+      expect(
+        stateChanges.invokes[0].stateChanges.invokes.map(
+          (item) => [item.dApp, item.call.function],
+        ),
+      ).to.deep.include.members(
+        [[treasuryContract, 'withdrawReferralReward']],
+      );
     },
   );
 });
