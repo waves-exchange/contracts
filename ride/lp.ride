@@ -494,6 +494,18 @@ func commonPut(i: Invocation, slippageTolerance: Int, emitLp: Boolean) = {
     estPut
 }
 
+func emit(amount: Int) = {
+  # emit lp on factory
+  strict emitInv = factoryContract.invoke("emit", [amount], [])
+  # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
+  strict emitInvLegacy = match emitInv {
+    case legacyFactoryContract: Address => legacyFactoryContract.invoke("emit", [amount], [])
+    case _ => unit
+  }
+
+  amount
+}
+
 func calcPutOneToken(
   paymentAmountRaw: Int,
   paymentAssetId: ByteVector|Unit,
@@ -524,7 +536,7 @@ func calcPutOneToken(
   let depositBigInt = paymentAmount.toBigInt()
   let issueAmount = supplyBigInt * (sqrt(scale8BigInt + (depositBigInt * scale8BigInt) / balanceBigInt, 8, 8, DOWN) - scale8BigInt) / scale8BigInt
 
-  issueAmount
+  issueAmount.toInt()
 }
 
 func calcGetOneToken(
@@ -560,7 +572,7 @@ func calcGetOneToken(
   let redeemedBigInt = paymentAmount.toBigInt()
   let amount = balanceBigInt * (scale8BigInt - pow(scale8BigInt - redeemedBigInt * scale8BigInt / supplyBigInt, 8, big2, 0, 8, DOWN)) / scale8BigInt
 
-  amount
+  amount.toInt()
 }
 
 func managerPublicKeyOrUnit() = match mpk().getString() {
@@ -685,9 +697,23 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   let userAddress = i.caller
   let txId = i.transactionId
 
-  let issueAmount = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
+  let emitAmount = {
+    let emitAmountEstimated = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
+    if (minOutAmount > 0 && emitAmountEstimated < minOutAmount) then {
+      ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+    } else emitAmountEstimated
+  }
 
-  ([], issueAmount)
+  strict emitInv = emitAmount.emit()
+
+  let lpTransfer = if (autoStake) then {
+    strict stakeInv = stakingContract.invoke("stake", [], [AttachedPayment(lpAssetId, emitAmount)])
+    []
+  } else {
+    [ScriptTransfer(i.caller, emitAmount, lpAssetId)]
+  }
+
+  (lpTransfer, emitAmount)
 }
 
 # amount = balance * (1 - (1 - redeemed / supply)^2)
@@ -717,9 +743,18 @@ func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
   let userAddress = i.caller
   let txId = i.transactionId
 
-  let amount = calcGetOneToken(outAssetId.parseAssetId(), paymentAmount, paymentAssetId, userAddress, txId)
+  let amount = {
+    let amountEstimated = calcGetOneToken(outAssetId.parseAssetId(), paymentAmount, paymentAssetId, userAddress, txId)
+    if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
+      ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+    } else amountEstimated
+  }
 
-  ([], amount)
+  strict burnInv = factoryContract.invoke("burn", [paymentAmount], [AttachedPayment(paymentAssetId, paymentAmount)])
+
+  let assetTransfer = [ScriptTransfer(userAddress, amount, outAssetId.parseAssetId())]
+
+  (assetTransfer, amount)
 }
 
 # Called by: LP
