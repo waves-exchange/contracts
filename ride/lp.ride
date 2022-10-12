@@ -47,6 +47,7 @@ let scale18 = 1_000_000_000_000_000_000.toBigInt()
 let zeroBigInt = 0.toBigInt()
 let big0 = 0.toBigInt()
 let big1 = 1.toBigInt()
+let big2 = 1.toBigInt()
 let wavesString = "WAVES"
 
 let SEP = "__"
@@ -526,6 +527,42 @@ func calcPutOneToken(
   issueAmount
 }
 
+func calcGetOneToken(
+  outAssetId: ByteVector|Unit,
+  paymentAmount: Int,
+  paymentAssetId: ByteVector|Unit,
+  userAddress: Address|Unit,
+  txId: ByteVector|Unit
+) = {
+  let isEval = txId == unit
+
+  let (
+    poolAddress,
+    poolStatus,
+    lpAssetId,
+    amountAssetId,
+    priceAssetId,
+    amountAssetDecimals,
+    priceAssetDecimals
+  ) = getPoolConfig().parsePoolConfig()
+
+  strict checks = [
+    paymentAssetId == lpAssetId || "invalid lp asset".throw()
+  ]
+
+  let balanceBigInt = if (outAssetId == amountAssetId) then {
+    amountAssetId.assetIdToString().getAccBalance().toBigInt()
+  } else if (outAssetId == priceAssetId) then {
+    priceAssetId.assetIdToString().getAccBalance().toBigInt()
+  } else "invalid asset".throwErr()
+
+  let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
+  let redeemedBigInt = paymentAmount.toBigInt()
+  let amount = balanceBigInt * (scale8BigInt - pow(scale8BigInt - redeemedBigInt * scale8BigInt / supplyBigInt, 8, big2, 0, 8, DOWN)) / scale8BigInt
+
+  amount
+}
+
 func managerPublicKeyOrUnit() = match mpk().getString() {
   case s: String => s.fromBase58String()
   case _: Unit => unit
@@ -656,7 +693,33 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
 # amount = balance * (1 - (1 - redeemed / supply)^2)
 @Callable(i)
 func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
-  ([], unit)
+  let (
+    poolAddress,
+    poolStatus,
+    lpAssetId,
+    amountAssetId,
+    priceAssetId,
+    amountAssetDecimals,
+    priceAssetDecimals
+  ) = getPoolConfig().parsePoolConfig()
+
+  let isGetDisabled = isGlobalShutdown() || poolStatus == PoolShutdown
+
+  strict checks = [
+    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
+  ]
+
+  let payment = i.payments[0]
+  let paymentAssetId = payment.assetId
+  let paymentAmount = payment.amount
+
+  let userAddress = i.caller
+  let txId = i.transactionId
+
+  let amount = calcGetOneToken(outAssetId.parseAssetId(), paymentAmount, paymentAssetId, userAddress, txId)
+
+  ([], amount)
 }
 
 # Called by: LP
