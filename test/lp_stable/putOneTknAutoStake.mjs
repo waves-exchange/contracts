@@ -14,23 +14,40 @@ const api = create(apiBase);
 
 describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully putOneTkn with autoStake true', async function () {
-    const amAssetPart = 1e8;
-    const prAssetPart = 1e8;
-    const outLp = 1e10;
-    const slipByUser = 1e3;
+    const minOutAmount = 0;
+    const slippage = 0;
     const autoStake = true;
     const usdtAmount = 1e8;
+    const usdnAmount = 1e8;
 
-    const expectedPrice = 1e8;
-    const expectedPriceHistory = 1e8;
-    const expectedInAmtAssetAmt = 1e8;
-    const expectedInPriceAssetAmt = 0;
-    const expectedOutLpAmt = 1e10;
-    const expectedSlippageReal = 0;
-    const expectedSlipageAmAmt = 0;
-    const expectedSlipagePrAmt = 0;
+    const expectedPriceLast = 50012503;
+    const expectedPriceHistory = 50012503;
+    const expectedWriteAmAmt = 1e8;
+    const expectedWritePrAmt = 0;
+    const expectedEmitLpAmt = 4996564450;
+    const expectedslippageCalc = 0;
+    const expectedAmDiff = 0;
+    const expectedPrDiff = 0;
 
     const lpStable = address(this.accounts.lpStable, chainId);
+
+    const put = invokeScript({
+      dApp: lpStable,
+      payment: [
+        { assetId: this.usdtAssetId, amount: usdtAmount },
+        { assetId: this.usdnAssetId, amount: usdnAmount },
+      ],
+      call: {
+        function: 'put',
+        args: [
+          { type: 'integer', value: 0 },
+          { type: 'boolean', value: false },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
+    await api.transactions.broadcast(put, {});
+    await ni.waitForTx(put.id, { apiBase });
 
     const putOneTkn = invokeScript({
       dApp: lpStable,
@@ -38,12 +55,9 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
         { assetId: this.usdtAssetId, amount: usdtAmount },
       ],
       call: {
-        function: 'putOneTkn',
+        function: 'putOneTknV2',
         args: [
-          { type: 'integer', value: amAssetPart },
-          { type: 'integer', value: prAssetPart },
-          { type: 'integer', value: outLp },
-          { type: 'integer', value: slipByUser },
+          { type: 'integer', value: minOutAmount },
           { type: 'boolean', value: autoStake },
         ],
       },
@@ -58,7 +72,7 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     expect(stateChanges.data).to.eql([{
       key: '%s%s__price__last',
       type: 'integer',
-      value: expectedPrice,
+      value: expectedPriceLast,
     }, {
       key: keyPriceHistory,
       type: 'integer',
@@ -66,13 +80,11 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     }, {
       key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
-      value: `%d%d%d%d%d%d%d%d%d%d__${expectedInAmtAssetAmt}__${expectedInPriceAssetAmt}__${expectedOutLpAmt}__${expectedPrice}__${slipByUser}__${expectedSlippageReal}__${height}__${timestamp}__${expectedSlipageAmAmt}__${expectedSlipagePrAmt}`,
+      value: `%d%d%d%d%d%d%d%d%d%d__${expectedWriteAmAmt}__${expectedWritePrAmt}__${expectedEmitLpAmt}__${expectedPriceLast}__${slippage}__${expectedslippageCalc}__${height}__${timestamp}__${expectedAmDiff}__${expectedPrDiff}`,
     }]);
 
     expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
       .to.deep.include.members([
-        [address(this.accounts.gwxReward, chainId), 'calcD'],
-        [address(this.accounts.gwxReward, chainId), 'calcD'],
         [address(this.accounts.factoryV2, chainId), 'emit'],
         [address(this.accounts.staking, chainId), 'stake'],
       ]);

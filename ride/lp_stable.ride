@@ -632,6 +632,9 @@ func calcPutOneTkn(
   let amtDcm = poolConfig[idxAmtAsDcm].parseIntValue()
   let priceDcm = poolConfig[idxPriceAsDcm].parseIntValue()
 
+  let lpAssetEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
+  strict chechEmission = lpAssetEmission > big0 || "initial deposit requires all coins".throw()
+
   let amBalance = amId.getAccBalance()
   let prBalance = prId.getAccBalance()
 
@@ -643,7 +646,7 @@ func calcPutOneTkn(
       } else if (pmtAssetId == prId) then {
         if (prBalance < pmtAmtRaw) then "invalid payment amount".throw() else
           (amBalance, prBalance - pmtAmtRaw)
-      } else throw("wrong pmtAssetId")
+      } else "wrong pmtAssetId".throw()
     }
   
   let (amAmountRaw, prAmountRaw) = if (pmtAssetId == amId) then {
@@ -665,10 +668,7 @@ func calcPutOneTkn(
 
   strict checkD = D1 > D0 || throw()
 
-  let lpAssetEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
-  let lpAmount = if (lpAssetEmission > big0) then {
-    fraction(lpAssetEmission, D1 - D0, D0)
-  } else "initial deposit requires all coins".throw()
+  let lpAmount = lpAssetEmission.fraction(D1 - D0, D0)
 
   let curPrice = cpbi(prBalanceNew.t1(priceDcm), amBalanceNew.t1(amtDcm)).f1(scale8)
 

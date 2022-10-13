@@ -83,7 +83,7 @@ export const mochaHooks = {
     const usdtIssueTx = issue({
       name: 'USDT',
       description: '',
-      quantity: 1e16,
+      quantity: 10e16,
       decimals: 6,
       chainId,
     }, seed);

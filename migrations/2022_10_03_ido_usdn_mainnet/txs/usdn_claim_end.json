@@ -1,7 +1,16 @@
 {
-  "senderPublicKey": "5195SwZ4ifX6bBstZ6tN31kEQFVHaKpFYLc1GCa3Myrh",
+  "senderPublicKey": "8ZLAVkwG8sZ97hmBdGRkQpYTp5En9xgEYX4PeupqxpFw",
   "data": [
-    // TODO later, end height 3397974
+    {
+      "key": "%s__usdnClaimDisabled",
+      "type": "boolean",
+      "value": true
+    },
+    {
+      "key": "%s__usdnClaimEndHeight",
+      "type": "integer",
+      "value": 3397974
+    }
   ],
   "feeAssetId": null,
   "proofs": [],
