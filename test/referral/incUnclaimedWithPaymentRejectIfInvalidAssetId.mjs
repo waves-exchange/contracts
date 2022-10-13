@@ -1,36 +1,59 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
-import { invokeScript, libs, nodeInteraction as ni } from '@waves/waves-transactions';
+import {
+  invokeScript, issue, massTransfer, libs, nodeInteraction as ni,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { checkStateChanges } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
-
+const seed = 'waves private node seed with waves tokens';
 const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: incUnclaimed.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: incUnclaimedWithPaymentRejectIfInvalidAssetId.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully incUnclaimed',
+    'should reject incUnclaimedWithPayment',
     async function () {
       const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
+      const referral = address(this.accounts.referral, chainId);
       const referrerReward = 1e4;
-      const referralReward = 1e2;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
       );
       const signature = libs.crypto.signBytes(this.accounts.backend, bytes);
 
-      const referral = address(this.accounts.referral, chainId);
+      const expectedRejectMessage = 'referral.ride: invalid asset id';
+
+      const someAssetIssueTx = issue({
+        name: 'someAsset',
+        description: '',
+        quantity: 100000e6,
+        decimals: 6,
+        chainId,
+      }, seed);
+      await api.transactions.broadcast(someAssetIssueTx, {});
+      await ni.waitForTx(someAssetIssueTx.id, { apiBase });
+      const someAssetId = someAssetIssueTx.id;
+
+      const someAssetAmount = 100e6;
+      const massTransferSomeAssetTx = massTransfer({
+        transfers: [{
+          recipient: address(this.accounts.implementation, chainId), amount: someAssetAmount,
+        }],
+        assetId: someAssetId,
+        chainId,
+      }, seed);
+      await api.transactions.broadcast(massTransferSomeAssetTx, {});
+      await ni.waitForTx(massTransferSomeAssetTx.id, { apiBase });
 
       const createReferralProgramTx = invokeScript({
         dApp: referral,
@@ -69,49 +92,27 @@ describe('referral: incUnclaimed.mjs', /** @this {MochaSuiteModified} */() => {
       await api.transactions.broadcast(createPairTx, {});
       await ni.waitForTx(createPairTx.id, { apiBase });
 
-      const incUnclaimedTx = invokeScript({
+      const incUnclaimedWithPaymentTx = invokeScript({
         dApp: referral,
-        payment: [],
+        payment: [
+          { assetId: this.wxAssetId, amount: referrerReward },
+          { assetId: someAssetId, amount: referrerReward },
+        ],
         call: {
-          function: 'incUnclaimed',
+          function: 'incUnclaimedWithPayment',
           args: [
             { type: 'string', value: programName },
-            { type: 'string', value: referralAddress },
-            { type: 'integer', value: referrerReward },
-            { type: 'integer', value: referralReward },
+            { type: 'list', value: [{ type: 'string', value: referrerAddress }] },
           ],
         },
         chainId,
       }, this.accounts.implementation);
-      await api.transactions.broadcast(incUnclaimedTx, {});
-      const { stateChanges } = await ni.waitForTx(incUnclaimedTx.id, { apiBase });
 
-      expect(
-        await checkStateChanges(stateChanges, 5, 0, 0, 0, 0, 0, 0, 0, 0),
-      ).to.eql(true);
-
-      expect(stateChanges.data).to.eql([
-        {
-          key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
-          type: 'integer',
-          value: referrerReward,
-        }, {
-          key: `%s%s__unclaimedTotalAddress__${referralAddress}`,
-          type: 'integer',
-          value: referralReward,
-        }, {
-          key: `%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
-          type: 'integer',
-          value: referrerReward,
-        }, {
-          key: `%s%s%s__unclaimedReferral__${programName}__${referralAddress}`,
-          type: 'integer',
-          value: referralReward,
-        }, {
-          key: `%s%s__rewardsTotal__${programName}`,
-          type: 'integer',
-          value: referrerReward + referralReward,
-        }]);
+      await expect(
+        api.transactions.broadcast(incUnclaimedWithPaymentTx, {}),
+      ).to.be.rejectedWith(
+        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+      );
     },
   );
 });

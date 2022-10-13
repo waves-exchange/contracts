@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, libs, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { checkStateChanges } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -85,6 +86,10 @@ describe('referral: updateReferralActivityIfIsActive.mjs', /** @this {MochaSuite
       }, this.accounts.implementation);
       await api.transactions.broadcast(updateReferralActivityTx, {});
       const { stateChanges } = await ni.waitForTx(updateReferralActivityTx.id, { apiBase });
+
+      expect(
+        await checkStateChanges(stateChanges, 2, 0, 0, 0, 0, 0, 0, 0, 0),
+      ).to.eql(true);
 
       expect(stateChanges.data).to.eql([{
         key: `%s%s%s__activeReferral__${programName}__${referralAddress}`,

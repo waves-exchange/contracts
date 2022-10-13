@@ -61,8 +61,6 @@ func keyImplementationContract(programName: String) = {
   ["%s%s", "implementationContract", programName].makeString(separator)
 }
 func keyAllRefferalPrograms(address: String) = ["%s%s", "allReferralPrograms", address].makeString(separator)
-func keyClaimedTotalProgram(programName: String) = ["%s%s", "claimedTotalProgram", programName].makeString(separator)
-func keyUnclaimedTotal(address: String) = ["%s%s", "unclaimedTotalAddress", address].makeString(separator)
 func keyLastBulkClaimCallBlock(address: String) = ["%s%s", "lastBulkClaimCallBlock", address].makeString(separator)
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
@@ -367,6 +365,15 @@ func incUnclaimed(
 
 @Callable(i)
 func incUnclaimedWithPayment(programName: String, referrerAddresses: List[String]) = {
+  let callerAddress = i.caller.toString()
+  let lastCall = callerAddress.keyLastBulkClaimCallBlock().getInteger().valueOrElse(0)
+  let waitBlocks = lastCall - height + 3
+
+  strict lastCallCheck = lastCall < height - 3 || [
+    "wait",
+    waitBlocks.toString(),
+    "blocks"
+  ].makeString(" ").throwErr()
   func map(accum: List[Int], next: AttachedPayment) = {
     let assetIdCheck = next.assetId.value().toBase58String() == programName.keyRewardAssetId().getString().value()
     strict amountCheck = assetIdCheck || "invalid asset id".throwErr()
@@ -415,16 +422,9 @@ func claim(programName: String) = {
 
 @Callable(i)
 func claimBulk() = {
-  let callerProgramsStr = i.caller.toString().keyAllRefferalPrograms().getString()
   let callerAddress = i.caller.toString()
-  let lastCall = callerAddress.keyLastBulkClaimCallBlock().getInteger().valueOrElse(height)
-  let waitBlocks = height - lastCall - 3
+  let callerProgramsStr = i.caller.toString().keyAllRefferalPrograms().getString()
 
-  strict lastCallCheck = lastCall > height - 3 || [
-    "wait",
-    waitBlocks.toString(),
-    "blocks"
-  ].makeString(" ").throwErr()
   strict programsExists = callerProgramsStr.isDefined() || "no referral programs".throwErr()
 
   let callerPrograms = callerProgramsStr.value().split("__")
@@ -455,6 +455,22 @@ func claimBulkREADONLY(claimer: String) = {
   let uncleimedTotalAddress = claimer.keyUnclaimedTotalAddress().getInteger().valueOrElse(0)
 
   ([], [uncleimedTotalAddress, claimedTotalAddress])
+}
+
+@Callable(i)
+func setTotalKeys(programName: String, address: String) = {
+  let claimedReferrer = programName.keyClaimedReferrer(address).getInteger().valueOrElse(0)
+  let claimedReferral = programName.keyClaimedReferral(address).getInteger().valueOrElse(0)
+  let unclaimedReferrer = programName.keyUnclaimedReferrer(address).getInteger().valueOrElse(0)
+  let unclaimedReferral = programName.keyUnclaimedReferral(address).getInteger().valueOrElse(0)
+
+  let claimedTotalAddress = claimedReferrer + claimedReferral
+  let unclaimedTotalAddress = unclaimedReferrer + unclaimedReferral
+
+  ([
+    IntegerEntry(address.keyClaimedTotalAddress(), claimedTotalAddress),
+    IntegerEntry(address.keyUnclaimedTotalAddress(), unclaimedTotalAddress)
+  ], unit)
 }
 
 @Callable(i)

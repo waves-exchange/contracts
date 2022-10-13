@@ -6,7 +6,7 @@ import {
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { format, join } from 'path';
-import { setScriptFromFile } from '../utils.mjs';
+import { checkStateChanges, setScriptFromFile } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -19,58 +19,28 @@ const api = create(apiBase);
 const mockRidePath = join('test', 'referral', 'mock');
 const implementationPath = format({ dir: mockRidePath, base: 'implementation.mock.ride' });
 
-describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: claimIfRefferalCallerIsImplementationContract.mjs', /** @this {MochaSuiteModified} */() => {
   const programName = 'ReferralProgram';
   const referralReward = 1e2;
   before(async function () {
     await setScriptFromFile(implementationPath, this.accounts.implementation);
 
-    const setWxAssetIdImplementationTx = data({
+    const setKeysTx = data({
       additionalFee: 4e5,
       data: [
         {
           key: 'assetId',
           type: 'string',
           value: this.wxAssetId,
-        },
-      ],
-      chainId,
-    }, this.accounts.implementation);
-    await api.transactions.broadcast(setWxAssetIdImplementationTx, {});
-    await ni.waitForTx(setWxAssetIdImplementationTx.id, { apiBase });
-
-    const setMockAmountTx = data({
-      additionalFee: 4e5,
-      data: [
-        {
+        }, {
           key: 'amount',
           type: 'integer',
           value: referralReward,
-        },
-      ],
-      chainId,
-    }, this.accounts.implementation);
-    await api.transactions.broadcast(setMockAmountTx, {});
-    await ni.waitForTx(setMockAmountTx.id, { apiBase });
-
-    const setReferralProgramNameTx = data({
-      additionalFee: 4e5,
-      data: [
-        {
+        }, {
           key: 'programName',
           type: 'string',
           value: programName,
-        },
-      ],
-      chainId,
-    }, this.accounts.implementation);
-    await api.transactions.broadcast(setReferralProgramNameTx, {});
-    await ni.waitForTx(setReferralProgramNameTx.id, { apiBase });
-
-    const setKeyReferralsContractAddressTx = data({
-      additionalFee: 4e5,
-      data: [
-        {
+        }, {
           key: 'referralAddress',
           type: 'string',
           value: address(this.accounts.referral, chainId),
@@ -78,8 +48,8 @@ describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
       ],
       chainId,
     }, this.accounts.implementation);
-    await api.transactions.broadcast(setKeyReferralsContractAddressTx, {});
-    await ni.waitForTx(setKeyReferralsContractAddressTx.id, { apiBase });
+    await api.transactions.broadcast(setKeysTx, {});
+    await ni.waitForTx(setKeysTx.id, { apiBase });
   });
 
   it(
@@ -174,21 +144,42 @@ describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
 
       const { timestamp } = await api.blocks.fetchHeadersAt(height);
 
-      expect(stateChanges.transfers).to.eql([{
-        address: referralAddress,
-        asset: this.wxAssetId,
-        amount: expectedClaimerUnclaimed,
-      }]);
+      expect(
+        await checkStateChanges(stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+      ).to.eql(true);
 
       const { invokes } = stateChanges;
-      expect(invokes[0].dApp).to.eql(referral);
-      expect(invokes[0].call.function).to.eql('claim');
-      expect(invokes[0].call.args).to.eql([{
+      expect(
+        await checkStateChanges(invokes[0].stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+      ).to.eql(true);
+      const invokeClaim = invokes[0];
+
+      expect(invokeClaim.dApp).to.eql(referral);
+      expect(invokeClaim.call.function).to.eql('claim');
+      expect(invokeClaim.call.args).to.eql([{
         type: 'String',
         value: 'ReferralProgram',
       }]);
+      expect(invokeClaim.payment).to.eql([]);
+      expect(
+        await checkStateChanges(invokeClaim.stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+      ).to.eql(true);
 
-      expect(invokes[0].stateChanges.invokes[0].stateChanges.data).to.eql([{
+      const invokeClaimInternal = invokeClaim.stateChanges.invokes[0];
+
+      expect(invokeClaimInternal.dApp).to.eql(referral);
+      expect(invokeClaimInternal.call.function).to.eql('claimInternal');
+      expect(invokeClaimInternal.call.args).to.eql([
+        { type: 'String', value: 'ReferralProgram' },
+        { type: 'String', value: referralAddress },
+        { type: 'Boolean', value: true },
+      ]);
+      expect(invokeClaimInternal.payment).to.eql([]);
+      expect(
+        await checkStateChanges(invokeClaimInternal.stateChanges, 6, 1, 0, 0, 0, 0, 0, 0, 1),
+      ).to.eql(true);
+
+      expect(invokeClaimInternal.stateChanges.data).to.eql([{
         key: `%s%s%s__claimedReferral__${programName}__${referralAddress}`,
         type: 'integer',
         value: expectedNewClaimerClaimed,
@@ -212,6 +203,41 @@ describe('referral: claimReferral.mjs', /** @this {MochaSuiteModified} */() => {
         key: `%s%s%s%s%s__history__claimReferral__${programName}__${referralAddress}__${claimTx.id}`,
         type: 'string',
         value: `%d%d%d__${height}__${timestamp}__${expectedClaimerUnclaimedHistory}`,
+      }]);
+
+      expect(invokeClaimInternal.stateChanges.transfers).to.eql([{
+        address: referralAddress,
+        asset: this.wxAssetId,
+        amount: expectedClaimerUnclaimed,
+      }]);
+
+      const invokeWithdrawReferralReward = invokeClaimInternal.stateChanges.invokes[0];
+
+      expect(invokeWithdrawReferralReward.dApp).to.eql(treasuryContract);
+      expect(invokeWithdrawReferralReward.call.function).to.eql('withdrawReferralReward');
+      expect(invokeWithdrawReferralReward.call.args).to.eql([
+        { type: 'Int', value: expectedClaimerUnclaimed },
+      ]);
+      expect(invokeWithdrawReferralReward.payment).to.eql([]);
+      expect(
+        await checkStateChanges(
+          invokeWithdrawReferralReward.stateChanges,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+        ),
+      ).to.eql(true);
+
+      expect(invokeWithdrawReferralReward.stateChanges.transfers).to.eql([{
+        address: referral,
+        asset: this.wxAssetId,
+        amount: expectedClaimerUnclaimed,
       }]);
     },
   );

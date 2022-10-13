@@ -12,26 +12,32 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: confirmManagerRejectIfNoPendingManager.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: incUnclaimedWithPaymentRejectIfHasNotPermission.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should reject confirmManager',
+    'should reject incUnclaimedWithPayment',
     async function () {
       const referral = address(this.accounts.referral, chainId);
 
-      const expectedRejectMessage = 'referral.ride: no pending manager';
+      const expectedRejectMessage = 'referral.ride: permission denied';
 
-      const confirmManagerTx = invokeScript({
+      const incUnclaimedWithPaymentInternalTx = invokeScript({
         dApp: referral,
         payment: [],
         call: {
-          function: 'confirmManager',
-          args: [],
+          function: 'incUnclaimedWithPaymentInternal',
+          args: [
+            { type: 'list', value: [{ type: 'string', value: '' }] },
+            { type: 'string', value: '' },
+            { type: 'list', value: [{ type: 'string', value: '' }] },
+            { type: 'string', value: '' },
+            { type: 'string', value: '' },
+          ],
         },
         chainId,
       }, this.accounts.implementation);
 
       await expect(
-        api.transactions.broadcast(confirmManagerTx, {}),
+        api.transactions.broadcast(incUnclaimedWithPaymentInternalTx, {}),
       ).to.be.rejectedWith(
         new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
       );

@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, libs, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { checkStateChanges } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -22,6 +23,8 @@ describe('referral: incUnclaimedWithPayment.mjs', /** @this {MochaSuiteModified}
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
       const referrerReward = 1e4;
+
+      const expectedInvokesCount = 1;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
@@ -82,7 +85,55 @@ describe('referral: incUnclaimedWithPayment.mjs', /** @this {MochaSuiteModified}
       await api.transactions.broadcast(incUnclaimedWithPaymentTx, {});
       const { stateChanges } = await ni.waitForTx(incUnclaimedWithPaymentTx.id, { apiBase });
 
-      expect(stateChanges.invokes[0].stateChanges.data).to.eql([{
+      expect(
+        await checkStateChanges(stateChanges, 0, 1, 0, 0, 0, 0, 0, 0, 1),
+      ).to.eql(true);
+
+      expect(stateChanges.transfers).to.eql([{
+        address: treasuryContract,
+        asset: this.wxAssetId,
+        amount: referrerReward,
+      }]);
+
+      const { invokes } = stateChanges;
+      expect(invokes.length).to.eql(expectedInvokesCount);
+
+      expect(
+        await checkStateChanges(invokes[0].stateChanges, 3, 0, 0, 0, 0, 0, 0, 0, 1),
+      ).to.eql(true);
+
+      expect(invokes[0].dApp).to.eql(address(this.accounts.referral, chainId));
+      expect(invokes[0].call.function).to.eql('incUnclaimedWithPaymentInternal');
+      expect(invokes[0].call.args).to.eql([
+        {
+          type: 'Array',
+          value: [
+            {
+              type: 'Int',
+              value: referrerReward,
+            },
+          ],
+        }, {
+          type: 'String',
+          value: programName,
+        }, {
+          type: 'Array',
+          value: [
+            {
+              type: 'String',
+              value: referrerAddress,
+            },
+          ],
+        }, {
+          type: 'Int',
+          value: 0,
+        }, {
+          type: 'Int',
+          value: 0,
+        }]);
+      expect(invokes[0].payment).to.eql([]);
+
+      expect(invokes[0].stateChanges.data).to.eql([{
         key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
         type: 'integer',
         value: referrerReward,
@@ -95,6 +146,56 @@ describe('referral: incUnclaimedWithPayment.mjs', /** @this {MochaSuiteModified}
         type: 'integer',
         value: referrerReward,
       }]);
+
+      expect(invokes[0].stateChanges.invokes.length).to.eql(expectedInvokesCount);
+
+      expect(
+        await checkStateChanges(
+          invokes[0].stateChanges.invokes[0].stateChanges,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+        ),
+      ).to.eql(true);
+
+      expect(invokes[0].stateChanges.invokes[0].dApp).to.eql(
+        address(this.accounts.referral, chainId),
+      );
+      expect(invokes[0].stateChanges.invokes[0].call.function).to.eql('incUnclaimedWithPaymentInternal');
+      expect(invokes[0].stateChanges.invokes[0].call.args).to.eql([
+        {
+          type: 'Array',
+          value: [
+            {
+              type: 'Int',
+              value: referrerReward,
+            },
+          ],
+        }, {
+          type: 'String',
+          value: programName,
+        }, {
+          type: 'Array',
+          value: [
+            {
+              type: 'String',
+              value: referrerAddress,
+            },
+          ],
+        }, {
+          type: 'Int',
+          value: 1,
+        }, {
+          type: 'Int',
+          value: referrerReward,
+        }]);
+      expect(invokes[0].stateChanges.invokes[0].payment).to.eql([]);
     },
   );
 });
