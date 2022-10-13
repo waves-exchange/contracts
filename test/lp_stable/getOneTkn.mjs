@@ -14,20 +14,38 @@ const api = create(apiBase);
 
 describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully getOneTkn.', async function () {
-    const amAssetPart = 1e8;
-    const prAssetPart = 1e8;
     const outLp = 1e10;
-    const slippage = 1e3;
     const autoStake = false;
     const usdtAmount = 1e8;
-    const exchResult = 0;
-    const notUsed = 0;
+    const usdnAmount = 1e8;
+    const minOutAmount = 0;
     const delay = 2;
+    const expectedPriceLast = 9441800740;
+    const expectedPriceHistory = 9441800740;
 
-    const expectedOutAmAmt = 1e8;
+    const expectedOutAmAmt = 198791435;
+    const expectedFee = 99445;
     const expectedOutPrAmt = 0;
 
     const lpStable = address(this.accounts.lpStable, chainId);
+
+    const put = invokeScript({
+      dApp: lpStable,
+      payment: [
+        { assetId: this.usdtAssetId, amount: usdtAmount },
+        { assetId: this.usdnAssetId, amount: usdnAmount },
+      ],
+      call: {
+        function: 'put',
+        args: [
+          { type: 'integer', value: 0 },
+          { type: 'boolean', value: false },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
+    await api.transactions.broadcast(put, {});
+    await ni.waitForTx(put.id, { apiBase });
 
     const putOneTkn = invokeScript({
       dApp: lpStable,
@@ -35,12 +53,9 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
         { assetId: this.usdtAssetId, amount: usdtAmount },
       ],
       call: {
-        function: 'putOneTkn',
+        function: 'putOneTknV2',
         args: [
-          { type: 'integer', value: amAssetPart },
-          { type: 'integer', value: prAssetPart },
-          { type: 'integer', value: outLp },
-          { type: 'integer', value: slippage },
+          { type: 'integer', value: minOutAmount },
           { type: 'boolean', value: autoStake },
         ],
       },
@@ -57,13 +72,10 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
         { assetId: this.lpStableAssetId, amount: outLp },
       ],
       call: {
-        function: 'getOneTkn',
+        function: 'getOneTknV2',
         args: [
-          { type: 'integer', value: exchResult },
-          { type: 'integer', value: notUsed },
-          { type: 'integer', value: usdtAmount },
           { type: 'string', value: this.usdtAssetId },
-          { type: 'integer', value: slippage },
+          { type: 'integer', value: minOutAmount },
         ],
       },
       chainId,
@@ -81,28 +93,32 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     expect(stateChanges.data).to.eql([{
       key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
-      value: `%d%d%d%d%d%d__${expectedOutAmAmt}__${expectedOutPrAmt}__${outLp}__0__${heightAfterGetOneTkn}__${timestamp}`,
+      value: `%d%d%d%d%d%d__${expectedOutAmAmt}__${expectedOutPrAmt}__${outLp}__${expectedPriceLast}__${heightAfterGetOneTkn}__${timestamp}`,
     }, {
       key: '%s%s__price__last',
       type: 'integer',
-      value: 0,
+      value: expectedPriceLast,
     }, {
       key: keyPriceHistory,
       type: 'integer',
-      value: 0,
+      value: expectedPriceHistory,
     }]);
 
-    expect(stateChanges.transfers).to.eql([{
-      address: address(this.accounts.user1, chainId),
-      asset: this.usdtAssetId,
-      amount: usdtAmount,
-    }]);
+    expect(stateChanges.transfers).to.eql([
+      {
+        address: address(this.accounts.user1, chainId),
+        asset: this.usdtAssetId,
+        amount: expectedOutAmAmt,
+      },
+      {
+        address: address(this.accounts.feeCollector, chainId),
+        asset: this.usdtAssetId,
+        amount: expectedFee,
+      },
+    ]);
 
     expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
       .to.deep.include.members([
-        [address(this.accounts.lpStableAddon, chainId), 'ensureCanGetOneTkn'],
-        [address(this.accounts.gwxReward, chainId), 'calcD'],
-        [address(this.accounts.gwxReward, chainId), 'calcD'],
         [address(this.accounts.factoryV2, chainId), 'burn'],
       ]);
   });
