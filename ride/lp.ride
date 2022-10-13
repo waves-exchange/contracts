@@ -536,6 +536,7 @@ func calcPutOneToken(
   let balanceBigInt = balance.toBigInt()
 
   let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
+  strict chechSupply = supplyBigInt > big0 || "initial deposit requires all coins".throw()
   let depositBigInt = paymentAmount.toBigInt()
   let issueAmount = supplyBigInt * (sqrt(scale8BigInt + (depositBigInt * scale8BigInt) / balanceBigInt, 8, 8, DOWN) - scale8BigInt) / scale8BigInt
 
