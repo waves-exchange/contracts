@@ -47,7 +47,7 @@ let scale18 = 1_000_000_000_000_000_000.toBigInt()
 let zeroBigInt = 0.toBigInt()
 let big0 = 0.toBigInt()
 let big1 = 1.toBigInt()
-let big2 = 1.toBigInt()
+let big2 = 2.toBigInt()
 let wavesString = "WAVES"
 
 let SEP = "__"
