@@ -107,6 +107,10 @@ func aa() = {"%s__amountAsset"}
 # keyPriceAsset
 func pa() = {"%s__priceAsset"}
 
+let keyFee = "%s__fee"
+let feeDefault = fraction(5, scale8, 10_000)
+let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
+
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
@@ -119,6 +123,8 @@ func keyMappingsBaseAsset2internalId(baseAssetStr: String) = {"%s%s%s__mappings_
 func keyAllPoolsShutdown() = {"%s__shutdown"}
 func keyPoolWeight(contractAddress: String) = {"%s%s__poolWeight__"+contractAddress}
 func keyAllowedLpScriptHash() = {"%s__allowedLpScriptHash"}
+
+let keyFeeCollectorAddress = "%s__feeCollectorAddress"
 
 #------------------------
 # FAILURES
@@ -136,6 +142,8 @@ func getIntOrFail(address: Address, key: String) = address.getInteger(key).value
 func throwErr(msg: String) = ["lp.ride:", msg].makeString(" ").throw()
 
 let factoryContract = addressFromStringValue(getStringOrFail(this, fc()))
+
+let feeCollectorAddress = factoryContract.getStringOrFail(keyFeeCollectorAddress).addressFromStringValue()
 
 # check that global shutdown is take place
 func isGlobalShutdown() = {
@@ -506,6 +514,12 @@ func emit(amount: Int) = {
   amount
 }
 
+func takeFee(amount: Int) = {
+  let feeAmount = fraction(amount, fee, scale8)
+  (amount - feeAmount, feeAmount)
+}
+
+# issued = supply * (√(1 + deposit / balance) - 1)
 func calcPutOneToken(
   paymentAmountRaw: Int,
   paymentAssetId: ByteVector|Unit,
@@ -524,24 +538,69 @@ func calcPutOneToken(
     priceAssetDecimals
   ) = getPoolConfig().parsePoolConfig()
 
-  let paymentAmount = paymentAmountRaw
+  let amountBalanceRaw = amountAssetId.assetIdToString().getAccBalance()
+  let priceBalanceRaw = priceAssetId.assetIdToString().getAccBalance()
 
-  let balanceRaw = if (paymentAssetId == amountAssetId) then {
-    amountAssetId.assetIdToString().getAccBalance()
+  let paymentInAmountAsset = if (paymentAssetId == amountAssetId) then {
+    true
   } else if (paymentAssetId == priceAssetId) then {
-    priceAssetId.assetIdToString().getAccBalance()
+    false
   } else "invalid asset".throwErr()
-  let amountToSubtract = if (isEval) then 0 else paymentAmount
-  let balance = balanceRaw - amountToSubtract
-  let balanceBigInt = balance.toBigInt()
 
+  let (amountBalanceOld, priceBalanceOld) = if (isEval) then {
+    (amountBalanceRaw, priceBalanceRaw)
+  } else {
+    if (paymentInAmountAsset) then {
+      (amountBalanceRaw - paymentAmountRaw, priceBalanceRaw)
+    } else {
+      (amountBalanceRaw, priceBalanceRaw - paymentAmountRaw)
+    }
+  }
+
+  let (amountAssetAmountRaw, priceAssetAmountRaw) = if (paymentInAmountAsset) then {
+    (paymentAmountRaw, 0)
+  } else {
+    (0, paymentAmountRaw)
+  }
+
+  let amountAssetAmount = amountAssetAmountRaw.takeFee()._1
+  let priceAssetAmount = priceAssetAmountRaw.takeFee()._1
+  let (paymentAmount, feeAmount) = paymentAmountRaw.takeFee()
+
+  let amountBalanceNew = amountBalanceOld + amountAssetAmount
+  let priceBalanceNew = priceBalanceOld + priceAssetAmount
+
+  let curPrice = calcPriceBigInt(
+    priceBalanceNew.toX18(priceAssetDecimals),
+    amountBalanceNew.toX18(amountAssetDecimals)
+  ).fromX18(scale8)
+
+  let paymentBalance = if (paymentInAmountAsset) then amountBalanceOld else priceBalanceOld
+  let paymentBalanceBigInt = paymentBalance.toBigInt()
   let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
+  strict chechSupply = supplyBigInt > big0 || "initial deposit requires all coins".throw()
   let depositBigInt = paymentAmount.toBigInt()
-  let issueAmount = supplyBigInt * (sqrt(scale8BigInt + (depositBigInt * scale8BigInt) / balanceBigInt, 8, 8, DOWN) - scale8BigInt) / scale8BigInt
+  let issueAmount = { supplyBigInt * (sqrt(scale8BigInt + (depositBigInt * scale8BigInt) / paymentBalanceBigInt, 8, 8, DOWN) - scale8BigInt) / scale8BigInt }.toInt()
 
-  issueAmount.toInt()
+  let commonState = if (isEval) then [] else [
+    IntegerEntry(pl(), curPrice),
+    IntegerEntry(ph(height, lastBlock.timestamp), curPrice),
+    StringEntry(
+      pau(userAddress.value().toString(), txId.value().toBase58String()),
+      dataPutActionInfo(amountAssetAmountRaw, priceAssetAmountRaw, issueAmount, curPrice, 0, 0, height, lastBlock.timestamp, 0, 0)
+    )
+  ]
+
+  let poolProportion = priceBalanceOld.fraction(scale8, amountBalanceOld)
+  let amountAssetPart = fraction(paymentAmountRaw, scale8, poolProportion + scale8)
+  let priceAssetPart = paymentAmountRaw - amountAssetPart
+  let lpAmtBoth = fraction(supplyBigInt, priceAssetPart.toBigInt(), priceBalanceOld.toBigInt())
+  let bonus = fraction(issueAmount.toBigInt() - lpAmtBoth, scale8BigInt, lpAmtBoth).toInt()
+
+  (issueAmount, commonState, feeAmount, bonus)
 }
 
+# amount = balance * (1 - (1 - redeemed / supply)^2)
 func calcGetOneToken(
   outAssetId: ByteVector|Unit,
   paymentAmount: Int,
@@ -557,25 +616,63 @@ func calcGetOneToken(
     lpAssetId,
     amountAssetId,
     priceAssetId,
-    amountAssetDecimals,
-    priceAssetDecimals
+    amDecimals,
+    prDecimals
   ) = getPoolConfig().parsePoolConfig()
 
   strict checks = [
     paymentAssetId == lpAssetId || "invalid lp asset".throw()
   ]
 
-  let balanceBigInt = if (outAssetId == amountAssetId) then {
-    amountAssetId.assetIdToString().getAccBalance().toBigInt()
+  let outInAmountAsset = if (outAssetId == amountAssetId) then {
+    true
   } else if (outAssetId == priceAssetId) then {
-    priceAssetId.assetIdToString().getAccBalance().toBigInt()
+    false
   } else "invalid asset".throwErr()
 
+  let balanceBigInt = if (outInAmountAsset) then {
+    amountAssetId.assetIdToString().getAccBalance().toBigInt()
+  } else {
+    priceAssetId.assetIdToString().getAccBalance().toBigInt()
+  }
+
+  let amBalanceOld = amountAssetId.assetIdToString().getAccBalance()
+  let prBalanceOld = priceAssetId.assetIdToString().getAccBalance()
+
+  let outBalance = if (outInAmountAsset) then amBalanceOld else prBalanceOld
+  let outBalanceBigInt = outBalance.toBigInt()
   let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
   let redeemedBigInt = paymentAmount.toBigInt()
-  let amount = balanceBigInt * (scale8BigInt - pow(scale8BigInt - redeemedBigInt * scale8BigInt / supplyBigInt, 8, big2, 0, 8, DOWN)) / scale8BigInt
+  let amountRaw = { balanceBigInt * (scale8BigInt - pow(scale8BigInt - redeemedBigInt * scale8BigInt / supplyBigInt, 8, big2, 0, 8, DOWN)) / scale8BigInt }.toInt()
+  let (totalAmount, feeAmount) = amountRaw.takeFee()
 
-  amount.toInt()
+  let (outAmAmount, outPrAmount, amBalanceNew, prBalanceNew) = if (outInAmountAsset) then {
+    (totalAmount, 0, amBalanceOld - amountRaw, prBalanceOld)
+  } else {
+    (0, totalAmount, amBalanceOld, prBalanceOld - amountRaw)
+  }
+
+  let curPrX18 = calcPriceBigInt(prBalanceNew.toX18(prDecimals), amBalanceNew.toX18(amDecimals))
+  let curPrice = curPrX18.fromX18(scale8)
+
+  let commonState = if (isEval) then [] else [
+    StringEntry(
+      gau(userAddress.value().toString(), txId.value().toBase58String()),
+      dataGetActionInfo(outAmAmount, outPrAmount, paymentAmount, curPrice, height, lastBlock.timestamp)),
+    IntegerEntry(pl(), curPrice),
+    IntegerEntry(ph(height, lastBlock.timestamp), curPrice)
+  ]
+
+  let r = estimateGetOperation(
+    "",
+    lpAssetId.assetIdToString(),
+    paymentAmount,
+    this
+  )
+  let sumOfGetAssets = r._1 + r._2
+  let bonus = fraction((totalAmount - sumOfGetAssets), scale8, sumOfGetAssets)
+
+  (totalAmount, commonState, feeAmount, bonus)
 }
 
 func managerPublicKeyOrUnit() = match mpk().getString() {
@@ -672,7 +769,6 @@ func putForFree(maxSlippage: Int) = {
     estPut._9
 }
 
-# issued = supply * (√(1 + deposit / balance) - 1)
 @Callable(i)
 func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   let (
@@ -700,12 +796,11 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   let userAddress = i.caller
   let txId = i.transactionId
 
-  let emitAmount = {
-    let emitAmountEstimated = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
-    if (minOutAmount > 0 && emitAmountEstimated < minOutAmount) then {
-      ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
-    } else emitAmountEstimated
-  }
+
+  let (emitAmountEstimated, commonState, feeAmount, bonus) = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
+  let emitAmount = if (minOutAmount > 0 && emitAmountEstimated < minOutAmount) then {
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+  } else emitAmountEstimated
 
   strict emitInv = emitAmount.emit()
 
@@ -716,10 +811,11 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
     [ScriptTransfer(i.caller, emitAmount, lpAssetId)]
   }
 
-  (lpTransfer, emitAmount)
+  let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, paymentAssetId)] else []
+
+  (commonState ++ lpTransfer ++ sendFee, emitAmount)
 }
 
-# amount = balance * (1 - (1 - redeemed / supply)^2)
 @Callable(i)
 func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
   let (
@@ -746,12 +842,11 @@ func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
   let userAddress = i.caller
   let txId = i.transactionId
 
-  let amount = {
-    let amountEstimated = calcGetOneToken(outAssetId.parseAssetId(), paymentAmount, paymentAssetId, userAddress, txId)
-    if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
-      ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
-    } else amountEstimated
-  }
+  let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId.parseAssetId(), paymentAmount, paymentAssetId, userAddress, txId)
+
+  let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+  } else amountEstimated
 
   strict burnInv = factoryContract.invoke("burn", [paymentAmount], [AttachedPayment(paymentAssetId, paymentAmount)])
 
