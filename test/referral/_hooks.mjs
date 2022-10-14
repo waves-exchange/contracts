@@ -126,7 +126,7 @@ export const mochaHooks = {
         {
           key: '%s%s__treasuryContract',
           type: 'string',
-          value: this.accounts.treasury,
+          value: address(this.accounts.treasury),
         },
       ],
       chainId,
