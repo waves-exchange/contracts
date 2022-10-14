@@ -849,7 +849,9 @@ func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
 
   let assetTransfer = [ScriptTransfer(userAddress, amount, outAssetId.parseAssetId())]
 
-  (assetTransfer, amount)
+  let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, paymentAssetId)] else []
+
+  (commonState ++ assetTransfer ++ sendFee, amount)
 }
 
 @Callable(i)
