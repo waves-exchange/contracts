@@ -183,6 +183,17 @@ func parsePoolConfig(poolConfig: List[String]) = {
   )
 }
 
+let poolConfigParsed = getPoolConfig().parsePoolConfig()
+let (
+  cfgPoolAddress,
+  cfgPoolStatus,
+  cfgLpAssetId,
+  cfgAmountAssetId,
+  cfgPriceAssetId,
+  cfgAmountAssetDecimals,
+  cfgPriceAssetDecimals
+) = poolConfigParsed
+
 func getFactoryConfig() = {
   getStringOrFail(factoryContract, keyFactoryConfig()).split(SEP)
 }
@@ -771,17 +782,7 @@ func putForFree(maxSlippage: Int) = {
 
 @Callable(i)
 func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
-  let (
-    poolAddress,
-    poolStatus,
-    lpAssetId,
-    amountAssetId,
-    priceAssetId,
-    amountAssetDecimals,
-    priceAssetDecimals
-  ) = getPoolConfig().parsePoolConfig()
-
-  let isPutDisabled = isGlobalShutdown() || poolStatus == PoolPutDisabled || poolStatus == PoolShutdown
+  let isPutDisabled = isGlobalShutdown() || cfgPoolStatus == PoolPutDisabled || cfgPoolStatus == PoolShutdown
 
   strict checks = [
     !isPutDisabled || "put operation is blocked by admin".throwErr(),
@@ -791,7 +792,6 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   let payment = i.payments[0]
   let paymentAssetId = payment.assetId
   let paymentAmountRaw = payment.amount
-  let paymentAmount = paymentAmountRaw
 
   let userAddress = i.caller
   let txId = i.transactionId
@@ -805,10 +805,10 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   strict emitInv = emitAmount.emit()
 
   let lpTransfer = if (autoStake) then {
-    strict stakeInv = stakingContract.invoke("stake", [], [AttachedPayment(lpAssetId, emitAmount)])
+    strict stakeInv = stakingContract.invoke("stake", [], [AttachedPayment(cfgLpAssetId, emitAmount)])
     []
   } else {
-    [ScriptTransfer(i.caller, emitAmount, lpAssetId)]
+    [ScriptTransfer(i.caller, emitAmount, cfgLpAssetId)]
   }
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, paymentAssetId)] else []
@@ -817,18 +817,15 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
 }
 
 @Callable(i)
-func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
-  let (
-    poolAddress,
-    poolStatus,
-    lpAssetId,
-    amountAssetId,
-    priceAssetId,
-    amountAssetDecimals,
-    priceAssetDecimals
-  ) = getPoolConfig().parsePoolConfig()
+func putOneTknREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
+  let (emitAmountEstimated, commonState, feeAmount, bonus) = calcPutOneToken(paymentAmountRaw, paymentAssetId.parseAssetId(), unit, unit)
 
-  let isGetDisabled = isGlobalShutdown() || poolStatus == PoolShutdown
+  ([], (emitAmountEstimated, feeAmount, bonus))
+}
+
+@Callable(i)
+func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
+  let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown
 
   strict checks = [
     !isGetDisabled || "get operation is blocked by admin".throwErr(),
@@ -853,6 +850,13 @@ func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
   let assetTransfer = [ScriptTransfer(userAddress, amount, outAssetId.parseAssetId())]
 
   (assetTransfer, amount)
+}
+
+@Callable(i)
+func getOneTknREADONLY(outAssetId: String, paymentAmount: Int) = {
+  let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId.parseAssetId(), paymentAmount, cfgLpAssetId, unit, unit)
+
+  ([], (amountEstimated, feeAmount, bonus))
 }
 
 # Called by: LP
