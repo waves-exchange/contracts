@@ -817,7 +817,7 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
 }
 
 @Callable(i)
-func putOneTknREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
+func putOneTknREADONLY(paymentAssetId: String, paymentAmountRaw: Int) = {
   let (emitAmountEstimated, commonState, feeAmount, bonus) = calcPutOneToken(paymentAmountRaw, paymentAssetId.parseAssetId(), unit, unit)
 
   ([], (emitAmountEstimated, feeAmount, bonus))
