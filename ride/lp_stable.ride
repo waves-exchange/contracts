@@ -65,9 +65,10 @@ let idxPriceAsDcm                            = 7
 let idxIAmtAsId                              = 8
 let idxIPriceAsId                            = 9
 # data indexes from factory config
-let idxFactStakCntr      = 1
-let idxFactSlippCntr     = 7
-let idxFactGwxRewCntr    = 10
+let idxFactStakCntr       = 1
+let idxFactoryRestCntr    = 6
+let idxFactSlippCntr      = 7
+let idxFactGwxRewCntr     = 10
 
 let feeDefault = fraction(5, scale8, 10_000)
 #-------------------------
@@ -181,6 +182,7 @@ let factoryConfig = gfc()
 let stakingContract = factoryConfig[idxFactStakCntr].addressFromString().valueOrErrorMessage("Invalid staking contract address")
 let slipageContract = factoryConfig[idxFactSlippCntr].addressFromString().valueOrErrorMessage("Invalid slipage contract address")
 let gwxContract = factoryConfig[idxFactGwxRewCntr].addressFromString().valueOrErrorMessage("Invalid gwx contract address")
+let restContract = factoryConfig[idxFactoryRestCntr].addressFromString().valueOrErrorMessage("Invalid gwx contract address")
 
 func dataPutActionInfo(inAmtAssetAmt: Int, inPriceAssetAmt: Int, outLpAmt: Int, price: Int, slipByUser: Int, slippageReal: Int, txHeight: Int, txTimestamp: Int, slipageAmAmt: Int, slipagePrAmt: Int) = {
   makeString(["%d%d%d%d%d%d%d%d%d%d", inAmtAssetAmt.toString(), inPriceAssetAmt.toString(), outLpAmt.toString(), price.toString(), slipByUser.toString(), slippageReal.toString(), txHeight.toString(), txTimestamp.toString(), slipageAmAmt.toString(), slipagePrAmt.toString()], SEP)
@@ -707,7 +709,7 @@ func getOneTknV2Internal(
   let prDecimals = poolConfig[idxPriceAsDcm].parseIntValue()
   let poolStatus = poolConfig[idxPoolSt]
 
-  let userAddress = if (caller == this) then originCaller else caller
+  let userAddress = if (caller == restContract) then originCaller else caller
 
   let pmt = payments[0].value()
   let pmtAssetId = pmt.assetId.value()
