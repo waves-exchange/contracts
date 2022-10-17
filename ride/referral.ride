@@ -60,7 +60,7 @@ func keyTreasuryContract(programName: String)       = ["%s%s", "treasuryContract
 func keyImplementationContract(programName: String) = {
   ["%s%s", "implementationContract", programName].makeString(separator)
 }
-func keyAllRefferalPrograms(address: String) = ["%s%s", "allReferralPrograms", address].makeString(separator)
+func keyAllReferralPrograms(address: String) = ["%s%s", "allReferralPrograms", address].makeString(separator)
 func keyLastBulkClaimCallBlock(address: String) = ["%s%s", "lastBulkClaimCallBlock", address].makeString(separator)
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
@@ -275,26 +275,26 @@ func createPair(
   let totalReferralCount = programName.keyTotalReferralCount(referrerAddress).getInteger().valueOrElse(0)
   let newTotalReferralCount = totalReferralCount + 1
 
-  let allReferrerPrograms = referrerAddress.keyAllRefferalPrograms().getString().valueOrElse("")
+  let allReferrerPrograms = referrerAddress.keyAllReferralPrograms().getString().valueOrElse("")
   let newAllReferrerPrograms = if allReferrerPrograms == "" then {
     programName
   } else {
-    makeString([allReferrerPrograms, programName], separator)
+    [allReferrerPrograms, programName].makeString(separator)
   }
   
-  let allReferralPrograms = referralAddress.keyAllRefferalPrograms().getString().valueOrElse("")
+  let allReferralPrograms = referralAddress.keyAllReferralPrograms().getString().valueOrElse("")
   let newAllReferralPrograms = if allReferralPrograms == "" then {
     programName
   } else {
-    makeString([allReferralPrograms, programName], separator)
+    [allReferralPrograms, programName].makeString(separator)
   }
 
   ([
     BooleanEntry(programName.keyExistsReferrerToReferral(referrerAddress, referralAddress), true),
     IntegerEntry(programName.keyTotalReferralCount(referrerAddress), newTotalReferralCount),
     StringEntry(programName.keyReferrer(referralAddress), referrerAddress),
-    StringEntry(referrerAddress.keyAllRefferalPrograms(), newAllReferrerPrograms),
-    StringEntry(referralAddress.keyAllRefferalPrograms(), newAllReferralPrograms)
+    StringEntry(referrerAddress.keyAllReferralPrograms(), newAllReferrerPrograms),
+    StringEntry(referralAddress.keyAllReferralPrograms(), newAllReferralPrograms)
   ], unit)
 }
 
@@ -396,7 +396,8 @@ func incUnclaimedWithPayment(programName: String, referrerAddresses: List[String
   let rewardAssetId    = programName.keyRewardAssetId().getString().value().fromBase58String()
 
   [
-    ScriptTransfer(treasuryContract, resAmount, rewardAssetId)
+    ScriptTransfer(treasuryContract, resAmount, rewardAssetId),
+    IntegerEntry(callerAddress.keyLastBulkClaimCallBlock(), height)
   ]
 }
 
@@ -423,7 +424,7 @@ func claim(programName: String) = {
 @Callable(i)
 func claimBulk() = {
   let callerAddress = i.caller.toString()
-  let callerProgramsStr = i.caller.toString().keyAllRefferalPrograms().getString()
+  let callerProgramsStr = i.caller.toString().keyAllReferralPrograms().getString()
 
   strict programsExists = callerProgramsStr.isDefined() || "no referral programs".throwErr()
 
@@ -438,7 +439,7 @@ func claimBulk() = {
     ], []
   )
 
-  ([IntegerEntry(callerAddress.keyLastBulkClaimCallBlock(), height)], bulkClaim)
+  ([], bulkClaim)
 }
 
 @Callable(i)
@@ -452,9 +453,9 @@ func claimREADONLY(programName: String, userAddress: String) = {
 @Callable(i)
 func claimBulkREADONLY(claimer: String) = {
   let claimedTotalAddress = claimer.keyClaimedTotalAddress().getInteger().valueOrElse(0)
-  let uncleimedTotalAddress = claimer.keyUnclaimedTotalAddress().getInteger().valueOrElse(0)
+  let unclaimedTotalAddress = claimer.keyUnclaimedTotalAddress().getInteger().valueOrElse(0)
 
-  ([], [uncleimedTotalAddress, claimedTotalAddress])
+  ([], [unclaimedTotalAddress, claimedTotalAddress])
 }
 
 @Callable(i)
