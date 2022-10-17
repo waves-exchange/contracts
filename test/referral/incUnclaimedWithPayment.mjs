@@ -94,7 +94,7 @@ describe('referral: incUnclaimedWithPayment.mjs', /** @this {MochaSuiteModified}
 
       expect(stateChanges.data).to.eql([
         {
-          key: `%s%s__lastBulkClaimCallBlock__${referrerAddress}`,
+          key: `%s%s__lastBulkClaimCallBlock__${implementationContract}`,
           type: 'integer',
           value: height,
         }]);
