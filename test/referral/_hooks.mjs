@@ -120,20 +120,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(setBackendPublicKeyTx, {});
     await waitForTx(setBackendPublicKeyTx.id, { apiBase });
 
-    const setTreasuryContractTx = data({
-      additionalFee: 4e5,
-      data: [
-        {
-          key: '%s%s__treasuryContract',
-          type: 'string',
-          value: address(this.accounts.treasury),
-        },
-      ],
-      chainId,
-    }, this.accounts.referral);
-    await api.transactions.broadcast(setTreasuryContractTx, {});
-    await waitForTx(setTreasuryContractTx.id, { apiBase });
-
     const setWxAssetIdReferralTx = data({
       additionalFee: 4e5,
       data: [
