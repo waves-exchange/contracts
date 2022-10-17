@@ -61,7 +61,7 @@ func keyImplementationContract(programName: String) = {
   ["%s%s", "implementationContract", programName].makeString(separator)
 }
 func keyAllReferralPrograms(address: String) = ["%s%s", "allReferralPrograms", address].makeString(separator)
-func keyLastBulkClaimCallBlock(address: String) = ["%s%s", "lastBulkClaimCallBlock", address].makeString(separator)
+func keyLastIncUnclaimedWithPaymentCallBlock(address: String) = ["%s%s", "lastIncUnclaimedWithPaymentCallBlock", address].makeString(separator)
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
@@ -366,7 +366,7 @@ func incUnclaimed(
 @Callable(i)
 func incUnclaimedWithPayment(programName: String, referrerAddresses: List[String]) = {
   let callerAddress = i.caller.toString()
-  let lastCall = callerAddress.keyLastBulkClaimCallBlock().getInteger().valueOrElse(0)
+  let lastCall = callerAddress.keyLastIncUnclaimedWithPaymentCallBlock().getInteger().valueOrElse(0)
   let waitBlocks = lastCall - height + 3
 
   strict lastCallCheck = lastCall < height - 3 || [
@@ -397,7 +397,7 @@ func incUnclaimedWithPayment(programName: String, referrerAddresses: List[String
 
   [
     ScriptTransfer(treasuryContract, resAmount, rewardAssetId),
-    IntegerEntry(callerAddress.keyLastBulkClaimCallBlock(), height)
+    IntegerEntry(callerAddress.keyLastIncUnclaimedWithPaymentCallBlock(), height)
   ]
 }
 
