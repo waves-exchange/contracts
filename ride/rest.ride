@@ -354,6 +354,7 @@ func wxEmissionStatsREADONLY() = {
     SEP))
 }
 
+# TODO: add oneTokenOperationsEnabled
 @Callable(i)
 func poolStatsREADONLY(lpAsset: String) = {
   let poolAddress = factoryDapp.getStringByAddressOrFail(lpAsset.keyFactoryLpAssetToPoolContractAddress()).addressFromStringValue()
@@ -379,19 +380,22 @@ func poolStatsREADONLY(lpAsset: String) = {
   let lpPriceAssetShare = poolAddress.invoke("fromX18WrapperREADONLY", [pricesList[2], MULT8], []).asInt()
 
   let poolWeight = factoryDapp.getIntegerValue(poolAddress.toString().keyFactoryPoolWeight())
+
+  let poolOneTokenOperationsDisabled = factoryDapp.invoke("isPoolOneTokenOperationsDisabled", [poolAddress.toString()], []).exactAs[Boolean]
   let fee = poolAddress.getPoolFee()
   (
     [],
     makeString([
-      "%d%d%d%d%d%d%d%d",
+      "%d%d%d%d%d%d%d%d%s",
       accAmtAssetBalance.toString(),
       accPriceAssetBalance.toString(),
       poolLPBalance.toString(),
       curPrice.toString(),
       lpAmtAssetShare.toString(),
       lpPriceAssetShare.toString(),
-      poolWeight.toString(),
-      fee.toString()
+      poolWeight.toString(), 
+      fee.toString(),
+      poolOneTokenOperationsDisabled.toString()
     ],
     SEP)
   )
@@ -583,12 +587,6 @@ func gwxUserInfoREADONLY(userAddress: String) = {
   let gwxUserInfoLIST = boostingDapp.invoke("gwxUserInfoREADONLY", [userAddress], []).asAnyList()
   let gwxAmount = gwxUserInfoLIST[0].asInt()
   ([], ["%d", gwxAmount.toString()].makeString(SEP))
-}
-
-@Callable(i)
-func unstakeAndGetOneTknV2(poolAddress: String, unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
-  strict inv = poolAddress.addressFromStringValue().invoke("unstakeAndGetOneTknV2", [unstakeAmount, outAssetId, minOutAmount], [])
-  ([], unit)
 }
 
 @Callable(i)
