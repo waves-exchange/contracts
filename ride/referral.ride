@@ -61,7 +61,7 @@ func keyImplementationContract(programName: String) = {
   ["%s%s", "implementationContract", programName].makeString(separator)
 }
 func keyAllReferralPrograms(address: String) = ["%s%s", "allReferralPrograms", address].makeString(separator)
-func keyLastIncUnclaimedWithPaymentCallBlock(address: String) = ["%s%s", "lastBulkClaimCallBlock", address].makeString(separator)
+func keyLastIncUnclaimedWithPaymentCallBlock(address: String) = ["%s%s", "lastIncUnclaimedWithPaymentCallBlock", address].makeString(separator)
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
@@ -100,7 +100,7 @@ func claimInternal(programName: String, claimerAddress: String, isImplementation
   strict checkProgramExists = programName.keyProgramName().getBoolean().valueOrElse(
     false
   ) || "program does not exist".throwErr()
-  
+
   let (
     claimerClaimed,
     claimerUnclaimed,
@@ -158,7 +158,7 @@ func claimInternal(programName: String, claimerAddress: String, isImplementation
         claimerUnclaimed.formatClaimHistory()
       )
     ], claimerUnclaimed)
-  } 
+  }
 }
 
 @Callable(i)
@@ -281,7 +281,7 @@ func createPair(
   } else {
     [allReferrerPrograms, programName].makeString(separator)
   }
-  
+
   let allReferralPrograms = referralAddress.keyAllReferralPrograms().getString().valueOrElse("")
   let newAllReferralPrograms = if allReferralPrograms == "" then {
     programName
