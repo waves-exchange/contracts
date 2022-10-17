@@ -184,17 +184,22 @@ func claimBulkInternal(claimer: String, programNames: List[String], currentIter:
     []
   )
 
-  strict claimInternal = this.invoke(
-    "claimInternal",
-    [
-      programName,
-      claimer,
-      false
-    ],
-    []
-  )
+  let unclaimedReferrer = programName.keyUnclaimedReferrer(claimer).getInteger().valueOrElse(0)
+  strict claim = if (unclaimedReferrer > 0) then {
+    this.invoke(
+      "claimInternal",
+      [
+        programName,
+        claimer,
+        false
+      ],
+      []
+    )
+  } else {
+    unit
+  }
 
-  ([], [claimBulkInternal, claimInternal])
+  ([], [claimBulkInternal, claim])
 }
 
 @Callable(i)
