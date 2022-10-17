@@ -348,6 +348,7 @@ func wxEmissionStatsREADONLY() = {
     SEP))
 }
 
+# TODO: add oneTokenOperationsEnabled
 @Callable(i)
 func poolStatsREADONLY(lpAsset: String) = {
   let poolAddress = factoryDapp.getStringByAddressOrFail(lpAsset.keyFactoryLpAssetToPoolContractAddress()).addressFromStringValue()
@@ -575,12 +576,6 @@ func gwxUserInfoREADONLY(userAddress: String) = {
   let gwxUserInfoLIST = boostingDapp.invoke("gwxUserInfoREADONLY", [userAddress], []).asAnyList()
   let gwxAmount = gwxUserInfoLIST[0].asInt()
   ([], ["%d", gwxAmount.toString()].makeString(SEP))
-}
-
-@Callable(i)
-func unstakeAndGetOneTkn(poolAddress: String, amount: Int, exchResult: Int, notUsed: Int, outAmount: Int, outAssetId: String, slippage: Int) = {
-  strict inv = poolAddress.addressFromStringValue().getString(keyAddonAddr()).value().addressFromStringValue().invoke("unstakeAndGetOneTkn", [amount, exchResult, notUsed, outAmount, outAssetId, slippage], [])
-  ([], unit)
 }
 
 @Callable(i)
