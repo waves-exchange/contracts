@@ -824,13 +824,15 @@ func putOneTknREADONLY(paymentAssetId: String, paymentAmountRaw: Int) = {
 }
 
 @Callable(i)
-func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
+func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
   let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown
 
   strict checks = [
     !isGetDisabled || "get operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
+
+  let outAssetId = outAssetIdStr.parseAssetId()
 
   let payment = i.payments[0]
   let paymentAssetId = payment.assetId
@@ -839,7 +841,7 @@ func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
   let userAddress = i.caller
   let txId = i.transactionId
 
-  let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId.parseAssetId(), paymentAmount, paymentAssetId, userAddress, txId)
+  let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, paymentAmount, paymentAssetId, userAddress, txId)
 
   let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
@@ -847,9 +849,9 @@ func getOneTkn(outAssetId: String, minOutAmount: Int, unstakeAmount: Int) = {
 
   strict burnInv = factoryContract.invoke("burn", [paymentAmount], [AttachedPayment(paymentAssetId, paymentAmount)])
 
-  let assetTransfer = [ScriptTransfer(userAddress, amount, outAssetId.parseAssetId())]
+  let assetTransfer = [ScriptTransfer(userAddress, amount, outAssetId)]
 
-  let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, paymentAssetId)] else []
+  let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
 
   (commonState ++ assetTransfer ++ sendFee, amount)
 }
@@ -859,6 +861,33 @@ func getOneTknREADONLY(outAssetId: String, paymentAmount: Int) = {
   let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId.parseAssetId(), paymentAmount, cfgLpAssetId, unit, unit)
 
   ([], (amountEstimated, feeAmount, bonus))
+}
+
+@Callable(i)
+func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount: Int) = {
+  let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown
+
+  strict checks = [
+    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    i.payments.size() == 0 || "no payments are expected".throwErr()
+  ]
+
+  let outAssetId = outAssetIdStr.parseAssetId()
+
+  strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
+  let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, unstakeAmount, cfgLpAssetId, unit, unit)
+
+  let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+  } else amountEstimated
+
+  strict burnInv = factoryContract.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
+
+  let assetTransfer = [ScriptTransfer(i.caller, amount, outAssetId)]
+
+  let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
+
+  (commonState ++ assetTransfer ++ sendFee, amount)
 }
 
 # Called by: LP
