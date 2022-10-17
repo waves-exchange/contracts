@@ -111,7 +111,7 @@ describe('referral: incUnclaimedWithPaymentIfMultiplePayments.mjs', /** @this {M
 
       expect(stateChanges.data).to.eql([
         {
-          key: `%s%s__lastBulkClaimCallBlock__${implementationContract}`,
+          key: `%s%s__lastIncUnclaimedWithPaymentCallBlock__${implementationContract}`,
           type: 'integer',
           value: height,
         }]);
