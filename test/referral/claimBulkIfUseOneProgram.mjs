@@ -204,7 +204,7 @@ describe('referral: claimBulkIfUseOneProgram.mjs', /** @this {MochaSuiteModified
           0,
           0,
           0,
-          2,
+          1,
         ),
       ).to.eql(true);
 
@@ -278,6 +278,21 @@ describe('referral: claimBulkIfUseOneProgram.mjs', /** @this {MochaSuiteModified
       expect(
         await checkStateChanges(
           withdrawReferralRewardAfterFirstClaimBulk.stateChanges,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+        ),
+      ).to.eql(true);
+
+      expect(
+        await checkStateChanges(
+          secondClaimBulk.stateChanges.invokes[0].stateChanges,
           0,
           0,
           0,
