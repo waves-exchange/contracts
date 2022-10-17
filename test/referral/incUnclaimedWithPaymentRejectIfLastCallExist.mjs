@@ -12,9 +12,9 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: claimREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: incUnclaimedWithPaymentRejectIfLastCallExist.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully claimREADONLY',
+    'should successfully incUnclaimedWithPayment',
     async function () {
       const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
@@ -22,10 +22,6 @@ describe('referral: claimREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
       const referrerReward = 1e4;
-      const referralReward = 1e2;
-
-      const expectedClaimerUnclaimed = referrerReward;
-      const expectedClaimerClaimed = 0;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
@@ -71,33 +67,42 @@ describe('referral: claimREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
       await api.transactions.broadcast(createPairTx, {});
       await ni.waitForTx(createPairTx.id, { apiBase });
 
-      const incUnclaimedTx = invokeScript({
+      const incUnclaimedWithPaymentTx = invokeScript({
         dApp: referral,
-        payment: [],
+        payment: [{ assetId: this.wxAssetId, amount: referrerReward }],
         call: {
-          function: 'incUnclaimed',
+          function: 'incUnclaimedWithPayment',
           args: [
             { type: 'string', value: programName },
-            { type: 'string', value: referralAddress },
-            { type: 'integer', value: referrerReward },
-            { type: 'integer', value: referralReward },
+            { type: 'list', value: [{ type: 'string', value: referrerAddress }] },
           ],
         },
         chainId,
       }, this.accounts.implementation);
-      await api.transactions.broadcast(incUnclaimedTx, {});
-      await ni.waitForTx(incUnclaimedTx.id, { apiBase });
+      await api.transactions.broadcast(incUnclaimedWithPaymentTx, {});
+      const { height } = await ni.waitForTx(incUnclaimedWithPaymentTx.id, { apiBase });
 
-      const expected1 = { type: 'Int', value: expectedClaimerUnclaimed };
-      const expected2 = { type: 'Int', value: expectedClaimerClaimed };
+      const repeatIncUnclaimedWithPaymentTx = invokeScript({
+        dApp: referral,
+        payment: [{ assetId: this.wxAssetId, amount: referrerReward }],
+        call: {
+          function: 'incUnclaimedWithPayment',
+          args: [
+            { type: 'string', value: programName },
+            { type: 'list', value: [{ type: 'string', value: referrerAddress }] },
+          ],
+        },
+        chainId,
+      }, this.accounts.implementation);
 
-      const expr = `claimREADONLY(\"${programName}\", \"${referrerAddress}\")`; /* eslint-disable-line */
-      const response = await api.utils.fetchEvaluate(referral, expr);
-      const checkData = response.result.value._2.value;  /* eslint-disable-line */
+      const { height: currentHeight } = await api.blocks.fetchHeight();
+      const expectedRejectMessage = `referral.ride: wait ${currentHeight - height + 3} blocks`;
 
-      expect(checkData.length).to.eql(2);
-      expect(checkData[0]).to.eql(expected1); /* eslint-disable-line */
-      expect(checkData[1]).to.eql(expected2); /* eslint-disable-line */
+      await expect(
+        api.transactions.broadcast(repeatIncUnclaimedWithPaymentTx, {}),
+      ).to.be.rejectedWith(
+        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+      );
     },
   );
 });
