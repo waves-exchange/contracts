@@ -176,15 +176,8 @@ describe('referral: claimBulkExtendedTest.mjs', /** @this {MochaSuiteModified} *
       // ___________________________________________________________________________________________
 
       expect(
-        await checkStateChanges(stateChanges, 1, 0, 0, 0, 0, 0, 0, 0, 1),
+        await checkStateChanges(stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 1),
       ).to.eql(true);
-
-      expect(stateChanges.data).to.eql([
-        {
-          key: `%s%s__lastBulkClaimCallBlock__${referrerAddress}`,
-          type: 'integer',
-          value: heightClaimBulk,
-        }]);
 
       const { invokes } = stateChanges;
 
