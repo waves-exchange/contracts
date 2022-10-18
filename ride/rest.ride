@@ -354,7 +354,6 @@ func wxEmissionStatsREADONLY() = {
     SEP))
 }
 
-# TODO: add oneTokenOperationsEnabled
 @Callable(i)
 func poolStatsREADONLY(lpAsset: String) = {
   let poolAddress = factoryDapp.getStringByAddressOrFail(lpAsset.keyFactoryLpAssetToPoolContractAddress()).addressFromStringValue()
@@ -382,7 +381,7 @@ func poolStatsREADONLY(lpAsset: String) = {
   let poolWeight = factoryDapp.getIntegerValue(poolAddress.toString().keyFactoryPoolWeight())
   let fee = poolAddress.getPoolFee()
 
-  let poolOneTokenOperationsDisabled = factoryDapp.invoke("isPoolOneTokenOperationsDisabled", [poolAddress.toString()], []).exactAs[Boolean]
+  let poolOneTokenOperationsDisabled = factoryDapp.invoke("isPoolOneTokenOperationsDisabledREADONLY", [poolAddress.toString()], []).exactAs[Boolean]
   (
     [],
     makeString([

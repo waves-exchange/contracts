@@ -469,7 +469,7 @@ func modifyWeights(btcPoolAddress: String, ethPoolAddress: String) = {
 }
 
 @Callable(i)
-func isPoolOneTokenOperationsDisabled(poolAddress: String) = {
+func isPoolOneTokenOperationsDisabledREADONLY(poolAddress: String) = {
   let poolConfig = poolAddress.getPoolConfig()
   let assetsInternal = (poolConfig[idxIAmtAssetId].parseIntValue(), poolConfig[idxIPriceAssetId].parseIntValue())
   let poolOneTokenOperationsDisabled = assetsInternal.keyPoolOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
