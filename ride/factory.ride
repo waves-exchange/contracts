@@ -69,9 +69,9 @@ func keyMappingsBaseAsset2internalId(baseAssetStr: String)
       = {"%s%s%s__mappings__baseAsset2internalId__" + baseAssetStr}
 func keyPoolConfig(amountAssetInternal: String, priceAssetInternal: String)
       = {"%d%d%s__" + amountAssetInternal + "__" + priceAssetInternal + "__config"}
-func keyPoolConfigOneTokenOperationsDisabled(assetsInternal: (Int, Int)) = {
+func keyPoolOneTokenOperationsDisabled(assetsInternal: (Int, Int)) = {
   let (amountAssetInternal, priceAssetInternal) = assetsInternal
-  ["%d%d%s%s", amountAssetInternal.toString(), priceAssetInternal.toString(), "config", "oneTokenOperationsDisabled"].makeString(SEP)
+  ["%d%d%s", amountAssetInternal.toString(), priceAssetInternal.toString(), "oneTokenOperationsDisabled"].makeString(SEP)
 }
 func keyAllPoolsOneTokenOperationsDisabled() = {
   ["%s", "oneTokenOperationsDisabled"].makeString(SEP)
@@ -472,7 +472,7 @@ func modifyWeights(btcPoolAddress: String, ethPoolAddress: String) = {
 func isPoolOneTokenOperationsDisabled(poolAddress: String) = {
   let poolConfig = poolAddress.getPoolConfig()
   let assetsInternal = (poolConfig[idxIAmtAssetId].parseIntValue(), poolConfig[idxIPriceAssetId].parseIntValue())
-  let poolOneTokenOperationsDisabled = assetsInternal.keyPoolConfigOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
+  let poolOneTokenOperationsDisabled = assetsInternal.keyPoolOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
   let allPoolsOntTokenOperationsDisabled = keyAllPoolsOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
 
   ([], allPoolsOntTokenOperationsDisabled || poolOneTokenOperationsDisabled)
