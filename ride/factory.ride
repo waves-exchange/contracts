@@ -69,13 +69,6 @@ func keyMappingsBaseAsset2internalId(baseAssetStr: String)
       = {"%s%s%s__mappings__baseAsset2internalId__" + baseAssetStr}
 func keyPoolConfig(amountAssetInternal: String, priceAssetInternal: String)
       = {"%d%d%s__" + amountAssetInternal + "__" + priceAssetInternal + "__config"}
-func keyPoolOneTokenOperationsDisabled(assetsInternal: (Int, Int)) = {
-  let (amountAssetInternal, priceAssetInternal) = assetsInternal
-  ["%d%d%s", amountAssetInternal.toString(), priceAssetInternal.toString(), "oneTokenOperationsDisabled"].makeString(SEP)
-}
-func keyAllPoolsOneTokenOperationsDisabled() = {
-  ["%s", "oneTokenOperationsDisabled"].makeString(SEP)
-}
 func keyMappingLpAssetToPoolAssets(lpAssetStr: String)
        = {"%s%s%s__" + lpAssetStr + "__mappings__lpAsset2Pool"}
 func keyMappingPoolAssetsToLpasset(internalAmountAssetIdStr: String, internalPriceAssetIdStr: String)
@@ -466,16 +459,6 @@ func modifyWeights(btcPoolAddress: String, ethPoolAddress: String) = {
     IntegerEntry(keyPoolToWeightHistory(btcPoolAddress, 0), btcWeight),
     IntegerEntry(keyPoolToWeightHistory(ethPoolAddress, 0), ethWeight)
     ]
-}
-
-@Callable(i)
-func isPoolOneTokenOperationsDisabledREADONLY(poolAddress: String) = {
-  let poolConfig = poolAddress.getPoolConfig()
-  let assetsInternal = (poolConfig[idxIAmtAssetId].parseIntValue(), poolConfig[idxIPriceAssetId].parseIntValue())
-  let poolOneTokenOperationsDisabled = assetsInternal.keyPoolOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
-  let allPoolsOntTokenOperationsDisabled = keyAllPoolsOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
-
-  ([], allPoolsOntTokenOperationsDisabled || poolOneTokenOperationsDisabled)
 }
 
 @Verifier(tx)
