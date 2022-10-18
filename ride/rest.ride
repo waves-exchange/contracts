@@ -380,9 +380,9 @@ func poolStatsREADONLY(lpAsset: String) = {
   let lpPriceAssetShare = poolAddress.invoke("fromX18WrapperREADONLY", [pricesList[2], MULT8], []).asInt()
 
   let poolWeight = factoryDapp.getIntegerValue(poolAddress.toString().keyFactoryPoolWeight())
+  let fee = poolAddress.getPoolFee()
 
   let poolOneTokenOperationsDisabled = factoryDapp.invoke("isPoolOneTokenOperationsDisabled", [poolAddress.toString()], []).exactAs[Boolean]
-  let fee = poolAddress.getPoolFee()
   (
     [],
     makeString([
@@ -393,8 +393,8 @@ func poolStatsREADONLY(lpAsset: String) = {
       curPrice.toString(),
       lpAmtAssetShare.toString(),
       lpPriceAssetShare.toString(),
-      poolWeight.toString(), 
-      fee.toString(),
+      poolWeight.toString(),
+      fee.toString(), 
       poolOneTokenOperationsDisabled.toString()
     ],
     SEP)
