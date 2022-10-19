@@ -16,7 +16,7 @@ describe('referral: createPairRejectIfProgramDoesNotExist.mjs', /** @this {Mocha
   it(
     'should reject createPair',
     async function () {
-      const DoesNotExitProgramName = 'ReferralProgram';
+      const DoesNotExitProgramName = 'wxlock';
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
 

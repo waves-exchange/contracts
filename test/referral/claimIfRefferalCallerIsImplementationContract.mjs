@@ -20,7 +20,7 @@ const mockRidePath = join('test', 'referral', 'mock');
 const implementationPath = format({ dir: mockRidePath, base: 'implementation.mock.ride' });
 
 describe('referral: claimIfRefferalCallerIsImplementationContract.mjs', /** @this {MochaSuiteModified} */() => {
-  const programName = 'ReferralProgram';
+  const programName = 'wxlock';
   const referralReward = 1e2;
   before(async function () {
     await setScriptFromFile(implementationPath, this.accounts.implementation);
@@ -158,7 +158,7 @@ describe('referral: claimIfRefferalCallerIsImplementationContract.mjs', /** @thi
       expect(invokeClaim.call.function).to.eql('claim');
       expect(invokeClaim.call.args).to.eql([{
         type: 'String',
-        value: 'ReferralProgram',
+        value: 'wxlock',
       }]);
       expect(invokeClaim.payment).to.eql([]);
       expect(
@@ -170,7 +170,7 @@ describe('referral: claimIfRefferalCallerIsImplementationContract.mjs', /** @thi
       expect(invokeClaimInternal.dApp).to.eql(referral);
       expect(invokeClaimInternal.call.function).to.eql('claimInternal');
       expect(invokeClaimInternal.call.args).to.eql([
-        { type: 'String', value: 'ReferralProgram' },
+        { type: 'String', value: 'wxlock' },
         { type: 'String', value: referralAddress },
         { type: 'Boolean', value: true },
       ]);

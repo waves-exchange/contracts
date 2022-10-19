@@ -17,7 +17,7 @@ describe('referral: setTotalKeys.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully setTotalKeys',
     async function () {
-      const programName = 'SomeProgram';
+      const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
@@ -67,7 +67,7 @@ describe('referral: setTotalKeys.mjs', /** @this {MochaSuiteModified} */() => {
       }, this.accounts.manager);
       await api.transactions.broadcast(createPairTx, {});
       await ni.waitForTx(createPairTx.id, { apiBase });
-
+      console.log(123);
       const incUnclaimedTx = invokeScript({
         dApp: referral,
         payment: [],

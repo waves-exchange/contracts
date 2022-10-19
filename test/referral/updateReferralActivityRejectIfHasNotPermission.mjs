@@ -16,7 +16,7 @@ describe('referral: updateReferralActivityRejectIfHasNotPermission.mjs', /** @th
   it(
     'should reject updateReferralActivity',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const isActive = false;
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);

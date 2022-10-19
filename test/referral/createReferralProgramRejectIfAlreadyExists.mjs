@@ -16,7 +16,7 @@ describe('referral: createReferralProgramRejectIfAlreadyExists.mjs', /** @this {
   it(
     'should reject createReferralProgram',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referral = address(this.accounts.referral, chainId);

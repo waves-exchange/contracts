@@ -17,7 +17,7 @@ describe('referral: claimReferrer.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully claim',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
@@ -118,7 +118,7 @@ describe('referral: claimReferrer.mjs', /** @this {MochaSuiteModified} */() => {
       expect(invokeClaimInternal.dApp).to.eql(referral);
       expect(invokeClaimInternal.call.function).to.eql('claimInternal');
       expect(invokeClaimInternal.call.args).to.eql([
-        { type: 'String', value: 'ReferralProgram' },
+        { type: 'String', value: 'wxlock' },
         { type: 'String', value: referrerAddress },
         { type: 'Boolean', value: false },
       ]);

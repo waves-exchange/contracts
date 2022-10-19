@@ -19,7 +19,7 @@ describe('referral: createPairIfReferrerAndRefferalProgramsExist.mjs', /** @this
   it(
     'should successfully createPair',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const programNameFirst = 'ReferralProgramFirst';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);

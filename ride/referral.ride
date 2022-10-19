@@ -353,16 +353,17 @@ func incUnclaimed(
   referralReward: Int
 ) = {
   let implementationContract = programName.keyImplementationContract().getString().value()
+  let referrerAddress   = programName.keyReferrer(referralAddress).getString().value()
+
   strict checkCaller = i.caller.toString() == implementationContract || "permission denied".throwErr()
   strict checkProgram = programName == "wxlock" || "invalid program".throwErr()
-  strict checkReferrerInProgram = referralAddress.keyAllReferralPrograms().getString().valueOrElse(
+  strict checkReferrerInProgram = referrerAddress.keyAllReferralPrograms().getString().valueOrElse(
     ""
   ).contains(programName) || "referrer not in program".throwErr()
   strict checkReferralInProgram = referralAddress.keyAllReferralPrograms().getString().valueOrElse(
     ""
   ).contains(programName) || "referral not in program".throwErr()
 
-  let referrerAddress   = programName.keyReferrer(referralAddress).getString().value()
   let unclaimedTotalReferrer = referrerAddress.keyUnclaimedTotalAddress().getInteger().valueOrElse(0)
   let referrerUnclaimed = programName.keyUnclaimedReferrer(referrerAddress).getInteger().valueOrElse(0)
   let unclaimedTotalReferral = referralAddress.keyUnclaimedTotalAddress().getInteger().valueOrElse(0)

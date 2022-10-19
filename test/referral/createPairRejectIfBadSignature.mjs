@@ -16,7 +16,7 @@ describe('referral: createPairRejectIfBadSignature.mjs', /** @this {MochaSuiteMo
   it(
     'should reject createPair',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);

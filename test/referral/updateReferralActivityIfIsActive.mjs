@@ -17,7 +17,7 @@ describe('referral: updateReferralActivityIfIsActive.mjs', /** @this {MochaSuite
   it(
     'should successfully updateReferralActivity if isActive is false',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const isActive = true;
 
       const treasuryContract = address(this.accounts.treasury, chainId);

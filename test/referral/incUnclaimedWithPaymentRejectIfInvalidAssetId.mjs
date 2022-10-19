@@ -18,7 +18,7 @@ describe('referral: incUnclaimedWithPaymentRejectIfInvalidAssetId.mjs', /** @thi
   it(
     'should reject incUnclaimedWithPayment',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxSpotFee';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
