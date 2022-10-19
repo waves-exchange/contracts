@@ -139,19 +139,19 @@ export const mochaHooks = {
     await api.transactions.broadcast(setAssetsStoreContractTx, {});
     await waitForTx(setAssetsStoreContractTx.id, { apiBase });
 
-    const constructorLpInvokeTx = invokeScript({
-      dApp: address(this.accounts.lp, chainId),
+    const setFactoryContractTx = data({
       additionalFee: 4e5,
-      call: {
-        function: 'constructor',
-        args: [
-          { type: 'string', value: address(this.accounts.factoryV2, chainId) },
-        ],
-      },
+      data: [
+        {
+          key: '%s__factoryContract',
+          type: 'string',
+          value: address(this.accounts.factoryV2, chainId),
+        },
+      ],
       chainId,
     }, this.accounts.lp);
-    await api.transactions.broadcast(constructorLpInvokeTx, {});
-    await waitForTx(constructorLpInvokeTx.id, { apiBase });
+    await api.transactions.broadcast(setFactoryContractTx, {});
+    await waitForTx(setFactoryContractTx.id, { apiBase });
 
     const activateNewPoolTx = invokeScript({
       dApp: address(this.accounts.factoryV2, chainId),
