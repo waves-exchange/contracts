@@ -28,7 +28,7 @@ const gwxRewardPath = format({ dir: mockRidePath, base: 'gwx_reward.mock.ride' }
 
 export const mochaHooks = {
   async beforeAll() {
-    const names = ['lpStable', 'lpStableAddon', 'factoryV2', 'staking', 'slippage', 'gwxReward', 'manager', 'store', 'feeCollector', 'user1'];
+    const names = ['lpStable', 'lpStableAddon', 'factoryV2', 'staking', 'slippage', 'gwxReward', 'manager', 'store', 'feeCollector', 'rest', 'user1'];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
@@ -102,7 +102,7 @@ export const mochaHooks = {
           { type: 'string', value: '' },
           { type: 'string', value: '' },
           { type: 'string', value: '' },
-          { type: 'string', value: '' },
+          { type: 'string', value: address(this.accounts.rest, chainId) },
           { type: 'string', value: address(this.accounts.slippage, chainId) },
           { type: 'integer', value: 8 },
         ],
