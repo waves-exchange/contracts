@@ -16,7 +16,7 @@ describe('referral: incUnclaimedRejectIfHasNotPermission.mjs', /** @this {MochaS
   it(
     'should reject incUnclaimed',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const notImplementationAccount = this.accounts.treasury;

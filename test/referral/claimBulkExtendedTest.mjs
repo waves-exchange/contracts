@@ -19,8 +19,8 @@ describe('referral: claimBulkExtendedTest.mjs', /** @this {MochaSuiteModified} *
   it(
     'should successfully claimBulk',
     async function () {
-      const programName = 'ReferralProgram';
-      const programNameSecond = 'ReferralProgramSecond';
+      const programName = 'wxlock';
+      const programNameSecond = 'wxSpotFee';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const treasuryContractSecond = address(this.accounts.treasurySecond, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
@@ -143,7 +143,7 @@ describe('referral: claimBulkExtendedTest.mjs', /** @this {MochaSuiteModified} *
         call: {
           function: 'incUnclaimed',
           args: [
-            { type: 'string', value: programNameSecond },
+            { type: 'string', value: programName },
             { type: 'string', value: referralAddress },
             { type: 'integer', value: referrerRewardSecond },
             { type: 'integer', value: referralReward },

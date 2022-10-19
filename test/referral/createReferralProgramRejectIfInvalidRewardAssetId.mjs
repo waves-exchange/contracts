@@ -16,7 +16,7 @@ describe('referral: createReferralProgramRejectIfInvalidRewardAssetId.mjs', /** 
   it(
     'should reject createReferralProgram',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const invalidWxAssetId = this.wxAssetId.slice(0, this.wxAssetId.length - 1);
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);

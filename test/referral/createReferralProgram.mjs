@@ -17,7 +17,7 @@ describe('referral: createReferralProgram.mjs', /** @this {MochaSuiteModified} *
   it(
     'should successfully createReferralProgram',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
 

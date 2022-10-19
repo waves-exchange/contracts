@@ -16,7 +16,7 @@ describe('referral: claimRejectIfNothingToClaim.mjs', /** @this {MochaSuiteModif
   it(
     'should reject claim',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
 
