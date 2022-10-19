@@ -38,6 +38,8 @@ export const mochaHooks = {
       'manager',
       'store',
       'matcher',
+      'feeCollector',
+      'rest',
       'user1',
     ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
@@ -113,7 +115,7 @@ export const mochaHooks = {
           { type: 'string', value: '' },
           { type: 'string', value: '' },
           { type: 'string', value: '' },
-          { type: 'string', value: '' },
+          { type: 'string', value: address(this.accounts.rest, chainId) },
           { type: 'string', value: address(this.accounts.slippage, chainId) },
           { type: 'integer', value: 8 },
         ],
