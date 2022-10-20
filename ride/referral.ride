@@ -280,4 +280,3 @@ func verify() = {
   }
   sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
 }
-Footer
