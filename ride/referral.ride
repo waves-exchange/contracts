@@ -95,6 +95,21 @@ func mustManager(i: Invocation) = {
   }
 }
 
+func updateAllReferralPrograms(address: String, programName: String) = {
+  let allReferralPrograms = address.keyAllReferralPrograms().getString().valueOrElse("")
+  let updatedAllReferralPrograms = if allReferralPrograms.contains(programName) then {
+    []
+  } else {
+    let newAllReferralPrograms = if allReferralPrograms == "" then {
+      programName
+    } else {
+      [allReferralPrograms, programName].makeString(separator)
+    }
+    [StringEntry(address.keyAllReferralPrograms(), newAllReferralPrograms)]
+  }
+  updatedAllReferralPrograms
+}
+
 @Callable(i)
 func claimInternal(programName: String, claimerAddress: String, isImplementationContract: Boolean) = {
   strict checkProgramExists = programName.keyProgramName().getBoolean().valueOrElse(
@@ -288,27 +303,17 @@ func createPair(
   let totalReferralCount = programName.keyTotalReferralCount(referrerAddress).getInteger().valueOrElse(0)
   let newTotalReferralCount = totalReferralCount + 1
 
-  let allReferrerPrograms = referrerAddress.keyAllReferralPrograms().getString().valueOrElse("")
-  let newAllReferrerPrograms = if allReferrerPrograms == "" then {
-    programName
-  } else {
-    [allReferrerPrograms, programName].makeString(separator)
-  }
+  let updatedAllReferrerPrograms = updateAllReferralPrograms(referrerAddress, programName)
+  let updatedAllReferralPrograms = updateAllReferralPrograms(referralAddress, programName)
 
-  let allReferralPrograms = referralAddress.keyAllReferralPrograms().getString().valueOrElse("")
-  let newAllReferralPrograms = if allReferralPrograms == "" then {
-    programName
-  } else {
-    [allReferralPrograms, programName].makeString(separator)
-  }
-
-  ([
-    BooleanEntry(programName.keyExistsReferrerToReferral(referrerAddress, referralAddress), true),
-    IntegerEntry(programName.keyTotalReferralCount(referrerAddress), newTotalReferralCount),
-    StringEntry(programName.keyReferrer(referralAddress), referrerAddress),
-    StringEntry(referrerAddress.keyAllReferralPrograms(), newAllReferrerPrograms),
-    StringEntry(referralAddress.keyAllReferralPrograms(), newAllReferralPrograms)
-  ], unit)
+  (
+    [
+      BooleanEntry(programName.keyExistsReferrerToReferral(referrerAddress, referralAddress), true),
+      IntegerEntry(programName.keyTotalReferralCount(referrerAddress), newTotalReferralCount),
+      StringEntry(programName.keyReferrer(referralAddress), referrerAddress)
+    ] ++ updatedAllReferrerPrograms ++ updatedAllReferralPrograms,
+    unit
+  )
 }
 
 @Callable(i)

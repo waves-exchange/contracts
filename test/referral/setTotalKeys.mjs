@@ -67,7 +67,7 @@ describe('referral: setTotalKeys.mjs', /** @this {MochaSuiteModified} */() => {
       }, this.accounts.manager);
       await api.transactions.broadcast(createPairTx, {});
       await ni.waitForTx(createPairTx.id, { apiBase });
-      console.log(123);
+
       const incUnclaimedTx = invokeScript({
         dApp: referral,
         payment: [],
