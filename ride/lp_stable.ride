@@ -991,6 +991,7 @@ func getOneTknV2READONLY(
   let dy = xp[index] - newY
   let totalGetRaw = { dy - big1 }.toInt()
   let (totalGet, feeAmount) = totalGetRaw.takeFee()
+  strict checkTotalGet = totalGet > 0 || "nothing to get".throw()
 
   (nil, (totalGet, feeAmount))
 }
