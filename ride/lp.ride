@@ -591,7 +591,7 @@ func calcPutOneToken(
   let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
   strict chechSupply = supplyBigInt > big0 || "initial deposit requires all coins".throw()
   let depositBigInt = paymentAmount.toBigInt()
-  let issueAmount = { supplyBigInt * (sqrt(scale8BigInt + (depositBigInt * scale8BigInt) / paymentBalanceBigInt, 8, 8, DOWN) - scale8BigInt) / scale8BigInt }.toInt()
+  let issueAmount = { supplyBigInt * (sqrt(scale18 + (depositBigInt * scale18) / paymentBalanceBigInt, 8, 18, DOWN) - scale18) / scale18 }.toInt()
 
   let commonState = if (isEval) then [] else [
     IntegerEntry(pl(), curPrice),
@@ -654,7 +654,7 @@ func calcGetOneToken(
   let outBalanceBigInt = outBalance.toBigInt()
   let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
   let redeemedBigInt = paymentAmount.toBigInt()
-  let amountRaw = { balanceBigInt * (scale8BigInt - pow(scale8BigInt - redeemedBigInt * scale8BigInt / supplyBigInt, 8, big2, 0, 8, DOWN)) / scale8BigInt }.toInt()
+  let amountRaw = { balanceBigInt * (scale18 - pow(scale18 - redeemedBigInt * scale18 / supplyBigInt, 18, big2, 0, 18, DOWN)) / scale18 }.toInt()
   let (totalAmount, feeAmount) = amountRaw.takeFee()
 
   let (outAmAmount, outPrAmount, amBalanceNew, prBalanceNew) = if (outInAmountAsset) then {
