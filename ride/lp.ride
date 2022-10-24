@@ -608,8 +608,12 @@ func calcPutOneToken(
   let poolProportion = priceBalanceOld.fraction(scale8, amountBalanceOld)
   let amountAssetPart = fraction(paymentAmountRaw, scale8, poolProportion + scale8)
   let priceAssetPart = paymentAmountRaw - amountAssetPart
-  let lpAmtBoth = fraction(supplyBigInt, priceAssetPart.toBigInt(), priceBalanceOld.toBigInt())
-  let bonus = fraction(issueAmount.toBigInt() - lpAmtBoth, scale8BigInt, lpAmtBoth).toInt()
+  let lpAmtBoth = fraction(supplyBigInt, priceAssetPart.toBigInt(), priceBalanceOld.toBigInt()).toInt()
+  let bonus = if (lpAmtBoth == 0) then {
+    if (issueAmount == 0) then 0 else "bonus calculation error".throw()
+  } else {
+    fraction(issueAmount - lpAmtBoth, scale8, lpAmtBoth)
+  }
 
   (issueAmount, commonState, feeAmount, bonus)
 }
@@ -687,7 +691,11 @@ func calcGetOneToken(
     this
   )
   let sumOfGetAssets = r._1 + r._2
-  let bonus = fraction((totalAmount - sumOfGetAssets), scale8, sumOfGetAssets)
+  let bonus = if (sumOfGetAssets == 0) then {
+    if (totalAmount == 0) then 0 else "bonus calculation error".throw()
+  } else {
+    fraction((totalAmount - sumOfGetAssets), scale8, sumOfGetAssets)
+  }
 
   (totalAmount, commonState, feeAmount, bonus)
 }
