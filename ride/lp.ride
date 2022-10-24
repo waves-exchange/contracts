@@ -589,7 +589,7 @@ func calcPutOneToken(
   let paymentBalance = if (paymentInAmountAsset) then amountBalanceOld else priceBalanceOld
   let paymentBalanceBigInt = paymentBalance.toBigInt()
   let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
-  strict chechSupply = supplyBigInt > big0 || "initial deposit requires all coins".throw()
+  strict chechSupply = supplyBigInt > big0 || "initial deposit requires all coins".throwErr()
   let depositBigInt = paymentAmount.toBigInt()
   let issueAmount = [
     0,
@@ -610,7 +610,7 @@ func calcPutOneToken(
   let priceAssetPart = paymentAmountRaw - amountAssetPart
   let lpAmtBoth = fraction(supplyBigInt, priceAssetPart.toBigInt(), priceBalanceOld.toBigInt()).toInt()
   let bonus = if (lpAmtBoth == 0) then {
-    if (issueAmount == 0) then 0 else "bonus calculation error".throw()
+    if (issueAmount == 0) then 0 else "bonus calculation error".throwErr()
   } else {
     fraction(issueAmount - lpAmtBoth, scale8, lpAmtBoth)
   }
@@ -639,7 +639,7 @@ func calcGetOneToken(
   ) = getPoolConfig().parsePoolConfig()
 
   strict checks = [
-    paymentAssetId == lpAssetId || "invalid lp asset".throw()
+    paymentAssetId == lpAssetId || "invalid lp asset".throwErr()
   ]
 
   let outInAmountAsset = if (outAssetId == amountAssetId) then {
@@ -692,7 +692,7 @@ func calcGetOneToken(
   )
   let sumOfGetAssets = r._1 + r._2
   let bonus = if (sumOfGetAssets == 0) then {
-    if (totalAmount == 0) then 0 else "bonus calculation error".throw()
+    if (totalAmount == 0) then 0 else "bonus calculation error".throwErr()
   } else {
     fraction((totalAmount - sumOfGetAssets), scale8, sumOfGetAssets)
   }
@@ -813,7 +813,7 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
 
   let (emitAmountEstimated, commonState, feeAmount, bonus) = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
   let emitAmount = if (minOutAmount > 0 && emitAmountEstimated < minOutAmount) then {
-    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else emitAmountEstimated
 
   strict emitInv = emitAmount.emit()
@@ -858,7 +858,7 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
   let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, paymentAmount, paymentAssetId, userAddress, txId)
 
   let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
-    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else amountEstimated
 
   strict burnInv = factoryContract.invoke("burn", [paymentAmount], [AttachedPayment(paymentAssetId, paymentAmount)])
@@ -892,7 +892,7 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
   let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, unstakeAmount, cfgLpAssetId, unit, unit)
 
   let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
-    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else amountEstimated
 
   strict burnInv = factoryContract.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
