@@ -1021,7 +1021,11 @@ func getOneTknV2WithBonusREADONLY(
   let outPrAmt = r._2
   let sumOfGetAssets = outAmAmt + outPrAmt
   
-  let bonus = fraction((totalGet - sumOfGetAssets), scale8, sumOfGetAssets)
+  let bonus = if (sumOfGetAssets == 0) then {
+    "bonus calculation error".throw()
+  } else {
+    fraction((totalGet - sumOfGetAssets), scale8, sumOfGetAssets)
+  }
 
   ([], (totalGet, feeAmount, bonus))
 }
