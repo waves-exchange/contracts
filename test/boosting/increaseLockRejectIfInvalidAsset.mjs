@@ -96,7 +96,7 @@ describe('boosting: increaseLockRejectIfInvalidAsset.mjs', /** @this {MochaSuite
       await expect(
         api.transactions.broadcast(increaseLockTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing account-script: ${expectedRejectMessage}`,
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

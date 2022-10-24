@@ -57,7 +57,7 @@ describe('lp: putRejectIfPoolPutDisabled.mjs', /** @this {MochaSuiteModified} */
     await expect(
       api.transactions.broadcast(put, {}),
     ).to.be.rejectedWith(
-      new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+      new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
     );
   });
 });

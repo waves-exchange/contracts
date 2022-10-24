@@ -68,7 +68,7 @@ describe('boosting: unlockRejectIfNothingToUnlock.mjs', /** @this {MochaSuiteMod
       await expect(
         api.transactions.broadcast(unlockTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing account-script: ${expectedRejectMessage}`,
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

@@ -51,7 +51,7 @@ describe('otc_multiasset: swapAssetsAToBRejectIfDepositBlocked.mjs', /** @this {
     await expect(
       api.transactions.broadcast(swapAssetsAToBTx, {}),
     ).to.be.rejectedWith(
-      new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+      new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
     );
   });
 });

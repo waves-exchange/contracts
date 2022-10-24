@@ -68,7 +68,7 @@ describe('referral: createPairRejectIfReferToSelf.mjs', /** @this {MochaSuiteMod
       await expect(
         api.transactions.broadcast(createPairTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing account-script: ${expectedRejectMessage}`,
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );
