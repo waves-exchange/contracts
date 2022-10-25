@@ -251,19 +251,13 @@ func incUnclaimedWithPaymentInternal(
     ], []
   )
 
-  let allReferrerPrograms = referrerAddress.keyAllReferralPrograms().getString().valueOrElse("")
-  let newAllReferrerPrograms = if allReferrerPrograms == "" then {
-    programName
-  } else {
-    [allReferrerPrograms, programName].makeString(separator)
-  }
+  let updatedAllReferrerPrograms = updateAllReferralPrograms(referrerAddress, programName)
 
   ([
     IntegerEntry(referrerAddress.keyUnclaimedTotalAddress(), newUnclaimedTotalAddress),
     IntegerEntry(programName.keyUnclaimedReferrer(referrerAddress), newReferrerUnclaimed),
-    IntegerEntry(programName.keyRewardsTotal(), rewardsTotal + paymentAmounts[currentIter]),
-    StringEntry(referrerAddress.keyAllReferralPrograms(), newAllReferrerPrograms)
-  ], inv)
+    IntegerEntry(programName.keyRewardsTotal(), rewardsTotal + paymentAmounts[currentIter])
+  ] ++ updatedAllReferrerPrograms, inv)
 }
 
 @Callable(i)
