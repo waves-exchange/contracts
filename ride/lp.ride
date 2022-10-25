@@ -83,7 +83,8 @@ func fromX18(val: BigInt, resultScaleMult: Int)       = fraction(val, resultScal
 # cast passed amount to specified 'resScale' scale value from 'curScale' scale value
 func toScale(amt: Int, resScale: Int, curScale: Int)  = fraction(amt, resScale, curScale)
 
-func abs(val: BigInt) = if (val < zeroBigInt) then -val else val
+func abs(val: Int) = if (val < 0) then -val else val
+func absBigInt(val: BigInt) = if (val < zeroBigInt) then -val else val
 
 #-------------------------
 # KEYS ON CURRENT CONTRACT
@@ -364,7 +365,7 @@ func estimatePutOperation(txId58: String, slippageTolerance: Int, inAmAssetAmt: 
         )
     } else {
         let curPriceX18 = calcPriceBigInt(prBalanceX18, amBalanceX18)
-        let slippageX18 = fraction(abs(curPriceX18 - userPriceX18), scale18, curPriceX18)
+        let slippageX18 = fraction(absBigInt(curPriceX18 - userPriceX18), scale18, curPriceX18)
         let slippageToleranceX18 = slippageTolerance.toX18(scale8)
         # validate slippage
         if (curPriceX18 != zeroBigInt && slippageX18 > slippageToleranceX18) then throw("Price slippage " + slippageX18.toString() + " exceeded the passed limit of " + slippageToleranceX18.toString()) else
@@ -581,10 +582,8 @@ func calcPutOneToken(
   let amountBalanceNew = amountBalanceOld + amountAssetAmount
   let priceBalanceNew = priceBalanceOld + priceAssetAmount
 
-  let curPrice = calcPriceBigInt(
-    priceBalanceNew.toX18(priceAssetDecimals),
-    amountBalanceNew.toX18(amountAssetDecimals)
-  ).fromX18(scale8)
+  let priceNewX18 = calcPriceBigInt(priceBalanceNew.toX18(priceAssetDecimals), amountBalanceNew.toX18(amountAssetDecimals))
+  let priceNew = priceNewX18.fromX18(scale8)
 
   let paymentBalance = if (paymentInAmountAsset) then amountBalanceOld else priceBalanceOld
   let paymentBalanceBigInt = paymentBalance.toBigInt()
@@ -597,25 +596,20 @@ func calcPutOneToken(
   ].max()
 
   let commonState = if (isEval) then [] else [
-    IntegerEntry(pl(), curPrice),
-    IntegerEntry(ph(height, lastBlock.timestamp), curPrice),
+    IntegerEntry(pl(), priceNew),
+    IntegerEntry(ph(height, lastBlock.timestamp), priceNew),
     StringEntry(
       pau(userAddress.value().toString(), txId.value().toBase58String()),
-      dataPutActionInfo(amountAssetAmountRaw, priceAssetAmountRaw, issueAmount, curPrice, 0, 0, height, lastBlock.timestamp, 0, 0)
+      dataPutActionInfo(amountAssetAmountRaw, priceAssetAmountRaw, issueAmount, priceNew, 0, 0, height, lastBlock.timestamp, 0, 0)
     )
   ]
 
-  let poolProportion = priceBalanceOld.fraction(scale8, amountBalanceOld)
-  let amountAssetPart = fraction(paymentAmountRaw, scale8, poolProportion + scale8)
-  let priceAssetPart = paymentAmountRaw - amountAssetPart
-  let lpAmtBoth = fraction(supplyBigInt, priceAssetPart.toBigInt(), priceBalanceOld.toBigInt()).toInt()
-  let bonus = if (lpAmtBoth == 0) then {
-    if (issueAmount == 0) then 0 else "bonus calculation error".throwErr()
-  } else {
-    fraction(issueAmount - lpAmtBoth, scale8, lpAmtBoth)
-  }
+  let priceOldX18 = calcPriceBigInt(priceBalanceOld.toX18(priceAssetDecimals), amountBalanceOld.toX18(amountAssetDecimals))
+  let priceOld = priceOldX18.fromX18(scale8)
 
-  (issueAmount, commonState, feeAmount, bonus)
+  let priceImpact = { (priceNew - priceOld) * scale8 / priceOld }.abs()
+
+  (issueAmount, commonState, feeAmount, priceImpact)
 }
 
 # amount = balance * (1 - (1 - redeemed / supply)^2)
@@ -673,31 +667,23 @@ func calcGetOneToken(
     (0, totalAmount, amBalanceOld, prBalanceOld - amountRaw)
   }
 
-  let curPrX18 = calcPriceBigInt(prBalanceNew.toX18(prDecimals), amBalanceNew.toX18(amDecimals))
-  let curPrice = curPrX18.fromX18(scale8)
+  let priceNewX18 = calcPriceBigInt(prBalanceNew.toX18(prDecimals), amBalanceNew.toX18(amDecimals))
+  let priceNew = priceNewX18.fromX18(scale8)
 
   let commonState = if (isEval) then [] else [
     StringEntry(
       gau(userAddress.value().toString(), txId.value().toBase58String()),
-      dataGetActionInfo(outAmAmount, outPrAmount, paymentAmount, curPrice, height, lastBlock.timestamp)),
-    IntegerEntry(pl(), curPrice),
-    IntegerEntry(ph(height, lastBlock.timestamp), curPrice)
+      dataGetActionInfo(outAmAmount, outPrAmount, paymentAmount, priceNew, height, lastBlock.timestamp)),
+    IntegerEntry(pl(), priceNew),
+    IntegerEntry(ph(height, lastBlock.timestamp), priceNew)
   ]
 
-  let r = estimateGetOperation(
-    "",
-    lpAssetId.assetIdToString(),
-    paymentAmount,
-    this
-  )
-  let sumOfGetAssets = r._1 + r._2
-  let bonus = if (sumOfGetAssets == 0) then {
-    if (totalAmount == 0) then 0 else "bonus calculation error".throwErr()
-  } else {
-    fraction((totalAmount - sumOfGetAssets), scale8, sumOfGetAssets)
-  }
+  let priceOldX18 = calcPriceBigInt(prBalanceOld.toX18(prDecimals), amBalanceOld.toX18(amDecimals))
+  let priceOld = priceOldX18.fromX18(scale8)
 
-  (totalAmount, commonState, feeAmount, bonus)
+  let priceImpact = { (priceNew - priceOld) * scale8 / priceOld }.abs()
+
+  (totalAmount, commonState, feeAmount, priceImpact)
 }
 
 func managerPublicKeyOrUnit() = match mpk().getString() {
