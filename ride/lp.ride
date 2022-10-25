@@ -593,7 +593,7 @@ func calcPutOneToken(
   let depositBigInt = paymentAmount.toBigInt()
   let issueAmount = [
     0,
-    { supplyBigInt * (sqrt(scale18 + (depositBigInt * scale18) / paymentBalanceBigInt, 8, 18, DOWN) - scale18) / scale18 }.toInt()
+    { supplyBigInt * (sqrt(scale18 + (depositBigInt * scale18) / paymentBalanceBigInt, 18, 18, DOWN) - scale18) / scale18 }.toInt()
   ].max()
 
   let commonState = if (isEval) then [] else [
