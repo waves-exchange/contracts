@@ -49,7 +49,7 @@ describe('boosting: confirmManagerRejectIfYouAreNotPendingManager.mjs', /** @thi
       await expect(
         api.transactions.broadcast(confirmManagerTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing account-script: ${expectedRejectMessage}`,
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

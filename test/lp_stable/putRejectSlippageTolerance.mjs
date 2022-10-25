@@ -35,7 +35,7 @@ describe('lpStable: putRejectSlippageTolerance.mjs', /** @this {MochaSuiteModifi
     }, this.accounts.user1);
     // await api.transactions.broadcast(put, {});
     await expect(api.transactions.broadcast(put, {})).to.be.rejectedWith(
-      /^Error while executing account-script: Wrong slippage$/,
+      /^Error while executing dApp: Wrong slippage$/,
     );
   });
 });

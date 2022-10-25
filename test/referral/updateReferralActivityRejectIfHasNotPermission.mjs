@@ -58,7 +58,7 @@ describe('referral: updateReferralActivityRejectIfHasNotPermission.mjs', /** @th
       }, notImplementationAccount);
 
       await expect(api.transactions.broadcast(updateReferralActivityTx, {})).to.be.rejectedWith(
-        `Error while executing account-script: ${expectedRejectMessage}`,
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

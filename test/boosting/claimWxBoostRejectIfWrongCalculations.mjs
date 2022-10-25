@@ -110,7 +110,7 @@ describe('boosting: claimWxBoostRejectIfWrongCalculations.mjs', /** @this {Mocha
       await expect(
         api.transactions.broadcast(claimWxBoostTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing account-script: ${expectedRejectMessage}`,
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

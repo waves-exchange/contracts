@@ -59,7 +59,7 @@ describe('boosting: lockRefRejectIfLockedWXs.mjs', /** @this {MochaSuiteModified
       await expect(
         api.transactions.broadcast(lockRefTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing account-script: ${expectedRejectMessage}`,
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );
