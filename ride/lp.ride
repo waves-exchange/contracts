@@ -540,22 +540,12 @@ func calcPutOneToken(
 ) = {
   let isEval = txId == unit
 
-  let (
-    poolAddress,
-    poolStatus,
-    lpAssetId,
-    amountAssetId,
-    priceAssetId,
-    amountAssetDecimals,
-    priceAssetDecimals
-  ) = getPoolConfig().parsePoolConfig()
+  let amountBalanceRaw = cfgAmountAssetId.assetIdToString().getAccBalance()
+  let priceBalanceRaw = cfgPriceAssetId.assetIdToString().getAccBalance()
 
-  let amountBalanceRaw = amountAssetId.assetIdToString().getAccBalance()
-  let priceBalanceRaw = priceAssetId.assetIdToString().getAccBalance()
-
-  let paymentInAmountAsset = if (paymentAssetId == amountAssetId) then {
+  let paymentInAmountAsset = if (paymentAssetId == cfgAmountAssetId) then {
     true
-  } else if (paymentAssetId == priceAssetId) then {
+  } else if (paymentAssetId == cfgPriceAssetId) then {
     false
   } else "invalid asset".throwErr()
 
@@ -582,12 +572,12 @@ func calcPutOneToken(
   let amountBalanceNew = amountBalanceOld + amountAssetAmount
   let priceBalanceNew = priceBalanceOld + priceAssetAmount
 
-  let priceNewX18 = calcPriceBigInt(priceBalanceNew.toX18(priceAssetDecimals), amountBalanceNew.toX18(amountAssetDecimals))
+  let priceNewX18 = calcPriceBigInt(priceBalanceNew.toX18(cfgPriceAssetDecimals), amountBalanceNew.toX18(cfgAmountAssetDecimals))
   let priceNew = priceNewX18.fromX18(scale8)
 
   let paymentBalance = if (paymentInAmountAsset) then amountBalanceOld else priceBalanceOld
   let paymentBalanceBigInt = paymentBalance.toBigInt()
-  let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
+  let supplyBigInt = cfgLpAssetId.assetInfo().valueOrErrorMessage("asset " + cfgLpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
   strict chechSupply = supplyBigInt > big0 || "initial deposit requires all coins".throwErr()
   let depositBigInt = paymentAmount.toBigInt()
   let issueAmount = [
@@ -604,7 +594,7 @@ func calcPutOneToken(
     )
   ]
 
-  let priceOldX18 = calcPriceBigInt(priceBalanceOld.toX18(priceAssetDecimals), amountBalanceOld.toX18(amountAssetDecimals))
+  let priceOldX18 = calcPriceBigInt(priceBalanceOld.toX18(cfgPriceAssetDecimals), amountBalanceOld.toX18(cfgAmountAssetDecimals))
   let priceOld = priceOldX18.fromX18(scale8)
 
   let priceImpact = { (priceNew - priceOld) * scale8 / priceOld }.abs()
@@ -622,38 +612,28 @@ func calcGetOneToken(
 ) = {
   let isEval = txId == unit
 
-  let (
-    poolAddress,
-    poolStatus,
-    lpAssetId,
-    amountAssetId,
-    priceAssetId,
-    amDecimals,
-    prDecimals
-  ) = getPoolConfig().parsePoolConfig()
-
   strict checks = [
-    paymentAssetId == lpAssetId || "invalid lp asset".throwErr()
+    paymentAssetId == cfgLpAssetId || "invalid lp asset".throwErr()
   ]
 
-  let outInAmountAsset = if (outAssetId == amountAssetId) then {
+  let outInAmountAsset = if (outAssetId == cfgAmountAssetId) then {
     true
-  } else if (outAssetId == priceAssetId) then {
+  } else if (outAssetId == cfgPriceAssetId) then {
     false
   } else "invalid asset".throwErr()
 
   let balanceBigInt = if (outInAmountAsset) then {
-    amountAssetId.assetIdToString().getAccBalance().toBigInt()
+    cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
   } else {
-    priceAssetId.assetIdToString().getAccBalance().toBigInt()
+    cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
   }
 
-  let amBalanceOld = amountAssetId.assetIdToString().getAccBalance()
-  let prBalanceOld = priceAssetId.assetIdToString().getAccBalance()
+  let amBalanceOld = cfgAmountAssetId.assetIdToString().getAccBalance()
+  let prBalanceOld = cfgPriceAssetId.assetIdToString().getAccBalance()
 
   let outBalance = if (outInAmountAsset) then amBalanceOld else prBalanceOld
   let outBalanceBigInt = outBalance.toBigInt()
-  let supplyBigInt = lpAssetId.assetInfo().valueOrErrorMessage("asset " + lpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
+  let supplyBigInt = cfgLpAssetId.assetInfo().valueOrErrorMessage("asset " + cfgLpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
   let redeemedBigInt = paymentAmount.toBigInt()
   let amountRaw = [
     0,
@@ -667,7 +647,7 @@ func calcGetOneToken(
     (0, totalAmount, amBalanceOld, prBalanceOld - amountRaw)
   }
 
-  let priceNewX18 = calcPriceBigInt(prBalanceNew.toX18(prDecimals), amBalanceNew.toX18(amDecimals))
+  let priceNewX18 = calcPriceBigInt(prBalanceNew.toX18(cfgPriceAssetDecimals), amBalanceNew.toX18(cfgAmountAssetDecimals))
   let priceNew = priceNewX18.fromX18(scale8)
 
   let commonState = if (isEval) then [] else [
@@ -678,7 +658,7 @@ func calcGetOneToken(
     IntegerEntry(ph(height, lastBlock.timestamp), priceNew)
   ]
 
-  let priceOldX18 = calcPriceBigInt(prBalanceOld.toX18(prDecimals), amBalanceOld.toX18(amDecimals))
+  let priceOldX18 = calcPriceBigInt(prBalanceOld.toX18(cfgPriceAssetDecimals), amBalanceOld.toX18(cfgAmountAssetDecimals))
   let priceOld = priceOldX18.fromX18(scale8)
 
   let priceImpact = { (priceNew - priceOld) * scale8 / priceOld }.abs()
@@ -782,7 +762,8 @@ func putForFree(maxSlippage: Int) = {
 
 @Callable(i)
 func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
-  let isPutDisabled = isGlobalShutdown() || cfgPoolStatus == PoolPutDisabled || cfgPoolStatus == PoolShutdown
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPutDisabled = isGlobalShutdown() || cfgPoolStatus == PoolPutDisabled || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
     !isPutDisabled || "put operation is blocked by admin".throwErr(),
@@ -825,7 +806,8 @@ func putOneTknREADONLY(paymentAssetId: String, paymentAmountRaw: Int) = {
 
 @Callable(i)
 func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
-  let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
     !isGetDisabled || "get operation is blocked by admin".throwErr(),
@@ -865,7 +847,8 @@ func getOneTknREADONLY(outAssetId: String, paymentAmount: Int) = {
 
 @Callable(i)
 func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount: Int) = {
-  let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
     !isGetDisabled || "get operation is blocked by admin".throwErr(),
