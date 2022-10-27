@@ -88,7 +88,7 @@ describe('referral: createPairRejectIfPairAlreadyExists.mjs', /** @this {MochaSu
       await expect(
         api.transactions.broadcast(repeatedCreatePairTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
       );
     },
   );

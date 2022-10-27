@@ -36,6 +36,6 @@ describe('vesting_multiasset: increaseDepositForNoDeposit.mjs', /** @this {Mocha
       chainId,
     }, this.accounts.user3);
     await expect(api.transactions.broadcast(increaseDepositFor, {})).to.be
-      .rejectedWith('Error while executing account-script: value() called on unit value on function \'getString\' call');
+      .rejectedWith('Error while executing dApp: value() called on unit value on function \'getString\' call');
   });
 });

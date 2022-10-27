@@ -42,7 +42,7 @@ describe('referral: createReferralProgramRejectIfInvalidRewardAssetId.mjs', /** 
       await expect(
         api.transactions.broadcast(createReferralProgramTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
       );
     },
   );

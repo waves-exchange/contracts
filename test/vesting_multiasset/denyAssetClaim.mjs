@@ -78,6 +78,6 @@ describe('vesting_multiasset: denyAssetClaim.mjs', /** @this {MochaSuiteModified
       chainId,
     }, this.accounts.user1);
     await expect(api.transactions.broadcast(claim2, {})).to.be
-      .rejectedWith('Error while executing account-script: vesting_multiasset.ride: asset claim denied');
+      .rejectedWith('Error while executing dApp: vesting_multiasset.ride: asset claim denied');
   });
 });

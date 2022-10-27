@@ -58,7 +58,7 @@ describe('referral: createReferralProgramRejectIfAlreadyExists.mjs', /** @this {
       await expect(
         api.transactions.broadcast(repeatedCreateReferralProgramTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
       );
     },
   );

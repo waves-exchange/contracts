@@ -57,7 +57,7 @@ describe('otc_multiasset: initializationSwapAssetsBToARejectIfWithdrawLessThanMi
     await expect(
       api.transactions.broadcast(initializationSwapAssetsBToATx, {}),
     ).to.be.rejectedWith(
-      new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+      new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
     );
   });
 });

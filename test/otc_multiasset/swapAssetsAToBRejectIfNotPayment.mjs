@@ -31,7 +31,7 @@ describe('otc_multiasset: swapAssetsAToBRejectIfNotPayment.mjs', /** @this {Moch
     await expect(
       api.transactions.broadcast(swapAssetsAToBTx, {}),
     ).to.be.rejectedWith(
-      new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+      new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
     );
   });
 });
