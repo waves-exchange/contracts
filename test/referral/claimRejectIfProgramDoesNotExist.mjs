@@ -34,11 +34,10 @@ describe('referral: claimRejectIfProgramDoesNotExist.mjs', /** @this {MochaSuite
         chainId,
       }, this.accounts.referrerAccount);
 
-      const exp = new RegExp(`/*${expectedRejectMessage}/*`);
       await expect(
         api.transactions.broadcast(claimTx, {}),
       ).to.be.rejectedWith(
-        exp,
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

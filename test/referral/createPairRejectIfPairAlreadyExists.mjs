@@ -16,7 +16,7 @@ describe('referral: createPairRejectIfPairAlreadyExists.mjs', /** @this {MochaSu
   it(
     'should reject createPair',
     async function () {
-      const programName = 'wxlock';
+      const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
@@ -88,7 +88,7 @@ describe('referral: createPairRejectIfPairAlreadyExists.mjs', /** @this {MochaSu
       await expect(
         api.transactions.broadcast(repeatedCreatePairTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

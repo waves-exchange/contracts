@@ -16,7 +16,7 @@ describe('referral: claimRejectIfNothingToClaim.mjs', /** @this {MochaSuiteModif
   it(
     'should reject claim',
     async function () {
-      const programName = 'wxlock';
+      const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
 
@@ -53,11 +53,10 @@ describe('referral: claimRejectIfNothingToClaim.mjs', /** @this {MochaSuiteModif
         chainId,
       }, this.accounts.referrerAccount);
 
-      const exp = new RegExp(`/*${expectedRejectMessage}/*`);
       await expect(
         api.transactions.broadcast(claimTx, {}),
       ).to.be.rejectedWith(
-        exp,
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

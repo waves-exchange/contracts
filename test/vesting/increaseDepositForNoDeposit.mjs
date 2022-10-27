@@ -36,6 +36,6 @@ describe('vesting: increaseDepositForNoDeposit.mjs', /** @this {MochaSuiteModifi
       chainId,
     }, this.accounts.manager);
     await expect(api.transactions.broadcast(increaseDepositFor, {})).to.be
-      .rejectedWith('Error while executing account-script: value() called on unit value on function \'getString\' call');
+      .rejectedWith('Error while executing dApp: value() called on unit value on function \'getString\' call');
   });
 });

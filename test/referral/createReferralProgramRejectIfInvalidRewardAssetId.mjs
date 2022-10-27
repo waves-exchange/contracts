@@ -16,7 +16,7 @@ describe('referral: createReferralProgramRejectIfInvalidRewardAssetId.mjs', /** 
   it(
     'should reject createReferralProgram',
     async function () {
-      const programName = 'wxlock';
+      const programName = 'ReferralProgram';
       const invalidWxAssetId = this.wxAssetId.slice(0, this.wxAssetId.length - 1);
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
@@ -42,7 +42,7 @@ describe('referral: createReferralProgramRejectIfInvalidRewardAssetId.mjs', /** 
       await expect(
         api.transactions.broadcast(createReferralProgramTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

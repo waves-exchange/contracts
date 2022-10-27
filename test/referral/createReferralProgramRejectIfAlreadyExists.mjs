@@ -16,7 +16,7 @@ describe('referral: createReferralProgramRejectIfAlreadyExists.mjs', /** @this {
   it(
     'should reject createReferralProgram',
     async function () {
-      const programName = 'wxlock';
+      const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referral = address(this.accounts.referral, chainId);
@@ -58,7 +58,7 @@ describe('referral: createReferralProgramRejectIfAlreadyExists.mjs', /** @this {
       await expect(
         api.transactions.broadcast(repeatedCreateReferralProgramTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

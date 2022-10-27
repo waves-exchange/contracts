@@ -16,7 +16,7 @@ describe('referral: createPairRejectIfReferToSelf.mjs', /** @this {MochaSuiteMod
   it(
     'should reject createPair',
     async function () {
-      const programName = 'wxlock';
+      const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
@@ -68,7 +68,7 @@ describe('referral: createPairRejectIfReferToSelf.mjs', /** @this {MochaSuiteMod
       await expect(
         api.transactions.broadcast(createPairTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

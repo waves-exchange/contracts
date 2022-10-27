@@ -88,7 +88,7 @@ describe('otc_multiasset: withdrawAssetRejectIfAssetLockHeightLessHeight.mjs', /
     await expect(
       api.transactions.broadcast(withdrawAssetTx, {}),
     ).to.be.rejectedWith(
-      new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+      new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
     );
   });
 });

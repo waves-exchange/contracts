@@ -52,6 +52,6 @@ describe('vesting_multiasset: revokeOnlyAdmin.mjs', /** @this {MochaSuiteModifie
       chainId,
     }, this.accounts.user2);
     await expect(api.transactions.broadcast(revoke, {})).to.be
-      .rejectedWith('Error while executing account-script: vesting_multiasset.ride: permission denied');
+      .rejectedWith('Error while executing dApp: vesting_multiasset.ride: permission denied');
   });
 });

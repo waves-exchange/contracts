@@ -16,7 +16,7 @@ describe('referral: createPairRejectIfProgramDoesNotExist.mjs', /** @this {Mocha
   it(
     'should reject createPair',
     async function () {
-      const DoesNotExitProgramName = 'wxlock';
+      const DoesNotExitProgramName = 'ReferralProgram';
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
 
@@ -44,7 +44,7 @@ describe('referral: createPairRejectIfProgramDoesNotExist.mjs', /** @this {Mocha
       await expect(
         api.transactions.broadcast(createPairTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

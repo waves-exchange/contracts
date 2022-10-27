@@ -16,7 +16,7 @@ describe('referral: updateReferralActivityRejectIfHasNotPermission.mjs', /** @th
   it(
     'should reject updateReferralActivity',
     async function () {
-      const programName = 'wxlock';
+      const programName = 'ReferralProgram';
       const isActive = false;
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
@@ -58,7 +58,7 @@ describe('referral: updateReferralActivityRejectIfHasNotPermission.mjs', /** @th
       }, notImplementationAccount);
 
       await expect(api.transactions.broadcast(updateReferralActivityTx, {})).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

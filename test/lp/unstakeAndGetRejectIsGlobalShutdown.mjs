@@ -70,7 +70,7 @@ describe('lp: unstakeAndGetRejectIsGlobalShutdown.mjs', /** @this {MochaSuiteMod
       await expect(
         api.transactions.broadcast(unstakeAndGet, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
       );
     },
   );

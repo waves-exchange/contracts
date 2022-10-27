@@ -16,7 +16,7 @@ describe('referral: incUnclaimedRejectIfHasNotPermission.mjs', /** @this {MochaS
   it(
     'should reject incUnclaimed',
     async function () {
-      const programName = 'wxlock';
+      const programName = 'ReferralProgram';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const notImplementationAccount = this.accounts.treasury;
@@ -60,7 +60,7 @@ describe('referral: incUnclaimedRejectIfHasNotPermission.mjs', /** @this {MochaS
       }, notImplementationAccount);
 
       await expect(api.transactions.broadcast(incUnclaimedTx, {})).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        `Error while executing dApp: ${expectedRejectMessage}`,
       );
     },
   );

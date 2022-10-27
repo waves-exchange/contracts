@@ -112,6 +112,9 @@ func keyOperationHistoryRecord(type: String, userAddress: String, txId58: String
         txId58],
     SEP)
 }
+func keyUSDNClaimDisabled() = "%s__usdnClaimDisabled"
+func keyUSDNClaimEndHeight() = "%s__usdnClaimEndHeight"
+
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
 
@@ -208,6 +211,17 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
 
   let claimingPriceAssetAmount = fraction(investTotalAmount, claimingBlocks, claimDuration)
   let claimingIdoAssetAmount = convertPriceAssetIntoIdoAsset(claimingPriceAssetAmount, priceAssetMult, price, priceMult, idoAssetMult)
+
+  let isUSDN = claimedAssetId58 == priceAssetId58
+  let isUSDNClaimDisabled = keyUSDNClaimDisabled().getBoolean().valueOrElse(false)
+  let isUSDNClaimEnded = match keyUSDNClaimEndHeight().getInteger() {
+	case end: Int => height > end
+	case _: Unit => false
+  }
+  strict checks = [
+    !(isUSDN && isUSDNClaimDisabled) || "USDN claim is disabled".throw(),
+    !(isUSDN && isUSDNClaimEnded) || "USDN claim is ended".throw()
+  ]
 
   if (claimedAssetId58 == priceAssetId58) then {
     ([0, -claimingPriceAssetAmount, claimingPriceAssetAmount, 0],
