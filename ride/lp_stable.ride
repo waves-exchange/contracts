@@ -1121,6 +1121,32 @@ func unstakeAndGet(amount: Int) = {
 }
 
 @Callable(i)
+func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessThenPriceAsset: Int) = {
+  let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown
+
+  strict checks = [
+    !isGetDisabled || "get operation is blocked by admin".throw(),
+    i.payments.size() == 0 || "no payments are expected".throw()
+  ]
+
+  strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
+
+  let res = ego(i.transactionId.toBase58String(), cfgLpAssetId.toBase58String(), unstakeAmount, i.caller)
+  let outAmAmt = res._1
+  let outPrAmt = res._2
+  let state = res._10
+
+  strict checkAmounts = [
+    outAmAmt >= noLessThenAmountAsset || ["amount asset amount to receive is less than ", noLessThenAmountAsset.toString()].makeString("").throw(),
+    outPrAmt >= noLessThenPriceAsset || ["price asset amount to receive is less than ", noLessThenPriceAsset.toString()].makeString("").throw()
+  ]
+
+  strict burnLPAssetOnFactory = fca.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
+
+  state
+}
+
+@Callable(i)
 func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
   let isPoolOneTokenOperationsDisabled = fca.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
   let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
