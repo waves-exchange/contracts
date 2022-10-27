@@ -1,7 +1,7 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
-import { invokeScript, libs, nodeInteraction as ni } from '@waves/waves-transactions';
+import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { checkStateChanges } from '../utils.mjs';
 
@@ -32,11 +32,6 @@ describe('referral: incUnclaimedWithPaymentIfMultiplePayments.mjs', /** @this {M
 
       const expectedInvokesCount = 1;
 
-      const bytes = libs.crypto.stringToBytes(
-        `${programName}:${referrerAddress}:${referralAddress}`,
-      );
-      const signature = libs.crypto.signBytes(this.accounts.backend, bytes);
-
       const referral = address(this.accounts.referral, chainId);
 
       const createReferralProgramTx = invokeScript({
@@ -55,26 +50,6 @@ describe('referral: incUnclaimedWithPaymentIfMultiplePayments.mjs', /** @this {M
       }, this.accounts.manager);
       await api.transactions.broadcast(createReferralProgramTx, {});
       await ni.waitForTx(createReferralProgramTx.id, { apiBase });
-
-      const createPairTx = invokeScript({
-        dApp: referral,
-        payment: [],
-        call: {
-          function: 'createPair',
-          args: [
-            { type: 'string', value: programName },
-            { type: 'string', value: referrerAddress },
-            { type: 'string', value: referralAddress },
-            {
-              type: 'binary',
-              value: `base64:${libs.crypto.base64Encode(libs.crypto.base58Decode(signature))}`,
-            },
-          ],
-        },
-        chainId,
-      }, this.accounts.manager);
-      await api.transactions.broadcast(createPairTx, {});
-      await ni.waitForTx(createPairTx.id, { apiBase });
 
       const incUnclaimedWithPaymentTx = invokeScript({
         dApp: referral,
@@ -126,7 +101,18 @@ describe('referral: incUnclaimedWithPaymentIfMultiplePayments.mjs', /** @this {M
       expect(invokes.length).to.eql(expectedInvokesCount);
 
       expect(
-        await checkStateChanges(invokes[0].stateChanges, 3, 0, 0, 0, 0, 0, 0, 0, 1),
+        await checkStateChanges(
+          invokes[0].stateChanges,
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+        ),
       ).to.eql(true);
 
       expect(invokes[0].dApp).to.eql(address(this.accounts.referral, chainId));
@@ -170,6 +156,10 @@ describe('referral: incUnclaimedWithPaymentIfMultiplePayments.mjs', /** @this {M
         key: `%s%s__rewardsTotal__${programName}`,
         type: 'integer',
         value: amountUser1 + amountUser2 + amountUser3,
+      }, {
+        key: `%s%s__allReferralPrograms__${user1}`,
+        type: 'string',
+        value: programName,
       }]);
 
       const nestedInvokes1 = invokes[0].stateChanges.invokes;
@@ -178,7 +168,7 @@ describe('referral: incUnclaimedWithPaymentIfMultiplePayments.mjs', /** @this {M
       expect(
         await checkStateChanges(
           nestedInvokes1[0].stateChanges,
-          3,
+          4,
           0,
           0,
           0,
@@ -231,6 +221,10 @@ describe('referral: incUnclaimedWithPaymentIfMultiplePayments.mjs', /** @this {M
         key: `%s%s__rewardsTotal__${programName}`,
         type: 'integer',
         value: amountUser2 + amountUser3,
+      }, {
+        key: `%s%s__allReferralPrograms__${user2}`,
+        type: 'string',
+        value: programName,
       }]);
 
       const nestedInvokes2 = nestedInvokes1[0].stateChanges.invokes;
@@ -239,7 +233,7 @@ describe('referral: incUnclaimedWithPaymentIfMultiplePayments.mjs', /** @this {M
       expect(
         await checkStateChanges(
           nestedInvokes2[0].stateChanges,
-          3,
+          4,
           0,
           0,
           0,
@@ -292,6 +286,10 @@ describe('referral: incUnclaimedWithPaymentIfMultiplePayments.mjs', /** @this {M
         key: `%s%s__rewardsTotal__${programName}`,
         type: 'integer',
         value: amountUser3,
+      }, {
+        key: `%s%s__allReferralPrograms__${user3}`,
+        type: 'string',
+        value: programName,
       }]);
 
       const nestedInvokes3 = nestedInvokes2[0].stateChanges.invokes;
