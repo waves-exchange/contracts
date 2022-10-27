@@ -28,21 +28,13 @@ describe('referral: claimBulkExtendedTest.mjs', /** @this {MochaSuiteModified} *
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
       const referrerReward = 1e4;
-      const referrerRewardSecond = 1e4 + 500;
+      const referrerRewardWxSpotFee = 1e4 + 500;
       const referralReward = 1e2;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
       );
       const signature = libs.crypto.signBytes(this.accounts.backend, bytes);
-
-      const bytesSecondProgram = libs.crypto.stringToBytes(
-        `${programNameSecond}:${referrerAddress}:${referralAddress}`,
-      );
-      const signatureSecondProgram = libs.crypto.signBytes(
-        this.accounts.backend,
-        bytesSecondProgram,
-      );
 
       const referral = address(this.accounts.referral, chainId);
 
@@ -117,42 +109,20 @@ describe('referral: claimBulkExtendedTest.mjs', /** @this {MochaSuiteModified} *
       await api.transactions.broadcast(createReferralProgramTxSecondProgram, {});
       await ni.waitForTx(createReferralProgramTxSecondProgram.id, { apiBase });
 
-      const createPairTxSecondProgram = invokeScript({
+      const incUnclaimedWithPaymentTx = invokeScript({
         dApp: referral,
-        payment: [],
+        payment: [{ assetId: this.wxAssetId, amount: referrerRewardWxSpotFee }],
         call: {
-          function: 'createPair',
+          function: 'incUnclaimedWithPayment',
           args: [
             { type: 'string', value: programNameSecond },
-            { type: 'string', value: referrerAddress },
-            { type: 'string', value: referralAddress },
-            {
-              type: 'binary',
-              value: `base64:${libs.crypto.base64Encode(libs.crypto.base58Decode(signatureSecondProgram))}`,
-            },
+            { type: 'list', value: [{ type: 'string', value: referrerAddress }] },
           ],
         },
         chainId,
-      }, this.accounts.manager);
-      await api.transactions.broadcast(createPairTxSecondProgram, {});
-      await ni.waitForTx(createPairTxSecondProgram.id, { apiBase });
-
-      const incUnclaimedTxSecondProgram = invokeScript({
-        dApp: referral,
-        payment: [],
-        call: {
-          function: 'incUnclaimed',
-          args: [
-            { type: 'string', value: programName },
-            { type: 'string', value: referralAddress },
-            { type: 'integer', value: referrerRewardSecond },
-            { type: 'integer', value: referralReward },
-          ],
-        },
-        chainId,
-      }, this.accounts.implementationSecond);
-      await api.transactions.broadcast(incUnclaimedTxSecondProgram, {});
-      await ni.waitForTx(incUnclaimedTxSecondProgram.id, { apiBase });
+      }, this.accounts.implementation);
+      await api.transactions.broadcast(incUnclaimedWithPaymentTx, {});
+      await ni.waitForTx(incUnclaimedWithPaymentTx.id, { apiBase });
 
       const claimBulkTx = invokeScript({
         dApp: referral,
@@ -274,7 +244,7 @@ describe('referral: claimBulkExtendedTest.mjs', /** @this {MochaSuiteModified} *
       }, {
         key: `%s%s__claimedTotalAddress__${referrerAddress}`,
         type: 'integer',
-        value: referrerReward + referrerRewardSecond,
+        value: referrerReward + referrerRewardWxSpotFee,
       }, {
         key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
         type: 'integer',
@@ -369,7 +339,7 @@ describe('referral: claimBulkExtendedTest.mjs', /** @this {MochaSuiteModified} *
       expect(claimInternalAfterSecondClaimBulk.stateChanges.data).to.eql([{
         key: `%s%s%s__claimedReferrer__${programNameSecond}__${referrerAddress}`,
         type: 'integer',
-        value: referrerRewardSecond,
+        value: referrerRewardWxSpotFee,
       }, {
         key: `%s%s%s__unclaimedReferrer__${programNameSecond}__${referrerAddress}`,
         type: 'integer',
@@ -377,11 +347,11 @@ describe('referral: claimBulkExtendedTest.mjs', /** @this {MochaSuiteModified} *
       }, {
         key: `%s%s__claimedTotal__${programNameSecond}`,
         type: 'integer',
-        value: referrerRewardSecond,
+        value: referrerRewardWxSpotFee,
       }, {
         key: `%s%s__claimedTotalAddress__${referrerAddress}`,
         type: 'integer',
-        value: referrerRewardSecond,
+        value: referrerRewardWxSpotFee,
       }, {
         key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
         type: 'integer',
@@ -389,13 +359,13 @@ describe('referral: claimBulkExtendedTest.mjs', /** @this {MochaSuiteModified} *
       }, {
         key: `%s%s%s%s%s__history__claimReferrer__${programNameSecond}__${referrerAddress}__${id}`,
         type: 'string',
-        value: `%d%d%d__${heightClaimBulk}__${timestamp}__${referrerRewardSecond}`,
+        value: `%d%d%d__${heightClaimBulk}__${timestamp}__${referrerRewardWxSpotFee}`,
       }]);
 
       expect(claimInternalAfterSecondClaimBulk.stateChanges.transfers).to.eql([{
         address: referrerAddress,
         asset: this.wxAssetId,
-        amount: referrerRewardSecond,
+        amount: referrerRewardWxSpotFee,
       }]);
 
       const withdrawReferralRewardAfterSecondClaimBulk = claimInternalAfterSecondClaimBulk
@@ -417,7 +387,7 @@ describe('referral: claimBulkExtendedTest.mjs', /** @this {MochaSuiteModified} *
       expect(withdrawReferralRewardAfterSecondClaimBulk.stateChanges.transfers).to.eql([{
         address: referral,
         asset: this.wxAssetId,
-        amount: referrerRewardSecond,
+        amount: referrerRewardWxSpotFee,
       }]);
     },
   );
