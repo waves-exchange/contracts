@@ -68,8 +68,8 @@ jobs:
     services:
       waves-private-node:
         image: wavesplatform/waves-private-node
-        ports:
-          - 6869:6869
+#        ports:
+#          - 6869:6869
     env:
       API_NODE_URL: http://waves-private-node:6869
     steps:
