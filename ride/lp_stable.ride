@@ -44,6 +44,7 @@ let big0 = 0.toBigInt()
 let big1 = 1.toBigInt()
 let big2 = 2.toBigInt()
 let slippage4D = (scale8 - scale8 * 1 / scale8).toBigInt() # 9999999 or error of 0.0000001
+let wavesString = "WAVES"
 
 let Amult = "100"
 let Dconv = "1" # D convergence
@@ -145,6 +146,8 @@ func strf(addr: Address, key: String) = addr.getString(key).valueOrErrorMessage(
 # getIntOrFail
 func intf(addr: Address, key: String) = addr.getInteger(key).valueOrErrorMessage(makeString(["mandatory ", addr.toString(), ".", key, " not defined"], ""))
 
+func throwErr(msg: String) = ["lp_stable.ride:", msg].makeString(" ").throw()
+
 # factoryContract
 let fca = addressFromStringValue(strf(this, fc()))
 
@@ -172,6 +175,37 @@ func gpc() = {
   let iAmtAs = intf(fca, mba(amtAs))
   strf(fca, pc(iAmtAs.toString(), iPriceAs.toString())).split(SEP)
 }
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
+func parsePoolConfig(poolConfig: List[String]) = {
+  (
+    poolConfig[idxPoolAddress].addressFromStringValue(),
+    poolConfig[idxPoolSt].parseIntValue(),
+    poolConfig[idxLPAsId].fromBase58String(),
+    poolConfig[idxAmAsId].parseAssetId(),
+    poolConfig[idxPrAsId].parseAssetId(),
+    poolConfig[idxAmtAsDcm].parseIntValue(),
+    poolConfig[idxPriceAsDcm].parseIntValue()
+  )
+}
+
+let poolConfigParsed = gpc().parsePoolConfig()
+let (
+  cfgPoolAddress,
+  cfgPoolStatus,
+  cfgLpAssetId,
+  cfgAmountAssetId,
+  cfgPriceAssetId,
+  cfgAmountAssetDecimals,
+  cfgPriceAssetDecimals
+) = poolConfigParsed
 
 # getFactoryConfig
 func gfc() = {
@@ -700,7 +734,6 @@ func getOneTknV2Internal(
   originCaller: Address,
   transactionId: ByteVector
 ) = {
-  if (payments.size() != 1) then throw("1 pmnt expd") else
   let poolConfig = gpc()
   let lpId = poolConfig[idxLPAsId]
   let amId = poolConfig[idxAmAsId]
@@ -873,7 +906,13 @@ func put(slip: Int, autoStake: Boolean) = {
 
 @Callable(i)
 func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
-  if (i.payments.size() != 1) then throw("1 pmnt expd") else
+  let isPoolOneTokenOperationsDisabled = fca.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPutDisabled = igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+
+  strict checks = [
+    !isPutDisabled || "put operation is blocked by admin".throwErr(),
+    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
+  ]
 
   let poolConfig = gpc()
   let amId = poolConfig[idxAmAsId]
@@ -959,6 +998,14 @@ func get() = {
 
 @Callable(i)
 func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
+  let isPoolOneTokenOperationsDisabled = fca.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+
+  strict checks = [
+    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
+  ]
+
   let (state, totalAmount) = getOneTknV2Internal(
     outAssetId,
     minOutAmount,
@@ -1075,7 +1122,13 @@ func unstakeAndGet(amount: Int) = {
 
 @Callable(i)
 func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
-  strict checkPayments = if (i.payments.size() != 0) then throw("No pmnts expd") else true
+  let isPoolOneTokenOperationsDisabled = fca.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+
+  strict checks = [
+    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    i.payments.size() == 0 || "no payments are expected".throwErr()
+  ]
 
   let cfg = gpc()
   let factoryCfg = gfc()
