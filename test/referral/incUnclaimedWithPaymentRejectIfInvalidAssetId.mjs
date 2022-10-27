@@ -111,7 +111,7 @@ describe('referral: incUnclaimedWithPaymentRejectIfInvalidAssetId.mjs', /** @thi
       await expect(
         api.transactions.broadcast(incUnclaimedWithPaymentTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        new RegExp(`^Error while executing dApp:${expectedRejectMessage}$`),
       );
     },
   );

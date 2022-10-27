@@ -32,7 +32,7 @@ describe('referral: claimBulkRejectIfNoReferalPrograms.mjs', /** @this {MochaSui
       await expect(
         api.transactions.broadcast(claimBulkTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        new RegExp(`^Error while executing dApp:${expectedRejectMessage}$`),
       );
     },
   );

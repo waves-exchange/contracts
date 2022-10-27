@@ -59,7 +59,7 @@ describe('referral: incUnclaimedRejectIfProgramNameIsNotWxlock.mjs', /** @this {
       }, this.accounts.implementation);
 
       await expect(api.transactions.broadcast(incUnclaimedTx, {})).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        new RegExp(`^Error while executing dApp:${expectedRejectMessage}$`),
       );
     },
   );

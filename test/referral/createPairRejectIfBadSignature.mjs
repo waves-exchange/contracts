@@ -65,7 +65,7 @@ describe('referral: createPairRejectIfBadSignature.mjs', /** @this {MochaSuiteMo
       await expect(
         api.transactions.broadcast(createPairTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
       );
     },
   );

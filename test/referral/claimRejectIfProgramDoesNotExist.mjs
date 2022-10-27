@@ -37,7 +37,7 @@ describe('referral: claimRejectIfProgramDoesNotExist.mjs', /** @this {MochaSuite
       await expect(
         api.transactions.broadcast(claimTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
       );
     },
   );
