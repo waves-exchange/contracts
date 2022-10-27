@@ -80,7 +80,7 @@ describe('referral: incUnclaimedWithPaymentRejectIfLastCallExist.mjs', /** @this
         chainId,
       }, this.accounts.implementation);
       await api.transactions.broadcast(incUnclaimedWithPaymentTx, {});
-      const { height } = await ni.waitForTx(incUnclaimedWithPaymentTx.id, { apiBase });
+      await ni.waitForTx(incUnclaimedWithPaymentTx.id, { apiBase });
 
       const repeatIncUnclaimedWithPaymentTx = invokeScript({
         dApp: referral,
@@ -95,8 +95,7 @@ describe('referral: incUnclaimedWithPaymentRejectIfLastCallExist.mjs', /** @this
         chainId,
       }, this.accounts.implementation);
 
-      const { height: currentHeight } = await api.blocks.fetchHeight();
-      const expectedRejectMessage = `referral.ride: wait ${currentHeight - height + 3} blocks`;
+      const expectedRejectMessage = 'referral.ride: wait \\d blocks';
 
       await expect(
         api.transactions.broadcast(repeatIncUnclaimedWithPaymentTx, {}),
