@@ -81,7 +81,7 @@ describe('otc_multiasset: userStory.mjs', /** @this {MochaSuiteModified} */() =>
     await expect(
       api.transactions.broadcast(initializationSwapAssetsBToATx, {}),
     ).to.be.rejectedWith(
-      new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+      new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
     );
 
     // user1 makes an init in order to withdraw some of his funds

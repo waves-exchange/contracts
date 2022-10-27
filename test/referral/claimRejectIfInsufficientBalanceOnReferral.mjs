@@ -111,7 +111,7 @@ describe('referral: claimRejectIfInsufficientBalanceOnReferral.mjs', /** @this {
       await expect(
         api.transactions.broadcast(claimTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing account-script: ${expectedRejectMessage}$`),
+        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
       );
     },
   );

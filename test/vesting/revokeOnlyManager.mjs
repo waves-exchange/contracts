@@ -49,6 +49,6 @@ describe('vesting: revokeOnlyManager.mjs', /** @this {MochaSuiteModified} */() =
       chainId,
     }, this.accounts.user2);
     await expect(api.transactions.broadcast(revoke, {})).to.be
-      .rejectedWith('Error while executing account-script: vesting.ride: permission denied');
+      .rejectedWith('Error while executing dApp: vesting.ride: permission denied');
   });
 });
