@@ -69,18 +69,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTxWX, {});
     await waitForTx(massTransferTxWX.id, { apiBase });
 
-    const setWxAssetIdTx = data({
-      additionalFee: 4e5,
-      data: [{
-        key: '%s__wxAssetId',
-        type: 'string',
-        value: this.wxAssetId,
-      }],
-      chainId,
-    }, this.accounts.referral);
-    await api.transactions.broadcast(setWxAssetIdTx, {});
-    await waitForTx(setWxAssetIdTx.id, { apiBase });
-
     const setWxAssetIdOnTreasuryTx = data({
       additionalFee: 4e5,
       data: [{
