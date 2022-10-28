@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address, publicKey } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { checkStateChanges } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -32,6 +33,10 @@ describe('referral: setManager.mjs', /** @this {MochaSuiteModified} */() => {
       }, this.accounts.manager);
       await api.transactions.broadcast(setManagerTx, {});
       const { stateChanges } = await ni.waitForTx(setManagerTx.id, { apiBase });
+
+      expect(
+        await checkStateChanges(stateChanges, 1, 0, 0, 0, 0, 0, 0, 0, 0),
+      ).to.eql(true);
 
       expect(stateChanges.data).to.eql([{
         key: '%s__pendingManagerPublicKey',

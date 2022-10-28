@@ -60,7 +60,7 @@ describe('referral: incUnclaimedRejectIfHasNotPermission.mjs', /** @this {MochaS
       }, notImplementationAccount);
 
       await expect(api.transactions.broadcast(incUnclaimedTx, {})).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
       );
     },
   );
