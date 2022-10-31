@@ -123,9 +123,7 @@ func keyPeriodStartHeight(periodNum: Int) = ["%s%s", "periodStartHeight", period
 func keyPeriodEndHeight(periodNum: Int) = ["%s%s", "periodEndHeight", periodNum.toString()].makeString(SEP)
 func keyUsdtPriceAssetRatio() = ["%s", "usdtUsdnRatio"].makeString(SEP)
 func keyTotalPeriodAllowance(assetId: String) = ["%s%s", "totalPeriodAllowance", assetId].makeString(SEP)
-func keyUserPeriodAllowance(assetId: String, userAddress: String) = {
-  ["%s%s%s", "userPeriodAllowance", assetId, userAddress].makeString(SEP)
-}
+func keyUserPeriodAllowance(assetId: String) = ["%s%s", "userPeriodAllowance", assetId].makeString(SEP)
 func keyPeriodTotalAvailableToClaim(assetId: String, periodNum: Int) = {
   ["%s%s%s", "periodTotalAvailableToClaim", assetId, periodNum.toString()].makeString(SEP)
 }
@@ -242,10 +240,7 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
   ]
 
   let totalPeriodPriceAssetAllowance = keyTotalPeriodAllowance(priceAssetId58).getInteger().value()
-  let userPeriodPriceAssetAllowance = keyUserPeriodAllowance(
-    priceAssetId58,
-    userAddress58
-  ).getInteger().value()
+  let userPeriodPriceAssetAllowance = keyUserPeriodAllowance(priceAssetId58).getInteger().value()
 
   let currentPeriod = keyCurrnetPeriod().getInteger().valueOrElse(0)
 
