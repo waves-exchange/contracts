@@ -35,7 +35,11 @@ describe('vesting_multiasset: increaseDepositForNoDeposit.mjs', /** @this {Mocha
       },
       chainId,
     }, this.accounts.user3);
-    await expect(api.transactions.broadcast(increaseDepositFor, {})).to.be
-      .rejectedWith('Error while executing dApp: value() called on unit value on function \'getString\' call');
+
+    const expectedRejectMessage = `value by key '%s%s__${this.wxAssetId}__${user1}' not found for the contract address on function 'getStringValue' call`;
+
+    await expect(api.transactions.broadcast(increaseDepositFor, {})).to.be.rejectedWith(
+      new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
+    );
   });
 });
