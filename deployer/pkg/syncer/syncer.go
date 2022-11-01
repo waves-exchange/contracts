@@ -41,7 +41,7 @@ type Syncer struct {
 	compareLpStableScriptAddress      proto.WavesAddress
 	compareLpStableAddonScriptAddress proto.WavesAddress
 	compileCache                      compileCacheMap
-	mined                             errgroup.Group
+	mined                             *errgroup.Group
 }
 
 const (
@@ -91,6 +91,7 @@ func NewSyncer(
 		compareLpStableScriptAddress:      compareLpStableScriptAddr,
 		compareLpStableAddonScriptAddress: compareLpStableAddonScriptAddr,
 		compileCache:                      make(compileCacheMap),
+		mined:                             &errgroup.Group{},
 	}, nil
 }
 
