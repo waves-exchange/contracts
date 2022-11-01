@@ -6,6 +6,7 @@ func getStringOrFail(key: String) = getString(key).valueOrErrorMessage("mandator
 
 let SEP = "__"
 let BUFSCALE = 1000_000_000_000_000_000.toBigInt() # 10^18
+let scale8 = 100_000_000 # 10^8
 
 func throwErr(msg: String) = ["ido.ride:", msg].makeString(" ").throw()
 
@@ -121,7 +122,7 @@ func keyPeriodLength() = ["%s", "periodLength"].makeString(SEP)
 func keyCurrnetPeriod() = ["%s", "currentPeriod"].makeString(SEP)
 func keyPeriodStartHeight(periodNum: Int) = ["%s%s", "periodStartHeight", periodNum.toString()].makeString(SEP)
 func keyPeriodEndHeight(periodNum: Int) = ["%s%s", "periodEndHeight", periodNum.toString()].makeString(SEP)
-func keyUsdtPriceAssetRatio() = ["%s", "usdtUsdnRatio"].makeString(SEP)
+func keyUsdtPriceAssetAllowableRatio() = ["%s", "usdtPriceAssetAllowableRatio"].makeString(SEP)
 func keyTotalPeriodAllowance(assetId: String) = ["%s%s", "totalPeriodAllowance", assetId].makeString(SEP)
 func keyUserPeriodAllowance(assetId: String) = ["%s%s", "userPeriodAllowance", assetId].makeString(SEP)
 func keyPeriodTotalAvailableToClaim(assetId: String, periodNum: Int) = {
@@ -130,6 +131,9 @@ func keyPeriodTotalAvailableToClaim(assetId: String, periodNum: Int) = {
 func keyPeriodUserAvailableToClaim(assetId: String, periodNum: Int, userAddress: String) = {
   ["%s%s%s%s", "periodUserAvailableToClaim", assetId, periodNum.toString(), userAddress].makeString(SEP)
 }
+
+func keyUsdtPriceAssetStablePool() = ["%s", "usdtPriceAssetStablePool"].makeString(SEP)
+func keyUsdtAssetId() = ["%s", "usdtAssetId"].makeString(SEP)
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
@@ -260,7 +264,28 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
     periodUserAvailableToClaim
   ].min()
 
-  # TODO add disabledPriceAssetPrice, currentPriceAssetRatio and endPeriodBlocksLeft to last elem of returned array
+  let usdtPriceAssetAllowableRatio = keyUsdtPriceAssetAllowableRatio().getInteger().value()
+  let putOneTknV2PriceAssestAmount = scale8 # 100 * 10^6
+
+  strict (lpAmount, feeAmount, bonus) = invoke(
+    keyUsdtPriceAssetStablePool().getString().value().addressFromStringValue(),
+    "putOneTknV2WithoutTakeFeeREADONLY",
+    [putOneTknV2PriceAssestAmount, priceAssetId],
+    []
+  ).exactAs[(Int, Int, Int)]
+
+  let usdtAssetId = keyUsdtAssetId().getString().value().fromBase58String().value()
+
+  strict (usdtAmount, getOneTknV2FeeAmount) = invoke(
+    keyUsdtPriceAssetStablePool().getString().value().addressFromStringValue(),
+    "getOneTknV2READONLY",
+    [usdtAssetId, lpAmount],
+    []
+  ).exactAs[(Int, Int)]
+
+  let currentUsdtPriceAssetRatio = fraction(usdtAmount, putOneTknV2PriceAssestAmount, scale8)
+  let endPeriodBlocksLeft = keyPeriodEndHeight(currentPeriod).getInteger().valueOrElse(claimEnd) - height
+
   if (claimedAssetId58 == priceAssetId58) then {
     (
       [0, -availableClaimingPriceAssetAmount, availableClaimingPriceAssetAmount, 0],
@@ -268,7 +293,14 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
       priceAssetId,
       origInvestArray,
       newClaimPeriodHeight,
-      [availableClaimingPriceAssetAmount, claimingIdoAssetAmount, periodTotalAvailableToClaim]
+      [
+        availableClaimingPriceAssetAmount,
+        claimingIdoAssetAmount,
+        periodTotalAvailableToClaim,
+        usdtPriceAssetAllowableRatio,
+        currentUsdtPriceAssetRatio,
+        endPeriodBlocksLeft
+      ]
     )
   } else if (claimedAssetId58 == idoAssetId58) then {
     (
@@ -277,7 +309,13 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
       idoAssetId,
       origInvestArray,
       newClaimPeriodHeight,
-      [availableClaimingPriceAssetAmount, claimingIdoAssetAmount, periodTotalAvailableToClaim]
+      [
+        availableClaimingPriceAssetAmount,
+        claimingIdoAssetAmount,
+        periodTotalAvailableToClaim,
+        currentUsdtPriceAssetRatio,
+        usdtPriceAssetAllowableRatio
+      ]
     )
   } else ["unsupported assetId:", claimedAssetId58].makeString(" ").throwErr()
 }
@@ -478,31 +516,21 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
   let newClaimPeriodHeight  = claimResultTuple._5
   let availableToClaimArray = claimResultTuple._6
 
-  # let periodAvailableUserPriceAmountToClaim   = availableToClaimArray[0]
-  # let periodAvailableIdoAmountToClaim         = availableToClaimArray[1]
-  # let periodAvailableTotalPriceAmountToClaim  = availableToClaimArray[2]
-  # let usdtPriceAssetRatio                     = availableToClaimArray[3]
-  # let currentPriceAssetRatio                  = availableToClaimArray[4]
-  # let endPriodBlocksLeft                      = availableToClaimArray[5]
-
-  # let resultString = [
-  #   "%d%d%d%d%d%d",
-  #   periodAvailableUserPriceAmountToClaim.toString(),
-  #   periodAvailableIdoAmountToClaim.toString(),
-  #   periodAvailableTotalPriceAmountToClaim.toString(),
-  #   usdtPriceAssetRatio.toString(),
-  #   currentPriceAssetRatio.toString(),
-  #   endPriodBlocksLeft.toString()
-  # ].makeString(SEP)
+  let periodAvailableUserPriceAmountToClaim   = availableToClaimArray[0]
+  let periodAvailableIdoAmountToClaim         = availableToClaimArray[1]
+  let periodAvailableTotalPriceAmountToClaim  = availableToClaimArray[2]
+  let usdtPriceAssetAllowableRatio            = availableToClaimArray[3]
+  let currentPriceAssetRatio                  = availableToClaimArray[4]
+  let endPriodBlocksLeft                      = availableToClaimArray[5]
 
   let resultString = [
     "%d%d%d%d%d%d",
-    "1000",
-    "2000",
-    "100000",
-    "101000000",
-    "100123456",
-    "100"
+    periodAvailableUserPriceAmountToClaim.toString(),
+    periodAvailableIdoAmountToClaim.toString(),
+    periodAvailableTotalPriceAmountToClaim.toString(),
+    usdtPriceAssetAllowableRatio.toString(),
+    currentPriceAssetRatio.toString(),
+    endPriodBlocksLeft.toString()
   ].makeString(SEP)
 
   ([], resultString)

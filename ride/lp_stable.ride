@@ -659,7 +659,8 @@ func calcPutOneTkn(
   pmtAmtRaw: Int,
   pmtAssetId: String,
   userAddress: String,
-  txId: String
+  txId: String,
+  withTakeFee: Boolean
 ) = {
   let poolConfig = gpc()
   let amId = poolConfig[idxAmAsId]
@@ -691,9 +692,19 @@ func calcPutOneTkn(
     (0, pmtAmtRaw)
   } else "invalid payment".throw()
 
-  let amAmount = amAmountRaw.takeFee()._1
-  let prAmount = prAmountRaw.takeFee()._1
-  let feeAmount = pmtAmtRaw.takeFee()._2
+  let (amAmount, prAmount, feeAmount) = if (withTakeFee) then {
+    (
+      amAmountRaw.takeFee()._1,
+      prAmountRaw.takeFee()._1,
+      pmtAmtRaw.takeFee()._2
+    )
+  } else {
+    (
+      amAmountRaw,
+      prAmountRaw,
+      0
+    )
+  }
 
   let amBalanceNew = amBalanceOld + amAmount
   let prBalanceNew = prBalanceOld + prAmount
@@ -929,7 +940,13 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   
   if (pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
-  let (estimLP, state, feeAmount) = calcPutOneTkn(pmtAmt, pmtAssetId, userAddress.toString(), i.transactionId.toBase58String())
+  let (estimLP, state, feeAmount) = calcPutOneTkn(
+    pmtAmt,
+    pmtAssetId,
+    userAddress.toString(),
+    i.transactionId.toBase58String(),
+    true
+  )
 
   let emitLpAmt = if (minOutAmount > 0 && estimLP < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
@@ -1156,7 +1173,19 @@ func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String)
   let prId = poolConfig[idxPrAsId]
   let lpId = poolConfig[idxLPAsId]
 
-  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "")
+  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", true)
+
+  (nil, (lpAmount, feeAmount, bonus))
+}
+
+@Callable(i)
+func putOneTknV2WithoutTakeFeeREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let lpId = poolConfig[idxLPAsId]
+
+  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", false)
 
   (nil, (lpAmount, feeAmount, bonus))
 }
