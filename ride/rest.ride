@@ -605,7 +605,7 @@ func gwxUserInfoREADONLY(userAddress: String) = {
 func getKeysBulkInternal(currentIter: Int, keys: List[String], resAcc: List[String]) = {
   if(currentIter == keys.size()) then ([], resAcc) else
 
-  let key = keys[currentIter].split(SEP)
+  let key = keys[currentIter].split("++")
   let val = getKey(key[0].addressFromStringValue(), key[1], key[2])
   let res = resAcc :+ val
   strict inv = this.invoke("getKeysBulkInternal", [currentIter + 1, keys, res], [])
@@ -613,7 +613,7 @@ func getKeysBulkInternal(currentIter: Int, keys: List[String], resAcc: List[Stri
 }
 
 # Get keys from addresses
-# keys: address__key__string/int/boolean
+# keys: address++key++string/int/boolean
 # returns list of values (casted to string)
 @Callable(i)
 func getKeysBulk(keys: List[String]) = {
