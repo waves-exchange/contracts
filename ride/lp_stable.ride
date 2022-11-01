@@ -758,7 +758,7 @@ func getOneTknV2Internal(
   let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
 
   let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
-    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else totalGet
 
   let (outAm, outPr, amBalanceNew, prBalanceNew) = if (outAssetId == amId) then {
