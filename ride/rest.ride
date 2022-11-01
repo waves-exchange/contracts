@@ -164,12 +164,12 @@ func calcGwxAmountStartREADONLY(lockAmount: Int, lockDuration: Int, maxLockDurat
 func getKey(addr: Address, key: String, type: String) = {
   if(type == "string") then {
     addr.getStringValue(key)
-  } else if(type == "int") then {
+  } else if(type == "integer") then {
     addr.getIntegerValue(key).toString()
   } else if(type == "boolean") then {
     addr.getBooleanValue(key).toString()
   } else {
-    "unknown type. expected string/int/boolean".throw()
+    "unknown type. expected string/integer/boolean".throw()
   }
 }
 
@@ -613,7 +613,7 @@ func getKeysBulkInternal(currentIter: Int, keys: List[String], resAcc: List[Stri
 }
 
 # Get keys from addresses
-# keys: address++key++string/int/boolean
+# keys: address++key++string/integer/boolean
 # returns list of values (casted to string)
 @Callable(i)
 func getKeysBulk(keys: List[String]) = {
