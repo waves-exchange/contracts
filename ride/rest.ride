@@ -380,10 +380,13 @@ func poolStatsREADONLY(lpAsset: String) = {
 
   let poolWeight = factoryDapp.getIntegerValue(poolAddress.toString().keyFactoryPoolWeight())
   let fee = poolAddress.getPoolFee()
+
+  let poolOneTokenOperationsDisabled = factoryDapp.invoke("isPoolOneTokenOperationsDisabledREADONLY", [poolAddress.toString()], []).exactAs[Boolean]
+  let poolOneTokenOperationsEnabled = !poolOneTokenOperationsDisabled
   (
     [],
     makeString([
-      "%d%d%d%d%d%d%d%d",
+      "%d%d%d%d%d%d%d%d%s",
       accAmtAssetBalance.toString(),
       accPriceAssetBalance.toString(),
       poolLPBalance.toString(),
@@ -391,7 +394,8 @@ func poolStatsREADONLY(lpAsset: String) = {
       lpAmtAssetShare.toString(),
       lpPriceAssetShare.toString(),
       poolWeight.toString(),
-      fee.toString()
+      fee.toString(), 
+      poolOneTokenOperationsEnabled.toString()
     ],
     SEP)
   )
@@ -583,12 +587,6 @@ func gwxUserInfoREADONLY(userAddress: String) = {
   let gwxUserInfoLIST = boostingDapp.invoke("gwxUserInfoREADONLY", [userAddress], []).asAnyList()
   let gwxAmount = gwxUserInfoLIST[0].asInt()
   ([], ["%d", gwxAmount.toString()].makeString(SEP))
-}
-
-@Callable(i)
-func unstakeAndGetOneTknV2(poolAddress: String, unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
-  strict inv = poolAddress.addressFromStringValue().invoke("unstakeAndGetOneTknV2", [unstakeAmount, outAssetId, minOutAmount], [])
-  ([], unit)
 }
 
 @Callable(i)

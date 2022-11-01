@@ -748,8 +748,6 @@ func getOneTknV2Internal(
   let pmtAssetId = pmt.assetId.value()
   let pmtAmt = pmt.amount
 
-  if (pmtAmt < 10_00_000_000) then throw("Min pmt 10 LP") else
-
   let txId58 = transactionId.toBase58String()
 
   if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
@@ -1038,7 +1036,7 @@ func getOneTknV2READONLY(
   }
   let newY = xp.getYD(index, D1)
   let dy = xp[index] - newY
-  let totalGetRaw = { dy - big1 }.toInt()
+  let totalGetRaw = [0, { dy - big1 }.toInt()].max()
   let (totalGet, feeAmount) = totalGetRaw.takeFee()
 
   (nil, (totalGet, feeAmount))
@@ -1070,7 +1068,11 @@ func getOneTknV2WithBonusREADONLY(
   let outPrAmt = r._2
   let sumOfGetAssets = outAmAmt + outPrAmt
   
-  let bonus = fraction((totalGet - sumOfGetAssets), scale8, sumOfGetAssets)
+  let bonus = if (sumOfGetAssets == 0) then {
+    if (totalGet == 0) then 0 else "bonus calculation error".throw()
+  } else {
+    fraction((totalGet - sumOfGetAssets), scale8, sumOfGetAssets)
+  }
 
   ([], (totalGet, feeAmount, bonus))
 }
