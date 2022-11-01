@@ -928,7 +928,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   let (estimLP, state, feeAmount) = calcPutOneTkn(pmtAmt, pmtAssetId, userAddress.toString(), i.transactionId.toBase58String())
 
   let emitLpAmt = if (minOutAmount > 0 && estimLP < minOutAmount) then {
-    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else estimLP
 
   # emit lp on factory
