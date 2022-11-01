@@ -926,8 +926,6 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   let pmt = i.payments[0].value()
   let pmtAssetId = pmt.assetId.value().toBase58String()
   let pmtAmt = pmt.amount
-  
-  if (pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
   let (estimLP, state, feeAmount) = calcPutOneTkn(pmtAmt, pmtAssetId, userAddress.toString(), i.transactionId.toBase58String())
 
