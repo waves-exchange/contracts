@@ -161,6 +161,18 @@ func calcGwxAmountStartREADONLY(lockAmount: Int, lockDuration: Int, maxLockDurat
   [gWxAmountStart]
 }
 
+func getKey(addr: Address, key: String, type: String) = {
+  if(type == "string") then {
+    addr.getStringValue(key)
+  } else if(type == "int") then {
+    addr.getIntegerValue(key).toString()
+  } else if(type == "boolean") then {
+    addr.getBooleanValue(key).toString()
+  } else {
+    "unknown type. expected string/int/boolean".throw()
+  }
+}
+
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
   case s: String => s.fromBase58String()
   case _: Unit => unit
@@ -587,6 +599,26 @@ func gwxUserInfoREADONLY(userAddress: String) = {
   let gwxUserInfoLIST = boostingDapp.invoke("gwxUserInfoREADONLY", [userAddress], []).asAnyList()
   let gwxAmount = gwxUserInfoLIST[0].asInt()
   ([], ["%d", gwxAmount.toString()].makeString(SEP))
+}
+
+@Callable(i)
+func getKeysBulkInternal(currentIter: Int, keys: List[String], resAcc: List[String]) = {
+  if(currentIter == keys.size()) then ([], resAcc) else
+
+  let key = keys[currentIter].split(SEP)
+  let val = getKey(key[0].addressFromStringValue(), key[1], key[2])
+  let res = resAcc :+ val
+  strict inv = this.invoke("getKeysBulkInternal", [currentIter + 1, keys, res], [])
+  ([], inv)
+}
+
+# Get keys from addresses
+# keys: address__key__string/int/boolean
+# returns list of values (casted to string)
+@Callable(i)
+func getKeysBulk(keys: List[String]) = {
+  let res = this.invoke("getKeysBulkInternal", [0, keys, []], [])
+  ([], res)
 }
 
 @Callable(i)
