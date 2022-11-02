@@ -268,6 +268,8 @@ func internalClaimV2(priceAssetId58: String, userAddress58: String, outAmount: I
 
   let periodLength = keyPeriodLength().getInteger().value()
   let currentPeriod = keyCurrentPeriod().getInteger().valueOrElse(0)
+  let zeroPeriodEndHeighIsDefined = keyPeriodEndHeight(0).getInteger().isDefined()
+
   let (updatedCurrentPeriod, periodStart, periodEnd) = if currentPeriod > 0 then {
     let lastPeriodStartHeight = keyPeriodStartHeight(currentPeriod - 1).getInteger().value()
     let lastPeriodEndHeight = keyPeriodEndHeight(currentPeriod - 1).getInteger().value()
@@ -280,6 +282,21 @@ func internalClaimV2(priceAssetId58: String, userAddress58: String, outAmount: I
       (updatedCurrentPeriod, periodStart, periodEnd)
     } else {
       (currentPeriod, lastPeriodStartHeight, lastPeriodEndHeight)
+    }
+
+    (updatedCurrentPeriod, periodStart, periodEnd)
+  } else if zeroPeriodEndHeighIsDefined then {
+    let zeroPeriodStartHeight = keyPeriodStartHeight(0).getInteger().value()
+    let zeroPeriodEndHeight = keyPeriodEndHeight(0).getInteger().value()
+
+    let (updatedCurrentPeriod, periodStart, periodEnd) = if height > zeroPeriodEndHeight then {
+      let updatedCurrentPeriod = currentPeriod + 1
+      let periodStart = zeroPeriodEndHeight + 1
+      let periodEnd = periodStart + periodLength - 1
+
+      (updatedCurrentPeriod, periodStart, periodEnd)
+    } else {
+      (currentPeriod, zeroPeriodStartHeight, zeroPeriodEndHeight)
     }
 
     (updatedCurrentPeriod, periodStart, periodEnd)
