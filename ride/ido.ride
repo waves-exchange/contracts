@@ -478,7 +478,19 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
     )
 
     strict checks = [
-      periodMinAvailableToClaim > 0 || "nothing to claim".throwErr(),
+      periodMinAvailableToClaim > 0 || [
+        "nothing to claim",
+        periodMinAvailableToClaim.toString(),
+        periodTotalAvailableToClaim.toString(),
+        periodUserAvailableToClaim.toString(),
+        totalUserAvailableToClaim.toString(),
+        usdtPriceAssetAllowableRatio.toString(),
+        currentUsdtPriceAssetRatio.toString(),
+        endPeriodBlocksLeft.toString(),
+        updatedCurrentPeriod.toString(),
+        periodStart.toString(),
+        periodEnd.toString()
+      ].makeString(SEP).throwErr(),
       periodUserAvailableToClaim > 0 || "unavailable to claim because user period allowance reached".throwErr(),
       periodTotalAvailableToClaim > 0 || "unavailable to claim because total period allowance reached".throwErr(),
       currentUsdtPriceAssetRatio < usdtPriceAssetAllowableRatio ||
