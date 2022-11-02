@@ -248,25 +248,36 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
 
   let periodLength = keyPeriodLength().getInteger().value()
   let currentPeriod = keyCurrentPeriod().getInteger().valueOrElse(0)
-  let (periodStart, periodEnd) = if currentPeriod > 0 then {
-    (
-      keyPeriodStartHeight(currentPeriod - 1).getInteger().value(),
-      keyPeriodEndHeight(currentPeriod - 1).getInteger().valueOrElse(height + periodLength)
-    )
+  let (updatedCurrentPeriod, periodStart, periodEnd) = if currentPeriod > 0 then {
+    let lastPeriodStartHeight = keyPeriodStartHeight(currentPeriod - 1).getInteger().value()
+    let lastPeriodEndHeight = keyPeriodEndHeight(currentPeriod - 1).getInteger().value()
+
+    let (updatedCurrentPeriod, periodStart, periodEnd) = if height > lastPeriodEndHeight then {
+      let updatedCurrentPeriod = currentPeriod + 1
+      let periodStart = lastPeriodEndHeight + 1
+      let periodEnd = periodStart + periodLength - 1
+
+      (updatedCurrentPeriod, periodStart, periodEnd)
+    } else {
+      (currentPeriod, lastPeriodStartHeight, lastPeriodEndHeight)
+    }
+
+    (updatedCurrentPeriod, periodStart, periodEnd)
   } else {
     (
+      currentPeriod,
       keyPeriodStartHeight(currentPeriod).getInteger().valueOrElse(height),
-      keyPeriodEndHeight(currentPeriod).getInteger().valueOrElse(height + periodLength)
+      keyPeriodEndHeight(currentPeriod).getInteger().valueOrElse(height + periodLength - 1)
     )
   }
 
   let periodTotalAvailableToClaim = keyPeriodTotalAvailableToClaim(
     priceAssetId58,
-    currentPeriod
+    updatedCurrentPeriod
   ).getInteger().valueOrElse(totalPeriodPriceAssetAllowance)
   let periodUserAvailableToClaim = keyPeriodUserAvailableToClaim(
     priceAssetId58,
-    currentPeriod,
+    updatedCurrentPeriod,
     userAddress58
   ).getInteger().valueOrElse(userPeriodPriceAssetAllowance)
 
@@ -282,11 +293,11 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
   strict (lpAmount, feeAmount, bonus) = invoke(
     keyUsdtPriceAssetStablePool().getString().value().addressFromStringValue(),
     "putOneTknV2WithoutTakeFeeREADONLY",
-    [putOneTknV2PriceAssetAmount, priceAssetId],
+    [putOneTknV2PriceAssetAmount, priceAssetId58],
     []
   ).exactAs[(Int, Int, Int)]
 
-  let usdtAssetId = keyUsdtAssetId().getString().value().fromBase58String().value()
+  let usdtAssetId = keyUsdtAssetId().getString().value()
 
   strict (usdtAmount, getOneTknV2FeeAmount) = invoke(
     keyUsdtPriceAssetStablePool().getString().value().addressFromStringValue(),
@@ -306,7 +317,7 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
       origInvestArray,
       newClaimPeriodHeight,
       [
-        currentPeriod,
+        updatedCurrentPeriod,
         periodStart,
         periodEnd,
         totalUserAvailableToClaim,
@@ -326,7 +337,7 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
       origInvestArray,
       newClaimPeriodHeight,
       [
-        currentPeriod,
+        updatedCurrentPeriod,
         periodStart,
         periodEnd,
         totalUserAvailableToClaim,
