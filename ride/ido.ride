@@ -229,8 +229,8 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
 
   let claimingBlocks = newClaimPeriodHeight - investLastClaimedHeight
 
-  let claimingPriceAssetAmount = fraction(investTotalAmount, claimingBlocks, claimDuration)
-  let claimingIdoAssetAmount = convertPriceAssetIntoIdoAsset(claimingPriceAssetAmount, priceAssetMult, price, priceMult, idoAssetMult)
+  let totalUserAvailableToClaim = fraction(investTotalAmount, claimingBlocks, claimDuration)
+  let claimingIdoAssetAmount = convertPriceAssetIntoIdoAsset(totalUserAvailableToClaim, priceAssetMult, price, priceMult, idoAssetMult)
 
   let isUSDN = claimedAssetId58 == priceAssetId58
   let isUSDNClaimDisabled = keyUSDNClaimDisabled().getBoolean().valueOrElse(false)
@@ -259,7 +259,7 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
   ).getInteger().valueOrElse(userPeriodPriceAssetAllowance)
 
   let availableClaimingPriceAssetAmount = [
-    claimingPriceAssetAmount,
+    totalUserAvailableToClaim,
     periodTotalAvailableToClaim,
     periodUserAvailableToClaim
   ].min()
@@ -294,8 +294,9 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
       origInvestArray,
       newClaimPeriodHeight,
       [
-        availableClaimingPriceAssetAmount,
+        totalUserAvailableToClaim,
         claimingIdoAssetAmount,
+        availableClaimingPriceAssetAmount,
         periodTotalAvailableToClaim,
         usdtPriceAssetAllowableRatio,
         currentUsdtPriceAssetRatio,
@@ -310,8 +311,9 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
       origInvestArray,
       newClaimPeriodHeight,
       [
-        availableClaimingPriceAssetAmount,
+        totalUserAvailableToClaim,
         claimingIdoAssetAmount,
+        availableClaimingPriceAssetAmount,
         periodTotalAvailableToClaim,
         currentUsdtPriceAssetRatio,
         usdtPriceAssetAllowableRatio
@@ -427,6 +429,20 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
   let outAssetId            = claimResultTuple._3
   let origInvestArray       = claimResultTuple._4
   let newClaimPeriodHeight  = claimResultTuple._5
+  let availableToClaimArray = claimResultTuple._6
+
+  let totalUserAvailableToClaim               = availableToClaimArray[0]
+  let periodAvailableIdoAmountToClaim         = availableToClaimArray[1]
+  let periodAvailableUserPriceAmountToClaim   = availableToClaimArray[2]
+  let periodAvailableTotalPriceAmountToClaim  = availableToClaimArray[3]
+
+  strict checks = [
+    totalUserAvailableToClaim > 0 || periodAvailableIdoAmountToClaim > 0 || "nothing to claim".throwErr(),
+    periodAvailableUserPriceAmountToClaim > 0 ||
+      "unavailable to claim because user period allowance reached".throwErr(),
+    periodAvailableTotalPriceAmountToClaim > 0 ||
+      "unavailable to claim because total period allowance reached".throwErr()
+  ]
 
   let claimedPriceAmountFromDiff    = totalsDiff[IdxDiffClaimedPriceAmountIncrement]
   let claimedIdoAssetAmountFromDiff = totalsDiff[IdxDiffClaimedIdoAssetAmountIncrement]
@@ -495,8 +511,8 @@ func claimREADONLY(claimedAssetId58: String, userAddress58: String) = {
   let newClaimPeriodHeight  = claimResultTuple._5
   let availableToClaimArray = claimResultTuple._6
 
-  let availablePriceAmountToClaim = availableToClaimArray[0]
-  let availableIdoAmountToClaim   = availableToClaimArray[1]
+  let availablePriceAmountToClaim = availableToClaimArray[1]
+  let availableIdoAmountToClaim   = availableToClaimArray[2]
 
   ([], makeString([
           "%s%d%d",
@@ -516,17 +532,19 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
   let newClaimPeriodHeight  = claimResultTuple._5
   let availableToClaimArray = claimResultTuple._6
 
-  let periodAvailableUserPriceAmountToClaim   = availableToClaimArray[0]
+  let totalUserAvailableToClaim               = availableToClaimArray[0]
   let periodAvailableIdoAmountToClaim         = availableToClaimArray[1]
-  let periodAvailableTotalPriceAmountToClaim  = availableToClaimArray[2]
-  let usdtPriceAssetAllowableRatio            = availableToClaimArray[3]
-  let currentPriceAssetRatio                  = availableToClaimArray[4]
-  let endPriodBlocksLeft                      = availableToClaimArray[5]
+  let periodAvailableUserPriceAmountToClaim   = availableToClaimArray[2]
+  let periodAvailableTotalPriceAmountToClaim  = availableToClaimArray[3]
+  let usdtPriceAssetAllowableRatio            = availableToClaimArray[4]
+  let currentPriceAssetRatio                  = availableToClaimArray[5]
+  let endPriodBlocksLeft                      = availableToClaimArray[6]
 
   let resultString = [
-    "%d%d%d%d%d%d",
-    periodAvailableUserPriceAmountToClaim.toString(),
+    "%d%d%d%d%d%d%d",
+    totalUserAvailableToClaim.toString(),
     periodAvailableIdoAmountToClaim.toString(),
+    periodAvailableUserPriceAmountToClaim.toString(),
     periodAvailableTotalPriceAmountToClaim.toString(),
     usdtPriceAssetAllowableRatio.toString(),
     currentPriceAssetRatio.toString(),
