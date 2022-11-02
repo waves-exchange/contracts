@@ -300,8 +300,11 @@ func internalClaimV2(priceAssetId58: String, userAddress58: String, outAmount: I
     updatedCurrentPeriod,
     userAddress58
   ).getInteger().valueOrElse(userPeriodPriceAssetAllowance)
+
+  let priceAssetBalance = keyPriceAssetBalance(userAddress58).getInteger().valueOrElse(0)
+
   let periodMinAvailableToClaim = [
-    outAmount,
+    outAmount + priceAssetBalance,
     periodTotalAvailableToClaim,
     periodUserAvailableToClaim
   ].min()
