@@ -643,15 +643,33 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
     totalsDiff[IdxDiffClaimedPriceAmountIncrement]
   )
 
-  let resultString = [
-    "%d%d%d%d%d%d",
-    availableIdoAmountToClaim.toString(),
-    periodMinAvailableToClaim.toString(),
-    periodTotalAvailableToClaim.toString(),
-    usdtPriceAssetAllowableRatio.toString(),
-    currentUsdtPriceAssetRatio.toString(),
-    endPeriodBlocksLeft.toString()
-  ].makeString(SEP)
+  let currentPeriodEndHeight = keyPeriodEndHeight(updatedCurrentPeriod).getInteger().value()
+
+  let resultString = if height > currentPeriodEndHeight then {
+    let periodLenght = keyPeriodLength().getInteger().value()
+    let userPeriodAllowance = keyUserPeriodAllowance(priceAssetId58).getInteger().value()
+    let totalPeriodAllowance = keyTotalPeriodAllowance(priceAssetId58).getInteger().value()
+
+    [
+      "%d%d%d%d%d%d",
+      availableIdoAmountToClaim.toString(),
+      userPeriodAllowance.toString(),
+      totalPeriodAllowance.toString(),
+      usdtPriceAssetAllowableRatio.toString(),
+      currentUsdtPriceAssetRatio.toString(),
+      periodLenght.toString()
+    ].makeString(SEP)
+  } else {
+    [
+      "%d%d%d%d%d%d",
+      availableIdoAmountToClaim.toString(),
+      periodMinAvailableToClaim.toString(),
+      periodTotalAvailableToClaim.toString(),
+      usdtPriceAssetAllowableRatio.toString(),
+      currentUsdtPriceAssetRatio.toString(),
+      endPeriodBlocksLeft.toString()
+    ].makeString(SEP)
+  }
 
   ([], resultString)
 }
