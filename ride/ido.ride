@@ -634,8 +634,7 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
   )
 
   let resultString = [
-    "%d%d%d%d%d%d%d",
-    totalUserAvailableToClaim.toString(),
+    "%d%d%d%d%d%d",
     availableIdoAmountToClaim.toString(),
     periodMinAvailableToClaim.toString(),
     periodTotalAvailableToClaim.toString(),
