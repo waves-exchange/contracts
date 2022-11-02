@@ -236,13 +236,8 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
 
   let isUSDN = claimedAssetId58 == priceAssetId58
   let isUSDNClaimDisabled = keyUSDNClaimDisabled().getBoolean().valueOrElse(false)
-  let isUSDNClaimEnded = match keyUSDNClaimEndHeight().getInteger() {
-	case end: Int => height > end
-	case _: Unit => false
-  }
   strict checks = [
-    !(isUSDN && isUSDNClaimDisabled) || "USDN claim is disabled".throw(),
-    !(isUSDN && isUSDNClaimEnded) || "USDN claim is ended".throw()
+    !(isUSDN && isUSDNClaimDisabled) || "USDN claim is disabled".throw()
   ]
 
   if (claimedAssetId58 == priceAssetId58) then {
