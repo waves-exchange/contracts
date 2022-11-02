@@ -8,6 +8,8 @@ let SEP = "__"
 let BUFSCALE = 1000_000_000_000_000_000.toBigInt() # 10^18
 let scale8 = 100_000_000 # 10^8
 
+func throwErr(msg: String) = ["ido.ride:", msg].makeString(" ").throw()
+
 # Convertion between Assets - utility functions
 func convertPriceAssetIntoIdoAsset(priceAssetAmount: Int, priceAssetMULT: Int, price: Int, priceMULT: Int, idoAssetMULT: Int) = {
   let bPriceAssetMULT = priceAssetMULT.toBigInt()
@@ -472,6 +474,14 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
       totalsDiff[IdxDiffClaimedPriceAmountIncrement]
     )
 
+    strict checks = [
+      periodMinAvailableToClaim > 0 || "nothing to claim".throwErr(),
+      periodUserAvailableToClaim > 0 || "unavailable to claim because user period allowance reached".throwErr(),
+      periodTotalAvailableToClaim > 0 || "unavailable to claim because total period allowance reached".throwErr(),
+      currentUsdtPriceAssetRatio < usdtPriceAssetAllowableRatio ||
+        "unavailable to claim because usdn price lower than usdtPriceAssetAllowableRatio".throwErr()
+    ]
+
     let priceAssetBalance = keyPriceAssetBalance(userAddress58).getInteger().valueOrElse(0)
 
     let updatedPeriodTotalAvailableToClaim = periodTotalAvailableToClaim - periodMinAvailableToClaim
@@ -509,7 +519,7 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
         # TODO consider to add more data into history: operationPrice, realPrice
         ClaimOperationHistoryEntry(
           userAddress58,
-          claimedPriceAmountFromDiff,
+          periodMinAvailableToClaim,
           claimedIdoAssetAmountFromDiff,
           i.transactionId
         )
