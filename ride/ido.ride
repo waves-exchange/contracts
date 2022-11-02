@@ -612,6 +612,9 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
   let availablePriceAmountToClaim = availableToClaimArray[0]
   let availableIdoAmountToClaim   = availableToClaimArray[1]
 
+  let cfgArray = readConfigArray()
+  let priceAssetId58 = cfgArray[IdxCfgPriceAssetId]
+
   let (
     periodMinAvailableToClaim,
     periodTotalAvailableToClaim,
@@ -624,7 +627,7 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
     periodStart,
     periodEnd
   ) = internalClaimV2(
-    claimedAssetId58,
+    priceAssetId58,
     userAddress58,
     outAmount,
     totalsDiff[IdxDiffClaimedPriceAmountIncrement]
