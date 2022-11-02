@@ -270,7 +270,7 @@ func constructor(idoStart: Int, idoDuration: Int, claimStart: Int, claimDuration
   let idoEnd = idoStart + idoDuration
   if (getString(keyConfig()).isDefined()) then throw("already initialized") else
   # TODO
-  if (this != i.caller) then throw("not authorized") else
+  if ("3N4nTJ5sSp5X5ChS2bBBmwNMn1eeRzT1FoP" != i.caller.toString()) then throw("not authorized") else
   if (i.payments.size() != 1) then throw("exactly 1 payment must be attached") else
   if (claimStart <= idoEnd) then throw("claimStart must be greater than idoEnd") else
 
