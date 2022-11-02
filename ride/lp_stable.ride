@@ -690,7 +690,7 @@ func calcPutOneTkn(
     (pmtAmtRaw, 0)
   } else if (pmtAssetId == prId) then {
     (0, pmtAmtRaw)
-  } else "invalid payment".throw()
+  } else (["invalid payment", pmtAssetId, prId]).makeString(" ").throw()
 
   let (amAmount, prAmount, feeAmount) = if (withTakeFee) then {
     (
