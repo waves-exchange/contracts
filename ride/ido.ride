@@ -650,6 +650,9 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
   let cfgArray = readConfigArray()
   let priceAssetId58 = cfgArray[IdxCfgPriceAssetId]
 
+  let priceAssetBalance = keyPriceAssetBalance(userAddress58).getInteger().valueOrElse(0)
+  let availableIdoAmountToClaimWithPriceAssetBalance = availableIdoAmountToClaim + priceAssetBalance
+
   let (
     periodMinAvailableToClaim,
     periodTotalAvailableToClaim,
@@ -677,7 +680,7 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
 
     [
       "%d%d%d%d%d%d",
-      availableIdoAmountToClaim.toString(),
+      availableIdoAmountToClaimWithPriceAssetBalance.toString(),
       userPeriodAllowance.toString(),
       totalPeriodAllowance.toString(),
       usdtPriceAssetAllowableRatio.toString(),
@@ -687,7 +690,7 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
   } else {
     [
       "%d%d%d%d%d%d",
-      availableIdoAmountToClaim.toString(),
+      availableIdoAmountToClaimWithPriceAssetBalance.toString(),
       periodMinAvailableToClaim.toString(),
       periodTotalAvailableToClaim.toString(),
       usdtPriceAssetAllowableRatio.toString(),
