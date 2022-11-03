@@ -241,17 +241,12 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
   ]
 
   if (claimedAssetId58 == priceAssetId58) then {
-    let priceAssetDecimals = claimedAssetId58.fromBase58String().assetInfo().value().decimals
-    let claimingPriceAssetAmountPriceAssetDecimals = claimingPriceAssetAmount.fraction(
-      scale8, pow(10, 0, priceAssetDecimals, 0, 0, DOWN)
-    )
-
-    ([0, -claimingPriceAssetAmountPriceAssetDecimals, claimingPriceAssetAmountPriceAssetDecimals, 0],
-        claimingPriceAssetAmountPriceAssetDecimals,
+    ([0, -claimingPriceAssetAmount, claimingPriceAssetAmount, 0],
+        claimingPriceAssetAmount,
         priceAssetId,
         origInvestArray,
         newClaimPeriodHeight,
-        [claimingPriceAssetAmountPriceAssetDecimals, claimingIdoAssetAmount])
+        [claimingPriceAssetAmount, claimingIdoAssetAmount])
   } else if (claimedAssetId58 == idoAssetId58) then {
     ([0, -claimingPriceAssetAmount, 0, claimingIdoAssetAmount],
         claimingIdoAssetAmount,
@@ -517,23 +512,15 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
     let updatedPeriodTotalAvailableToClaim = periodTotalAvailableToClaim - periodMinAvailableToClaim
     let updatedPeriodUserAvailableToClaim  = periodUserAvailableToClaim - periodMinAvailableToClaim
 
-    let priceAssetDecimals = claimedAssetId58.fromBase58String().assetInfo().value().decimals
-
-    let periodMinAvailableToClaimPriceAssetDecimals = periodMinAvailableToClaim.fraction(
-      pow(10, 0, priceAssetDecimals, 0, 0, DOWN), scale8
-    )
-
-    strict err = "123".throw()
-
     let entries = if priceAssetBalance >= periodMinAvailableToClaim then {
       [
-        ScriptTransfer(i.caller, periodMinAvailableToClaimPriceAssetDecimals, outAssetId),
+        ScriptTransfer(i.caller, periodMinAvailableToClaim, outAssetId),
         IntegerEntry(keyPriceAssetBalance(userAddress58), priceAssetBalance - periodMinAvailableToClaim)
       ]
     } else {
       let updatedPriceAssetBalance = priceAssetBalance + outAmount - periodMinAvailableToClaim
       [
-        ScriptTransfer(i.caller, periodMinAvailableToClaimPriceAssetDecimals, outAssetId),
+        ScriptTransfer(i.caller, periodMinAvailableToClaim, outAssetId),
         TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight),
         TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight),
         IntegerEntry(keyPriceAssetBalance(userAddress58), updatedPriceAssetBalance)
@@ -557,7 +544,7 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
         # TODO consider to add more data into history: operationPrice, realPrice
         ClaimOperationHistoryEntry(
           userAddress58,
-          periodMinAvailableToClaimPriceAssetDecimals,
+          periodMinAvailableToClaim,
           claimedIdoAssetAmountFromDiff,
           i.transactionId
         )
@@ -686,7 +673,6 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
   )
 
   let currentPeriodEndHeight = keyPeriodEndHeight(updatedCurrentPeriod).getInteger().valueOrElse(0)
-  let decimals = claimedAssetId58.fromBase58String().assetInfo().value().decimals
 
   let resultString = if height > currentPeriodEndHeight then {
     let periodLenght = keyPeriodLength().getInteger().value()
@@ -703,8 +689,7 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
       periodLenght.toString(),
       outAmount.toString(),
       periodMinAvailableToClaim.toString(),
-      periodUserAvailableToClaim.toString(),
-      decimals.toString()
+      periodUserAvailableToClaim.toString()
     ].makeString(SEP)
   } else {
     [
@@ -717,8 +702,7 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
       endPeriodBlocksLeft.toString(),
       outAmount.toString(),
       periodMinAvailableToClaim.toString(),
-      periodUserAvailableToClaim.toString(),
-      decimals.toString()
+      periodUserAvailableToClaim.toString()
     ].makeString(SEP)
   }
 
