@@ -331,6 +331,15 @@ func internalClaimV2(priceAssetId58: String, userAddress58: String, outAmount: I
     periodUserAvailableToClaim
   ].min()
 
+  let sum = outAmount + priceAssetBalance
+  strict err = [
+    outAmount.toString(),
+    priceAssetBalance.toString(),
+    sum.toString(),
+    periodTotalAvailableToClaim.toString(),
+    periodUserAvailableToClaim.toString()
+  ].makeString(SEP).throw()
+
   let usdtPriceAssetAllowableRatio = keyUsdtPriceAssetAllowableRatio().getInteger().value()
   let putOneTknV2PriceAssetAmount = scale8 # 100 * 10^6
 
