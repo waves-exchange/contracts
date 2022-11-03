@@ -278,7 +278,6 @@ func internalClaimV2(priceAssetId58: String, userAddress58: String, outAmount: I
         } else {
           height - blocksToLastPeriodStart
         }
-
       } else {
         lastPeriodEndHeight + 1
       }
@@ -681,7 +680,7 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
     totalsDiff[IdxDiffClaimedPriceAmountIncrement]
   )
 
-  let currentPeriodEndHeight = keyPeriodEndHeight(updatedCurrentPeriod).getInteger().value()
+  let currentPeriodEndHeight = keyPeriodEndHeight(updatedCurrentPeriod).getInteger().valueOrElse(0)
 
   let resultString = if height > currentPeriodEndHeight then {
     let periodLenght = keyPeriodLength().getInteger().value()
