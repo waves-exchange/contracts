@@ -181,10 +181,19 @@ func TotalsEntry(
 
   let newTotalAmount              = totalAmount             + incrementDiff[IdxDiffTotalIncrement]
   let newRemainingAmount          = remainingAmount         + incrementDiff[IdxDiffRemainingPriceAmountIncrement]
-  let newClaimedPriceAssetAmount  = 
+
+  let cfgArray = readConfigArray()
+  let priceAssetId58 = cfgArray[IdxCfgPriceAssetId]
+
+  let priceAssetDecimals = priceAssetId58.fromBase58String().assetInfo().value().decimals
+  let priceAssetBalancePriceAssetDecimals = priceAssetBalance.fraction(
+    scale8, pow(10, 0, priceAssetDecimals, 0, 0, DOWN)
+  )
+
+  let newClaimedPriceAssetAmount = 
     claimedPriceAssetAmount + incrementDiff[IdxDiffClaimedPriceAmountIncrement] - priceAssetBalance
-  let newClaimedIdoAssetAmount    =
-    claimedIdoAssetAmount   + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement] + priceAssetBalance
+  let newClaimedIdoAssetAmount =
+    claimedIdoAssetAmount + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement] + priceAssetBalancePriceAssetDecimals
 
   if (newRemainingAmount < 0) then throw("invalid math") else
 
