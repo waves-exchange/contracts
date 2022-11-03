@@ -674,6 +674,9 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
   )
 
   let currentPeriodEndHeight = keyPeriodEndHeight(updatedCurrentPeriod).getInteger().valueOrElse(0)
+  let userTotalPriceAssetClaimed = readInvestorArrayOrFail(
+    userAddress58
+  )[IdxInvClaimedPriceAssetAmount].parseIntValue() - priceAssetBalance
 
   let resultString = if height > currentPeriodEndHeight then {
     let periodLenght = keyPeriodLength().getInteger().value()
@@ -688,10 +691,7 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
       usdtPriceAssetAllowableRatio.toString(),
       currentUsdtPriceAssetRatio.toString(),
       periodLenght.toString(),
-      outAmount.toString(),
-      priceAssetBalanceIdoDecimals.toString(),
-      periodMinAvailableToClaim.toString(),
-      periodUserAvailableToClaim.toString()
+      userTotalPriceAssetClaimed.toString()
     ].makeString(SEP)
   } else {
     [
@@ -702,10 +702,7 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
       usdtPriceAssetAllowableRatio.toString(),
       currentUsdtPriceAssetRatio.toString(),
       endPeriodBlocksLeft.toString(),
-      outAmount.toString(),
-      priceAssetBalanceIdoDecimals.toString(),
-      periodMinAvailableToClaim.toString(),
-      periodUserAvailableToClaim.toString()
+      userTotalPriceAssetClaimed.toString()
     ].makeString(SEP)
   }
 
