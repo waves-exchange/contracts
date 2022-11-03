@@ -241,12 +241,17 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
   ]
 
   if (claimedAssetId58 == priceAssetId58) then {
-    ([0, -claimingPriceAssetAmount, claimingPriceAssetAmount, 0],
-        claimingPriceAssetAmount,
+    let priceAssetDecimals = claimedAssetId58.fromBase58String().assetInfo().value().decimals
+    let claimingPriceAssetAmountPriceAssetDecimals = claimingPriceAssetAmount.fraction(
+      scale8, pow(10, 0, priceAssetDecimals, 0, 0, DOWN)
+    )
+
+    ([0, -claimingPriceAssetAmountPriceAssetDecimals, claimingPriceAssetAmountPriceAssetDecimals, 0],
+        claimingPriceAssetAmountPriceAssetDecimals,
         priceAssetId,
         origInvestArray,
         newClaimPeriodHeight,
-        [claimingPriceAssetAmount, claimingIdoAssetAmount])
+        [claimingPriceAssetAmountPriceAssetDecimals, claimingIdoAssetAmount])
   } else if (claimedAssetId58 == idoAssetId58) then {
     ([0, -claimingPriceAssetAmount, 0, claimingIdoAssetAmount],
         claimingIdoAssetAmount,
@@ -330,15 +335,6 @@ func internalClaimV2(priceAssetId58: String, userAddress58: String, outAmount: I
     periodTotalAvailableToClaim,
     periodUserAvailableToClaim
   ].min()
-
-  let sum = outAmount + priceAssetBalance
-  strict err = [
-    outAmount.toString(),
-    priceAssetBalance.toString(),
-    sum.toString(),
-    periodTotalAvailableToClaim.toString(),
-    periodUserAvailableToClaim.toString()
-  ].makeString(SEP).throw()
 
   let usdtPriceAssetAllowableRatio = keyUsdtPriceAssetAllowableRatio().getInteger().value()
   let putOneTknV2PriceAssetAmount = scale8 # 100 * 10^6
@@ -526,12 +522,6 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
     let periodMinAvailableToClaimPriceAssetDecimals = periodMinAvailableToClaim.fraction(
       pow(10, 0, priceAssetDecimals, 0, 0, DOWN), scale8
     )
-
-    strict error = [
-      priceAssetDecimals.toString(),
-      periodMinAvailableToClaim.toString(),
-      periodMinAvailableToClaimPriceAssetDecimals.toString()
-    ].makeString(SEP).throw()
 
     let entries = if priceAssetBalance >= periodMinAvailableToClaim then {
       [
