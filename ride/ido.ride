@@ -166,7 +166,13 @@ let IdxDiffRemainingPriceAmountIncrement  = 1
 let IdxDiffClaimedPriceAmountIncrement    = 2
 let IdxDiffClaimedIdoAssetAmountIncrement = 3
 
-func TotalsEntry(key: String, origArray: List[String], incrementDiff: List[Int], newLastClaimedHeight: Int) = {
+func TotalsEntry(
+  key: String,
+  origArray: List[String],
+  incrementDiff: List[Int],
+  newLastClaimedHeight: Int,
+  priceAssetBalance: Int
+) = {
   let totalAmount                 = origArray[IdxInvTotalAmount].parseIntValue()
   let remainingAmount             = origArray[IdxInvRemainingAmount].parseIntValue()
   let claimedPriceAssetAmount     = origArray[IdxInvClaimedPriceAssetAmount].parseIntValue()
@@ -175,8 +181,10 @@ func TotalsEntry(key: String, origArray: List[String], incrementDiff: List[Int],
 
   let newTotalAmount              = totalAmount             + incrementDiff[IdxDiffTotalIncrement]
   let newRemainingAmount          = remainingAmount         + incrementDiff[IdxDiffRemainingPriceAmountIncrement]
-  let newClaimedPriceAssetAmount  = claimedPriceAssetAmount + incrementDiff[IdxDiffClaimedPriceAmountIncrement]
-  let newClaimedIdoAssetAmount    = claimedIdoAssetAmount   + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement]
+  let newClaimedPriceAssetAmount  = 
+    claimedPriceAssetAmount + incrementDiff[IdxDiffClaimedPriceAmountIncrement] + priceAssetBalance
+  let newClaimedIdoAssetAmount    =
+    claimedIdoAssetAmount   + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement] - priceAssetBalance
 
   if (newRemainingAmount < 0) then throw("invalid math") else
 
@@ -416,7 +424,7 @@ func constructor(idoStart: Int, idoDuration: Int, claimStart: Int, claimDuration
   [StringEntry(keyConfig(),
         fromatConfig(idoStart, idoDuration, claimStart, claimDuration, price, priceMult,
               idoAssetId58, idoAssetMult, priceAssetId58, priceAssetMult, minInvestAmount, pmt.amount)),
-    TotalsEntry(keyTotals(), origTotalsArray, totalsDiff, claimStart)
+    TotalsEntry(keyTotals(), origTotalsArray, totalsDiff, claimStart, 0)
   ]
 }
 
@@ -456,8 +464,8 @@ func invest() = {
   if (requiredIdoAssetAmount > assetBalance(this, idoAssetId)) then throw("IDO asset has been - sold consider to use smaller payment") else
 
   let totalsDiff = [pmtAmount, pmtAmount, 0, 0]
-  [TotalsEntry(keyInvestor(userAddress), origInvestorArray, totalsDiff, claimStart),
-    TotalsEntry(keyTotals(), origTotalsArray, totalsDiff, claimStart),
+  [TotalsEntry(keyInvestor(userAddress), origInvestorArray, totalsDiff, claimStart, 0),
+    TotalsEntry(keyTotals(), origTotalsArray, totalsDiff, claimStart, 0),
     InvestOperationHistoryEntry(userAddress, pmtAmount, 0, i.transactionId)
   ]
 }
@@ -479,6 +487,8 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
 
   let claimedPriceAmountFromDiff    = totalsDiff[IdxDiffClaimedPriceAmountIncrement]
   let claimedIdoAssetAmountFromDiff = totalsDiff[IdxDiffClaimedIdoAssetAmountIncrement]
+
+  let priceAssetBalance = keyPriceAssetBalance(userAddress58).getInteger().valueOrElse(0)
 
   let entries = if claimedAssetId58 == priceAssetId58 then {
     let (
@@ -507,8 +517,6 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
         "unavailable to claim because usdn price lower than usdtPriceAssetAllowableRatio".throwErr()
     ]
 
-    let priceAssetBalance = keyPriceAssetBalance(userAddress58).getInteger().valueOrElse(0)
-
     let updatedPeriodTotalAvailableToClaim = periodTotalAvailableToClaim - periodMinAvailableToClaim
     let updatedPeriodUserAvailableToClaim  = periodUserAvailableToClaim - periodMinAvailableToClaim
 
@@ -521,8 +529,8 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
       let updatedPriceAssetBalance = priceAssetBalance + outAmount - periodMinAvailableToClaim
       [
         ScriptTransfer(i.caller, periodMinAvailableToClaim, outAssetId),
-        TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight),
-        TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight),
+        TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight, 0),
+        TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight, 0),
         IntegerEntry(keyPriceAssetBalance(userAddress58), updatedPriceAssetBalance)
       ]
     }
@@ -551,15 +559,16 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
       ] ++ entries,
       unit
     )
-  } else { 
+  } else {
     (
       [
-        ScriptTransfer(i.caller, outAmount, outAssetId),
+        ScriptTransfer(i.caller, outAmount + priceAssetBalance, outAssetId),
         IntegerEntry(keyPriceAssetBalance(userAddress58), 0),
-        TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight),
-        TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight),
+        TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight, priceAssetBalance),
+        TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight, priceAssetBalance),
+
         # TODO consider to add more data into history: operationPrice, realPrice
-        ClaimOperationHistoryEntry(userAddress58, claimedPriceAmountFromDiff, claimedIdoAssetAmountFromDiff, i.transactionId)
+        ClaimOperationHistoryEntry(userAddress58, claimedPriceAmountFromDiff + priceAssetBalance, claimedIdoAssetAmountFromDiff, i.transactionId)
       ],
       unit
     )
