@@ -583,7 +583,7 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
         TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight, priceAssetBalance),
 
         # TODO consider to add more data into history: operationPrice, realPrice
-        ClaimOperationHistoryEntry(userAddress58, claimedPriceAmountFromDiff + priceAssetBalance, claimedIdoAssetAmountFromDiff, i.transactionId)
+        ClaimOperationHistoryEntry(userAddress58, claimedPriceAmountFromDiff + priceAssetBalanceIdoDecimals, claimedIdoAssetAmountFromDiff, i.transactionId)
       ],
       unit
     )
