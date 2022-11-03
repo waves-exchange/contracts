@@ -555,6 +555,7 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
     (
       [
         ScriptTransfer(i.caller, outAmount, outAssetId),
+        IntegerEntry(keyPriceAssetBalance(userAddress58), 0),
         TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight),
         TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight),
         # TODO consider to add more data into history: operationPrice, realPrice
