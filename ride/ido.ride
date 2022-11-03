@@ -513,9 +513,15 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
     let updatedPeriodUserAvailableToClaim  = periodUserAvailableToClaim - periodMinAvailableToClaim
 
     let priceAssetDecimals = claimedAssetId58.fromBase58String().assetInfo().value().decimals
+
+    # periodMinAvailableToClaim = 20833333300
     let periodMinAvailableToClaimPriceAssetDecimals = periodMinAvailableToClaim.fraction(
       pow(10, 0, priceAssetDecimals, 0, 0, DOWN), scale8
     )
+
+    # periodMinAvailableToClaimPriceAssetDecimals = 20833333300 * 10^6 / 10^8 = 2083333
+    # 2083333
+    # 208333333
 
     let entries = if priceAssetBalance >= periodMinAvailableToClaim then {
       [
@@ -678,6 +684,7 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
   )
 
   let currentPeriodEndHeight = keyPeriodEndHeight(updatedCurrentPeriod).getInteger().valueOrElse(0)
+  let decimals = claimedAssetId58.fromBase58String().assetInfo().value().decimals
 
   let resultString = if height > currentPeriodEndHeight then {
     let periodLenght = keyPeriodLength().getInteger().value()
@@ -694,7 +701,8 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
       periodLenght.toString(),
       outAmount.toString(),
       periodMinAvailableToClaim.toString(),
-      periodUserAvailableToClaim.toString()
+      periodUserAvailableToClaim.toString(),
+      decimals.toString()
     ].makeString(SEP)
   } else {
     [
@@ -705,9 +713,10 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
       usdtPriceAssetAllowableRatio.toString(),
       currentUsdtPriceAssetRatio.toString(),
       endPeriodBlocksLeft.toString(),
-      outAmount.toString(),
-      periodMinAvailableToClaim.toString(),
-      periodUserAvailableToClaim.toString()
+      outAmount.toString(),                                         # 20833333300
+      periodMinAvailableToClaim.toString(),                         # 20833333300
+      periodUserAvailableToClaim.toString(),                         # 50000000000
+      decimals.toString()
     ].makeString(SEP)
   }
 
