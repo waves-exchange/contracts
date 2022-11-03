@@ -182,9 +182,9 @@ func TotalsEntry(
   let newTotalAmount              = totalAmount             + incrementDiff[IdxDiffTotalIncrement]
   let newRemainingAmount          = remainingAmount         + incrementDiff[IdxDiffRemainingPriceAmountIncrement]
   let newClaimedPriceAssetAmount  = 
-    claimedPriceAssetAmount + incrementDiff[IdxDiffClaimedPriceAmountIncrement] + priceAssetBalance
+    claimedPriceAssetAmount + incrementDiff[IdxDiffClaimedPriceAmountIncrement] - priceAssetBalance
   let newClaimedIdoAssetAmount    =
-    claimedIdoAssetAmount   + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement] - priceAssetBalance
+    claimedIdoAssetAmount   + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement] + priceAssetBalance
 
   if (newRemainingAmount < 0) then throw("invalid math") else
 
