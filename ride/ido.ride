@@ -523,6 +523,8 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
       pow(10, 0, priceAssetDecimals, 0, 0, DOWN), scale8
     )
 
+    strict err = "123".throw()
+
     let entries = if priceAssetBalance >= periodMinAvailableToClaim then {
       [
         ScriptTransfer(i.caller, periodMinAvailableToClaimPriceAssetDecimals, outAssetId),
@@ -713,9 +715,9 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
       usdtPriceAssetAllowableRatio.toString(),
       currentUsdtPriceAssetRatio.toString(),
       endPeriodBlocksLeft.toString(),
-      outAmount.toString(),                                         # 20833333300
-      periodMinAvailableToClaim.toString(),                         # 20833333300
-      periodUserAvailableToClaim.toString(),                         # 50000000000
+      outAmount.toString(),
+      periodMinAvailableToClaim.toString(),
+      periodUserAvailableToClaim.toString(),
       decimals.toString()
     ].makeString(SEP)
   }
