@@ -271,7 +271,18 @@ func internalClaimV2(priceAssetId58: String, userAddress58: String, outAmount: I
 
     let (updatedCurrentPeriod, periodStart, periodEnd) = if height > lastPeriodEndHeight then {
       let updatedCurrentPeriod = currentPeriod + 1
-      let periodStart = height - (height - lastPeriodEndHeight) % periodLength
+      let periodStart = if height > lastPeriodEndHeight + periodLength then {
+        let blocksToLastPeriodStart = (height - lastPeriodEndHeight) % periodLength
+        if blocksToLastPeriodStart == 0 then {
+          height - periodLength + 1
+        } else {
+          height - blocksToLastPeriodStart
+        }
+
+      } else {
+        lastPeriodEndHeight + 1
+      }
+
       let periodEnd = periodStart + periodLength - 1
 
       (updatedCurrentPeriod, periodStart, periodEnd)
