@@ -689,6 +689,8 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
       usdtPriceAssetAllowableRatio.toString(),
       currentUsdtPriceAssetRatio.toString(),
       periodLenght.toString(),
+      claimedAssetId58,
+      priceAssetDecimals.toString(),
       availableIdoAmountToClaim.toString(),
       priceAssetBalanceEightDecimals.toString()
     ].makeString(SEP)
@@ -701,6 +703,8 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
       usdtPriceAssetAllowableRatio.toString(),
       currentUsdtPriceAssetRatio.toString(),
       endPeriodBlocksLeft.toString(),
+      claimedAssetId58,
+      priceAssetDecimals.toString(),
       availableIdoAmountToClaim.toString(),
       priceAssetBalanceEightDecimals.toString()
     ].makeString(SEP)
