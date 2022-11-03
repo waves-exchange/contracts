@@ -367,7 +367,7 @@ func internalClaimV2(priceAssetId58: String, userAddress58: String, outAmount: I
     []
   ).exactAs[(Int, Int)]
 
-  let currentUsdtPriceAssetRatio = fraction(putOneTknV2PriceAssetAmount, usdtAmount, scale8)
+  let currentUsdtPriceAssetRatio = fraction(putOneTknV2PriceAssetAmount, scale8, usdtAmount)
 
   strict err = [
     putOneTknV2PriceAssetAmount.toString(),
