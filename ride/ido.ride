@@ -652,7 +652,7 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
   let priceAssetId58 = cfgArray[IdxCfgPriceAssetId]
 
   let priceAssetBalance = keyPriceAssetBalance(userAddress58).getInteger().valueOrElse(0)
-  let priceAssetDecimals = claimedAssetId58.fromBase64String().assetInfo().value().decimals
+  let priceAssetDecimals = claimedAssetId58.fromBase58String().assetInfo().value().decimals
   let priceAssetBalanceEightDecimals = priceAssetBalance.fraction(scale8, pow(10, 0, priceAssetDecimals, 0, 0, DOWN))
   let availableIdoAmountToClaimWithPriceAssetBalance = availableIdoAmountToClaim + priceAssetBalanceEightDecimals
 
