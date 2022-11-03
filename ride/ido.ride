@@ -499,6 +499,8 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
 
   let priceAssetBalance = keyPriceAssetBalance(userAddress58).getInteger().valueOrElse(0)
 
+  let priceAssetDecimals = priceAssetId58.fromBase58String().assetInfo().value().decimals
+
   let entries = if claimedAssetId58 == priceAssetId58 then {
     let (
       periodMinAvailableToClaim,
@@ -569,9 +571,13 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
       unit
     )
   } else {
+    let priceAssetBalanceIdoDecimals = priceAssetBalance.fraction(
+      scale8, pow(10, 0, priceAssetDecimals, 0, 0, DOWN)
+    )
+
     (
       [
-        ScriptTransfer(i.caller, outAmount + priceAssetBalance, outAssetId),
+        ScriptTransfer(i.caller, outAmount + priceAssetBalanceIdoDecimals, outAssetId),
         IntegerEntry(keyPriceAssetBalance(userAddress58), 0),
         TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight, priceAssetBalance),
         TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight, priceAssetBalance),
