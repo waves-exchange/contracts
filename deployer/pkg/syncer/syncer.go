@@ -530,7 +530,17 @@ func (s *Syncer) doFile(
 					true,
 				)
 				if er != nil {
-					return fmt.Errorf("s.client.Transactions.Broadcast: %w", er)
+					setScriptTx, er3 := json.Marshal(unsignedSetScriptTx)
+					if er3 != nil {
+						return fmt.Errorf("s.validateSignBroadcastWait: %w", er3)
+					}
+
+					log().Err(er).Str(action, sign).RawJSON("tx", setScriptTx).Msg("contract changed but can't auto-deploy it")
+					er3 = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
+					if er3 != nil {
+						return fmt.Errorf("s.printDiff: %w", er3)
+					}
+					continue
 				}
 
 				log().Str(action, deployed).Msg(changed)
