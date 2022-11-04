@@ -13,23 +13,23 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: setTotalKeys.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully createPair',
+    'should successfully setTotalKeys',
     async function () {
       const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
-
-      const expectedTotalReferralCount = 1;
+      const referral = address(this.accounts.referral, chainId);
+      const referrerReward = 1e4;
+      const referralReward = 1e2;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
       );
       const signature = libs.crypto.signBytes(this.accounts.backend, bytes);
-      const referral = address(this.accounts.referral, chainId);
 
       const createReferralProgramTx = invokeScript({
         dApp: referral,
@@ -64,36 +64,57 @@ describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
           ],
         },
         chainId,
-      }, this.accounts.referrerAccount);
+      }, this.accounts.manager);
       await api.transactions.broadcast(createPairTx, {});
-      const { stateChanges } = await ni.waitForTx(createPairTx.id, { apiBase });
+      await ni.waitForTx(createPairTx.id, { apiBase });
+
+      const incUnclaimedTx = invokeScript({
+        dApp: referral,
+        payment: [],
+        call: {
+          function: 'incUnclaimed',
+          args: [
+            { type: 'string', value: programName },
+            { type: 'string', value: referralAddress },
+            { type: 'integer', value: referrerReward },
+            { type: 'integer', value: referralReward },
+          ],
+        },
+        chainId,
+      }, this.accounts.implementation);
+      await api.transactions.broadcast(incUnclaimedTx, {});
+      await ni.waitForTx(incUnclaimedTx.id, { apiBase });
+
+      const someAccount = this.accounts.implementation;
+      const setTotalKeysTx = invokeScript({
+        dApp: referral,
+        payment: [],
+        call: {
+          function: 'setTotalKeys',
+          args: [
+            { type: 'string', value: programName },
+            { type: 'string', value: referrerAddress },
+          ],
+        },
+        chainId,
+      }, someAccount);
+      await api.transactions.broadcast(setTotalKeysTx, {});
+      const { stateChanges } = await ni.waitForTx(setTotalKeysTx.id, { apiBase });
 
       expect(
-        await checkStateChanges(stateChanges, 5, 0, 0, 0, 0, 0, 0, 0, 0),
+        await checkStateChanges(stateChanges, 2, 0, 0, 0, 0, 0, 0, 0, 0),
       ).to.eql(true);
 
-      expect(stateChanges.data).to.eql([{
-        key: `%s%s%s%s__existsReferrerToReferral__${programName}__${referrerAddress}__${referralAddress}`,
-        type: 'boolean',
-        value: true,
-      }, {
-        key: `%s%s%s__totalReferralCount__${programName}__${referrerAddress}`,
-        type: 'integer',
-        value: expectedTotalReferralCount,
-      }, {
-        key: `%s%s%s__referrer__${programName}__${referralAddress}`,
-        type: 'string',
-        value: referrerAddress,
-      }, {
-        key: `%s%s__allReferralPrograms__${referrerAddress}`,
-        type: 'string',
-        value: programName,
-      }, {
-        key: `%s%s__allReferralPrograms__${referralAddress}`,
-        type: 'string',
-        value: programName,
-      },
-      ]);
+      expect(stateChanges.data).to.eql([
+        {
+          key: `%s%s__claimedTotalAddress__${referrerAddress}`,
+          type: 'integer',
+          value: 0,
+        }, {
+          key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
+          type: 'integer',
+          value: referrerReward,
+        }]);
     },
   );
 });

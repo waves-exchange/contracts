@@ -13,9 +13,9 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: claimReferrer.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: claimBulk.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully claim',
+    'should successfully claimBulk',
     async function () {
       const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
@@ -24,13 +24,6 @@ describe('referral: claimReferrer.mjs', /** @this {MochaSuiteModified} */() => {
       const referralAddress = address(this.accounts.referralAccount, chainId);
       const referrerReward = 1e4;
       const referralReward = 1e2;
-
-      const expectedClaimed = 10000;
-      const expectedUnclaimed = 0;
-      const expectedClaimedTotal = 10000;
-      const expectedNewClaimedTotalAddress = 10000;
-      const expectedNewUnclaimedTotalAddress = 0;
-      const expectedClaimerUnclaimedHistory = 10000;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
@@ -93,83 +86,146 @@ describe('referral: claimReferrer.mjs', /** @this {MochaSuiteModified} */() => {
       await api.transactions.broadcast(incUnclaimedTx, {});
       await ni.waitForTx(incUnclaimedTx.id, { apiBase });
 
-      const claimTx = invokeScript({
+      const claimBulkTx = invokeScript({
         dApp: referral,
         payment: [],
         call: {
-          function: 'claim',
-          args: [
-            { type: 'string', value: programName },
-          ],
+          function: 'claimBulk',
+          args: [],
         },
         chainId,
       }, this.accounts.referrerAccount);
-      await api.transactions.broadcast(claimTx, {});
-      const { height, stateChanges } = await ni.waitForTx(claimTx.id, { apiBase });
+      await api.transactions.broadcast(claimBulkTx, {});
+      const {
+        id,
+        height: heightClaimBulk,
+        stateChanges,
+      } = await ni.waitForTx(claimBulkTx.id, { apiBase });
 
-      const { timestamp } = await api.blocks.fetchHeadersAt(height);
+      const { timestamp } = await api.blocks.fetchHeadersAt(heightClaimBulk);
+
+      // claimBulk invoke
+      // ___________________________________________________________________________________________
 
       expect(
         await checkStateChanges(stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 1),
       ).to.eql(true);
 
-      const invokeClaimInternal = stateChanges.invokes[0];
+      const { invokes } = stateChanges;
 
-      expect(invokeClaimInternal.dApp).to.eql(referral);
-      expect(invokeClaimInternal.call.function).to.eql('claimInternal');
-      expect(invokeClaimInternal.call.args).to.eql([
-        { type: 'String', value: 'wxlock' },
-        { type: 'String', value: referrerAddress },
-        { type: 'Boolean', value: false },
-      ]);
-      expect(invokeClaimInternal.payment).to.eql([]);
+      // firstClaimBulk
+      // ___________________________________________________________________________________________
+      const firstClaimBulk = invokes[0];
       expect(
-        await checkStateChanges(invokeClaimInternal.stateChanges, 6, 1, 0, 0, 0, 0, 0, 0, 1),
+        await checkStateChanges(firstClaimBulk.stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 2),
       ).to.eql(true);
 
-      expect(invokeClaimInternal.stateChanges.data).to.eql([{
+      expect(firstClaimBulk.dApp).to.eql(address(this.accounts.referral, chainId));
+      expect(firstClaimBulk.call.function).to.eql('claimBulkInternal');
+      expect(firstClaimBulk.call.args).to.eql([
+        {
+          type: 'String',
+          value: referrerAddress,
+        }, {
+          type: 'Array',
+          value: [
+            { type: 'String', value: programName },
+          ],
+        }, {
+          type: 'Int',
+          value: 0,
+        }]);
+      expect(firstClaimBulk.payment).to.eql([]);
+
+      // secondClaimBulk, claimInternal
+      // ___________________________________________________________________________________________
+      const secondClaimBulk = firstClaimBulk.stateChanges.invokes[0];
+      const claimInternalAfterFirstClaimBulk = firstClaimBulk.stateChanges.invokes[1];
+
+      expect(
+        await checkStateChanges(
+          secondClaimBulk.stateChanges,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+        ),
+      ).to.eql(true);
+
+      expect(secondClaimBulk.dApp).to.eql(address(this.accounts.referral, chainId));
+      expect(secondClaimBulk.call.function).to.eql('claimBulkInternal');
+      expect(secondClaimBulk.call.args).to.eql([
+        {
+          type: 'String',
+          value: referrerAddress,
+        }, {
+          type: 'Array',
+          value: [
+            { type: 'String', value: programName },
+          ],
+        }, {
+          type: 'Int',
+          value: 1,
+        }]);
+      expect(secondClaimBulk.payment).to.eql([]);
+
+      expect(
+        await checkStateChanges(
+          claimInternalAfterFirstClaimBulk.stateChanges,
+          6,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+        ),
+      ).to.eql(true);
+
+      expect(claimInternalAfterFirstClaimBulk.stateChanges.data).to.eql([{
         key: `%s%s%s__claimedReferrer__${programName}__${referrerAddress}`,
         type: 'integer',
-        value: expectedClaimed,
+        value: referrerReward,
       }, {
         key: `%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
         type: 'integer',
-        value: expectedUnclaimed,
+        value: 0,
       }, {
         key: `%s%s__claimedTotal__${programName}`,
         type: 'integer',
-        value: expectedClaimedTotal,
+        value: referrerReward,
       }, {
         key: `%s%s__claimedTotalAddress__${referrerAddress}`,
         type: 'integer',
-        value: expectedNewClaimedTotalAddress,
+        value: referrerReward,
       }, {
         key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
         type: 'integer',
-        value: expectedNewUnclaimedTotalAddress,
+        value: 0,
       }, {
-        key: `%s%s%s%s%s__history__claimReferrer__${programName}__${referrerAddress}__${claimTx.id}`,
+        key: `%s%s%s%s%s__history__claimReferrer__${programName}__${referrerAddress}__${id}`,
         type: 'string',
-        value: `%d%d%d__${height}__${timestamp}__${expectedClaimerUnclaimedHistory}`,
+        value: `%d%d%d__${heightClaimBulk}__${timestamp}__${referrerReward}`,
       }]);
 
-      expect(invokeClaimInternal.stateChanges.transfers).to.eql([{
+      expect(claimInternalAfterFirstClaimBulk.stateChanges.transfers).to.eql([{
         address: referrerAddress,
         asset: this.wxAssetId,
-        amount: expectedClaimed,
+        amount: referrerReward,
       }]);
 
-      const invokeWithdrawReferralReward = invokeClaimInternal.stateChanges.invokes[0];
-
-      expect(invokeWithdrawReferralReward.dApp).to.eql(treasuryContract);
-      expect(invokeWithdrawReferralReward.call.function).to.eql('withdrawReferralReward');
-      expect(invokeWithdrawReferralReward.call.args).to.eql([
-        { type: 'Int', value: expectedClaimed },
-      ]);
-      expect(invokeWithdrawReferralReward.payment).to.eql([]);
+      const withdrawReferralRewardAfterFirstClaimBulk = claimInternalAfterFirstClaimBulk
+        .stateChanges.invokes[0];
       expect(
         await checkStateChanges(
-          invokeWithdrawReferralReward.stateChanges,
+          withdrawReferralRewardAfterFirstClaimBulk.stateChanges,
           0,
           1,
           0,
@@ -181,11 +237,10 @@ describe('referral: claimReferrer.mjs', /** @this {MochaSuiteModified} */() => {
           0,
         ),
       ).to.eql(true);
-
-      expect(invokeWithdrawReferralReward.stateChanges.transfers).to.eql([{
+      expect(withdrawReferralRewardAfterFirstClaimBulk.stateChanges.transfers).to.eql([{
         address: referral,
         asset: this.wxAssetId,
-        amount: expectedClaimed,
+        amount: referrerReward,
       }]);
     },
   );

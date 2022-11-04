@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, libs, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { checkStateChanges } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -16,7 +17,7 @@ describe('referral: incUnclaimed.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully incUnclaimed',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
@@ -85,19 +86,32 @@ describe('referral: incUnclaimed.mjs', /** @this {MochaSuiteModified} */() => {
       await api.transactions.broadcast(incUnclaimedTx, {});
       const { stateChanges } = await ni.waitForTx(incUnclaimedTx.id, { apiBase });
 
-      expect(stateChanges.data).to.eql([{
-        key: `%s%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
-        type: 'integer',
-        value: referrerReward,
-      }, {
-        key: `%s%s%s%s__unclaimedReferral__${programName}__${referralAddress}`,
-        type: 'integer',
-        value: referralReward,
-      }, {
-        key: `%s%s__rewardsTotal__${programName}`,
-        type: 'integer',
-        value: referrerReward + referralReward,
-      }]);
+      expect(
+        await checkStateChanges(stateChanges, 5, 0, 0, 0, 0, 0, 0, 0, 0),
+      ).to.eql(true);
+
+      expect(stateChanges.data).to.eql([
+        {
+          key: `%s%s__unclaimedTotalAddress__${referrerAddress}`,
+          type: 'integer',
+          value: referrerReward,
+        }, {
+          key: `%s%s__unclaimedTotalAddress__${referralAddress}`,
+          type: 'integer',
+          value: referralReward,
+        }, {
+          key: `%s%s%s__unclaimedReferrer__${programName}__${referrerAddress}`,
+          type: 'integer',
+          value: referrerReward,
+        }, {
+          key: `%s%s%s__unclaimedReferral__${programName}__${referralAddress}`,
+          type: 'integer',
+          value: referralReward,
+        }, {
+          key: `%s%s__rewardsTotal__${programName}`,
+          type: 'integer',
+          value: referrerReward + referralReward,
+        }]);
     },
   );
 });

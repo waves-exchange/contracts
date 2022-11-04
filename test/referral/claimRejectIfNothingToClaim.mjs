@@ -56,7 +56,7 @@ describe('referral: claimRejectIfNothingToClaim.mjs', /** @this {MochaSuiteModif
       await expect(
         api.transactions.broadcast(claimTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        new RegExp(`/*${expectedRejectMessage}/*`),
       );
     },
   );

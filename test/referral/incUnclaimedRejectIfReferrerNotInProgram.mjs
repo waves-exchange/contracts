@@ -12,19 +12,16 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: createPairRejectIfBadSignature.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: incUnclaimedRejectIfReferrerNotInProgram.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should reject createPair',
+    'should reject incUnclaimed',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
-      const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
-
-      const expectedRejectMessage = 'referral.ride: bad signature';
-
-      const badSignature = 'BadSignature';
+      const referrerReward = 1e4;
+      const referralReward = 1e2;
       const referral = address(this.accounts.referral, chainId);
 
       const createReferralProgramTx = invokeScript({
@@ -44,29 +41,22 @@ describe('referral: createPairRejectIfBadSignature.mjs', /** @this {MochaSuiteMo
       await api.transactions.broadcast(createReferralProgramTx, {});
       await ni.waitForTx(createReferralProgramTx.id, { apiBase });
 
-      const createPairTx = invokeScript({
+      const incUnclaimedTx = invokeScript({
         dApp: referral,
         payment: [],
         call: {
-          function: 'createPair',
+          function: 'incUnclaimed',
           args: [
             { type: 'string', value: programName },
-            { type: 'string', value: referrerAddress },
             { type: 'string', value: referralAddress },
-            {
-              type: 'binary',
-              value: badSignature,
-            },
+            { type: 'integer', value: referrerReward },
+            { type: 'integer', value: referralReward },
           ],
         },
         chainId,
-      }, this.accounts.manager);
+      }, this.accounts.implementation);
 
-      await expect(
-        api.transactions.broadcast(createPairTx, {}),
-      ).to.be.rejectedWith(
-        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
-      );
+      await expect(api.transactions.broadcast(incUnclaimedTx, {})).to.be.rejected;
     },
   );
 });

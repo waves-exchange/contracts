@@ -25,7 +25,7 @@ describe('referral: claimRejectIfInsufficientBalanceOnReferral.mjs', /** @this {
   it(
     'should reject claim',
     async function () {
-      const programName = 'ReferralProgram';
+      const programName = 'wxlock';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
@@ -111,7 +111,7 @@ describe('referral: claimRejectIfInsufficientBalanceOnReferral.mjs', /** @this {
       await expect(
         api.transactions.broadcast(claimTx, {}),
       ).to.be.rejectedWith(
-        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
+        new RegExp(`/*${expectedRejectMessage}/*`),
       );
     },
   );

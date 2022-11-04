@@ -12,26 +12,25 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: confirmManagerRejectIfNoPendingManager.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: claimBulkRejectIfNoReferalPrograms.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should reject confirmManager',
+    'should reject claimBulk',
     async function () {
       const referral = address(this.accounts.referral, chainId);
+      const expectedRejectMessage = 'referral.ride: no referral programs';
 
-      const expectedRejectMessage = 'referral.ride: no pending manager';
-
-      const confirmManagerTx = invokeScript({
+      const claimBulkTx = invokeScript({
         dApp: referral,
         payment: [],
         call: {
-          function: 'confirmManager',
+          function: 'claimBulk',
           args: [],
         },
         chainId,
-      }, this.accounts.implementation);
+      }, this.accounts.referrerAccount);
 
       await expect(
-        api.transactions.broadcast(confirmManagerTx, {}),
+        api.transactions.broadcast(claimBulkTx, {}),
       ).to.be.rejectedWith(
         new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
       );

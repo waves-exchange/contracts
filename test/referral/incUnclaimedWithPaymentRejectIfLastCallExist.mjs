@@ -3,7 +3,6 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, libs, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { checkStateChanges } from '../utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -13,22 +12,22 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
+describe('referral: incUnclaimedWithPaymentRejectIfLastCallExist.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully createPair',
+    'should successfully incUnclaimedWithPayment',
     async function () {
-      const programName = 'wxlock';
+      const programName = 'wxSpotFee';
       const treasuryContract = address(this.accounts.treasury, chainId);
       const implementationContract = address(this.accounts.implementation, chainId);
       const referrerAddress = address(this.accounts.referrerAccount, chainId);
       const referralAddress = address(this.accounts.referralAccount, chainId);
-
-      const expectedTotalReferralCount = 1;
+      const referrerReward = 1e4;
 
       const bytes = libs.crypto.stringToBytes(
         `${programName}:${referrerAddress}:${referralAddress}`,
       );
       const signature = libs.crypto.signBytes(this.accounts.backend, bytes);
+
       const referral = address(this.accounts.referral, chainId);
 
       const createReferralProgramTx = invokeScript({
@@ -64,36 +63,45 @@ describe('referral: createPair.mjs', /** @this {MochaSuiteModified} */() => {
           ],
         },
         chainId,
-      }, this.accounts.referrerAccount);
+      }, this.accounts.manager);
       await api.transactions.broadcast(createPairTx, {});
-      const { stateChanges } = await ni.waitForTx(createPairTx.id, { apiBase });
+      await ni.waitForTx(createPairTx.id, { apiBase });
 
-      expect(
-        await checkStateChanges(stateChanges, 5, 0, 0, 0, 0, 0, 0, 0, 0),
-      ).to.eql(true);
+      const incUnclaimedWithPaymentTx = invokeScript({
+        dApp: referral,
+        payment: [{ assetId: this.wxAssetId, amount: referrerReward }],
+        call: {
+          function: 'incUnclaimedWithPayment',
+          args: [
+            { type: 'string', value: programName },
+            { type: 'list', value: [{ type: 'string', value: referrerAddress }] },
+          ],
+        },
+        chainId,
+      }, this.accounts.implementation);
+      await api.transactions.broadcast(incUnclaimedWithPaymentTx, {});
+      await ni.waitForTx(incUnclaimedWithPaymentTx.id, { apiBase });
 
-      expect(stateChanges.data).to.eql([{
-        key: `%s%s%s%s__existsReferrerToReferral__${programName}__${referrerAddress}__${referralAddress}`,
-        type: 'boolean',
-        value: true,
-      }, {
-        key: `%s%s%s__totalReferralCount__${programName}__${referrerAddress}`,
-        type: 'integer',
-        value: expectedTotalReferralCount,
-      }, {
-        key: `%s%s%s__referrer__${programName}__${referralAddress}`,
-        type: 'string',
-        value: referrerAddress,
-      }, {
-        key: `%s%s__allReferralPrograms__${referrerAddress}`,
-        type: 'string',
-        value: programName,
-      }, {
-        key: `%s%s__allReferralPrograms__${referralAddress}`,
-        type: 'string',
-        value: programName,
-      },
-      ]);
+      const repeatIncUnclaimedWithPaymentTx = invokeScript({
+        dApp: referral,
+        payment: [{ assetId: this.wxAssetId, amount: referrerReward }],
+        call: {
+          function: 'incUnclaimedWithPayment',
+          args: [
+            { type: 'string', value: programName },
+            { type: 'list', value: [{ type: 'string', value: referrerAddress }] },
+          ],
+        },
+        chainId,
+      }, this.accounts.implementation);
+
+      const expectedRejectMessage = 'referral.ride: wait \\d blocks';
+
+      await expect(
+        api.transactions.broadcast(repeatIncUnclaimedWithPaymentTx, {}),
+      ).to.be.rejectedWith(
+        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
+      );
     },
   );
 });

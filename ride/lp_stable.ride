@@ -659,7 +659,8 @@ func calcPutOneTkn(
   pmtAmtRaw: Int,
   pmtAssetId: String,
   userAddress: String,
-  txId: String
+  txId: String,
+  withTakeFee: Boolean
 ) = {
   let poolConfig = gpc()
   let amId = poolConfig[idxAmAsId]
@@ -691,9 +692,19 @@ func calcPutOneTkn(
     (0, pmtAmtRaw)
   } else "invalid payment".throw()
 
-  let amAmount = amAmountRaw.takeFee()._1
-  let prAmount = prAmountRaw.takeFee()._1
-  let feeAmount = pmtAmtRaw.takeFee()._2
+  let (amAmount, prAmount, feeAmount) = if (withTakeFee) then {
+    (
+      amAmountRaw.takeFee()._1,
+      prAmountRaw.takeFee()._1,
+      pmtAmtRaw.takeFee()._2
+    )
+  } else {
+    (
+      amAmountRaw,
+      prAmountRaw,
+      0
+    )
+  }
 
   let amBalanceNew = amBalanceOld + amAmount
   let prBalanceNew = prBalanceOld + prAmount
@@ -748,8 +759,6 @@ func getOneTknV2Internal(
   let pmtAssetId = pmt.assetId.value()
   let pmtAmt = pmt.amount
 
-  if (pmtAmt < 10_00_000_000) then throw("Min pmt 10 LP") else
-
   let txId58 = transactionId.toBase58String()
 
   if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
@@ -760,7 +769,7 @@ func getOneTknV2Internal(
   let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
 
   let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
-    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else totalGet
 
   let (outAm, outPr, amBalanceNew, prBalanceNew) = if (outAssetId == amId) then {
@@ -926,13 +935,17 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   let pmt = i.payments[0].value()
   let pmtAssetId = pmt.assetId.value().toBase58String()
   let pmtAmt = pmt.amount
-  
-  if (pmtAmt < 10_000_000) then throw("Wrong pmt amt") else
 
-  let (estimLP, state, feeAmount) = calcPutOneTkn(pmtAmt, pmtAssetId, userAddress.toString(), i.transactionId.toBase58String())
+  let (estimLP, state, feeAmount) = calcPutOneTkn(
+    pmtAmt,
+    pmtAssetId,
+    userAddress.toString(),
+    i.transactionId.toBase58String(),
+    true
+  )
 
   let emitLpAmt = if (minOutAmount > 0 && estimLP < minOutAmount) then {
-    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throw()
+    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else estimLP
 
   # emit lp on factory
@@ -1040,7 +1053,7 @@ func getOneTknV2READONLY(
   }
   let newY = xp.getYD(index, D1)
   let dy = xp[index] - newY
-  let totalGetRaw = { dy - big1 }.toInt()
+  let totalGetRaw = [0, { dy - big1 }.toInt()].max()
   let (totalGet, feeAmount) = totalGetRaw.takeFee()
 
   (nil, (totalGet, feeAmount))
@@ -1072,7 +1085,11 @@ func getOneTknV2WithBonusREADONLY(
   let outPrAmt = r._2
   let sumOfGetAssets = outAmAmt + outPrAmt
   
-  let bonus = fraction((totalGet - sumOfGetAssets), scale8, sumOfGetAssets)
+  let bonus = if (sumOfGetAssets == 0) then {
+    if (totalGet == 0) then 0 else "bonus calculation error".throw()
+  } else {
+    fraction((totalGet - sumOfGetAssets), scale8, sumOfGetAssets)
+  }
 
   ([], (totalGet, feeAmount, bonus))
 }
@@ -1156,7 +1173,19 @@ func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String)
   let prId = poolConfig[idxPrAsId]
   let lpId = poolConfig[idxLPAsId]
 
-  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "")
+  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", true)
+
+  (nil, (lpAmount, feeAmount, bonus))
+}
+
+@Callable(i)
+func putOneTknV2WithoutTakeFeeREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let lpId = poolConfig[idxLPAsId]
+
+  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", false)
 
   (nil, (lpAmount, feeAmount, bonus))
 }

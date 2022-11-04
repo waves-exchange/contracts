@@ -41,7 +41,7 @@ describe('referral: createReferralProgramRejectIfInvalidProgramName.mjs', /** @t
       await expect(
         api.transactions.broadcast(createReferralProgramTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
       );
     },
   );

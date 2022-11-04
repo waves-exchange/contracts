@@ -6,6 +6,9 @@ func getStringOrFail(key: String) = getString(key).valueOrErrorMessage("mandator
 
 let SEP = "__"
 let BUFSCALE = 1000_000_000_000_000_000.toBigInt() # 10^18
+let scale8 = 100_000_000 # 10^8
+
+func throwErr(msg: String) = ["ido.ride:", msg].makeString(" ").throw()
 
 # Convertion between Assets - utility functions
 func convertPriceAssetIntoIdoAsset(priceAssetAmount: Int, priceAssetMULT: Int, price: Int, priceMULT: Int, idoAssetMULT: Int) = {
@@ -115,6 +118,25 @@ func keyOperationHistoryRecord(type: String, userAddress: String, txId58: String
 func keyUSDNClaimDisabled() = "%s__usdnClaimDisabled"
 func keyUSDNClaimEndHeight() = "%s__usdnClaimEndHeight"
 
+func keyPeriodLength() = ["%s", "periodLength"].makeString(SEP)
+func keyCurrentPeriod() = ["%s", "currentPeriod"].makeString(SEP)
+func keyPeriodStartHeight(periodNum: Int) = ["%s%s", "periodStartHeight", periodNum.toString()].makeString(SEP)
+func keyPeriodEndHeight(periodNum: Int) = ["%s%s", "periodEndHeight", periodNum.toString()].makeString(SEP)
+func keyUsdtPriceAssetAllowableRatio() = ["%s", "usdtPriceAssetAllowableRatio"].makeString(SEP)
+func keyTotalPeriodAllowance(assetId: String) = ["%s%s", "totalPeriodAllowance", assetId].makeString(SEP)
+func keyUserPeriodAllowance(assetId: String) = ["%s%s", "userPeriodAllowance", assetId].makeString(SEP)
+func keyPeriodTotalAvailableToClaim(assetId: String, periodNum: Int) = {
+  ["%s%s%s", "periodTotalAvailableToClaim", assetId, periodNum.toString()].makeString(SEP)
+}
+func keyPeriodUserAvailableToClaim(assetId: String, periodNum: Int, userAddress: String) = {
+  ["%s%s%s%s", "periodUserAvailableToClaim", assetId, periodNum.toString(), userAddress].makeString(SEP)
+}
+
+func keyUsdtPriceAssetStablePool() = ["%s", "usdtPriceAssetStablePool"].makeString(SEP)
+func keyUsdtAssetId() = ["%s", "usdtAssetId"].makeString(SEP)
+
+func keyPriceAssetBalance(address: String) = ["%s%s", "priceAssetBalance", address].makeString(SEP)
+
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
 
@@ -144,7 +166,13 @@ let IdxDiffRemainingPriceAmountIncrement  = 1
 let IdxDiffClaimedPriceAmountIncrement    = 2
 let IdxDiffClaimedIdoAssetAmountIncrement = 3
 
-func TotalsEntry(key: String, origArray: List[String], incrementDiff: List[Int], newLastClaimedHeight: Int) = {
+func TotalsEntry(
+  key: String,
+  origArray: List[String],
+  incrementDiff: List[Int],
+  newLastClaimedHeight: Int,
+  priceAssetBalance: Int
+) = {
   let totalAmount                 = origArray[IdxInvTotalAmount].parseIntValue()
   let remainingAmount             = origArray[IdxInvRemainingAmount].parseIntValue()
   let claimedPriceAssetAmount     = origArray[IdxInvClaimedPriceAssetAmount].parseIntValue()
@@ -153,8 +181,19 @@ func TotalsEntry(key: String, origArray: List[String], incrementDiff: List[Int],
 
   let newTotalAmount              = totalAmount             + incrementDiff[IdxDiffTotalIncrement]
   let newRemainingAmount          = remainingAmount         + incrementDiff[IdxDiffRemainingPriceAmountIncrement]
-  let newClaimedPriceAssetAmount  = claimedPriceAssetAmount + incrementDiff[IdxDiffClaimedPriceAmountIncrement]
-  let newClaimedIdoAssetAmount    = claimedIdoAssetAmount   + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement]
+
+  let cfgArray = readConfigArray()
+  let priceAssetId58 = cfgArray[IdxCfgPriceAssetId]
+
+  let priceAssetDecimals = priceAssetId58.fromBase58String().assetInfo().value().decimals
+  let priceAssetBalancePriceAssetDecimals = priceAssetBalance.fraction(
+    scale8, pow(10, 0, priceAssetDecimals, 0, 0, DOWN)
+  )
+
+  let newClaimedPriceAssetAmount = 
+    claimedPriceAssetAmount + incrementDiff[IdxDiffClaimedPriceAmountIncrement] - priceAssetBalance
+  let newClaimedIdoAssetAmount =
+    claimedIdoAssetAmount + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement] + priceAssetBalancePriceAssetDecimals
 
   if (newRemainingAmount < 0) then throw("invalid math") else
 
@@ -214,13 +253,8 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
 
   let isUSDN = claimedAssetId58 == priceAssetId58
   let isUSDNClaimDisabled = keyUSDNClaimDisabled().getBoolean().valueOrElse(false)
-  let isUSDNClaimEnded = match keyUSDNClaimEndHeight().getInteger() {
-	case end: Int => height > end
-	case _: Unit => false
-  }
   strict checks = [
-    !(isUSDN && isUSDNClaimDisabled) || "USDN claim is disabled".throw(),
-    !(isUSDN && isUSDNClaimEnded) || "USDN claim is ended".throw()
+    !(isUSDN && isUSDNClaimDisabled) || "USDN claim is disabled".throw()
   ]
 
   if (claimedAssetId58 == priceAssetId58) then {
@@ -238,6 +272,116 @@ func internalClaim(claimedAssetId58: String, userAddress: Address, txId: ByteVec
         newClaimPeriodHeight,
         [claimingPriceAssetAmount, claimingIdoAssetAmount])
   } else throw("unsupported assetId: " + claimedAssetId58)
+}
+
+func internalClaimV2(priceAssetId58: String, userAddress58: String, outAmount: Int, totalUserAvailableToClaim: Int) = {
+  let totalPeriodPriceAssetAllowance = keyTotalPeriodAllowance(priceAssetId58).getInteger().value()
+  let userPeriodPriceAssetAllowance = keyUserPeriodAllowance(priceAssetId58).getInteger().value()
+
+  let periodLength = keyPeriodLength().getInteger().value()
+  let currentPeriod = keyCurrentPeriod().getInteger().valueOrElse(0)
+  let zeroPeriodEndHeighIsDefined = keyPeriodEndHeight(0).getInteger().isDefined()
+
+  let (updatedCurrentPeriod, periodStart, periodEnd) = if currentPeriod > 0 then {
+    let lastPeriodStartHeight = keyPeriodStartHeight(currentPeriod).getInteger().value()
+    let lastPeriodEndHeight = keyPeriodEndHeight(currentPeriod).getInteger().value()
+
+    let (updatedCurrentPeriod, periodStart, periodEnd) = if height > lastPeriodEndHeight then {
+      let updatedCurrentPeriod = currentPeriod + 1
+      let periodStart = if height > lastPeriodEndHeight + periodLength then {
+        let blocksToLastPeriodStart = (height - lastPeriodEndHeight) % periodLength
+        if blocksToLastPeriodStart == 0 then {
+          height - periodLength + 1
+        } else {
+          height - blocksToLastPeriodStart
+        }
+      } else {
+        lastPeriodEndHeight + 1
+      }
+
+      let periodEnd = periodStart + periodLength - 1
+
+      (updatedCurrentPeriod, periodStart, periodEnd)
+    } else {
+      (currentPeriod, lastPeriodStartHeight, lastPeriodEndHeight)
+    }
+
+    (updatedCurrentPeriod, periodStart, periodEnd)
+  } else if zeroPeriodEndHeighIsDefined then {
+    let zeroPeriodStartHeight = keyPeriodStartHeight(0).getInteger().value()
+    let zeroPeriodEndHeight = keyPeriodEndHeight(0).getInteger().value()
+
+    let (updatedCurrentPeriod, periodStart, periodEnd) = if height > zeroPeriodEndHeight then {
+      let updatedCurrentPeriod = currentPeriod + 1
+      let periodStart = zeroPeriodEndHeight + 1
+      let periodEnd = periodStart + periodLength - 1
+
+      (updatedCurrentPeriod, periodStart, periodEnd)
+    } else {
+      (currentPeriod, zeroPeriodStartHeight, zeroPeriodEndHeight)
+    }
+
+    (updatedCurrentPeriod, periodStart, periodEnd)
+  } else {
+    (
+      currentPeriod,
+      keyPeriodStartHeight(currentPeriod).getInteger().valueOrElse(height),
+      keyPeriodEndHeight(currentPeriod).getInteger().valueOrElse(height + periodLength - 1)
+    )
+  }
+
+  let periodTotalAvailableToClaim = keyPeriodTotalAvailableToClaim(
+    priceAssetId58,
+    updatedCurrentPeriod
+  ).getInteger().valueOrElse(totalPeriodPriceAssetAllowance)
+  let periodUserAvailableToClaim = keyPeriodUserAvailableToClaim(
+    priceAssetId58,
+    updatedCurrentPeriod,
+    userAddress58
+  ).getInteger().valueOrElse(userPeriodPriceAssetAllowance)
+
+  let priceAssetBalance = keyPriceAssetBalance(userAddress58).getInteger().valueOrElse(0)
+
+  let periodMinAvailableToClaim = [
+    outAmount + priceAssetBalance,
+    periodTotalAvailableToClaim,
+    periodUserAvailableToClaim
+  ].min()
+
+  let usdtPriceAssetAllowableRatio = keyUsdtPriceAssetAllowableRatio().getInteger().value()
+  let putOneTknV2PriceAssetAmount = scale8 # 100 * 10^6
+
+  strict (lpAmount, feeAmount, bonus) = invoke(
+    keyUsdtPriceAssetStablePool().getString().value().addressFromStringValue(),
+    "putOneTknV2WithoutTakeFeeREADONLY",
+    [putOneTknV2PriceAssetAmount, priceAssetId58],
+    []
+  ).exactAs[(Int, Int, Int)]
+
+  let usdtAssetId = keyUsdtAssetId().getString().value()
+
+  strict (usdtAmount, getOneTknV2FeeAmount) = invoke(
+    keyUsdtPriceAssetStablePool().getString().value().addressFromStringValue(),
+    "getOneTknV2READONLY",
+    [usdtAssetId, lpAmount],
+    []
+  ).exactAs[(Int, Int)]
+
+  let currentUsdtPriceAssetRatio = fraction(putOneTknV2PriceAssetAmount, scale8, usdtAmount)
+  let endPeriodBlocksLeft = periodEnd - height
+
+  (
+    periodMinAvailableToClaim,
+    periodTotalAvailableToClaim,
+    periodUserAvailableToClaim,
+    totalUserAvailableToClaim,
+    usdtPriceAssetAllowableRatio,
+    currentUsdtPriceAssetRatio,
+    endPeriodBlocksLeft,
+    updatedCurrentPeriod,
+    periodStart,
+    periodEnd
+  )
 }
 
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
@@ -289,7 +433,7 @@ func constructor(idoStart: Int, idoDuration: Int, claimStart: Int, claimDuration
   [StringEntry(keyConfig(),
         fromatConfig(idoStart, idoDuration, claimStart, claimDuration, price, priceMult,
               idoAssetId58, idoAssetMult, priceAssetId58, priceAssetMult, minInvestAmount, pmt.amount)),
-    TotalsEntry(keyTotals(), origTotalsArray, totalsDiff, claimStart)
+    TotalsEntry(keyTotals(), origTotalsArray, totalsDiff, claimStart, 0)
   ]
 }
 
@@ -329,8 +473,8 @@ func invest() = {
   if (requiredIdoAssetAmount > assetBalance(this, idoAssetId)) then throw("IDO asset has been - sold consider to use smaller payment") else
 
   let totalsDiff = [pmtAmount, pmtAmount, 0, 0]
-  [TotalsEntry(keyInvestor(userAddress), origInvestorArray, totalsDiff, claimStart),
-    TotalsEntry(keyTotals(), origTotalsArray, totalsDiff, claimStart),
+  [TotalsEntry(keyInvestor(userAddress), origInvestorArray, totalsDiff, claimStart, 0),
+    TotalsEntry(keyTotals(), origTotalsArray, totalsDiff, claimStart, 0),
     InvestOperationHistoryEntry(userAddress, pmtAmount, 0, i.transactionId)
   ]
 }
@@ -340,6 +484,8 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
   let callerAddress58 = i.caller.toString()
 
   if (userAddress58 != callerAddress58) then throw("not authorized") else
+  let cfgArray = readConfigArray()
+  let priceAssetId58 = cfgArray[IdxCfgPriceAssetId]
 
   let claimResultTuple = internalClaim(claimedAssetId58, i.caller, i.transactionId)
   let totalsDiff            = claimResultTuple._1
@@ -351,12 +497,104 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
   let claimedPriceAmountFromDiff    = totalsDiff[IdxDiffClaimedPriceAmountIncrement]
   let claimedIdoAssetAmountFromDiff = totalsDiff[IdxDiffClaimedIdoAssetAmountIncrement]
 
-  ([ScriptTransfer(i.caller, outAmount, outAssetId),
-    TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight),
-    TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight),
-# TODO consider to add more data into history: operationPrice, realPrice
-    ClaimOperationHistoryEntry(userAddress58, claimedPriceAmountFromDiff, claimedIdoAssetAmountFromDiff, i.transactionId)
-  ], unit)
+  let priceAssetBalance = keyPriceAssetBalance(userAddress58).getInteger().valueOrElse(0)
+
+  let priceAssetDecimals = priceAssetId58.fromBase58String().assetInfo().value().decimals
+
+  let entries = if claimedAssetId58 == priceAssetId58 then {
+    let (
+      periodMinAvailableToClaim,
+      periodTotalAvailableToClaim,
+      periodUserAvailableToClaim,
+      totalUserAvailableToClaim,
+      usdtPriceAssetAllowableRatio,
+      currentUsdtPriceAssetRatio,
+      endPeriodBlocksLeft,
+      updatedCurrentPeriod,
+      periodStart,
+      periodEnd
+    ) = internalClaimV2(
+      priceAssetId58,
+      userAddress58,
+      outAmount,
+      totalsDiff[IdxDiffClaimedPriceAmountIncrement]
+    )
+
+    strict checks = [
+      periodUserAvailableToClaim > 0 || "unavailable to claim because user period allowance reached".throwErr(),
+      periodTotalAvailableToClaim > 0 || "unavailable to claim because total period allowance reached".throwErr(),
+      periodMinAvailableToClaim > 0 || "nothing to claim".throwErr(),
+      currentUsdtPriceAssetRatio < usdtPriceAssetAllowableRatio ||
+        "unavailable to claim because usdn price lower than usdtPriceAssetAllowableRatio".throwErr()
+    ]
+
+    let updatedPeriodTotalAvailableToClaim = periodTotalAvailableToClaim - periodMinAvailableToClaim
+    let updatedPeriodUserAvailableToClaim  = periodUserAvailableToClaim - periodMinAvailableToClaim
+
+    let entries = if priceAssetBalance >= periodMinAvailableToClaim then {
+      [
+        ScriptTransfer(i.caller, periodMinAvailableToClaim, outAssetId),
+        IntegerEntry(keyPriceAssetBalance(userAddress58), priceAssetBalance - periodMinAvailableToClaim)
+      ]
+    } else {
+      let updatedPriceAssetBalance = priceAssetBalance + outAmount - periodMinAvailableToClaim
+      [
+        ScriptTransfer(i.caller, periodMinAvailableToClaim, outAssetId),
+        TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight, 0),
+        TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight, 0),
+        IntegerEntry(keyPriceAssetBalance(userAddress58), updatedPriceAssetBalance)
+      ]
+    }
+
+    (
+      [
+        IntegerEntry(keyCurrentPeriod(), updatedCurrentPeriod),
+        IntegerEntry(keyPeriodStartHeight(updatedCurrentPeriod), periodStart),
+        IntegerEntry(keyPeriodEndHeight(updatedCurrentPeriod), periodEnd),
+        IntegerEntry(keyPeriodTotalAvailableToClaim(priceAssetId58, updatedCurrentPeriod), updatedPeriodTotalAvailableToClaim),
+        IntegerEntry(
+          keyPeriodUserAvailableToClaim(
+            priceAssetId58,
+            updatedCurrentPeriod,
+            userAddress58
+          ),
+          updatedPeriodUserAvailableToClaim
+        ),
+        # TODO consider to add more data into history: operationPrice, realPrice
+        ClaimOperationHistoryEntry(
+          userAddress58,
+          periodMinAvailableToClaim,
+          claimedIdoAssetAmountFromDiff,
+          i.transactionId
+        )
+      ] ++ entries,
+      unit
+    )
+  } else {
+    let priceAssetBalanceIdoDecimals = priceAssetBalance.fraction(
+      scale8, pow(10, 0, priceAssetDecimals, 0, 0, DOWN)
+    )
+
+    (
+      [
+        ScriptTransfer(i.caller, outAmount + priceAssetBalanceIdoDecimals, outAssetId),
+        IntegerEntry(keyPriceAssetBalance(userAddress58), 0),
+        TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight, priceAssetBalance),
+        TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight, priceAssetBalance),
+
+        # TODO consider to add more data into history: operationPrice, realPrice
+        ClaimOperationHistoryEntry(
+          userAddress58,
+          claimedPriceAmountFromDiff,
+          claimedIdoAssetAmountFromDiff + priceAssetBalanceIdoDecimals,
+          i.transactionId
+        )
+      ],
+      unit
+    )
+  }
+
+  entries
 
   # TestCase Example
   # _start 	    100
@@ -424,6 +662,80 @@ func claimREADONLY(claimedAssetId58: String, userAddress58: String) = {
           availablePriceAmountToClaim.toString(),
           availableIdoAmountToClaim.toString()],
         SEP))
+}
+
+@Callable(i)
+func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
+  let claimResultTuple = internalClaim(claimedAssetId58, userAddress58.addressFromStringValue(), "".fromBase58String())
+  let totalsDiff            = claimResultTuple._1
+  let outAmount             = claimResultTuple._2
+  let outAssetId            = claimResultTuple._3
+  let origInvestArray       = claimResultTuple._4
+  let newClaimPeriodHeight  = claimResultTuple._5
+  let availableToClaimArray = claimResultTuple._6
+
+  let availablePriceAmountToClaim = availableToClaimArray[0]
+  let availableIdoAmountToClaim   = availableToClaimArray[1]
+
+  let cfgArray = readConfigArray()
+  let priceAssetId58 = cfgArray[IdxCfgPriceAssetId]
+
+  let priceAssetBalance = keyPriceAssetBalance(userAddress58).getInteger().valueOrElse(0)
+  let priceAssetBalanceIdoDecimals = priceAssetBalance * 100
+  let availableIdoAmountToClaimWithPriceAssetBalance = availableIdoAmountToClaim + priceAssetBalanceIdoDecimals
+
+  let (
+    periodMinAvailableToClaim,
+    periodTotalAvailableToClaim,
+    periodUserAvailableToClaim,
+    totalUserAvailableToClaim,
+    usdtPriceAssetAllowableRatio,
+    currentUsdtPriceAssetRatio,
+    endPeriodBlocksLeft,
+    updatedCurrentPeriod,
+    periodStart,
+    periodEnd
+  ) = internalClaimV2(
+    priceAssetId58,
+    userAddress58,
+    outAmount,
+    totalsDiff[IdxDiffClaimedPriceAmountIncrement]
+  )
+
+  let currentPeriodEndHeight = keyPeriodEndHeight(updatedCurrentPeriod).getInteger().valueOrElse(0)
+  let userTotalPriceAssetClaimed = readInvestorArrayOrFail(
+    userAddress58
+  )[IdxInvClaimedPriceAssetAmount].parseIntValue() - priceAssetBalance
+
+  let resultString = if height > currentPeriodEndHeight then {
+    let periodLenght = keyPeriodLength().getInteger().value()
+    let userPeriodAllowance = keyUserPeriodAllowance(priceAssetId58).getInteger().value()
+    let totalPeriodAllowance = keyTotalPeriodAllowance(priceAssetId58).getInteger().value()
+
+    [
+      "%d%d%d%d%d%d",
+      availableIdoAmountToClaimWithPriceAssetBalance.toString(),
+      userPeriodAllowance.toString(),
+      totalPeriodAllowance.toString(),
+      usdtPriceAssetAllowableRatio.toString(),
+      currentUsdtPriceAssetRatio.toString(),
+      periodLenght.toString(),
+      userTotalPriceAssetClaimed.toString()
+    ].makeString(SEP)
+  } else {
+    [
+      "%d%d%d%d%d%d",
+      availableIdoAmountToClaimWithPriceAssetBalance.toString(),
+      periodMinAvailableToClaim.toString(),
+      periodTotalAvailableToClaim.toString(),
+      usdtPriceAssetAllowableRatio.toString(),
+      currentUsdtPriceAssetRatio.toString(),
+      endPeriodBlocksLeft.toString(),
+      userTotalPriceAssetClaimed.toString()
+    ].makeString(SEP)
+  }
+
+  ([], resultString)
 }
 
 @Callable(i)

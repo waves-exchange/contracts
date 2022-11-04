@@ -49,7 +49,7 @@ describe('referral: confirmManager.mjs', /** @this {MochaSuiteModified} */() => 
       await expect(
         api.transactions.broadcast(confirmManagerTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
       );
     },
   );
