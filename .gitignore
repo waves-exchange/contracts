@@ -1,4 +1,4 @@
 node_modules
 .idea
 .vscode
-tmp/**.ride
+deployer/tmp/**.ride
