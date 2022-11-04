@@ -71,7 +71,7 @@ let idxFactoryRestCntr    = 6
 let idxFactSlippCntr      = 7
 let idxFactGwxRewCntr     = 10
 
-let feeDefault = fraction(50, scale8, 10_000)
+let feeDefault = fraction(10, scale8, 10_000)
 #-------------------------
 # WX COMMON LIBRARY
 #-------------------------
