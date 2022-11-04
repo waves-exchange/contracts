@@ -1,0 +1,91 @@
+{
+  "type": 12,
+  "version": 2,
+  "senderPublicKey": "",
+  "fee": 500000,
+  "proofs": [],
+  "chainId": 84,
+  "data": [
+    {
+      "key": "%s%s%s__unclaimedReferral__wxlock__3P67tYPW5hHg1GbXLGeweSivKNRxN6zPUfK",
+      "type": "integer",
+      "value": 22108203
+    },
+    {
+      "key": "%s%s%s__unclaimedReferral__wxlock__3PCXwoCvPQKhSADrYNoRoNygahKbXmVpMfJ",
+      "type": "integer",
+      "value": 115640290
+    },
+    {
+      "key": "%s%s%s__unclaimedReferral__wxlock__3PH7oa3CgjYCMabeGKtHZPnRRf3UcWfVwsG",
+      "type": "integer",
+      "value": 1646062
+    },
+    {
+      "key": "%s%s%s__unclaimedReferral__wxlock__3PKHWtv1yTWj2EnhJPwFKELHAU1AvTcN35U",
+      "type": "integer",
+      "value": 5772596
+    },
+    {
+      "key": "%s%s%s__unclaimedReferrer__wxlock__3PFKDaMTFbRh3rwirFhSk7E81p3gEUBXrQo",
+      "type": "integer",
+      "value": 36005794
+    },
+    {
+      "key": "%s%s%s__unclaimedReferrer__wxlock__3PHLdFo2MTo57ivKcR4gwG2JvusoGfmRtW4",
+      "type": "integer",
+      "value": 1646062
+    },
+    {
+      "key": "%s%s%s__unclaimedReferrer__wxlock__3PMWqeqgTpBobKZbHxr9JaatZKVTZYk9YCb",
+      "type": "integer",
+      "value": 22108203
+    },
+    {
+      "key": "%s%s%s__unclaimedReferrer__wxlock__3PRFQo41DEKeziRFiVc9mEYXbc9VPwf89rA",
+      "type": "integer",
+      "value": 115640290
+    },
+    {
+      "key": "%s%s%s__claimedReferral__wxlock__3PKHWtv1yTWj2EnhJPwFKELHAU1AvTcN35U",
+      "type": "integer",
+      "value": 30233198
+    },
+    {
+      "key": "%s%s%s%s__unclaimedReferral__wxlock__3P67tYPW5hHg1GbXLGeweSivKNRxN6zPUfK",
+      "value": null
+    },
+    {
+      "key": "%s%s%s%s__unclaimedReferral__wxlock__3PCXwoCvPQKhSADrYNoRoNygahKbXmVpMfJ",
+      "value": null
+    },
+    {
+      "key": "%s%s%s%s__unclaimedReferral__wxlock__3PH7oa3CgjYCMabeGKtHZPnRRf3UcWfVwsG",
+      "value": null
+    },
+    {
+      "key": "%s%s%s%s__unclaimedReferral__wxlock__3PKHWtv1yTWj2EnhJPwFKELHAU1AvTcN35U",
+      "value": null
+    },
+    {
+      "key": "%s%s%s%s__unclaimedReferrer__wxlock__3PFKDaMTFbRh3rwirFhSk7E81p3gEUBXrQo",
+      "value": null
+    },
+    {
+      "key": "%s%s%s%s__unclaimedReferrer__wxlock__3PHLdFo2MTo57ivKcR4gwG2JvusoGfmRtW4",
+      "value": null
+    },
+    {
+      "key": "%s%s%s%s__unclaimedReferrer__wxlock__3PMWqeqgTpBobKZbHxr9JaatZKVTZYk9YCb",
+      "value": null
+    },
+    {
+      "key": "%s%s%s%s__unclaimedReferrer__wxlock__3PRFQo41DEKeziRFiVc9mEYXbc9VPwf89rA",
+      "value": null
+    },
+    {
+      "key": "%s%s%s%s__claimedReferral__wxlock__3PKHWtv1yTWj2EnhJPwFKELHAU1AvTcN35U",
+      "value": null
+    }
+  ]
+}
