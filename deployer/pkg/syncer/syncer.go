@@ -126,6 +126,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		lpRide,
 		keyAllowedLpScriptHash,
 		s.compareLpScriptAddress,
+		true,
 	)
 	if err != nil {
 		return fmt.Errorf("s.doHash: %w", err)
@@ -136,6 +137,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		lpStableRide,
 		keyAllowedLpStableScriptHash,
 		s.compareLpStableScriptAddress,
+		false,
 	)
 	if err != nil {
 		return fmt.Errorf("s.doHash: %w", err)
@@ -146,6 +148,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		lpStableAddonRide,
 		keyAllowedLpStableAddonScriptHash,
 		s.compareLpStableAddonScriptAddress,
+		false,
 	)
 	if err != nil {
 		return fmt.Errorf("s.doHash: %w", err)
@@ -181,6 +184,7 @@ func (s *Syncer) doHash(
 	fileName string,
 	key string,
 	compareAddress proto.WavesAddress,
+	compact bool,
 ) (
 	bool,
 	error,
@@ -198,7 +202,7 @@ func (s *Syncer) doHash(
 		return false, fmt.Errorf("io.ReadAll: %w", err)
 	}
 
-	scriptBase64, scriptBytes, _, err := s.compile(ctx, bodyLpRide, false)
+	scriptBase64, scriptBytes, _, err := s.compile(ctx, bodyLpRide, compact)
 	if err != nil {
 		return false, fmt.Errorf("s.compile: %w", err)
 	}

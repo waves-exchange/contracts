@@ -1,0 +1,40 @@
+{
+    "type": 12,
+    "version": 2,
+    "senderPublicKey": "6bj3L3GyaTejhux59f2iQkvXJZ9hAukkWN67hi3X8ND4",
+    "fee": 500000,
+    "proofs": [],
+    "chainId": 84,
+    "data": [
+      {
+        "key": "%s__periodLength",
+        "type": "integer",
+        "value": "1440"
+      },
+      {
+        "key": "%s%s__totalPeriodAllowance__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p",
+        "type": "integer",
+        "value": "100000000000"
+      },
+      {
+        "key": "%s%s__userPeriodAllowance__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p",
+        "type": "integer",
+        "value": "500000000"
+      },
+      {
+        "key": "%s__usdtPriceAssetAllowableRatio",
+        "type": "integer",
+        "value": "101000000"
+      },
+      {
+        "key": "%s__usdtPriceAssetStablePool",
+        "type": "string",
+        "value": "3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz"
+      },
+      {
+        "key": "%s__usdtAssetId",
+        "type": "string",
+        "value": "34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ"
+      }
+    ]
+  }
