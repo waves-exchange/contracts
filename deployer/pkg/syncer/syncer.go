@@ -184,7 +184,6 @@ func (s *Syncer) doHash(
 	fileName string,
 	key string,
 	compareAddress proto.WavesAddress,
-	compact bool,
 ) (
 	bool,
 	error,
@@ -200,6 +199,11 @@ func (s *Syncer) doHash(
 	bodyLpRide, err := io.ReadAll(f)
 	if err != nil {
 		return false, fmt.Errorf("io.ReadAll: %w", err)
+	}
+
+	compact, err := s.contractModel.IsCompact(ctx, fileName)
+	if err != nil {
+		return false, fmt.Errorf("s.contractModel.IsCompact: %w", err)
 	}
 
 	scriptBase64, scriptBytes, _, err := s.compile(ctx, bodyLpRide, compact)
