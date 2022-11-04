@@ -109,7 +109,7 @@ func aa() = {"%s__amountAsset"}
 func pa() = {"%s__priceAsset"}
 
 let keyFee = "%s__fee"
-let feeDefault = fraction(5, scale8, 10_000)
+let feeDefault = fraction(50, scale8, 10_000)
 let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
 
 #------------------------
