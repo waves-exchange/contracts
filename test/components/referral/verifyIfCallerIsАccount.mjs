@@ -14,7 +14,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-const ridePath = 'ride';
+const ridePath = '../ride';
 const referralPath = format({ dir: ridePath, base: 'referral.ride' });
 
 describe('referral: verifyIfCallerIsАccount.mjs', /** @this {MochaSuiteModified} */() => {

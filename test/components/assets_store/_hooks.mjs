@@ -11,8 +11,8 @@ const seed = 'waves private node seed with waves tokens';
 const chainId = 'R';
 const api = create(apiBase);
 const seedWordsCount = 5;
-const ridePath = 'ride';
-const testPath = 'test';
+const ridePath = '../ride';
+const testPath = 'common_mock';
 const assetsStorePath = format({ dir: ridePath, base: 'assets_store.ride' });
 const userPoolsMockPath = format({ dir: testPath, base: 'user_pools.mock.ride' });
 

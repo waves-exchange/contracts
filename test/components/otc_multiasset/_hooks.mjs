@@ -15,7 +15,7 @@ const seed = 'waves private node seed with waves tokens';
 const chainId = 'R';
 const api = create(apiBase);
 const seedWordsCount = 5;
-const ridePath = 'ride';
+const ridePath = '../ride';
 const otcMultiassetPath = format({ dir: ridePath, base: 'otc_multiasset.ride' });
 
 export const mochaHooks = {

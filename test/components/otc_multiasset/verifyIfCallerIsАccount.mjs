@@ -14,7 +14,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-const ridePath = 'ride';
+const ridePath = '../ride';
 const otcMultiassetPath = format({ dir: ridePath, base: 'otc_multiasset.ride' });
 
 describe('otc_multiasset: verifyIfCallerIsАccount.mjs', /** @this {MochaSuiteModified} */() => {

@@ -14,7 +14,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-const ridePath = 'ride';
+const ridePath = '../ride';
 const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
 
 describe('boosting: verifyIfRejectIfCallerIsNotManager.mjs', /** @this {MochaSuiteModified} */() => {
