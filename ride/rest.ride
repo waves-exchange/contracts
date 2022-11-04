@@ -123,7 +123,7 @@ func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 # STABLE POOL API
 func keyAddonAddr() = "%s__addonAddr"
 func getPoolFee(poolAddress: Address) = {
-  let feeDefault = fraction(5, MULT8, 10_000)
+  let feeDefault = fraction(50, MULT8, 10_000)
   let keyFee = "%s__fee"
   poolAddress.getInteger(keyFee).valueOrElse(feeDefault)
 }
