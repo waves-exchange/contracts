@@ -597,9 +597,17 @@ func calcPutOneToken(
   let priceOldX18 = calcPriceBigInt(priceBalanceOld.toX18(cfgPriceAssetDecimals), amountBalanceOld.toX18(cfgAmountAssetDecimals))
   let priceOld = priceOldX18.fromX18(scale8)
 
-  let priceImpact = { (priceNew - priceOld) * scale8 / priceOld }.abs()
-
-  (issueAmount, commonState, feeAmount, priceImpact)
+  let bonus = {
+    let (amount, balance) = if (paymentInAmountAsset) then {
+      (amountAssetAmountRaw, amountBalanceOld)
+    } else {
+      (priceAssetAmountRaw, priceBalanceOld)
+    }
+    let issueAmountBoth = fraction(supplyBigInt, { amount / 2}.toBigInt(), balance.toBigInt()).toInt()
+    (issueAmount - issueAmountBoth) * scale8 / issueAmount
+  }
+  
+  (issueAmount, commonState, feeAmount, bonus)
 }
 
 # amount = balance * (1 - (1 - redeemed / supply)^2)
@@ -661,9 +669,12 @@ func calcGetOneToken(
   let priceOldX18 = calcPriceBigInt(prBalanceOld.toX18(cfgPriceAssetDecimals), amBalanceOld.toX18(cfgAmountAssetDecimals))
   let priceOld = priceOldX18.fromX18(scale8)
 
-  let priceImpact = { (priceNew - priceOld) * scale8 / priceOld }.abs()
+  let bonus = {
+    let amountBothInPaymentAsset = fraction(balanceBigInt, redeemedBigInt, supplyBigInt).toInt() * 2
+    (totalAmount - amountBothInPaymentAsset) * scale8 / totalAmount
+  }
 
-  (totalAmount, commonState, feeAmount, priceImpact)
+  (totalAmount, commonState, feeAmount, bonus)
 }
 
 func managerPublicKeyOrUnit() = match mpk().getString() {
