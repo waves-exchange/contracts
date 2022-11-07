@@ -1,6 +1,6 @@
 import { address, publicKey, randomSeed } from '@waves/ts-lib-crypto';
 import {
-  data, invokeScript,
+  data,
   issue,
   massTransfer,
   nodeInteraction,
@@ -23,10 +23,9 @@ const lpStablePath = format({ dir: mockRidePath, base: 'lp_stable.mock.ride' });
 export const mochaHooks = {
   async beforeAll() {
     const names = [
-      'ido',
       'lpStable',
       'manager',
-      'wxOwner',
+      'ido',
       'user1',
     ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
@@ -123,32 +122,12 @@ export const mochaHooks = {
     this.claimStart = this.idoStart + this.idoDuration + 1;
     this.claimDuration = 200;
     this.price = 100e6;
+    this.priceMult = 100e6;
     this.priceAssetId58 = this.usdnAssetId;
     this.minInvestAmount = 1e6;
-
-    const constructorTx = invokeScript({
-      dApp: address(this.accounts.ido, chainId),
-      payment: [
-        { assetId: this.wxAssetId, amount: wxAmount },
-      ],
-      additionalFee: 4e5,
-      call: {
-        function: 'constructor',
-        args: [
-          { type: 'integer', value: this.idoStart },
-          { type: 'integer', value: this.idoDuration },
-          { type: 'integer', value: this.claimStart },
-          { type: 'integer', value: this.claimDuration },
-          { type: 'integer', value: this.price },
-          { type: 'string', value: this.priceAssetId58 },
-          { type: 'integer', value: this.minInvestAmount },
-        ],
-      },
-      chainId,
-    }, this.accounts.wxOwner);
-    await api.transactions.broadcast(constructorTx, {});
-    await waitForTx(constructorTx.id, { apiBase });
-
+    this.idoAssetId58 = this.wxAssetId;
+    this.idoAssetMult = 100e6;
+    this.priceAssetMult = 1e6;
     this.periodLength = 3;
     this.totalPeriodAllowance = 1000e6;
     this.userPeriodAllowance = 500e6;
@@ -157,6 +136,10 @@ export const mochaHooks = {
     const setIdoKeysTx = data({
       additionalFee: 4e5,
       data: [{
+        key: '%s__config',
+        type: 'string',
+        value: `%d%d%d%d%d%d%s%d%s%d%d%d__${this.idoStart}__${this.idoDuration}__${this.claimStart}__${this.claimDuration}__${this.price}__${this.priceMult}__${this.idoAssetId58}__${this.idoAssetMult}__${this.priceAssetId58}__${this.priceAssetMult}__${this.minInvestAmount}__100000000000`,
+      }, {
         key: '%s__usdtPriceAssetStablePool',
         type: 'string',
         value: address(this.accounts.lpStable, chainId),
