@@ -337,7 +337,7 @@ func (s *Syncer) doHash(
 					break
 				}
 
-				log().Msg("polling factory state...")
+				log().RawJSON("tx", tx).Msg("polling factory state...")
 				time.Sleep(3 * time.Second)
 			}
 		} else {
