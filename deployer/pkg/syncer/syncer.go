@@ -126,7 +126,6 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		lpRide,
 		keyAllowedLpScriptHash,
 		s.compareLpScriptAddress,
-		true,
 	)
 	if err != nil {
 		return fmt.Errorf("s.doHash: %w", err)
@@ -137,7 +136,6 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		lpStableRide,
 		keyAllowedLpStableScriptHash,
 		s.compareLpStableScriptAddress,
-		false,
 	)
 	if err != nil {
 		return fmt.Errorf("s.doHash: %w", err)
@@ -148,7 +146,6 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		lpStableAddonRide,
 		keyAllowedLpStableAddonScriptHash,
 		s.compareLpStableAddonScriptAddress,
-		false,
 	)
 	if err != nil {
 		return fmt.Errorf("s.doHash: %w", err)
