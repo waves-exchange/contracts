@@ -604,7 +604,7 @@ func calcPutOneToken(
       (priceAssetAmountRaw, priceBalanceOld)
     }
     let issueAmountBoth = fraction(supplyBigInt, { amount / 2}.toBigInt(), balance.toBigInt()).toInt()
-    (issueAmount - issueAmountBoth) * scale8 / issueAmount
+    fraction(issueAmount - issueAmountBoth, scale8, issueAmount)
   }
   
   (issueAmount, commonState, feeAmount, bonus)
@@ -671,7 +671,7 @@ func calcGetOneToken(
 
   let bonus = {
     let amountBothInPaymentAsset = fraction(balanceBigInt, redeemedBigInt, supplyBigInt).toInt() * 2
-    (totalAmount - amountBothInPaymentAsset) * scale8 / totalAmount
+    fraction(totalAmount - amountBothInPaymentAsset, scale8, totalAmount)
   }
 
   (totalAmount, commonState, feeAmount, bonus)
