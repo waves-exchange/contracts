@@ -175,7 +175,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 
 	if s.network == config.Mainnet {
 		const blocks = 10
-		s.logger.Info().Msgf("wait %d blocks and ensure there is no diff")
+		s.logger.Info().Msgf("wait %d blocks and ensure there is no diff", blocks)
 		er := s.waitNBlocks(ctx, blocks)
 		if er != nil {
 			return fmt.Errorf("s.waitNBlocks: %w", er)
