@@ -152,7 +152,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	}
 
 	for _, fl := range files {
-		er := s.doFile(
+		_, er := s.doFile(
 			ctx,
 			fl.Name(),
 			contracts,
@@ -172,6 +172,35 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	}
 
 	s.logger.Info().Msg("changes applied")
+
+	if s.network == config.Mainnet {
+		const blocks = 10
+		s.logger.Info().Msgf("wait %d blocks and ensure there is no diff")
+		er := s.waitNBlocks(ctx, blocks)
+		if er != nil {
+			return fmt.Errorf("s.waitNBlocks: %w", er)
+		}
+
+		for _, fl := range files {
+			isChanged, er2 := s.doFile(
+				ctx,
+				fl.Name(),
+				contracts,
+				mainnetLpHashEmpty,
+				mainnetLpStableHashEmpty,
+				mainnetLpStableAddonHashEmpty,
+			)
+			if er2 != nil {
+				return fmt.Errorf("s.doFile: %w", er2)
+			}
+			if isChanged {
+				return errors.New("diff found after deploy, try again")
+			}
+		}
+
+		s.logger.Info().Msg("no diff: done")
+	}
+
 	return nil
 }
 
@@ -407,7 +436,11 @@ func (s *Syncer) doFile(
 	fileName string,
 	contracts []contract.Contract,
 	mainnetLpHashEmpty, mainnetLpStableHashEmpty, mainnetLpStableAddonHashEmpty bool,
-) error {
+) (
+	bool,
+	error,
+) {
+	isChanged := false
 	const (
 		changed    = "contract changed"
 		notChanged = "contract didn't changed"
@@ -422,7 +455,7 @@ func (s *Syncer) doFile(
 
 	f, err := os.Open(path.Join(s.contractsFolder, fileName))
 	if err != nil {
-		return fmt.Errorf("os.Open: %w", err)
+		return false, fmt.Errorf("os.Open: %w", err)
 	}
 	defer func() {
 		_ = f.Close()
@@ -430,7 +463,7 @@ func (s *Syncer) doFile(
 
 	body, err := io.ReadAll(f)
 	if err != nil {
-		return fmt.Errorf("io.ReadAll: %w", err)
+		return false, fmt.Errorf("io.ReadAll: %w", err)
 	}
 
 	for _, cont := range contracts {
@@ -455,29 +488,29 @@ func (s *Syncer) doFile(
 
 			base64Script, scriptBytes, setScriptFee, er2 := s.compile(ctx, body, cont.Compact)
 			if er2 != nil {
-				return fmt.Errorf("s.compile: %w", er2)
+				return false, fmt.Errorf("s.compile: %w", er2)
 			}
 
 			prv, er2 := crypto.NewSecretKeyFromBase58(cont.BasePrv)
 			if er2 != nil {
-				return fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er2)
+				return false, fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er2)
 			}
 
 			pub := crypto.GeneratePublicKey(prv)
 
 			prvSigner, er2 := crypto.NewSecretKeyFromBase58(cont.SignerPrv)
 			if er2 != nil {
-				return fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er2)
+				return false, fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er2)
 			}
 
 			addr, er2 := proto.NewAddressFromPublicKey(proto.TestNetScheme, pub)
 			if er2 != nil {
-				return fmt.Errorf("proto.NewAddressFromPublicKey: %w", er2)
+				return false, fmt.Errorf("proto.NewAddressFromPublicKey: %w", er2)
 			}
 
 			fromBlockchainScript, er2 := s.getScript(ctx, addr)
 			if er2 != nil {
-				return fmt.Errorf("s.getScript: %w", er2)
+				return false, fmt.Errorf("s.getScript: %w", er2)
 			}
 
 			log := s.logger.Info().
@@ -505,7 +538,7 @@ func (s *Syncer) doFile(
 				true,
 			)
 			if er2 != nil {
-				return fmt.Errorf(
+				return false, fmt.Errorf(
 					"file: %s address: %s s.validateSignBroadcastWait: %w",
 					fileName,
 					addr.String(),
@@ -513,28 +546,29 @@ func (s *Syncer) doFile(
 				)
 			}
 
+			isChanged = true
 			log.Str(action, deployed).Msg(changed)
 			continue
 
 		case config.Mainnet:
 			base64Script, scriptBytes, setScriptFee, er2 := s.compile(ctx, body, cont.Compact)
 			if er2 != nil {
-				return fmt.Errorf("s.compile: %w", er2)
+				return false, fmt.Errorf("s.compile: %w", er2)
 			}
 
 			pub, er2 := crypto.NewPublicKeyFromBase58(cont.BasePub)
 			if er2 != nil {
-				return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", er2)
+				return false, fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", er2)
 			}
 
 			addr, er2 := proto.NewAddressFromPublicKey(proto.MainNetScheme, pub)
 			if er2 != nil {
-				return fmt.Errorf("proto.NewAddressFromPublicKey: %w", er2)
+				return false, fmt.Errorf("proto.NewAddressFromPublicKey: %w", er2)
 			}
 
 			fromBlockchainScript, er2 := s.getScript(ctx, addr)
 			if er2 != nil {
-				return fmt.Errorf("s.getScript: %w", er2)
+				return false, fmt.Errorf("s.getScript: %w", er2)
 			}
 
 			log := func() *zerolog.Event {
@@ -569,27 +603,29 @@ func (s *Syncer) doFile(
 					true,
 				)
 				if er != nil {
-					return fmt.Errorf("s.client.Transactions.Broadcast: %w", er)
+					return false, fmt.Errorf("s.client.Transactions.Broadcast: %w", er)
 				}
 
+				isChanged = true
 				log().Str(action, deployed).Msg(changed)
 			} else {
 				setScriptTx, er := json.Marshal(unsignedSetScriptTx)
 				if er != nil {
-					return fmt.Errorf("s.validateSignBroadcastWait: %w", er)
+					return false, fmt.Errorf("s.validateSignBroadcastWait: %w", er)
 				}
 
+				isChanged = true
 				log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
 				er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
 				if er != nil {
-					return fmt.Errorf("s.printDiff: %w", er)
+					return false, fmt.Errorf("s.printDiff: %w", er)
 				}
 			}
 
 			continue
 		}
 	}
-	return nil
+	return isChanged, nil
 }
 
 func (s *Syncer) preparePathAndScript(ctx context.Context, fileName, base64Script string) (string, error) {
