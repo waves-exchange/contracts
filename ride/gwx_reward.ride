@@ -67,7 +67,7 @@ func keyReferrer(referralAddress: String) = ["%s%s%s", "referrer", referralProgr
 func keyUnclaimedReferral(
   programName: String,
   claimerAddress: String
-) = makeString(["%s%s%s%s", "unclaimedReferral", programName, claimerAddress], SEP)
+) = makeString(["%s%s%s", "unclaimedReferral", programName, claimerAddress], SEP)
 
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED

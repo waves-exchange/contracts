@@ -123,7 +123,7 @@ func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 # STABLE POOL API
 func keyAddonAddr() = "%s__addonAddr"
 func getPoolFee(poolAddress: Address) = {
-  let feeDefault = fraction(5, MULT8, 10_000)
+  let feeDefault = fraction(10, MULT8, 10_000)
   let keyFee = "%s__fee"
   poolAddress.getInteger(keyFee).valueOrElse(feeDefault)
 }
@@ -159,6 +159,18 @@ func calcGwxAmountStartREADONLY(lockAmount: Int, lockDuration: Int, maxLockDurat
   let coeffX8 = fraction(lockDuration, MULT8, maxLockDuration)
   let gWxAmountStart = fraction(lockAmount, coeffX8, MULT8)
   [gWxAmountStart]
+}
+
+func getKey(addr: Address, key: String, type: String) = {
+  if(type == "string") then {
+    addr.getStringValue(key)
+  } else if(type == "integer") then {
+    addr.getIntegerValue(key).toString()
+  } else if(type == "boolean") then {
+    addr.getBooleanValue(key).toString()
+  } else {
+    "unknown type. expected string/integer/boolean".throw()
+  }
 }
 
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
@@ -380,10 +392,13 @@ func poolStatsREADONLY(lpAsset: String) = {
 
   let poolWeight = factoryDapp.getIntegerValue(poolAddress.toString().keyFactoryPoolWeight())
   let fee = poolAddress.getPoolFee()
+
+  let poolOneTokenOperationsDisabled = factoryDapp.invoke("isPoolOneTokenOperationsDisabledREADONLY", [poolAddress.toString()], []).exactAs[Boolean]
+  let poolOneTokenOperationsEnabled = !poolOneTokenOperationsDisabled
   (
     [],
     makeString([
-      "%d%d%d%d%d%d%d%d",
+      "%d%d%d%d%d%d%d%d%s",
       accAmtAssetBalance.toString(),
       accPriceAssetBalance.toString(),
       poolLPBalance.toString(),
@@ -391,7 +406,8 @@ func poolStatsREADONLY(lpAsset: String) = {
       lpAmtAssetShare.toString(),
       lpPriceAssetShare.toString(),
       poolWeight.toString(),
-      fee.toString()
+      fee.toString(), 
+      poolOneTokenOperationsEnabled.toString()
     ],
     SEP)
   )
@@ -589,6 +605,29 @@ func gwxUserInfoREADONLY(userAddress: String) = {
 func unstakeAndGetOneTknV2(poolAddress: String, unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
   strict inv = poolAddress.addressFromStringValue().invoke("unstakeAndGetOneTknV2", [unstakeAmount, outAssetId, minOutAmount], [])
   ([], unit)
+}
+
+@Callable(i)
+func getKeysBulkInternal(currentIter: Int, keys: List[String], resAcc: List[String]) = {
+  if(currentIter == keys.size()) then ([], resAcc) else
+
+  let k = keys[currentIter].split("++")
+  let addr = k[0].addressFromStringValue()
+  let key = k[1]
+  let type = k[2]
+  let val = getKey(addr, key, type)
+  let res = resAcc :+ val
+  strict inv = this.invoke("getKeysBulkInternal", [currentIter + 1, keys, res], [])
+  ([], inv)
+}
+
+# Get keys from addresses
+# keys: address++key++string/integer/boolean
+# returns list of values (casted to string)
+@Callable(i)
+func getKeysBulk(keys: List[String]) = {
+  let res = this.invoke("getKeysBulkInternal", [0, keys, []], [])
+  ([], res)
 }
 
 @Callable(i)

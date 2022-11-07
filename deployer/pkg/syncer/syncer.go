@@ -41,7 +41,7 @@ type Syncer struct {
 	compareLpStableScriptAddress      proto.WavesAddress
 	compareLpStableAddonScriptAddress proto.WavesAddress
 	compileCache                      compileCacheMap
-	mined                             errgroup.Group
+	mined                             *errgroup.Group
 }
 
 const (
@@ -91,6 +91,7 @@ func NewSyncer(
 		compareLpStableScriptAddress:      compareLpStableScriptAddr,
 		compareLpStableAddonScriptAddress: compareLpStableAddonScriptAddr,
 		compileCache:                      make(compileCacheMap),
+		mined:                             &errgroup.Group{},
 	}, nil
 }
 
@@ -125,6 +126,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		lpRide,
 		keyAllowedLpScriptHash,
 		s.compareLpScriptAddress,
+		true,
 	)
 	if err != nil {
 		return fmt.Errorf("s.doHash: %w", err)
@@ -135,6 +137,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		lpStableRide,
 		keyAllowedLpStableScriptHash,
 		s.compareLpStableScriptAddress,
+		false,
 	)
 	if err != nil {
 		return fmt.Errorf("s.doHash: %w", err)
@@ -145,6 +148,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		lpStableAddonRide,
 		keyAllowedLpStableAddonScriptHash,
 		s.compareLpStableAddonScriptAddress,
+		false,
 	)
 	if err != nil {
 		return fmt.Errorf("s.doHash: %w", err)
@@ -197,7 +201,12 @@ func (s *Syncer) doHash(
 		return false, fmt.Errorf("io.ReadAll: %w", err)
 	}
 
-	scriptBase64, scriptBytes, _, err := s.compile(ctx, bodyLpRide, false)
+	compact, err := s.contractModel.IsCompact(ctx, fileName)
+	if err != nil {
+		return false, fmt.Errorf("s.contractModel.IsCompact: %w", err)
+	}
+
+	scriptBase64, scriptBytes, _, err := s.compile(ctx, bodyLpRide, compact)
 	if err != nil {
 		return false, fmt.Errorf("s.compile: %w", err)
 	}
@@ -314,7 +323,7 @@ func (s *Syncer) doHash(
 
 			log().RawJSON("tx", tx).
 				Msg("we are about to set script as approved. " +
-					"sign and broadcast data-tx to continue...")
+					"sign and broadcast data-tx to continue")
 
 			for {
 				value, er3 := s.getStringValue(ctx, addr, key)
@@ -322,18 +331,56 @@ func (s *Syncer) doHash(
 					return false, fmt.Errorf("s.getStringValue: %w", er3)
 				}
 				if value == newHashStr {
-					log().Msg("data-tx done")
+					const blocks = 2
+					log().Msgf("data-tx done, wait %d blocks", blocks)
+					er4 := s.waitNBlocks(ctx, blocks)
+					if er4 != nil {
+						return false, fmt.Errorf("s.waitNBlocks: %w", er4)
+					}
 					break
 				}
 
+				log().Msg("polling factory state...")
 				time.Sleep(3 * time.Second)
 			}
 		} else {
-			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, no need to update allowed script hash")
+			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, " +
+				"no need to update allowed script hash")
 		}
 	}
 
 	return hashEmpty, nil
+}
+
+func (s *Syncer) waitNBlocks(ctx context.Context, blocks uint64) error {
+	currentHeight, _, err := s.client.Blocks.Height(ctx)
+	if err != nil {
+		return fmt.Errorf("client.Blocks.Height: %w", err)
+	}
+	curH := currentHeight.Height
+	desiredH := curH + blocks
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			time.Sleep(5 * time.Second)
+
+			height, _, e := s.client.Blocks.Height(ctx)
+			if e != nil {
+				return fmt.Errorf("client.Blocks.Height: %w", e)
+			}
+			h := height.Height
+
+			if h >= desiredH {
+				s.logger.Info().Uint64("actual", h).Uint64("desired", desiredH).Msg("height reached")
+				return nil
+			}
+
+			s.logger.Info().Uint64("actual", h).Uint64("desired", desiredH).Msg("waiting for height...")
+		}
+	}
 }
 
 func (s *Syncer) getStringValue(ctx context.Context, address proto.WavesAddress, key string) (string, error) {
@@ -563,7 +610,7 @@ func (s *Syncer) preparePathAndScript(ctx context.Context, fileName, base64Scrip
 		return "", fmt.Errorf("uuid.NewRandom: %w", err)
 	}
 
-	p := path.Join("..", "tmp", fileName+" "+u.String())
+	p := path.Join("tmp", fileName+" "+u.String())
 
 	f, err := os.Create(p)
 	if err != nil {

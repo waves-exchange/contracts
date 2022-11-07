@@ -62,3 +62,33 @@ func (m Model) GetAll(ctx context.Context) ([]Contract, error) {
 
 	return res, nil
 }
+
+func (m Model) IsCompact(ctx context.Context, fileName string) (bool, error) {
+	cur, err := m.coll.Find(ctx, bson.M{"file": fileName})
+	if err != nil {
+		return false, fmt.Errorf("m.coll.FindOne: %w", err)
+	}
+
+	var docs []Contract
+	err = cur.All(ctx, &docs)
+	if err != nil {
+		return false, fmt.Errorf("cur.All: %w", err)
+	}
+
+	if len(docs) == 0 {
+		return false, errors.New("no contract found")
+	}
+
+	var compact bool
+	for i, doc := range docs {
+		if i == 0 {
+			compact = doc.Compact
+		} else {
+			if compact != doc.Compact {
+				return false, fmt.Errorf("different 'compact' values for file: %s", fileName)
+			}
+		}
+	}
+
+	return compact, nil
+}
