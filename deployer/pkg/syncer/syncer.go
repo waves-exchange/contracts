@@ -337,8 +337,8 @@ func (s *Syncer) doHash(
 					break
 				}
 
-				log().RawJSON("tx", tx).Msg("polling factory state...")
-				time.Sleep(3 * time.Second)
+				time.Sleep(5 * time.Second)
+				log().RawJSON("tx", tx).Msg("sign data-tx. polling factory state...")
 			}
 		} else {
 			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, " +
