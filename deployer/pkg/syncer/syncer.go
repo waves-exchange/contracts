@@ -159,6 +159,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 			mainnetLpHashEmpty,
 			mainnetLpStableHashEmpty,
 			mainnetLpStableAddonHashEmpty,
+			true,
 		)
 		if er != nil {
 			return fmt.Errorf("s.doFile: %w", er)
@@ -181,24 +182,29 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 			return fmt.Errorf("s.waitNBlocks: %w", er)
 		}
 
+		isChanged := false
 		for _, fl := range files {
-			isChanged, er2 := s.doFile(
+			isChn, er2 := s.doFile(
 				ctx,
 				fl.Name(),
 				contracts,
 				mainnetLpHashEmpty,
 				mainnetLpStableHashEmpty,
 				mainnetLpStableAddonHashEmpty,
+				false,
 			)
 			if er2 != nil {
 				return fmt.Errorf("s.doFile: %w", er2)
 			}
-			if isChanged {
-				return errors.New("diff found after deploy, try again")
+			if isChn {
+				isChanged = true
 			}
 		}
 
-		s.logger.Info().Msg("no diff: done")
+		if isChanged {
+			return errors.New("diff found after deploy, try again")
+		}
+		s.logger.Info().Msg("done: no diff")
 	}
 
 	return nil
@@ -436,6 +442,7 @@ func (s *Syncer) doFile(
 	fileName string,
 	contracts []contract.Contract,
 	mainnetLpHashEmpty, mainnetLpStableHashEmpty, mainnetLpStableAddonHashEmpty bool,
+	logSkip bool,
 ) (
 	bool,
 	error,
@@ -519,7 +526,9 @@ func (s *Syncer) doFile(
 				Str(tag, cont.Tag)
 
 			if base64Script == fromBlockchainScript {
-				log.Str(action, skip).Msg(notChanged)
+				if logSkip {
+					log.Str(action, skip).Msg(notChanged)
+				}
 				continue
 			}
 
@@ -579,7 +588,9 @@ func (s *Syncer) doFile(
 			}
 
 			if base64Script == fromBlockchainScript {
-				log().Str(action, skip).Msg(notChanged)
+				if logSkip {
+					log().Str(action, skip).Msg(notChanged)
+				}
 				continue
 			}
 
