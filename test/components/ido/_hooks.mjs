@@ -38,11 +38,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
 
-    console.log('account addresses:');
-    for (const [key, value] of Object.entries(this.accounts)) {
-      console.log('  ', key, address(value, chainId));
-    }
-
     await setScriptFromFile(idoPath, this.accounts.ido);
     await setScriptFromFile(lpStablePath, this.accounts.lpStable);
 
@@ -100,21 +95,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(usdtIssueTx, {});
     await waitForTx(usdtIssueTx.id, { apiBase });
     this.usdtAssetId = usdtIssueTx.id;
-
-    // const usdtAmount = 1000e6;
-    // const massTransferTxUSDT = massTransfer({
-    //   transfers: names.slice(-1).map((name) => ({
-    //     recipient: address(this.accounts[name], chainId), amount: usdnAmount,
-    //   })),
-    //   assetId: this.usdtAssetId,
-    //   chainId,
-    // }, seed);
-    // await api.transactions.broadcast(massTransferTxUSDT, {});
-    // await waitForTx(massTransferTxUSDT.id, { apiBase });
-
-    console.log('   usdnAssetId', this.usdnAssetId);
-    console.log('   usdtAssetId', this.usdtAssetId);
-    console.log('   wxAssetId', this.wxAssetId);
 
     const { height } = await api.blocks.fetchHeight();
     this.idoStart = height;
