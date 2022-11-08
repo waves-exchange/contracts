@@ -44,7 +44,7 @@ describe('ido: claimV2READONLY.mjs', /** @this {MochaSuiteModified} */() => {
       const expectedUserPeriodAllowance = this.userPeriodAllowance;
       const expectedPeriodLenght = this.periodLength;
       const expectedUserTotalPriceAssetClaimed = 0;
-      const expected = { type: 'String', value: `%d%d%d%d%d%d__${expectedUsdnAmount}__${expectedUserPeriodAllowance}__${expectedTotalPeriodAllowance}__${expectedUsdtPriceAssetAllowableRatio}__${expectedCurrentUsdtPriceAssetRatio}__${expectedPeriodLenght}__${expectedUserTotalPriceAssetClaimed}` };
+      const expected = `%d%d%d%d%d%d__${expectedUsdnAmount * 1e2}__${expectedUserPeriodAllowance}__${expectedTotalPeriodAllowance}__${expectedUsdtPriceAssetAllowableRatio}__${expectedCurrentUsdtPriceAssetRatio}__${expectedPeriodLenght}__${expectedUserTotalPriceAssetClaimed}`;
 
       const expr = `claimV2READONLY(\"${this.usdnAssetId}\", \"${address(this.accounts.user1, chainId)}\")`; /* eslint-disable-line */
       const response = await api.utils.fetchEvaluate(ido, expr);
