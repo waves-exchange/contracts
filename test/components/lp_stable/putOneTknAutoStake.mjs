@@ -12,7 +12,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
+describe('lp_stable: putOneTknAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully putOneTkn with autoStake true', async function () {
     const minOutAmount = 0;
     const slippage = 0;
@@ -20,11 +20,11 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     const usdtAmount = 1e8;
     const usdnAmount = 1e8;
 
-    const expectedPriceLast = 50012503;
-    const expectedPriceHistory = 50012503;
+    const expectedPriceLast = 50025012;
+    const expectedPriceHistory = 50025012;
     const expectedWriteAmAmt = 1e8;
     const expectedWritePrAmt = 0;
-    const expectedEmitLpAmt = 4996564450;
+    const expectedEmitLpAmt = 4994065300;
     const expectedslippageCalc = 0;
     const expectedAmDiff = 0;
     const expectedPrDiff = 0;
