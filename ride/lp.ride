@@ -74,6 +74,8 @@ let idxPoolLPAssetAmt        = 3
 let idxFactoryStakingContract      = 1
 let idxFactorySlippageContract     = 7
 
+let testingggggg = 1
+
 #-------------------------
 # WX COMMON LIBRARY
 #-------------------------
