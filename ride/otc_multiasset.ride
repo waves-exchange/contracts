@@ -36,8 +36,8 @@ func keyBalance(assetA: String, assetB: String, userAddress: String) = {
     makeString(["%s%s%s%s", "balance", assetA, assetB, userAddress], SEP)
 }
 
-func keyTotalFeeCollected(assetA: String, assetB: String) = {
-    makeString(["%s%s%s", "totalFeeCollected", assetA, assetB], SEP)
+func keyTotalFeeCollectedDeposit(assetA: String, assetB: String) = {
+    makeString(["%s%s%s%s", "totalFeeCollected", "deposit", assetA, assetB], SEP)
 }
 
 func keyProcessInProgress(userAddress: String, assetA: String, assetB: String, heightInKey: Int) = {
@@ -111,7 +111,7 @@ func swapAssetsAToB(assetB: String) = {
     let fee = toDeposit / 1000 * depositFee
     let currentUserBalance = keyBalance(assetA, assetB, userAddress).getInteger().valueOrElse(0)
 
-    let totalCommissions = keyTotalFeeCollected(assetA, assetB).getInteger().valueOrElse(0)
+    let totalCommissions = keyTotalFeeCollectedDeposit(assetA, assetB).getInteger().valueOrElse(0)
 
     let pairStatus = keyAssetsPairStatus(assetA, assetB).getInteger().valueOrErrorMessage("The asset pair status for this pair of assets is not set.".fmtErr())
 
@@ -123,7 +123,7 @@ func swapAssetsAToB(assetB: String) = {
 
     [
         IntegerEntry(keyBalance(assetA, assetB, userAddress), newBalance),
-        IntegerEntry(keyTotalFeeCollected(assetA, assetB), totalCommissions + fee),
+        IntegerEntry(keyTotalFeeCollectedDeposit(assetA, assetB), totalCommissions + fee),
         ScriptTransfer(i.caller, toDeposit - fee, asset)
     ]
 }
@@ -142,7 +142,7 @@ func initializationSwapAssetsBToA(assetA: String) = {
 
     let currentUserBalance = keyBalance(assetA, assetB, userAddress).getInteger().valueOrErrorMessage("This user balance does not exist.".fmtErr())
 
-    let totalCommissions = keyTotalFeeCollected(assetA, assetB).getInteger().valueOrElse(0)
+    let totalCommissions = keyTotalFeeCollectedDeposit(assetA, assetB).getInteger().valueOrElse(0)
 
     let withdrawFeePermilleKey = keyWithdrawFeePermille(assetA, assetB)
     let withdrawFee = withdrawFeePermilleKey.getInteger().valueOrErrorMessage("The withdrawal fee for this pair of assets is not set.".fmtErr())
@@ -156,7 +156,7 @@ func initializationSwapAssetsBToA(assetA: String) = {
     [
         IntegerEntry(keyBalance(assetA, assetB, userAddress), newBalance),
         IntegerEntry(keyProcessInProgress(userAddress, assetA, assetB, assetLockHeight), toWithdraw - fee),
-        IntegerEntry(keyTotalFeeCollected(assetA, assetB), totalCommissions + fee)
+        IntegerEntry(keyTotalFeeCollectedDeposit(assetA, assetB), totalCommissions + fee)
     ]
 }
 
@@ -183,11 +183,11 @@ func withdrawAsset(assetA: String, assetB: String, heightInKey: Int) = {
 func withdrawFee(assetA: String, assetB: String) = {
     strict checkCaller = i.mustManager()
 
-    let toWithdrawA = keyTotalFeeCollected(assetA, assetB).getInteger().valueOrElse(0)
+    let toWithdrawA = keyTotalFeeCollectedDeposit(assetA, assetB).getInteger().valueOrElse(0)
     let withdrawAssetA = assetA.value().fromBase58String()
 
     [
-        IntegerEntry(keyTotalFeeCollected(assetA, assetB), 0),
+        IntegerEntry(keyTotalFeeCollectedDeposit(assetA, assetB), 0),
         ScriptTransfer(i.caller, toWithdrawA, withdrawAssetA)
     ]
 }
