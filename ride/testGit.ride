@@ -3,3 +3,4 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 
 let SEP = "__"
+let SEP2 = "__"
