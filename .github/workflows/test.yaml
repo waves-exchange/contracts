@@ -1,14 +1,6 @@
 name: Test
 on:
   workflow_dispatch:
-    inputs:
-      branch:
-        description: "Branches"
-        required: true
-        default: 'main'
-        type: choice
-        options:
-          - test-workflow
 
 jobs:
   test:
