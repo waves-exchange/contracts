@@ -314,15 +314,11 @@ describe('otc_multiasset: userStory.mjs', /** @this {MochaSuiteModified} */() =>
     } = await ni.waitForTx(withdrawFeeTx.id, { apiBase });
 
     expect(
-      await checkStateChanges(stateChangesWithdrawFee, 2, 2, 0, 0, 0, 0, 0, 0, 0),
+      await checkStateChanges(stateChangesWithdrawFee, 1, 1, 0, 0, 0, 0, 0, 0, 0),
     ).to.eql(true);
 
     expect(stateChangesWithdrawFee.data).to.eql([{
       key: `%s%s%s%s__totalFeeCollected__deposit__${this.assetAId}__${this.assetBId}`,
-      type: 'integer',
-      value: 0,
-    }, {
-      key: `%s%s%s%s__totalFeeCollected__withdraw__${this.assetAId}__${this.assetBId}`,
       type: 'integer',
       value: 0,
     }]);
@@ -330,8 +326,7 @@ describe('otc_multiasset: userStory.mjs', /** @this {MochaSuiteModified} */() =>
     const expectedTotalFeeCollectedDeposit = (
       Math.floor(amountAssetAUser1 / 1000) * this.depositFee
             + Math.floor(amountAssetAUser2 / 1000) * this.depositFee
-    );
-    const expectedTotalFeeCollectedWithdraw = (
+    ) + (
       Math.floor(partAmountAssetAUser1 / 1000) * this.withdrawFee
             + Math.floor(restOfAmountAssetAUser1 / 1000) * this.withdrawFee
             + Math.floor(allAmountAssetAUser2 / 1000) * this.withdrawFee
@@ -340,10 +335,6 @@ describe('otc_multiasset: userStory.mjs', /** @this {MochaSuiteModified} */() =>
     expect(stateChangesWithdrawFee.transfers).to.eql([{
       address: address(this.accounts.manager, chainId),
       asset: this.assetAId,
-      amount: expectedTotalFeeCollectedWithdraw,
-    }, {
-      address: address(this.accounts.manager, chainId),
-      asset: this.assetBId,
       amount: expectedTotalFeeCollectedDeposit,
     }]);
 
@@ -352,11 +343,5 @@ describe('otc_multiasset: userStory.mjs', /** @this {MochaSuiteModified} */() =>
       `%s%s%s%s__totalFeeCollected__deposit__${this.assetAId}__${this.assetBId}`,
     );
     expect(totalFeeCollectedDepositFee.value).to.eql(0);
-
-    const totalFeeCollectedWithdrawFee = await api.addresses.fetchDataKey(
-      address(this.accounts.otcMultiasset, chainId),
-      `%s%s%s%s__totalFeeCollected__withdraw__${this.assetAId}__${this.assetBId}`,
-    );
-    expect(totalFeeCollectedWithdrawFee.value).to.eql(0);
   });
 });

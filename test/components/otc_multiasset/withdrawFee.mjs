@@ -19,8 +19,7 @@ describe('otc_multiasset: withdrawFee.mjs', /** @this {MochaSuiteModified} */() 
     const amountAssetB = amountAssetA - feeDeposit;
 
     const feeWithdraw = Math.floor(amountAssetB / 1000) * this.withdrawFee;
-    const expectedTotalFeeCollectedDeposit = feeDeposit;
-    const expectedTotalFeeCollectedWithdraw = feeWithdraw;
+    const expectedTotalFeeCollectedDeposit = feeDeposit + feeWithdraw;
 
     const swapAssetsAToBTx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),
@@ -92,14 +91,10 @@ describe('otc_multiasset: withdrawFee.mjs', /** @this {MochaSuiteModified} */() 
     await api.transactions.broadcast(withdrawFeeTx, {});
     const { stateChanges } = await ni.waitForTx(withdrawFeeTx.id, { apiBase });
 
-    expect(await checkStateChanges(stateChanges, 2, 2, 0, 0, 0, 0, 0, 0, 0)).to.eql(true);
+    expect(await checkStateChanges(stateChanges, 1, 1, 0, 0, 0, 0, 0, 0, 0)).to.eql(true);
 
     expect(stateChanges.data).to.eql([{
       key: `%s%s%s%s__totalFeeCollected__deposit__${this.assetAId}__${this.assetBId}`,
-      type: 'integer',
-      value: 0,
-    }, {
-      key: `%s%s%s%s__totalFeeCollected__withdraw__${this.assetAId}__${this.assetBId}`,
       type: 'integer',
       value: 0,
     }]);
@@ -107,10 +102,6 @@ describe('otc_multiasset: withdrawFee.mjs', /** @this {MochaSuiteModified} */() 
     expect(stateChanges.transfers).to.eql([{
       address: address(this.accounts.manager, chainId),
       asset: this.assetAId,
-      amount: expectedTotalFeeCollectedWithdraw,
-    }, {
-      address: address(this.accounts.manager, chainId),
-      asset: this.assetBId,
       amount: expectedTotalFeeCollectedDeposit,
     }]);
   });
