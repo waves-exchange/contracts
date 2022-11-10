@@ -17,6 +17,8 @@ jobs:
         run: |
           cd compiler
           go run main.go
+      - name: Clean up repo
+        uses: AutoModality/action-clean@v1
 
   deploy_testnet:
     env:
@@ -62,26 +64,26 @@ jobs:
           cd deployer
           go run main.go
 
-  lint_go:
-    runs-on: self-hosted
-    container:
-      image: golang:1.18
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v2
-      - name: Check .go code gofmt-formatted
-        run: |
-          gofmt -l .
+  # lint_go:
+  #   runs-on: self-hosted
+  #   container:
+  #     image: golang:1.18
+  #   steps:
+  #     - name: Check out the repo
+  #       uses: actions/checkout@v2
+  #     - name: Check .go code gofmt-formatted
+  #       run: |
+  #         gofmt -l .
 
-  lint_js:
-    runs-on: self-hosted
-    container:
-      image: node:18.1
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v2
-      - name: Check .js and .mjs code eslint-formatted
-        run: |
-          cd test
-          npm i
-          npm run lint
+  # lint_js:
+  #   runs-on: self-hosted
+  #   container:
+  #     image: node:18.1
+  #   steps:
+  #     - name: Check out the repo
+  #       uses: actions/checkout@v2
+  #     - name: Check .js and .mjs code eslint-formatted
+  #       run: |
+  #         cd test
+  #         npm i
+  #         npm run lint
