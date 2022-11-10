@@ -20,11 +20,11 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     const usdnAmount = 1e8;
     const minOutAmount = 0;
     const delay = 2;
-    const expectedPriceLast = 9441800740;
-    const expectedPriceHistory = 9441800740;
+    const expectedPriceLast = 9662694654;
+    const expectedPriceHistory = 9662694654;
 
-    const expectedOutAmAmt = 198791435;
-    const expectedFee = 99445;
+    const expectedOutAmAmt = 198666227;
+    const expectedFee = 198865;
     const expectedOutPrAmt = 0;
 
     const lpStable = address(this.accounts.lpStable, chainId);
