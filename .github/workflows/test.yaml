@@ -20,3 +20,5 @@ jobs:
           cd test
           npm i
           npm run ci-test
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
