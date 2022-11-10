@@ -22,6 +22,7 @@
     "test-referral": "node_modules/.bin/mocha --parallel --require components/referral/_hooks.mjs components/referral",
     "test-boosting": "node_modules/.bin/mocha --parallel --require components/boosting/_hooks.mjs components/boosting",
     "test-otc-multiasset": "node_modules/.bin/mocha --parallel --require components/otc_multiasset/_hooks.mjs components/otc_multiasset",
+    "test-ido": "node_modules/.bin/mocha --parallel --require components/ido/_hooks.mjs components/ido",
     "ci-test": "node_modules/.bin/concurrently --max-processes 8 --timings npm:test-*",
     "test": "API_NODE_URL=http://localhost:6869 npm run ci-test",
     "lint": "node_modules/.bin/eslint . --ext .mjs --ext .js",

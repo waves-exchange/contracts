@@ -190,7 +190,7 @@ func TotalsEntry(
     scale8, pow(10, 0, priceAssetDecimals, 0, 0, DOWN)
   )
 
-  let newClaimedPriceAssetAmount = 
+  let newClaimedPriceAssetAmount =
     claimedPriceAssetAmount + incrementDiff[IdxDiffClaimedPriceAmountIncrement] - priceAssetBalance
   let newClaimedIdoAssetAmount =
     claimedIdoAssetAmount + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement] + priceAssetBalancePriceAssetDecimals
@@ -403,6 +403,7 @@ func mustManager(i: Invocation) = {
   }
 }
 
+# constructor is not working, use dataTx and transfer instead
 # @param idoStart
 # @param idoDuration
 # @param claimStart
