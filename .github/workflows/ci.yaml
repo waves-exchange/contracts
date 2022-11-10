@@ -9,7 +9,6 @@ jobs:
     runs-on: self-hosted
     container:
       image: golang:1.18
-      options: --user $(id -u)
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
