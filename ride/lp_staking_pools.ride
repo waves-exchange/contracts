@@ -14,6 +14,8 @@ func throwErr(msg: String) = msg.wrapErr().throw()
 func keyFactoryContract() = "%s__factoryContract"
 func keyUsdnAssetId() = "%s__usdnAssetId"
 
+func keyMinDelay() = "%s__minDelay"
+
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 
@@ -42,6 +44,9 @@ func mustManager(i: Invocation) = {
 
 let factoryContract = this.getStrOrFail(keyFactoryContract()).addressFromStringValue()
 let usdnAssetId = this.getStrOrFail(keyUsdnAssetId()).fromBase58String()
+
+let minDelayDefault = 1440
+let minDelay = this.getInteger(keyMinDelay()).valueOrElse(minDelayDefault)
 
 func isPoolExists(assets: (String, String)) = {
   let (amountAssetId, priceAssetId) = assets
@@ -92,6 +97,7 @@ func confirmManager() = {
 @Callable(i)
 func create(baseAssetId: String, shareAssetName: String, shareAssetDescription: String, shareAssetLogo: String) = {
   strict checks = [
+    i.mustManager(),
     (baseAssetId, usdnAssetId.toBase58String()).isPoolExists()
   ]
 
