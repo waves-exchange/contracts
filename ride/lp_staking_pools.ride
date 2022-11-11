@@ -58,29 +58,36 @@ func mustManager(i: Invocation) = {
 
 let factoryContract = this.getStrOrFail(keyFactoryContract()).addressFromStringValue()
 let assetsStoreContract = factoryContract.getStrOrFail(keyAssetsStoreContract()).addressFromStringValue()
-let usdnAssetId = this.getStrOrFail(keyUsdnAssetId()).fromBase58String()
+let usdnAssetId = this.getStrOrFail(keyUsdnAssetId()).parseAssetId()
 
 let minDelayDefault = 1440
 let minDelay = this.getInteger(keyMinDelay()).valueOrElse(minDelayDefault)
 
-func isPoolExists(assets: (String, String)) = {
-  let (amountAssetId, priceAssetId) = assets
+func getPoolInfo(amountAssetId: ByteVector|Unit) = {
+  let amountAssetIdStr = amountAssetId.assetIdToString()
+  let priceAssetIdStr = usdnAssetId.assetIdToString()
+
   func keyMappingsBaseAsset2internalId(baseAssetStr: String) = {
     "%s%s%s__mappings__baseAsset2internalId__" + baseAssetStr
   }
   func keyMappingPoolAssetsToPoolContractAddress(internalAmountAssetIdStr: Int, internalPriceAssetIdStr: Int) = {
     "%d%d%s%s__" + internalAmountAssetIdStr.toString() + "__" + internalPriceAssetIdStr.toString() + "__mappings__poolAssets2PoolContract"
   }
-  func keyMappingPoolContractToLPAsset(poolContractAddress: String) = {
+  func keyMappingPoolContractToLpAsset(poolContractAddress: String) = {
     "%s%s%s__" + poolContractAddress + "__mappings__poolContract2LpAsset"
   }
 
-  let amountAssetInternalIdOption = factoryContract.getInteger(amountAssetId.keyMappingsBaseAsset2internalId())
-  let priceAssetInternalIdOption = factoryContract.getInteger(priceAssetId.keyMappingsBaseAsset2internalId())
+  let amountAssetInternalIdOption = factoryContract.getInteger(amountAssetIdStr.keyMappingsBaseAsset2internalId())
+  let priceAssetInternalIdOption = factoryContract.getInteger(priceAssetIdStr.keyMappingsBaseAsset2internalId())
   let poolContractAddressOption = factoryContract.getString(keyMappingPoolAssetsToPoolContractAddress(amountAssetInternalIdOption.value(), priceAssetInternalIdOption.value()))
+  let lpAssetIdOption = factoryContract.getString(poolContractAddressOption.value().keyMappingPoolContractToLpAsset())
   let poolExists = amountAssetInternalIdOption.isDefined() && priceAssetInternalIdOption.isDefined() && poolContractAddressOption.isDefined()
 
-  poolExists
+  let poolInfo = if (poolExists) then {
+    (poolContractAddressOption.value(), lpAssetIdOption.value())
+  } else unit
+
+  poolInfo
 }
 
 @Callable(i)
@@ -117,7 +124,7 @@ func create(
 
   strict checks = [
     i.mustManager(),
-    (baseAssetIdStr, usdnAssetId.toBase58String()).isPoolExists()
+    baseAssetId.getPoolInfo().isDefined() || "invalid base asset".throwErr()
   ]
 
   let shareAssetIssueAmount = 1
@@ -143,6 +150,9 @@ func create(
 # Вызвать claimShareAsset, чтобы упростить учет доступных к выводу средств
 @Callable(i)
 func put() = {
+  let pmt = i.payments[0]
+  let poolInfo = pmt.assetId.getPoolInfo()
+
   ([], unit)
 }
  
