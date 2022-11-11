@@ -2,12 +2,24 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+# Required state entries:
+# * "%s__factoryContract": String
+# * "%s__usdnAssetId": String
+
 let separator = "__"
 
-func throwErr(msg: String) = ["lp_staking_pools.ride:", msg].makeString(" ").throw()
+func wrapErr(msg: String) = ["lp_staking_pools.ride:", msg].makeString(" ").throw()
+func throwErr(msg: String) = msg.wrapErr().throw()
+
+func keyFactoryContract() = "%s__factoryContract"
+func keyUsdnAssetId() = "%s__usdnAssetId"
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+
+func errKeyIsNotDefined(address: Address, key: String) = ["mandatory ", address.toString(), ".", key, " is not defined"].makeString("").wrapErr()
+func getStrOrFail(address: Address, key: String) = address.getString(key).valueOrErrorMessage(address.errKeyIsNotDefined(key))
+func getIntOrFail(address: Address, key: String) = address.getInteger(key).valueOrErrorMessage(address.errKeyIsNotDefined(key))
 
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
   case s: String => s.fromBase58String()
@@ -26,6 +38,29 @@ func mustManager(i: Invocation) = {
     case pk: ByteVector => i.callerPublicKey == pk || pd
     case _: Unit => i.caller == this || pd
   }
+}
+
+let factoryContract = this.getStrOrFail(keyFactoryContract()).addressFromStringValue()
+let usdnAssetId = this.getStrOrFail(keyUsdnAssetId()).fromBase58String()
+
+func isPoolExists(assets: (String, String)) = {
+  let (amountAssetId, priceAssetId) = assets
+  func keyMappingsBaseAsset2internalId(baseAssetStr: String) = {
+    "%s%s%s__mappings__baseAsset2internalId__" + baseAssetStr
+  }
+  func keyMappingPoolAssetsToPoolContractAddress(internalAmountAssetIdStr: Int, internalPriceAssetIdStr: Int) = {
+    "%d%d%s%s__" + internalAmountAssetIdStr.toString() + "__" + internalPriceAssetIdStr.toString() + "__mappings__poolAssets2PoolContract"
+  }
+  func keyMappingPoolContractToLPAsset(poolContractAddress: String) = {
+    "%s%s%s__" + poolContractAddress + "__mappings__poolContract2LpAsset"
+  }
+
+  let amountAssetInternalIdOption = factoryContract.getInteger(amountAssetId.keyMappingsBaseAsset2internalId())
+  let priceAssetInternalIdOption = factoryContract.getInteger(priceAssetId.keyMappingsBaseAsset2internalId())
+  let poolContractAddressOption = factoryContract.getString(keyMappingPoolAssetsToPoolContractAddress(amountAssetInternalIdOption.value(), priceAssetInternalIdOption.value()))
+  let poolExists = amountAssetInternalIdOption.isDefined() && priceAssetInternalIdOption.isDefined() && poolContractAddressOption.isDefined()
+
+  poolExists
 }
 
 @Callable(i)
@@ -48,6 +83,63 @@ func confirmManager() = {
     StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
     DeleteEntry(keyPendingManagerPublicKey())
   ]
+}
+
+# Регистрация токена
+# Проверить, что есть пул baseAssetId/usdnAssetId, используя factoryContract
+# Обмен WX будет происходить через пул WX/USDN, поэтому работаем только с пулами к USDN
+# Выпустить share токен, записать shareAssetId
+@Callable(i)
+func create(baseAssetId: String, shareAssetName: String, shareAssetDescription: String, shareAssetLogo: String) = {
+  strict checks = [
+    (baseAssetId, usdnAssetId.toBase58String()).isPoolExists()
+  ]
+
+  ([], unit)
+}
+ 
+# Внести средства
+# Средства отправляются в соответствующий пул с autoStake = true во время финализации
+# Возможность получить lp токены появится только после финализации
+# Записать сумму, внесенную в текущий расчетный период, но пока не доступную к обмену на share токен
+# Увеличить общую сумму внесенных в текущий период base asset
+# Вызвать claimShareAsset, чтобы упростить учет доступных к выводу средств
+@Callable(i)
+func put() = {
+  ([], unit)
+}
+ 
+# Получить доступные к выводу share токены
+# Обнулить сумму, внесенную в предыдущий расчетный период
+# Обменять share asset на base asset
+@Callable(i)
+func claimShareAsset() = {
+  ([], unit)
+}
+ 
+# Запрос на вывод средств
+# Записать количество share asset, отправленных пользователем и увеличить общее количество
+# Возможность получить средства появится после финализации расчетного периода
+# Цену, по которой пользователь сможет вывести средства, надо сохранить
+# Сохранить номер периода, цена которого будет использована при вызове claimBaseAsset
+# Вызвать claimBaseAsset, чтобы забрать запрошенные в предыдущий раз средства
+@Callable(i)
+func get() = {
+  ([], unit)
+}
+ 
+# Вывод средств
+# Сжечь заблокированные share asset
+@Callable(i)
+func claimBaseAsset() = {
+  ([], unit)
+}
+ 
+# Финализация расчетного периода
+# Клейм и стейкинг/обмен WX
+@Callable(i)
+func finalize(baseAssetId: String) = {
+  ([], unit)
 }
 
 @Verifier(tx)
