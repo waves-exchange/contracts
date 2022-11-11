@@ -84,7 +84,7 @@ func getPoolInfo(amountAssetId: ByteVector|Unit) = {
   let poolExists = amountAssetInternalIdOption.isDefined() && priceAssetInternalIdOption.isDefined() && poolContractAddressOption.isDefined()
 
   let poolInfo = if (poolExists) then {
-    (poolContractAddressOption.value(), lpAssetIdOption.value())
+    (poolContractAddressOption.value().addressFromStringValue(), lpAssetIdOption.value().parseAssetId())
   } else unit
 
   poolInfo
@@ -150,8 +150,11 @@ func create(
 # Вызвать claimShareAsset, чтобы упростить учет доступных к выводу средств
 @Callable(i)
 func put() = {
+  strict checks = [
+    i.payments.size() == 1 || "exactly 1 payment is expected".throwErr()
+  ]
   let pmt = i.payments[0]
-  let poolInfo = pmt.assetId.getPoolInfo()
+  let (poolAddress, lpAssetId) = pmt.assetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
 
   ([], unit)
 }
