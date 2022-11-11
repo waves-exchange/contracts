@@ -7,21 +7,35 @@
 # * "%s__usdnAssetId": String
 
 let separator = "__"
+let shareAssetDecimals = 8
+let wavesString = "WAVES"
 
 func wrapErr(msg: String) = ["lp_staking_pools.ride:", msg].makeString(" ").throw()
 func throwErr(msg: String) = msg.wrapErr().throw()
 
-func keyFactoryContract() = "%s__factoryContract"
-func keyUsdnAssetId() = "%s__usdnAssetId"
-
-func keyMinDelay() = "%s__minDelay"
-
-func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
-
 func errKeyIsNotDefined(address: Address, key: String) = ["mandatory ", address.toString(), ".", key, " is not defined"].makeString("").wrapErr()
 func getStrOrFail(address: Address, key: String) = address.getString(key).valueOrErrorMessage(address.errKeyIsNotDefined(key))
 func getIntOrFail(address: Address, key: String) = address.getInteger(key).valueOrErrorMessage(address.errKeyIsNotDefined(key))
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
+func keyFactoryContract() = "%s__factoryContract"
+func keyAssetsStoreContract() = "%s__assetsStoreContract"
+func keyUsdnAssetId() = "%s__usdnAssetId"
+
+func keyMinDelay() = "%s__minDelay"
+func keyShareAssetId(baseAssetId: ByteVector|Unit) = {
+  ["%s%s", baseAssetId.assetIdToString(), "shareAssetId"].makeString(separator)
+}
+
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
   case s: String => s.fromBase58String()
@@ -43,6 +57,7 @@ func mustManager(i: Invocation) = {
 }
 
 let factoryContract = this.getStrOrFail(keyFactoryContract()).addressFromStringValue()
+let assetsStoreContract = factoryContract.getStrOrFail(keyAssetsStoreContract()).addressFromStringValue()
 let usdnAssetId = this.getStrOrFail(keyUsdnAssetId()).fromBase58String()
 
 let minDelayDefault = 1440
@@ -90,18 +105,34 @@ func confirmManager() = {
   ]
 }
 
-# Регистрация токена
-# Проверить, что есть пул baseAssetId/usdnAssetId, используя factoryContract
-# Обмен WX будет происходить через пул WX/USDN, поэтому работаем только с пулами к USDN
-# Выпустить share токен, записать shareAssetId
 @Callable(i)
-func create(baseAssetId: String, shareAssetName: String, shareAssetDescription: String, shareAssetLogo: String) = {
+func create(
+  baseAssetIdStr: String,
+  shareAssetName: String,
+  shareAssetDescription: String,
+  shareAssetLogo: String
+) = {
+  let shareAssetLabel = "LP_STAKING_POOLS"
+  let baseAssetId = baseAssetIdStr.parseAssetId()
+
   strict checks = [
     i.mustManager(),
-    (baseAssetId, usdnAssetId.toBase58String()).isPoolExists()
+    (baseAssetIdStr, usdnAssetId.toBase58String()).isPoolExists()
   ]
 
-  ([], unit)
+  let shareAssetIssueAmount = 1
+  let shareAssetIssueAction = Issue(shareAssetName, shareAssetDescription, shareAssetIssueAmount, shareAssetDecimals, true)
+  let shareAssetId = shareAssetIssueAction.calculateAssetId()
+  let shareAssetBurnAction = Burn(shareAssetId, shareAssetIssueAmount)
+  let shareAssetIdStr = shareAssetId.toBase58String()
+  strict createOrUpdate = assetsStoreContract.invoke("createOrUpdate", [shareAssetIdStr, shareAssetLogo, false], [])
+  strict addLabel = assetsStoreContract.invoke("addLabel", [shareAssetIdStr, shareAssetLabel], [])
+
+  ([
+    shareAssetIssueAction,
+    shareAssetBurnAction,
+    StringEntry(baseAssetId.keyShareAssetId(), shareAssetIdStr)
+  ], unit)
 }
  
 # Внести средства
