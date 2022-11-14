@@ -32,6 +32,7 @@ export const mochaHooks = {
       'staking',
       'slippage',
       'manager',
+      'feeCollector',
       'store',
       'user1',
     ];
@@ -52,6 +53,11 @@ export const mochaHooks = {
     await setScriptFromFile(stakingPath, this.accounts.staking);
     await setScriptFromFile(slippagePath, this.accounts.slippage);
     await setScriptFromFile(assetsStorePath, this.accounts.store);
+
+    console.log('account addresses:');
+    for (const [key, value] of Object.entries(this.accounts)) {
+      console.log('  ', key, address(value, chainId));
+    }
 
     const usdnIssueTx = issue({
       name: 'USDN',
@@ -111,33 +117,27 @@ export const mochaHooks = {
 
     const factoryV2Config = `%s%s%s%s%s%s%s%s%s%s%s__${stakingContract}__${boostingContract}__${idoContract}__${teamContract}__${emissionContract}__${restContract}__${slippageContract}__${daoContract}__${marketingContract}__${gwxRewardsContract}__${birdsContract}`;
 
-    const setFactoryV2ConfigTx = data({
+    const setKeysFactoryV2Tx = data({
       additionalFee: 4e5,
       data: [
         {
           key: '%s__factoryConfig',
           type: 'string',
           value: factoryV2Config,
-        },
-      ],
-      chainId,
-    }, this.accounts.factoryV2);
-    await api.transactions.broadcast(setFactoryV2ConfigTx, {});
-    await waitForTx(setFactoryV2ConfigTx.id, { apiBase });
-
-    const setAssetsStoreContractTx = data({
-      additionalFee: 4e5,
-      data: [
-        {
+        }, {
           key: '%s__assetsStoreContract',
           type: 'string',
           value: address(this.accounts.store, chainId),
+        }, {
+          key: '%s__feeCollectorAddress',
+          type: 'string',
+          value: address(this.accounts.feeCollector, chainId),
         },
       ],
       chainId,
     }, this.accounts.factoryV2);
-    await api.transactions.broadcast(setAssetsStoreContractTx, {});
-    await waitForTx(setAssetsStoreContractTx.id, { apiBase });
+    await api.transactions.broadcast(setKeysFactoryV2Tx, {});
+    await waitForTx(setKeysFactoryV2Tx.id, { apiBase });
 
     const setFactoryContractTx = data({
       additionalFee: 4e5,
@@ -174,6 +174,10 @@ export const mochaHooks = {
     await api.transactions.broadcast(activateNewPoolTx, {});
     const { stateChanges } = await waitForTx(activateNewPoolTx.id, { apiBase });
     this.lpAssetId = stateChanges.issues[0].assetId;
+
+    console.log('   usdnAssetId', this.usdnAssetId);
+    console.log('   shibAssetId', this.shibAssetId);
+    console.log('   lpAssetId', this.lpAssetId);
 
     const setManagerFactoryV2Tx = data({
       additionalFee: 4e5,
