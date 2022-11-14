@@ -22,3 +22,4 @@ jobs:
           npm run ci-test
       - name: Clean repo
         uses: AutoModality/action-clean@v1
+        if: always()
