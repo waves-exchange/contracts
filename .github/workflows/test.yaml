@@ -13,6 +13,8 @@ jobs:
     env:
       API_NODE_URL: http://waves-private-node:6869
     steps:
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Run tests on private node
@@ -20,5 +22,3 @@ jobs:
           cd test
           npm i
           npm run ci-test
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
