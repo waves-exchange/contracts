@@ -10,14 +10,16 @@ jobs:
     container:
       image: golang:1.18
     steps:
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
+      # - name: Clean repo
+      #   uses: AutoModality/action-clean@v1
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Compile .ride files
         run: |
           cd compiler
           go run main.go
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
 
   deploy_testnet:
     env:
@@ -34,14 +36,16 @@ jobs:
     container:
       image: golang:1.19
     steps:
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
+      # - name: Clean repo
+      #   uses: AutoModality/action-clean@v1
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Deploy changed contracts
         run: |
           cd deployer
           go run main.go
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
 
   deploy_mainnet:
     env:
@@ -58,35 +62,39 @@ jobs:
     container:
       image: golang:1.19
     steps:
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
+      # - name: Clean repo
+      #   uses: AutoModality/action-clean@v1
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Compare contracts and print diff. Deploy changed lp.ride
         run: |
           cd deployer
           go run main.go
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
 
   lint_go:
     runs-on: self-hosted
     container:
       image: golang:1.18
     steps:
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
+      # - name: Clean repo
+      #   uses: AutoModality/action-clean@v1
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Check .go code gofmt-formatted
         run: |
           gofmt -l .
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
 
   lint_js:
     runs-on: self-hosted
     container:
       image: node:18.1
     steps:
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
+      # - name: Clean repo
+      #   uses: AutoModality/action-clean@v1
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Check .js and .mjs code eslint-formatted
@@ -94,3 +102,5 @@ jobs:
           cd test
           npm i
           npm run lint
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
