@@ -174,38 +174,38 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 
 	s.logger.Info().Msg("changes applied")
 
-	if s.network == config.Mainnet {
-		const blocks = 10
-		s.logger.Info().Msgf("wait %d blocks and ensure there is no diff", blocks)
-		er := s.waitNBlocks(ctx, blocks)
-		if er != nil {
-			return fmt.Errorf("s.waitNBlocks: %w", er)
-		}
-
-		isChanged := false
-		for _, fl := range files {
-			isChn, er2 := s.doFile(
-				ctx,
-				fl.Name(),
-				contracts,
-				mainnetLpHashEmpty,
-				mainnetLpStableHashEmpty,
-				mainnetLpStableAddonHashEmpty,
-				false,
-			)
-			if er2 != nil {
-				return fmt.Errorf("s.doFile: %w", er2)
-			}
-			if isChn {
-				isChanged = true
-			}
-		}
-
-		if isChanged {
-			return errors.New("diff found after deploy, try again")
-		}
-		s.logger.Info().Msg("done: no diff")
-	}
+	//if s.network == config.Mainnet {
+	//	const blocks = 10
+	//	s.logger.Info().Msgf("wait %d blocks and ensure there is no diff", blocks)
+	//	er := s.waitNBlocks(ctx, blocks)
+	//	if er != nil {
+	//		return fmt.Errorf("s.waitNBlocks: %w", er)
+	//	}
+	//
+	//	isChanged := false
+	//	for _, fl := range files {
+	//		isChn, er2 := s.doFile(
+	//			ctx,
+	//			fl.Name(),
+	//			contracts,
+	//			mainnetLpHashEmpty,
+	//			mainnetLpStableHashEmpty,
+	//			mainnetLpStableAddonHashEmpty,
+	//			false,
+	//		)
+	//		if er2 != nil {
+	//			return fmt.Errorf("s.doFile: %w", er2)
+	//		}
+	//		if isChn {
+	//			isChanged = true
+	//		}
+	//	}
+	//
+	//	if isChanged {
+	//		return errors.New("diff found after deploy, try again")
+	//	}
+	//	s.logger.Info().Msg("done: no diff")
+	//}
 
 	return nil
 }
