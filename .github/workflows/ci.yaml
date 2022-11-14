@@ -18,6 +18,7 @@ jobs:
           go run main.go
       - name: Clean repo
         uses: AutoModality/action-clean@v1
+        if: always()
 
   deploy_testnet:
     env:
@@ -42,6 +43,7 @@ jobs:
           go run main.go
       - name: Clean repo
         uses: AutoModality/action-clean@v1
+        if: always()
 
   deploy_mainnet:
     env:
@@ -66,6 +68,7 @@ jobs:
           go run main.go
       - name: Clean repo
         uses: AutoModality/action-clean@v1
+        if: always()
 
   lint_go:
     runs-on: self-hosted
@@ -79,6 +82,7 @@ jobs:
           gofmt -l .
       - name: Clean repo
         uses: AutoModality/action-clean@v1
+        if: always()
 
   lint_js:
     runs-on: self-hosted
@@ -94,3 +98,4 @@ jobs:
           npm run lint
       - name: Clean repo
         uses: AutoModality/action-clean@v1
+        if: always()
