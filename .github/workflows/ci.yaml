@@ -29,7 +29,7 @@ jobs:
       COMPARELPSCRIPTADDRESS: 3N6wAa7PMFZJu4Zrmp3avXmMnRTrRpMM9Lh # WX/USDN pool
       COMPARELPSTABLESCRIPTADDRESS: 3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT # USDT/USDN pool
       COMPARELPSTABLEADDONSCRIPTADDRESS: 3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV # USDT/USDN pool addon
-    if: github.ref_name == 'dev'
+    if: github.ref_name == '14-11-22-release'
     runs-on: self-hosted
     container:
       image: golang:1.19
