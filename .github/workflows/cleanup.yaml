@@ -9,8 +9,6 @@ jobs:
     timeout-minutes: 2
     runs-on: self-hosted
     steps:
-      # - name: Clean repo
-      #   uses: AutoModality/action-clean@v1
       - uses: actions/checkout@v2
       - name: Set Git config
         run: |
@@ -25,3 +23,6 @@ jobs:
       #     git pull
       #     git merge --no-ff main -m "Auto-merge main -> dev"
       #     git push
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
+        if: always()
