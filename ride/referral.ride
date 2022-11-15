@@ -358,10 +358,10 @@ func incUnclaimed(
   strict checkProgram = programName == "wxlock" || "invalid program".throwErr()
   strict checkReferrerInProgram = referrerAddress.keyAllReferralPrograms().getString().valueOrElse(
     ""
-  ).contains(programName) || "referrer not in program".throwErr()
+  ).contains(programName) || ("referrer not in program="+programName+" addr="+referrerAddress).throwErr()
   strict checkReferralInProgram = referralAddress.keyAllReferralPrograms().getString().valueOrElse(
     ""
-  ).contains(programName) || "referral not in program".throwErr()
+  ).contains(programName) || ("referral not in program="+programName+" addr="+referralAddress).throwErr()
 
   let unclaimedTotalReferrer = referrerAddress.keyUnclaimedTotalAddress().getInteger().valueOrElse(0)
   let referrerUnclaimed = programName.keyUnclaimedReferrer(referrerAddress).getInteger().valueOrElse(0)
