@@ -161,6 +161,7 @@ func create(
   let shareAssetIdStr = shareAssetId.toBase58String()
   strict createOrUpdate = assetsStoreContract.invoke("createOrUpdate", [shareAssetIdStr, shareAssetLogo, false], [])
   strict addLabel = assetsStoreContract.invoke("addLabel", [shareAssetIdStr, shareAssetLabel], [])
+  # write current period 0 for base asset
 
   ([
     shareAssetIssueAction,
@@ -168,13 +169,7 @@ func create(
     StringEntry(baseAssetId.keyShareAssetId(), shareAssetIdStr)
   ], unit)
 }
- 
-# Внести средства
-# Средства отправляются в соответствующий пул с autoStake = true во время финализации
-# Возможность получить lp токены появится только после финализации
-# Записать сумму, внесенную в текущий расчетный период, но пока не доступную к обмену на share токен
-# Увеличить общую сумму внесенных в текущий период base asset
-# Вызвать claimShareAsset, чтобы упростить учет доступных к выводу средств
+
 @Callable(i)
 func put() = {
   let pmt = if (i.payments.size() == 1) then i.payments[0] else "exactly 1 payment is expected".throwErr()
@@ -182,40 +177,56 @@ func put() = {
     pmt.assetId.keyShareAssetId().getString().isDefined() || "invalid asset".throwErr()
   ]
   let (poolAddress, lpAssetId) = pmt.assetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
+  # increase baseAssetAmountToConvert for current period
+  # call claimShareAsset if userBaseAssetAmountToConvertPeriod ≥ current period
+  # increase userBaseAssetAmountToConvert
+  # write userBaseAssetAmountToConvertPeriod (current period)
 
   ([], unit)
 }
- 
-# Получить доступные к выводу share токены
-# Обнулить сумму, внесенную в предыдущий расчетный период
-# Обменять share asset на base asset
+
 @Callable(i)
 func claimShareAsset() = {
+  # current period should be ≥ userBaseAssetAmountToConvertPeriod
+  # claim share asset with the last price (base asset / share asset ?)
+  # reset userBaseAssetAmountToConvert
   ([], unit)
 }
- 
-# Запрос на вывод средств
-# Записать количество share asset, отправленных пользователем и увеличить общее количество
-# Возможность получить средства появится после финализации расчетного периода
-# Цену, по которой пользователь сможет вывести средства, надо сохранить
-# Сохранить номер периода, цена которого будет использована при вызове claimBaseAsset
-# Вызвать claimBaseAsset, чтобы забрать запрошенные в предыдущий раз средства
+
 @Callable(i)
 func get() = {
+  # call claimBaseAsset if there's pricePeriod for userShareAssetAmountToConvertPeriod
+  # increase shareAssetAmountToConvert
+  # increase userShareAssetAmountToConvert
+  # save next period in userShareAssetAmountToConvertPeriod
+    # this period's price will be used in claimBaseAsset
   ([], unit)
 }
- 
-# Вывод средств
-# Сжечь заблокированные share asset
+
 @Callable(i)
 func claimBaseAsset() = {
+  # burn share assets
+  # claim base asset with the price for userShareAssetAmountToConvertPeriod
+  # reset userShareAssetAmountToConvert
   ([], unit)
 }
- 
-# Финализация расчетного периода
-# Клейм и стейкинг/обмен WX
+
 @Callable(i)
 func finalize(baseAssetId: String) = {
+  # check minDelay
+  # update period
+  # update price last and price for period
+  # call staking.claimWx
+  # call gwx_reward.claimReward
+  # use wx on the balance (balance, not variable, because there could be auto-claims)
+    # 50% lock in boosting
+    # 50% convert to base asset via wx/usdn pool
+  # convert shareAssetAmountToConvert to lp tokens using price (share asset / lp asset ?)
+  # unstake and get lp, calculate price for claimBaseAsset (base asset / share asset)
+  # put and stake baseAssetAmountToConvert
+  # calculate and save new price (share asset / lp asset)
+  # reset baseAssetAmountToConvert
+  # reset shareAssetAmountToConvert
   ([], unit)
 }
 
