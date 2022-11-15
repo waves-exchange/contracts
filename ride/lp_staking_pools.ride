@@ -25,13 +25,40 @@ func assetIdToString(input: ByteVector|Unit) = {
   if (input == unit) then wavesString else input.value().toBase58String()
 }
 
-func keyFactoryContract() = "%s__factoryContract"
-func keyAssetsStoreContract() = "%s__assetsStoreContract"
-func keyUsdnAssetId() = "%s__usdnAssetId"
+func keyFactoryContract() = ["%s", "factoryContract"].makeString(separator)
+func keyAssetsStoreContract() = ["%s", "assetsStoreContract"].makeString(separator)
+func keyUsdnAssetId() = ["%s", "usdnAssetId"].makeString(separator)
 
-func keyMinDelay() = "%s__minDelay"
+func keyMinDelay() = ["%s", "minDelay"].makeString(separator)
 func keyShareAssetId(baseAssetId: ByteVector|Unit) = {
   ["%s%s", baseAssetId.assetIdToString(), "shareAssetId"].makeString(separator)
+}
+func keyPeriod(baseAssetId: ByteVector|Unit) = {
+  ["%s%s", baseAssetId.assetIdToString(), "period"].makeString(separator)
+}
+func keyBaseAssetAmountToConvert(baseAssetId: ByteVector|Unit) = {
+  ["%s%s", baseAssetId.assetIdToString(), "baseAssetAmountToConvert"].makeString(separator)
+}
+func keyShareAssetAmountToConvert(baseAssetId: ByteVector|Unit) = {
+  ["%s%s", baseAssetId.assetIdToString(), "shareAssetAmountToConvert"].makeString(separator)
+}
+func keyUserBaseAssetAmountToConvert(baseAssetId: ByteVector|Unit, userAddress: Address) = {
+  ["%s%s%s", baseAssetId.assetIdToString(), userAddress.toString(), "baseAssetAmountToConvert"].makeString(separator)
+}
+func keyUserBaseAssetAmountToConvertPeriod(baseAssetId: ByteVector|Unit, userAddress: Address) = {
+  ["%s%s%s%s", baseAssetId.assetIdToString(), userAddress.toString(), "baseAssetAmountToConvert", "period"].makeString(separator)
+}
+func keyUserShareAssetAmountToConvert(baseAssetId: ByteVector|Unit, userAddress: Address) = {
+  ["%s%s%s", baseAssetId.assetIdToString(), userAddress.toString(), "shareAssetAmountToConvert"].makeString(separator)
+}
+func keyUserShareAssetAmountToConvertPeriod(baseAssetId: ByteVector|Unit, userAddress: Address) = {
+  ["%s%s%s%s", baseAssetId.assetIdToString(), userAddress.toString(), "shareAssetAmountToConvert", "period"].makeString(separator)
+}
+func keyPriceLast(baseAssetId: ByteVector|Unit) = {
+  ["%s%s%s", baseAssetId.assetIdToString(), "price", "last"].makeString(separator)
+}
+func keyPricePeriod(baseAssetId: ByteVector|Unit, period: Int) = {
+  ["%s%s%s", baseAssetId.assetIdToString(), "price", period.toString()].makeString(separator)
 }
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
@@ -150,10 +177,10 @@ func create(
 # Вызвать claimShareAsset, чтобы упростить учет доступных к выводу средств
 @Callable(i)
 func put() = {
+  let pmt = if (i.payments.size() == 1) then i.payments[0] else "exactly 1 payment is expected".throwErr()
   strict checks = [
-    i.payments.size() == 1 || "exactly 1 payment is expected".throwErr()
+    pmt.assetId.keyShareAssetId().getString().isDefined() || "invalid asset".throwErr()
   ]
-  let pmt = i.payments[0]
   let (poolAddress, lpAssetId) = pmt.assetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
 
   ([], unit)
