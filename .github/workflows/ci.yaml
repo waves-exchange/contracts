@@ -11,16 +11,17 @@ jobs:
       image: golang:1.18
       options: --user root
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Compile .ride files
         run: |
           cd compiler
           go run main.go
-      # - name: Remove repo
-      #   if: always()
-      #   run: |
-      #     rm -rf $GITHUB_WORKSPACE
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
