@@ -17,13 +17,13 @@ jobs:
         run: |
           cd compiler
           go run main.go
-      - name: Remove repo
-        if: always()
-        run: |
-          rm -rf $GITHUB_WORKSPACE
-      # - name: Clean repo
-      #   uses: AutoModality/action-clean@v1
+      # - name: Remove repo
       #   if: always()
+      #   run: |
+      #     rm -rf $GITHUB_WORKSPACE
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
+        if: always()
 
   # deploy_testnet:
   #   env:
