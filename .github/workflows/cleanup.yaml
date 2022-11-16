@@ -3,20 +3,20 @@ on:
   push:
     branches:
       - main
-      # - fix-permissions-16112
+      - fix-permissions-16112
 jobs:
   merge-main-to-dev:
     timeout-minutes: 2
     runs-on: self-hosted
-    container:
-      image: bitnami/git:latest
-      options: --user root
+    # container:
+    #   image: bitnami/git:latest
+    #   options: --user root
     steps:
-      - name: Clean step
-        uses: mickem/clean-after-action@v1
-        if: always()
-        with:
-          keepGit: true
+      # - name: Clean step
+      #   uses: mickem/clean-after-action@v1
+      #   if: always()
+      #   with:
+      #     keepGit: true
       - uses: actions/checkout@v2
       - name: Set Git config
         run: |
