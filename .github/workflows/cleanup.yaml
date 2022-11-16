@@ -13,7 +13,7 @@ jobs:
         uses: mickem/clean-after-action@v1
         if: always()
         with:
-          keepGit: true
+          keepGit: false
       - uses: actions/checkout@v2
       - name: Set Git config
         run: |
