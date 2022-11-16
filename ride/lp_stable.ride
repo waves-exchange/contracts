@@ -926,11 +926,11 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
     "isPoolOneTokenOperationsDisabledREADONLY",
     [this.toString()],
     []
-  ).exactAs[Boolean] || i.isManager()
+  ).exactAs[Boolean]
   let isPutDisabled = igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isPutDisabled || "put operation is blocked by admin".throwErr(),
+    !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
@@ -1026,11 +1026,11 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
     "isPoolOneTokenOperationsDisabledREADONLY",
     [this.toString()],
     []
-  ).exactAs[Boolean] || i.isManager()
+  ).exactAs[Boolean]
   let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
@@ -1184,11 +1184,11 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
     "isPoolOneTokenOperationsDisabledREADONLY",
     [this.toString()],
     []
-  ).exactAs[Boolean] || i.isManager()
+  ).exactAs[Boolean]
   let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
     i.payments.size() == 0 || "no payments are expected".throwErr()
   ]
 
