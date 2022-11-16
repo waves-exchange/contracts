@@ -817,6 +817,13 @@ func pm() = match pmpk().getString() {
 
 let pd = "Permission denied".throw()
 
+func isManager(i: Invocation) = {
+  match m() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
+
 # mustManager
 func mm(i: Invocation) = {
   match m() {
@@ -915,7 +922,11 @@ func put(slip: Int, autoStake: Boolean) = {
 
 @Callable(i)
 func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = fca.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean] || i.isManager()
   let isPutDisabled = igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
@@ -1011,7 +1022,11 @@ func get() = {
 
 @Callable(i)
 func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = fca.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean] || i.isManager()
   let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
@@ -1165,7 +1180,11 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
 @Callable(i)
 func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = fca.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean] || i.isManager()
   let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
