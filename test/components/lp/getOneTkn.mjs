@@ -16,10 +16,10 @@ const api = create(apiBase);
 describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully getOneTkn with shouldAutoStake false', async function () {
     const usdnAmount = 10e6;
-    const shibAmount = 10e2;
+    const shibAmount = 30e2;
     const shouldAutoStake = false;
 
-    const expectedLpAmount = 413859964;
+    const expectedLpAmount = 716826485;
     const expectedPriceLast = 50025012;
     const expectedPriceHistory = 50025012;
     const expectedFeeAmount = 1;
@@ -32,8 +32,8 @@ describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     const put = invokeScript({
       dApp: lp,
       payment: [
-        { assetId: this.shibAssetId, amount: shibAmount },
-        { assetId: this.usdnAssetId, amount: usdnAmount },
+        { assetId: this.shibAssetId, amount: 96966035087 },
+        { assetId: this.usdnAssetId, amount: 9280844907 },
       ],
       call: {
         function: 'put',
@@ -43,14 +43,14 @@ describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
         ],
       },
       chainId,
-    }, this.accounts.user1);
+    }, this.accounts.user2);
     await api.transactions.broadcast(put, {});
-    await ni.waitForTx(put.id, { apiBase });
+    const { stateChanges: stateChangesPut } = await ni.waitForTx(put.id, { apiBase });
 
     const putOneTkn = invokeScript({
       dApp: lp,
       payment: [
-        { assetId: this.shibAssetId, amount: shibAmount },
+        { assetId: this.usdnAssetId, amount: 5000e6 },
       ],
       call: {
         function: 'putOneTkn',
@@ -67,12 +67,12 @@ describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     const getOneTkn = invokeScript({
       dApp: lp,
       payment: [
-        { assetId: this.lpAssetId, amount: lpAmount },
+        { assetId: this.lpAssetId, amount: 72070281921159 },
       ],
       call: {
         function: 'getOneTkn',
         args: [
-          { type: 'string', value: this.shibAssetId },
+          { type: 'string', value: this.usdnAssetId },
           { type: 'integer', value: 0 },
         ],
       },
@@ -80,6 +80,23 @@ describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     }, this.accounts.user1);
     await api.transactions.broadcast(getOneTkn, {});
     const { height, stateChanges, id } = await ni.waitForTx(getOneTkn.id, { apiBase });
+
+    const getOneTkn2 = invokeScript({
+      dApp: lp,
+      payment: [
+        { assetId: this.lpAssetId, amount: 10e8 },
+      ],
+      call: {
+        function: 'getOneTkn',
+        args: [
+          { type: 'string', value: this.usdnAssetId },
+          { type: 'integer', value: 0 },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
+    await api.transactions.broadcast(getOneTkn2, {});
+    await ni.waitForTx(getOneTkn2.id, { apiBase });
 
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
