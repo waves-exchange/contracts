@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - permissions-fix-1611
 jobs:
   merge-main-to-dev:
     timeout-minutes: 2
@@ -19,13 +18,13 @@ jobs:
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
-      # - name: Merge main -> dev
-      #   run: |
-      #     git fetch --unshallow
-      #     git checkout dev
-      #     git pull
-      #     git merge --no-ff main -m "Auto-merge main -> dev"
-      #     git push
+      - name: Merge main -> dev
+        run: |
+          git fetch --unshallow
+          git checkout dev
+          git pull
+          git merge --no-ff main -m "Auto-merge main -> dev"
+          git push
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
