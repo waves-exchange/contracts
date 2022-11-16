@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-      - fix-permissions-16112
+      # - fix-permissions-16112
 jobs:
   merge-main-to-dev:
     timeout-minutes: 2
