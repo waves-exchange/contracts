@@ -13,8 +13,6 @@ let SCALE8  = 8
 let MULT8   = 100000000
 let POOLWEIGHTMULT = MULT8
 
-let asdasdasdasdasdasd = 1
-
 # getStringOrFail
 func strf(address: Address, key: String)   = address.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
 # getIntOrZero

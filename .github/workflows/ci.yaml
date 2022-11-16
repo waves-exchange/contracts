@@ -9,7 +9,13 @@ jobs:
     runs-on: self-hosted
     container:
       image: golang:1.18
+      options: --user root
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: false
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Compile .ride files
@@ -34,7 +40,13 @@ jobs:
     runs-on: self-hosted
     container:
       image: golang:1.19
+      options: --user root
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: false
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Deploy changed contracts
@@ -59,7 +71,13 @@ jobs:
     runs-on: self-hosted
     container:
       image: golang:1.19
+      options: --user root
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: false
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Compare contracts and print diff. Deploy changed lp.ride
@@ -74,7 +92,13 @@ jobs:
     runs-on: self-hosted
     container:
       image: golang:1.18
+      options: --user root
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: false
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Check .go code gofmt-formatted
@@ -88,7 +112,13 @@ jobs:
     runs-on: self-hosted
     container:
       image: node:18.1
+      options: --user root
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: false
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Check .js and .mjs code eslint-formatted
