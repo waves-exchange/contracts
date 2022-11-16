@@ -687,6 +687,13 @@ func pendingManagerPublicKeyOrUnit() = match pmpk().getString() {
   case _: Unit => unit
 }
 
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
+
 func mustManager(i: Invocation) = {
   let pd = "Permission denied".throw()
 
@@ -773,7 +780,11 @@ func putForFree(maxSlippage: Int) = {
 
 @Callable(i)
 func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
-  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean] || i.isManager()
   let isPutDisabled = isGlobalShutdown() || cfgPoolStatus == PoolPutDisabled || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
@@ -817,7 +828,11 @@ func putOneTknREADONLY(paymentAssetId: String, paymentAmountRaw: Int) = {
 
 @Callable(i)
 func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean] || i.isManager()
   let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
@@ -858,7 +873,11 @@ func getOneTknREADONLY(outAssetId: String, paymentAmount: Int) = {
 
 @Callable(i)
 func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean] || i.isManager()
   let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
