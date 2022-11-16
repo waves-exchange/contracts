@@ -26,82 +26,106 @@ jobs:
         uses: AutoModality/action-clean@v1
         if: always()
 
-  # deploy_testnet:
-  #   env:
-  #     NETWORK: testnet
-  #     NODE: ${{ secrets.TESTNETNODE }}
-  #     MONGOURI: ${{ secrets.TESTNETMONGOURI }}
-  #     MONGODATABASENAME: ${{ secrets.TESTNETMONGODATABASENAME }}
-  #     MONGOCOLLECTIONCONTRACTS: ${{ secrets.TESTNETMONGOCOLLECTIONCONTRACTS }}
-  #     COMPARELPSCRIPTADDRESS: 3N6wAa7PMFZJu4Zrmp3avXmMnRTrRpMM9Lh # WX/USDN pool
-  #     COMPARELPSTABLESCRIPTADDRESS: 3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT # USDT/USDN pool
-  #     COMPARELPSTABLEADDONSCRIPTADDRESS: 3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV # USDT/USDN pool addon
-  #   if: github.ref_name == '14-11-22-release'
-  #   runs-on: self-hosted
-  #   container:
-  #     image: golang:1.19
-  #   steps:
-  #     - name: Check out the repo
-  #       uses: actions/checkout@v2
-  #     - name: Deploy changed contracts
-  #       run: |
-  #         cd deployer
-  #         go run main.go
-  #     - name: Clean repo
-  #       uses: AutoModality/action-clean@v1
-  #       if: always()
+  deploy_testnet:
+    env:
+      NETWORK: testnet
+      NODE: ${{ secrets.TESTNETNODE }}
+      MONGOURI: ${{ secrets.TESTNETMONGOURI }}
+      MONGODATABASENAME: ${{ secrets.TESTNETMONGODATABASENAME }}
+      MONGOCOLLECTIONCONTRACTS: ${{ secrets.TESTNETMONGOCOLLECTIONCONTRACTS }}
+      COMPARELPSCRIPTADDRESS: 3N6wAa7PMFZJu4Zrmp3avXmMnRTrRpMM9Lh # WX/USDN pool
+      COMPARELPSTABLESCRIPTADDRESS: 3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT # USDT/USDN pool
+      COMPARELPSTABLEADDONSCRIPTADDRESS: 3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV # USDT/USDN pool addon
+    if: github.ref_name == '14-11-22-release'
+    runs-on: self-hosted
+    container:
+      image: golang:1.19
+      options: --user root
+    steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Deploy changed contracts
+        run: |
+          cd deployer
+          go run main.go
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
+        if: always()
 
-  # deploy_mainnet:
-  #   env:
-  #     NETWORK: mainnet
-  #     NODE: ${{ secrets.MAINNETNODE }}
-  #     MONGOURI: ${{ secrets.MAINNETMONGOURI }}
-  #     MONGODATABASENAME: ${{ secrets.MAINNETMONGODATABASENAME }}
-  #     MONGOCOLLECTIONCONTRACTS: ${{ secrets.MAINNETMONGOCOLLECTIONCONTRACTS }}
-  #     COMPARELPSCRIPTADDRESS: 3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99 # WX/USDN pool
-  #     COMPARELPSTABLESCRIPTADDRESS: 3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz # USDT/USDN pool
-  #     COMPARELPSTABLEADDONSCRIPTADDRESS: 3P36szQtxxpSaefdqaFjbM9Ush8ieCjVZVw # USDT/USDN pool addon
-  #   if: github.ref_name == 'main'
-  #   runs-on: self-hosted
-  #   container:
-  #     image: golang:1.19
-  #   steps:
-  #     - name: Check out the repo
-  #       uses: actions/checkout@v2
-  #     - name: Compare contracts and print diff. Deploy changed lp.ride
-  #       run: |
-  #         cd deployer
-  #         go run main.go
-  #     - name: Clean repo
-  #       uses: AutoModality/action-clean@v1
-  #       if: always()
+  deploy_mainnet:
+    env:
+      NETWORK: mainnet
+      NODE: ${{ secrets.MAINNETNODE }}
+      MONGOURI: ${{ secrets.MAINNETMONGOURI }}
+      MONGODATABASENAME: ${{ secrets.MAINNETMONGODATABASENAME }}
+      MONGOCOLLECTIONCONTRACTS: ${{ secrets.MAINNETMONGOCOLLECTIONCONTRACTS }}
+      COMPARELPSCRIPTADDRESS: 3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99 # WX/USDN pool
+      COMPARELPSTABLESCRIPTADDRESS: 3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz # USDT/USDN pool
+      COMPARELPSTABLEADDONSCRIPTADDRESS: 3P36szQtxxpSaefdqaFjbM9Ush8ieCjVZVw # USDT/USDN pool addon
+    if: github.ref_name == 'main'
+    runs-on: self-hosted
+    container:
+      image: golang:1.19
+      options: --user root
+    steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Compare contracts and print diff. Deploy changed lp.ride
+        run: |
+          cd deployer
+          go run main.go
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
+        if: always()
 
-  # lint_go:
-  #   runs-on: self-hosted
-  #   container:
-  #     image: golang:1.18
-  #   steps:
-  #     - name: Check out the repo
-  #       uses: actions/checkout@v2
-  #     - name: Check .go code gofmt-formatted
-  #       run: |
-  #         gofmt -l .
-  #     - name: Clean repo
-  #       uses: AutoModality/action-clean@v1
-  #       if: always()
+  lint_go:
+    runs-on: self-hosted
+    container:
+      image: golang:1.18
+      options: root
+    steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Check .go code gofmt-formatted
+        run: |
+          gofmt -l .
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
+        if: always()
 
-  # lint_js:
-  #   runs-on: self-hosted
-  #   container:
-  #     image: node:18.1
-  #   steps:
-  #     - name: Check out the repo
-  #       uses: actions/checkout@v2
-  #     - name: Check .js and .mjs code eslint-formatted
-  #       run: |
-  #         cd test
-  #         npm i
-  #         npm run lint
-  #     - name: Clean repo
-  #       uses: AutoModality/action-clean@v1
-  #       if: always()
+  lint_js:
+    runs-on: self-hosted
+    container:
+      image: node:18.1
+      options: --user root
+    steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Check .js and .mjs code eslint-formatted
+        run: |
+          cd test
+          npm i
+          npm run lint
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
+        if: always()
