@@ -800,7 +800,7 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   let txId = i.transactionId
 
 
-  let (emitAmountEstimated, commonState, feeAmount, bonus) = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
+  strict (emitAmountEstimated, commonState, feeAmount, bonus) = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
   let emitAmount = if (minOutAmount > 0 && emitAmountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else emitAmountEstimated
@@ -849,7 +849,7 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
   let userAddress = i.caller
   let txId = i.transactionId
 
-  let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, paymentAmount, paymentAssetId, userAddress, txId)
+  strict (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, paymentAmount, paymentAssetId, userAddress, txId)
 
   let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
