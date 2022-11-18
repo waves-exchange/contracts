@@ -13,15 +13,15 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should successfully putOneTkn with shouldAutoStake false', async function () {
+describe('lp: putOneTknAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
+  it('should successfully putOneTkn with shouldAutoStake true', async function () {
     const lp = address(this.accounts.lp, chainId);
 
     const shibDecimals = 2;
     const shibAmount = 10e2;
     const usdnDecimals = 6;
     const usdnAmount = 25e6;
-    const shouldAutoStake = false;
+    const shouldAutoStake = true;
 
     const supplyLpAfterPut = Math.floor(
       Math.sqrt(
@@ -99,7 +99,7 @@ describe('lp: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     );
     const expectedPriceHistory = expectedPriceLast;
     const expectedFeeAmount = feeAmount;
-    const expectedInvokesCount = 2;
+    const expectedInvokesCount = 3;
 
     expect(payment).to.eql([{
       amount: depositAmount,
@@ -107,7 +107,7 @@ describe('lp: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     }]);
 
     expect(
-      await checkStateChanges(stateChanges, 3, 2, 0, 0, 0, 0, 0, 0, 2),
+      await checkStateChanges(stateChanges, 3, 1, 0, 0, 0, 0, 0, 0, 3),
     ).to.eql(true);
 
     expect(stateChanges.data).to.eql([{
@@ -125,10 +125,6 @@ describe('lp: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     }]);
 
     expect(stateChanges.transfers).to.eql([{
-      address: address(this.accounts.user1, chainId),
-      asset: this.lpAssetId,
-      amount: expectedLpAmount,
-    }, {
       address: address(this.accounts.feeCollector, chainId),
       asset: this.usdnAssetId,
       amount: expectedFeeAmount,
@@ -172,6 +168,18 @@ describe('lp: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
       assetId: this.lpAssetId,
       isReissuable: true,
       quantity: expectedLpAmount,
+    }]);
+
+    expect(
+      await checkStateChanges(invokes[2].stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+    ).to.eql(true);
+
+    expect(invokes[2].dApp).to.eql(address(this.accounts.staking, chainId));
+    expect(invokes[2].call.function).to.eql('stake');
+    expect(invokes[2].call.args).to.eql([]);
+    expect(invokes[2].payment).to.eql([{
+      amount: expectedLpAmount,
+      assetId: this.lpAssetId,
     }]);
   });
 });

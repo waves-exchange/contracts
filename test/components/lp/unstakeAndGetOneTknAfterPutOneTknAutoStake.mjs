@@ -13,15 +13,15 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should successfully getOneTkn with shouldAutoStake false', async function () {
+describe('lp: unstakeAndGetOneTknAfterPutOneTknAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
+  it('should successfully getOneTkn with shouldAutoStake true', async function () {
     const lp = address(this.accounts.lp, chainId);
 
     const shibDecimals = 2;
     const shibAmount = 10e2;
     const usdnDecimals = 6;
     const usdnAmount = 25e6;
-    const shouldAutoStake = false;
+    const shouldAutoStake = true;
 
     const supplyLpAfterPut = Math.floor(
       Math.sqrt(
@@ -39,7 +39,7 @@ describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
         function: 'put',
         args: [
           { type: 'integer', value: 0 },
-          { type: 'boolean', value: shouldAutoStake },
+          { type: 'boolean', value: false },
         ],
       },
       chainId,
@@ -66,28 +66,27 @@ describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     await api.transactions.broadcast(putOneTkn, {});
     const { stateChanges: stateChangesPutOneTkn } = await ni.waitForTx(putOneTkn.id, { apiBase });
 
-    const lpAmountAfterPutOneTkn = stateChangesPutOneTkn.transfers[0].amount;
+    const lpAmountAfterPutOneTkn = stateChangesPutOneTkn
+      .invokes[1].stateChanges.transfers[0].amount;
     const { balance: balanceUsdn } = await api.assets.fetchBalanceAddressAssetId(
       lp,
       this.usdnAssetId,
     );
 
-    const getOneTkn = invokeScript({
+    const unstakeAndGetOneTkn = invokeScript({
       dApp: lp,
-      payment: [
-        { assetId: this.lpAssetId, amount: lpAmountAfterPutOneTkn },
-      ],
       call: {
-        function: 'getOneTkn',
+        function: 'unstakeAndGetOneTkn',
         args: [
+          { type: 'integer', value: lpAmountAfterPutOneTkn },
           { type: 'string', value: this.usdnAssetId },
           { type: 'integer', value: 0 },
         ],
       },
       chainId,
     }, this.accounts.user1);
-    await api.transactions.broadcast(getOneTkn, {});
-    const { height, stateChanges, id } = await ni.waitForTx(getOneTkn.id, { apiBase });
+    await api.transactions.broadcast(unstakeAndGetOneTkn, {});
+    const { height, stateChanges, id } = await ni.waitForTx(unstakeAndGetOneTkn.id, { apiBase });
 
     const supplyLp = supplyLpAfterPut + lpAmountAfterPutOneTkn;
 
@@ -101,26 +100,30 @@ describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
-    const { balance: balanceShibAfterPutOneTkn } = await api.assets.fetchBalanceAddressAssetId(
+    const {
+      balance: balanceShibAfterUnstakeAndGetOneTkn,
+    } = await api.assets.fetchBalanceAddressAssetId(
       lp,
       this.shibAssetId,
     );
-    const { balance: balanceUsdnAfterPutOneTkn } = await api.assets.fetchBalanceAddressAssetId(
+    const {
+      balance: balanceUsdnAfterUnstakeAndGetOneTkn,
+    } = await api.assets.fetchBalanceAddressAssetId(
       lp,
       this.usdnAssetId,
     );
 
     const expectedUsdnAmount = withdrawAmount - feeAmount;
     const expectedPriceLast = Math.floor(
-      (balanceUsdnAfterPutOneTkn * 10 ** usdnDecimals)
-      / (balanceShibAfterPutOneTkn * 10 ** shibDecimals),
+      (balanceUsdnAfterUnstakeAndGetOneTkn * 10 ** usdnDecimals)
+      / (balanceShibAfterUnstakeAndGetOneTkn * 10 ** shibDecimals),
     );
     const expectedPriceHistory = expectedPriceLast;
     const expectedFeeAmount = feeAmount;
-    const expectedInvokesCount = 2;
+    const expectedInvokesCount = 3;
 
     expect(
-      await checkStateChanges(stateChanges, 3, 2, 0, 0, 0, 0, 0, 0, 2),
+      await checkStateChanges(stateChanges, 3, 2, 0, 0, 0, 0, 0, 0, 3),
     ).to.eql(true);
 
     expect(stateChanges.data).to.eql([{
@@ -164,23 +167,45 @@ describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     expect(invokes[0].payment).to.eql([]);
 
     expect(
-      await checkStateChanges(invokes[1].stateChanges, 0, 0, 0, 0, 1, 0, 0, 0, 0),
+      await checkStateChanges(invokes[1].stateChanges, 0, 1, 0, 0, 0, 0, 0, 0, 0),
     ).to.eql(true);
 
-    expect(invokes[1].dApp).to.eql(address(this.accounts.factoryV2, chainId));
-    expect(invokes[1].call.function).to.eql('burn');
+    expect(invokes[1].dApp).to.eql(address(this.accounts.staking, chainId));
+    expect(invokes[1].call.function).to.eql('unstake');
     expect(invokes[1].call.args).to.eql([
+      {
+        type: 'String',
+        value: this.lpAssetId,
+      }, {
+        type: 'Int',
+        value: lpAmountAfterPutOneTkn,
+      }]);
+    expect(invokes[1].payment).to.eql([]);
+    expect(invokes[1].stateChanges.transfers).to.eql([
+      {
+        address: lp,
+        asset: this.lpAssetId,
+        amount: lpAmountAfterPutOneTkn,
+      }]);
+
+    expect(
+      await checkStateChanges(invokes[2].stateChanges, 0, 0, 0, 0, 1, 0, 0, 0, 0),
+    ).to.eql(true);
+
+    expect(invokes[2].dApp).to.eql(address(this.accounts.factoryV2, chainId));
+    expect(invokes[2].call.function).to.eql('burn');
+    expect(invokes[2].call.args).to.eql([
       {
         type: 'Int',
         value: lpAmountAfterPutOneTkn,
       }]);
-    expect(invokes[1].payment).to.eql([
+    expect(invokes[2].payment).to.eql([
       {
         amount: lpAmountAfterPutOneTkn,
         assetId: this.lpAssetId,
       },
     ]);
-    expect(invokes[1].stateChanges.burns).to.eql([
+    expect(invokes[2].stateChanges.burns).to.eql([
       {
         assetId: this.lpAssetId,
         quantity: lpAmountAfterPutOneTkn,

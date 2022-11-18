@@ -34,6 +34,8 @@ export const mochaHooks = {
       'manager',
       'feeCollector',
       'store',
+      'user3',
+      'user2',
       'user1',
     ];
     this.accounts = Object.fromEntries(
@@ -62,7 +64,7 @@ export const mochaHooks = {
     const usdnIssueTx = issue({
       name: 'USDN',
       description: '',
-      quantity: 100000e6,
+      quantity: 1000000e6,
       decimals: 6,
       chainId,
     }, seed);
@@ -70,9 +72,9 @@ export const mochaHooks = {
     await waitForTx(usdnIssueTx.id, { apiBase });
     this.usdnAssetId = usdnIssueTx.id;
 
-    const usdnAmount = 100e6;
+    const usdnAmount = 30000e6;
     const massTransferTxUSDN = massTransfer({
-      transfers: names.slice(-1).map((name) => ({
+      transfers: names.slice(-3).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: usdnAmount,
       })),
       assetId: this.usdnAssetId,
@@ -92,9 +94,9 @@ export const mochaHooks = {
     await waitForTx(shibIssueTx.id, { apiBase });
     this.shibAssetId = shibIssueTx.id;
 
-    const shibAmount = 100e2;
+    const shibAmount = 30000e2;
     const massTransferTxSHIB = massTransfer({
-      transfers: names.slice(-1).map((name) => ({
+      transfers: names.slice(-3).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: shibAmount,
       })),
       assetId: this.shibAssetId,
