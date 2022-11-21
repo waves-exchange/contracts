@@ -202,13 +202,13 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		}
 	}
 
-	log().Msg("waiting transactions is being mined...")
+	s.logger.Info().Msg("waiting transactions is being mined...")
 	err = s.mined.Wait()
 	if err != nil {
 		return fmt.Errorf("s.mined.Wait: %w", err)
 	}
 
-	log().Msg("changes applied")
+	s.logger.Info().Msg("changes applied")
 
 	return nil
 }
