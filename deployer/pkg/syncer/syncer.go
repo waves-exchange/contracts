@@ -107,20 +107,33 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("s.branchModel.GetTestnetBranch: %w", err)
 	}
 
-	log := func() *zerolog.Event {
-		return s.logger.Info().
-			Str("network", string(s.network)).
-			Str("branch", s.branch).
-			Str("branchMainnet", "main").
-			Str("branchTestnet", branchTestnet)
-	}
+	if s.network == config.Testnet {
+		if branchTestnet != s.branch {
+			s.logger.Info().Msgf(
+				"nothing to do: branch for '%s' network is '%s', but current branch is '%s'",
+				config.Testnet,
+				branchTestnet,
+				s.branch,
+			)
+			return nil
+		}
 
-	if s.network == config.Testnet && branchTestnet != s.branch {
-		log().Msg("nothing to do")
-		return nil
+		s.logger.Info().Msgf(
+			"syncer start: branch for '%s' network is '%s' and current branch is '%s'",
+			config.Testnet,
+			branchTestnet,
+			s.branch,
+		)
+	} else if s.network == config.Mainnet {
+		s.logger.Info().Msgf(
+			"syncer start: branch for '%s' network is '%s' and current branch is '%s'",
+			config.Mainnet,
+			"main",
+			s.branch,
+		)
+	} else {
+		return errors.New("unknown network=" + string(s.network))
 	}
-
-	log().Msg("syncer start")
 
 	files, err := os.ReadDir(s.contractsFolder)
 	if err != nil {
@@ -189,13 +202,13 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		}
 	}
 
-	log().Msg("waiting transactions is being mined...")
+	s.logger.Info().Msg("waiting transactions is being mined...")
 	err = s.mined.Wait()
 	if err != nil {
 		return fmt.Errorf("s.mined.Wait: %w", err)
 	}
 
-	log().Msg("changes applied")
+	s.logger.Info().Msg("changes applied")
 
 	return nil
 }

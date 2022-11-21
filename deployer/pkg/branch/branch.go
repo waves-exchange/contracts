@@ -2,6 +2,7 @@ package branch
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
 	"go.mongodb.org/mongo-driver/bson"
@@ -50,6 +51,10 @@ func (m Model) GetTestnetBranch(ctx context.Context) (string, error) {
 		"network": config.Testnet,
 	}).Decode(&doc)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return "", nil
+		}
+
 		return "", fmt.Errorf("m.coll.FindOne: %w", err)
 	}
 
