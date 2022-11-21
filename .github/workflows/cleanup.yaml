@@ -20,6 +20,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: Set Git config
         run: |
+          pwd
+          ls -la
           git config --list --local user.email "actions@github.com"
           git config --list --local user.name "Github Actions"
       # - name: Merge main -> dev
