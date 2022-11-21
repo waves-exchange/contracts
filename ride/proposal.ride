@@ -1,9 +1,40 @@
-{-# STDLIB_VERSION 5 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+let SEP = "__"
 
-let nextVoteNumber = 0
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+
+func blockHeightError() = "The block's height is too big for this proposal".throw()
+func alreadyVoteError() = "You have already voted".throw()
+func noVoteError() = "You have not already voted".throw()
+
+func gwxContractAddress() = this.getStringValue("gwxContractAddress")
+
+func keyCurrentIndex() = ["%s", "currentIndex"].makeString(SEP)
+
+func keyProposalDescription(number: Int) = ["%s%d", "proposalDescription", number.toString()].makeString(SEP)
+func keyProposalEnd(number: Int) = ["%s%d", "proposalEnd", number.toString()].makeString(SEP)
+
+func keyTotalPositiveVoteByProposal(number: Int) = ["%s%d", "proposalTotalPositiveVoteNumber", number.toString()].makeString(SEP)
+func keyTotalNegativeVoteByProposal(number: Int) = ["%s%d", "proposalTotalNegativeVoteNumber", number.toString()].makeString(SEP)
+
+func keyTotalPositiveVoteByProposalFinal(number: Int) = ["%s%d", "proposalTotalPositiveVoteNumberFinal", number.toString()].makeString(SEP)
+func keyTotalNegativeVoteByProposalFinal(number: Int) = ["%s%d", "proposalTotalNegativeVoteNumberFinal", number.toString()].makeString(SEP)
+
+func keyUserChoice(number: Int, user: String) = ["%s%d%s", "usersChoicebyProposal", number.toString(), user].makeString(SEP)
+func keyUserNumberVotesGwxInProposal(number: Int, user: String) = ["%s%d%s", "usersGWXbyProposal", number.toString(), user].makeString(SEP)
+# let x = number.keyUserNumberVotesGwxInProposal(user)
+func getCurrentIndex() = this.getIntegerValue(keyCurrentIndex())
+
+func asInt(val: Any) = {
+  match val {
+    case valInt: Int => valInt
+    case _ => throw("fail to cast into Int")
+  }
+}
 
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
   case s: String => s.fromBase58String()
@@ -26,89 +57,109 @@ func mustManager(i: Invocation) = {
   i.isManager() || "permission denied".throw()
 }
 
+
 @Callable(i)
-func constructor(
-    gwxContractAddressString: string
-) = {
-    strict gwxContractAddress = gwxContractAddressString
+func constructor(gwxContractAddress: String) = {
+  strict check = i.mustManager()
+  [
+    StringEntry(gwxContractAddress(), gwxContractAddress),
+    IntegerEntry(keyCurrentIndex(), 0)
+  ]
 }
 
 @Callable(i)
-func startNewVote(description: String, startTimeStamp: Int, expirationTime: Int) = {
+func startNewVote(description: String, expirationHeight: Int, quorumNumber: Int) = {
+  strict checks = [
+      i.mustManager()
+  ]
+  let theIndex = getCurrentIndex()
+  
+  [
+      IntegerEntry(keyCurrentIndex(), theIndex + 1),
+      StringEntry(keyProposalDescription(theIndex), description),
+      IntegerEntry(keyProposalEnd(theIndex), lastBlock.height + expirationHeight),
+
+      IntegerEntry(keyTotalPositiveVoteByProposal(theIndex), 0),
+      IntegerEntry(keyTotalNegativeVoteByProposal(theIndex), 0)
+  ]
+}
+
+@Callable(i)
+func voteFor(proposalIndex: Int, choice: Boolean) = {
+  strict checks = [
+      lastBlock.height < this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError(),
+      this.getString(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller))) == unit || alreadyVoteError()
+  ]
+  let gwxNumber = invoke(
+      addressFromString(gwxContractAddress()).value(),
+      "calcUserGwxAmountAtHeight",
+      [i.caller, getIntegerValue(keyProposalEnd(proposalIndex))],
+      []
+  ).asInt()
+
+  let (action1, action2) = if (choice) then {
+      let action1 = IntegerEntry(keyUserChoice(proposalIndex, toString(i.caller)), 1) 
+      let action2 = IntegerEntry(keyTotalPositiveVoteByProposal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex)) + gwxNumber)
+      (action1, action2)
+  } else {
+      let action1 = IntegerEntry(keyUserChoice(proposalIndex, toString(i.caller)), 0)
+      let action2 = IntegerEntry(keyTotalNegativeVoteByProposal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)) + gwxNumber)
+      (action1, action2)
+  }
+  
+  [
+      IntegerEntry(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller)), gwxNumber),
+      action1,
+      action2
+  ]
+}
+
+@Callable(i)
+func deleteVote(proposalIndex: Int) = {
+  strict checks = [
+      lastBlock.height < this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError(),
+      getInteger(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller))) != unit || noVoteError()
+  ]
+  let action = if (getIntegerValue(keyUserChoice(proposalIndex, toString(i.caller))) == 1) 
+  then {
+      IntegerEntry(keyTotalPositiveVoteByProposal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex)) - getIntegerValue(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller))))
+  } else {
+      IntegerEntry(keyTotalNegativeVoteByProposal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)) - getIntegerValue(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller))))
+  }
+  
+  [
+      action,
+      DeleteEntry(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller))),
+      DeleteEntry(keyUserChoice(proposalIndex, toString(i.caller)))
+  ]
+}
+
+@Callable(i)
+func getResultREADONLY(proposalIndex: Int) = {
+    let positiveVotes = getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex))
+    let negativeVotes = getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex))
+
+    ([], [positiveVotes, negativeVotes])
+}
+
+@Callable(i)
+func finalise(proposalIndex: Int) = {
     strict checks = [
-        i.mustManager()
+        lastBlock.height >= this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError()
     ]
 
-    nextVoteNumber = nextVoteNumber + 1
     [
-        StringEntry(toString(nextVoteNumber - 1), description)
-
-        StringEntry(toString(nextVoteNumber - 1) + "__end", startTimeStamp + expirationTime)
-
-        IntegerEntry(proposalIndex + "__totalVote", 0)
-    ]
-    
-}
-
-@Callable(i)
-func voteFor(proposalIndex: String, choice: Boolean) = {
-    strict checks = [
-        lastBlock.timestamp < getIntegerValue(proposalIndex + "__end")
-        getStringValue(i.caller + "__voteFor__" + proposalIndex) != 0
-    ]
-    let gwxNumber = invoke(
-        gwxContractAddress,
-        "calcCurrentGwxAmount",
-        [i.caller],
-        []
-    )
-    let result = if (choice) then gwxNumber else -gwxNumber
-    [
-        IntegerEntry(i.caller + "__voteFor__" + proposalIndex, result)
-        IntegerEntry(proposalIndex + "__totalVote", getIntegerValue(proposalIndex + "__totalVote") + result)
+        IntegerEntry(keyTotalPositiveVoteByProposalFinal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex))),
+        IntegerEntry(keyTotalNegativeVoteByProposalFinal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)))
     ]
 }
 
 @Callable(i)
-func deleteVote(proposalIndex: String) = {
-    strict checks = [
-        lastBlock.timestamp < getIntegerValue(proposalIndex + "__end")
-        getStringValue(i.caller + "__voteFor__" + proposalIndex) != 0
-    ]
+func getFinalResultREADONLY(proposalIndex: Int) = {
+    let positiveVotes = getIntegerValue(keyTotalPositiveVoteByProposalFinal(proposalIndex))
+    let negativeVotes = getIntegerValue(keyTotalNegativeVoteByProposalFinal(proposalIndex))
 
-    [
-        IntegerEntry(proposalIndex + "__totalVote", getIntegerValue(proposalIndex + "__totalVote") - getIntegerValue(i.caller + "__voteFor__" + proposalIndex))
-        DeleteEntry(i.caller + "__voteFor__" + proposalIndex)
-    ]
-
-}
-
-@Callable(i)
-func changeVote(proposalIndex: String, choice: Boolean) = {
-    strict checks = [
-        lastBlock.timestamp < getIntegerValue(proposalIndex + "__end")
-        getStringValue(i.caller + "__voteFor__" + proposalIndex) != 0
-    ]
-    let gwxNumber = invoke(
-        gwxContractAddress,
-        "calcCurrentGwxAmount",
-        [i.caller],
-        []
-    )
-    let result = if (choice) then gwxNumber else -gwxNumber
-    [
-        IntegerEntry(proposalIndex + "__totalVote", getIntegerValue(proposalIndex + "__totalVote") - getIntegerValue(i.caller + "__voteFor__" + proposalIndex))
-        IntegerEntry(i.caller + "__voteFor__" + proposalIndex, result)
-    ]
-}
-
-@Callable(i)
-func getResult() = {
-    [
-        lastBlock.timestamp >= getIntegerValue(proposalIndex + "__end")
-    ]
-
-    [getIntegerValue(proposalIndex + "__totalVote")]
+    ([], [positiveVotes, negativeVotes])
 }
 
 
