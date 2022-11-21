@@ -9,16 +9,14 @@ jobs:
     timeout-minutes: 2
     runs-on: self-hosted
     steps:
-      # - name: Clean step
-      #   uses: mickem/clean-after-action@v1
-      #   if: always()
-      #   with:
-      #     keepGit: true
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
       - uses: actions/checkout@v2
       - name: Set Git config
         run: |
-          pwd
-          ls -la
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
       # - name: Merge main -> dev
@@ -28,6 +26,6 @@ jobs:
       #     git pull
       #     git merge --no-ff main -m "Auto-merge main -> dev"
       #     git push
-      # - name: Clean repo
-      #   uses: AutoModality/action-clean@v1
-      #   if: always()
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
+        if: always()
