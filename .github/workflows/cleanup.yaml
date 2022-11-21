@@ -22,8 +22,8 @@ jobs:
         run: |
           pwd
           ls -la
-          git config --list --local user.email "actions@github.com"
-          git config --list --local user.name "Github Actions"
+          git config user.email "actions@github.com"
+          git config user.name "Github Actions"
       # - name: Merge main -> dev
       #   run: |
       #     git fetch --unshallow
