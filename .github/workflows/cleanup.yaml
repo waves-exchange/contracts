@@ -19,11 +19,16 @@ jobs:
       #     keepGit: true
       - uses: actions/checkout@v2
       - name: Set Git config
-        run: |
-          pwd
-          ls -la
-          git config --local user.email "actions@github.com"
-          git config --local user.name "Github Actions"
+        uses: snow-actions/git-config-user@v1.0.0
+        with:
+          name: "Github Actions"
+          email: "actions@github.com"
+      # - name: Set Git config
+      #   run: |
+      #     pwd
+      #     ls -la
+      #     git config --local user.email "actions@github.com"
+      #     git config --local user.name "Github Actions"
       # - name: Merge main -> dev
       #   run: |
       #     git fetch --unshallow
