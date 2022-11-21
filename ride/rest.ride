@@ -2,6 +2,7 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+let testststststst = 1
 let SCALE8  = 8
 let MULT8   = 100000000
 let SCALE18 = 18
