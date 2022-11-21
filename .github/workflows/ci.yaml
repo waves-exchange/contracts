@@ -15,7 +15,7 @@ jobs:
         uses: mickem/clean-after-action@v1
         if: always()
         with:
-          keepGit: false
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Compile .ride files
@@ -46,7 +46,7 @@ jobs:
         uses: mickem/clean-after-action@v1
         if: always()
         with:
-          keepGit: false
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Deploy changed contracts
@@ -77,7 +77,7 @@ jobs:
         uses: mickem/clean-after-action@v1
         if: always()
         with:
-          keepGit: false
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Compare contracts and print diff. Deploy changed lp.ride
@@ -98,7 +98,7 @@ jobs:
         uses: mickem/clean-after-action@v1
         if: always()
         with:
-          keepGit: false
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Check .go code gofmt-formatted
@@ -118,7 +118,7 @@ jobs:
         uses: mickem/clean-after-action@v1
         if: always()
         with:
-          keepGit: false
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Check .js and .mjs code eslint-formatted
