@@ -28,6 +28,9 @@ jobs:
 
   deploy_testnet:
     env:
+      BRANCH: ${{ github.ref_name }}
+      MONGOCOLLECTIONBRANCHES: ${{ secrets.TESTNETMONGOCOLLECTIONBRANCHES }}
+
       NETWORK: testnet
       NODE: ${{ secrets.TESTNETNODE }}
       MONGOURI: ${{ secrets.TESTNETMONGOURI }}
@@ -36,7 +39,6 @@ jobs:
       COMPARELPSCRIPTADDRESS: 3N6wAa7PMFZJu4Zrmp3avXmMnRTrRpMM9Lh # WX/USDN pool
       COMPARELPSTABLESCRIPTADDRESS: 3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT # USDT/USDN pool
       COMPARELPSTABLEADDONSCRIPTADDRESS: 3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV # USDT/USDN pool addon
-    if: github.ref_name == 'dev'
     runs-on: self-hosted
     container:
       image: golang:1.19
