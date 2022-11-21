@@ -890,7 +890,7 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
   let txId = i.transactionId
 
   strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
-  let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, unstakeAmount, cfgLpAssetId, userAddress, txId)
+  strict (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, unstakeAmount, cfgLpAssetId, userAddress, txId)
 
   let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
