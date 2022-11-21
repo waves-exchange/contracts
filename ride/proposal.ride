@@ -1,10 +1,9 @@
-{-# STDLIB_VERSION 6 #-}
+{-# STDLIB_VERSION 5 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-let nextVoteNumber = 0
-let gwxContractAddress
 
+let nextVoteNumber = 0
 
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
   case s: String => s.fromBase58String()
@@ -15,7 +14,6 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
   case s: String => s.fromBase58String()
   case _: Unit => unit
 }
-
 
 func isManager(i: Invocation) = {
   match managerPublicKeyOrUnit() {
@@ -32,72 +30,10 @@ func mustManager(i: Invocation) = {
 func constructor(
     gwxContractAddressString: string
 ) = {
-    gwxContractAddress = gwxContractAddressString
+    strict gwxContractAddress = gwxContractAddressString
 }
 
-# type Point : 
-# { 
-#     bias: Int, 
-#     slope: Int, # - dweight / dt
-#     ts: Int, # ??? uint
-#     blck: Int # block # ??? uint
-# }
-
-# type LockedBalance : 
-# { 
-#     amount: Int, 
-#     end: Int # ??? uint
-# }
-
-
-
-# let depositForType = 0
-# let createLockType = 1
-# let increaseLockTime = 2
-# let increaseUnlockTime = 3
-
-
-# let week = 7 * 86400 # all future times are rounded by week # ??? constant
-# let maxTime = 4 * 365 * 86400 # 4 years # ??? constant
-# let multiplier = 10 ^ 18  # ??? constant
-
-
-# # token: public(address)
-# # supply: public(uint256)
-
-# # locked: public(HashMap[address, LockedBalance])
-
-
-# # epoch: public(uint256)
-# # point_history: public(Point[100000000000000000000000000000])  # epoch -> unsigned point
-# # user_point_history: public(HashMap[address, Point[1000000000]])  # user -> Point[user_epoch]
-# # user_point_epoch: public(HashMap[address, uint256])
-# # slope_changes: public(HashMap[uint256, int128])  # time -> signed slope change
-
-
-# # admin: public(address)  # Can and will be a smart contract
-# # future_admin: public(address)
-
-
-# @Callable(i)
-# func constructor() = {
-
-# }
-
-
-# func transferOwnership() = {
-
-# }
-
-# func getLastUserSlope() = {
-    
-# }
-
-
-
-
-
-
+@Callable(i)
 func startNewVote(description: String, startTimeStamp: Int, expirationTime: Int) = {
     strict checks = [
         i.mustManager()
@@ -107,7 +43,9 @@ func startNewVote(description: String, startTimeStamp: Int, expirationTime: Int)
     [
         StringEntry(toString(nextVoteNumber - 1), description)
 
-        StringEntry(toString(nextVoteNumber - 1) + "end", startTimeStamp + expirationTime)
+        StringEntry(toString(nextVoteNumber - 1) + "__end", startTimeStamp + expirationTime)
+
+        IntegerEntry(proposalIndex + "__totalVote", 0)
     ]
     
 }
@@ -115,39 +53,63 @@ func startNewVote(description: String, startTimeStamp: Int, expirationTime: Int)
 @Callable(i)
 func voteFor(proposalIndex: String, choice: Boolean) = {
     strict checks = [
-        lastBlock.timestamp < getString(proposalIndex + "end")
+        lastBlock.timestamp < getIntegerValue(proposalIndex + "__end")
+        getStringValue(i.caller + "__voteFor__" + proposalIndex) != 0
     ]
-
+    let gwxNumber = invoke(
+        gwxContractAddress,
+        "calcCurrentGwxAmount",
+        [i.caller],
+        []
+    )
+    let result = if (choice) then gwxNumber else -gwxNumber
     [
-        
-        BooleanEntry(toString(i.caller) + proposalIndex, choice)
+        IntegerEntry(i.caller + "__voteFor__" + proposalIndex, result)
+        IntegerEntry(proposalIndex + "__totalVote", getIntegerValue(proposalIndex + "__totalVote") + result)
     ]
 }
 
 @Callable(i)
 func deleteVote(proposalIndex: String) = {
+    strict checks = [
+        lastBlock.timestamp < getIntegerValue(proposalIndex + "__end")
+        getStringValue(i.caller + "__voteFor__" + proposalIndex) != 0
+    ]
+
     [
-        DeleteEntry(toString(i.caller) + proposalIndex)
+        IntegerEntry(proposalIndex + "__totalVote", getIntegerValue(proposalIndex + "__totalVote") - getIntegerValue(i.caller + "__voteFor__" + proposalIndex))
+        DeleteEntry(i.caller + "__voteFor__" + proposalIndex)
+    ]
+
+}
+
+@Callable(i)
+func changeVote(proposalIndex: String, choice: Boolean) = {
+    strict checks = [
+        lastBlock.timestamp < getIntegerValue(proposalIndex + "__end")
+        getStringValue(i.caller + "__voteFor__" + proposalIndex) != 0
+    ]
+    let gwxNumber = invoke(
+        gwxContractAddress,
+        "calcCurrentGwxAmount",
+        [i.caller],
+        []
+    )
+    let result = if (choice) then gwxNumber else -gwxNumber
+    [
+        IntegerEntry(proposalIndex + "__totalVote", getIntegerValue(proposalIndex + "__totalVote") - getIntegerValue(i.caller + "__voteFor__" + proposalIndex))
+        IntegerEntry(i.caller + "__voteFor__" + proposalIndex, result)
     ]
 }
 
-# @Callable(i)
-# func changeVote() = {
-    
-# }
-
 @Callable(i)
-func summarizeVote() = {
-    
+func getResult() = {
+    [
+        lastBlock.timestamp >= getIntegerValue(proposalIndex + "__end")
+    ]
+
+    [getIntegerValue(proposalIndex + "__totalVote")]
 }
-
-
-
-
-
-
-
-
 
 
 @Callable(i)
