@@ -22,7 +22,6 @@ jobs:
         run: |
           pwd
           ls -la
-          git init
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
       # - name: Merge main -> dev
