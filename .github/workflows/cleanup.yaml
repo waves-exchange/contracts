@@ -17,6 +17,8 @@ jobs:
       #   if: always()
       #   with:
       #     keepGit: true
+      - name: Debug Checkout
+        run: find .
       - uses: actions/checkout@v2
       - name: Set Git config
         uses: snow-actions/git-config-user@v1.0.0
