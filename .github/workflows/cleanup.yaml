@@ -12,11 +12,11 @@ jobs:
       image: bitnami/git:latest
       options: --user root
     steps:
-      - name: Clean step
-        uses: mickem/clean-after-action@v1
-        if: always()
-        with:
-          keepGit: true
+      # - name: Clean step
+      #   uses: mickem/clean-after-action@v1
+      #   if: always()
+      #   with:
+      #     keepGit: true
       - uses: actions/checkout@v2
       - name: Set Git config
         run: |
@@ -32,6 +32,6 @@ jobs:
       #     git pull
       #     git merge --no-ff main -m "Auto-merge main -> dev"
       #     git push
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
-        if: always()
+      # - name: Clean repo
+      #   uses: AutoModality/action-clean@v1
+      #   if: always()
