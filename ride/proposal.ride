@@ -11,7 +11,7 @@ func blockHeightError() = "The block's height is too big for this proposal".thro
 func alreadyVoteError() = "You have already voted".throw()
 func noVoteError() = "You have not already voted".throw()
 
-func gwxContractAddress() = this.getStringValue("gwxContractAddress")
+func gwxContractAddress() = ["%s", "gwxContractAddress"].makeString(SEP)
 
 func keyCurrentIndex() = ["%s", "currentIndex"].makeString(SEP)
 
@@ -21,11 +21,10 @@ func keyProposalEnd(number: Int) = ["%s%d", "proposalEnd", number.toString()].ma
 func keyTotalPositiveVoteByProposal(number: Int) = ["%s%d", "proposalTotalPositiveVoteNumber", number.toString()].makeString(SEP)
 func keyTotalNegativeVoteByProposal(number: Int) = ["%s%d", "proposalTotalNegativeVoteNumber", number.toString()].makeString(SEP)
 
-func keyTotalPositiveVoteByProposalFinal(number: Int) = ["%s%d", "proposalTotalPositiveVoteNumberFinal", number.toString()].makeString(SEP)
-func keyTotalNegativeVoteByProposalFinal(number: Int) = ["%s%d", "proposalTotalNegativeVoteNumberFinal", number.toString()].makeString(SEP)
-
 func keyUserChoice(number: Int, user: String) = ["%s%d%s", "usersChoicebyProposal", number.toString(), user].makeString(SEP)
 func keyUserNumberVotesGwxInProposal(number: Int, user: String) = ["%s%d%s", "usersGWXbyProposal", number.toString(), user].makeString(SEP)
+
+func keyQuorumQuantity(number: Int) = ["%s%d", "quorumQuantity", number.toString()].makeString(SEP)
 
 func getCurrentIndex() = this.getIntegerValue(keyCurrentIndex())
 
@@ -80,7 +79,9 @@ func startNewVote(description: String, expirationHeight: Int, quorumNumber: Int)
     IntegerEntry(keyProposalEnd(theIndex), lastBlock.height + expirationHeight),
 
     IntegerEntry(keyTotalPositiveVoteByProposal(theIndex), 0),
-    IntegerEntry(keyTotalNegativeVoteByProposal(theIndex), 0)
+    IntegerEntry(keyTotalNegativeVoteByProposal(theIndex), 0),
+
+    IntegerEntry(keyQuorumQuantity(theIndex), quorumNumber)
   ]
 }
 
@@ -141,27 +142,6 @@ func getResultREADONLY(proposalIndex: Int) = {
 
   ([], [positiveVotes, negativeVotes])
 }
-
-@Callable(i)
-func finalise(proposalIndex: Int) = {
-  strict checks = [
-    lastBlock.height >= this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError()
-  ]
-
-  [
-    IntegerEntry(keyTotalPositiveVoteByProposalFinal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex))),
-    IntegerEntry(keyTotalNegativeVoteByProposalFinal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)))
-  ]
-}
-
-@Callable(i)
-func getFinalResultREADONLY(proposalIndex: Int) = {
-  let positiveVotes = getIntegerValue(keyTotalPositiveVoteByProposalFinal(proposalIndex))
-  let negativeVotes = getIntegerValue(keyTotalNegativeVoteByProposalFinal(proposalIndex))
-
-  ([], [positiveVotes, negativeVotes])
-}
-
 
 @Callable(i)
 func setManager(pendingManagerPublicKey: String) = {
