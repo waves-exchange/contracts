@@ -1,0 +1,173 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let SEP = "__"
+
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+
+func blockHeightError() = "The block's height is too big for this proposal".throw()
+func alreadyVoteError() = "You have already voted".throw()
+func noVoteError() = "You have not already voted".throw()
+
+func gwxContractAddress() = ["%s", "gwxContractAddress"].makeString(SEP)
+
+func keyCurrentIndex() = ["%s", "currentIndex"].makeString(SEP)
+
+func keyProposalDescription(number: Int) = ["%s%d", "proposalDescription", number.toString()].makeString(SEP)
+func keyProposalEnd(number: Int) = ["%s%d", "proposalEnd", number.toString()].makeString(SEP)
+
+func keyTotalPositiveVoteByProposal(number: Int) = ["%s%d", "proposalTotalPositiveVoteNumber", number.toString()].makeString(SEP)
+func keyTotalNegativeVoteByProposal(number: Int) = ["%s%d", "proposalTotalNegativeVoteNumber", number.toString()].makeString(SEP)
+
+func keyUserChoice(number: Int, user: String) = ["%s%d%s", "usersChoicebyProposal", number.toString(), user].makeString(SEP)
+func keyUserNumberVotesGwxInProposal(number: Int, user: String) = ["%s%d%s", "usersGWXbyProposal", number.toString(), user].makeString(SEP)
+
+func keyQuorumQuantity(number: Int) = ["%s%d", "quorumQuantity", number.toString()].makeString(SEP)
+
+func getCurrentIndex() = this.getIntegerValue(keyCurrentIndex())
+
+func asInt(val: Any) = {
+  match val {
+    case valInt: Int => valInt
+    case _ => throw("fail to cast into Int")
+  }
+}
+
+func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
+
+func mustManager(i: Invocation) = {
+  i.isManager() || "permission denied".throw()
+}
+
+
+@Callable(i)
+func constructor(gwxContractAddress: String) = {
+  strict check = i.mustManager()
+  [
+    StringEntry(gwxContractAddress(), gwxContractAddress),
+    IntegerEntry(keyCurrentIndex(), 0)
+  ]
+}
+
+@Callable(i)
+func startNewVote(description: String, expirationHeight: Int, quorumNumber: Int) = {
+  strict checks = [
+    i.mustManager()
+  ]
+  let theIndex = getCurrentIndex()
+  
+  [
+    IntegerEntry(keyCurrentIndex(), theIndex + 1),
+    StringEntry(keyProposalDescription(theIndex), description),
+    IntegerEntry(keyProposalEnd(theIndex), lastBlock.height + expirationHeight),
+
+    IntegerEntry(keyTotalPositiveVoteByProposal(theIndex), 0),
+    IntegerEntry(keyTotalNegativeVoteByProposal(theIndex), 0),
+
+    IntegerEntry(keyQuorumQuantity(theIndex), quorumNumber)
+  ]
+}
+
+@Callable(i)
+func voteFor(proposalIndex: Int, choice: Boolean) = {
+  strict checks = [
+    lastBlock.height < this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError(),
+    this.getString(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))) == unit || alreadyVoteError()
+  ]
+  let gwxNumber = invoke(
+    addressFromString(gwxContractAddress()).value(),
+    "calcUserGwxAmountAtHeight",
+    [i.caller, getIntegerValue(keyProposalEnd(proposalIndex))],
+    []
+  ).asInt()
+
+  let (action1, action2) = if (choice) then {
+    let action1 = IntegerEntry(keyUserChoice(proposalIndex, toString(i.caller)), 1) 
+    let action2 = IntegerEntry(keyTotalPositiveVoteByProposal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex)) + gwxNumber)
+    (action1, action2)
+  } else {
+    let action1 = IntegerEntry(keyUserChoice(proposalIndex, toString(i.caller)), 0)
+    let action2 = IntegerEntry(keyTotalNegativeVoteByProposal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)) + gwxNumber)
+    (action1, action2)
+  }
+  
+  [
+    IntegerEntry(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller)), gwxNumber),
+    action1,
+    action2
+  ]
+}
+
+@Callable(i)
+func deleteVote(proposalIndex: Int) = {
+  strict checks = [
+    lastBlock.height < this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError(),
+    getInteger(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))) != unit || noVoteError()
+  ]
+  let action = if (getIntegerValue(keyUserChoice(proposalIndex, toString(i.caller))) == 1) 
+  then {
+    IntegerEntry(keyTotalPositiveVoteByProposal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex)) - getIntegerValue(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))))
+  } else {
+    IntegerEntry(keyTotalNegativeVoteByProposal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)) - getIntegerValue(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))))
+  }
+  
+  [
+    action,
+    DeleteEntry(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))),
+    DeleteEntry(keyUserChoice(proposalIndex, toString(i.caller)))
+  ]
+}
+
+@Callable(i)
+func getResultREADONLY(proposalIndex: Int) = {
+  let positiveVotes = getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex))
+  let negativeVotes = getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex))
+
+  ([], [positiveVotes, negativeVotes])
+}
+
+@Callable(i)
+func setManager(pendingManagerPublicKey: String) = {
+  strict checkCaller = i.mustManager()
+  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
+
+  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
+}
+
+@Callable(i)
+func confirmManager() = {
+  let pm = pendingManagerPublicKeyOrUnit()
+  strict hasPM = pm.isDefined() || throw("no pending manager")
+  strict checkPM = i.callerPublicKey == pm.value() || throw("you are not pending manager")
+
+  [
+    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
+    DeleteEntry(keyPendingManagerPublicKey())
+  ]
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}
