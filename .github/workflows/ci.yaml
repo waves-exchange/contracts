@@ -134,16 +134,21 @@ jobs:
         if: always()
 
   test:
-    if: github.ref_name == 'main' || github.ref_name == 'dev'
     runs-on: self-hosted
     container:
       image: node:18.1
+      options: --user root
     services:
       waves-private-node:
         image: wavesplatform/waves-private-node
     env:
       API_NODE_URL: http://waves-private-node:6869
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Run tests on private node
@@ -151,3 +156,6 @@ jobs:
           cd test
           npm i
           npm run ci-test
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
+        if: always()
