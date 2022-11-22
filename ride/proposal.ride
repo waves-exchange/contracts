@@ -26,7 +26,7 @@ func keyTotalNegativeVoteByProposalFinal(number: Int) = ["%s%d", "proposalTotalN
 
 func keyUserChoice(number: Int, user: String) = ["%s%d%s", "usersChoicebyProposal", number.toString(), user].makeString(SEP)
 func keyUserNumberVotesGwxInProposal(number: Int, user: String) = ["%s%d%s", "usersGWXbyProposal", number.toString(), user].makeString(SEP)
-# let x = number.keyUserNumberVotesGwxInProposal(user)
+
 func getCurrentIndex() = this.getIntegerValue(keyCurrentIndex())
 
 func asInt(val: Any) = {
@@ -70,96 +70,96 @@ func constructor(gwxContractAddress: String) = {
 @Callable(i)
 func startNewVote(description: String, expirationHeight: Int, quorumNumber: Int) = {
   strict checks = [
-      i.mustManager()
+    i.mustManager()
   ]
   let theIndex = getCurrentIndex()
   
   [
-      IntegerEntry(keyCurrentIndex(), theIndex + 1),
-      StringEntry(keyProposalDescription(theIndex), description),
-      IntegerEntry(keyProposalEnd(theIndex), lastBlock.height + expirationHeight),
+    IntegerEntry(keyCurrentIndex(), theIndex + 1),
+    StringEntry(keyProposalDescription(theIndex), description),
+    IntegerEntry(keyProposalEnd(theIndex), lastBlock.height + expirationHeight),
 
-      IntegerEntry(keyTotalPositiveVoteByProposal(theIndex), 0),
-      IntegerEntry(keyTotalNegativeVoteByProposal(theIndex), 0)
+    IntegerEntry(keyTotalPositiveVoteByProposal(theIndex), 0),
+    IntegerEntry(keyTotalNegativeVoteByProposal(theIndex), 0)
   ]
 }
 
 @Callable(i)
 func voteFor(proposalIndex: Int, choice: Boolean) = {
   strict checks = [
-      lastBlock.height < this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError(),
-      this.getString(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller))) == unit || alreadyVoteError()
+    lastBlock.height < this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError(),
+    this.getString(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))) == unit || alreadyVoteError()
   ]
   let gwxNumber = invoke(
-      addressFromString(gwxContractAddress()).value(),
-      "calcUserGwxAmountAtHeight",
-      [i.caller, getIntegerValue(keyProposalEnd(proposalIndex))],
-      []
+    addressFromString(gwxContractAddress()).value(),
+    "calcUserGwxAmountAtHeight",
+    [i.caller, getIntegerValue(keyProposalEnd(proposalIndex))],
+    []
   ).asInt()
 
   let (action1, action2) = if (choice) then {
-      let action1 = IntegerEntry(keyUserChoice(proposalIndex, toString(i.caller)), 1) 
-      let action2 = IntegerEntry(keyTotalPositiveVoteByProposal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex)) + gwxNumber)
-      (action1, action2)
+    let action1 = IntegerEntry(keyUserChoice(proposalIndex, toString(i.caller)), 1) 
+    let action2 = IntegerEntry(keyTotalPositiveVoteByProposal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex)) + gwxNumber)
+    (action1, action2)
   } else {
-      let action1 = IntegerEntry(keyUserChoice(proposalIndex, toString(i.caller)), 0)
-      let action2 = IntegerEntry(keyTotalNegativeVoteByProposal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)) + gwxNumber)
-      (action1, action2)
+    let action1 = IntegerEntry(keyUserChoice(proposalIndex, toString(i.caller)), 0)
+    let action2 = IntegerEntry(keyTotalNegativeVoteByProposal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)) + gwxNumber)
+    (action1, action2)
   }
   
   [
-      IntegerEntry(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller)), gwxNumber),
-      action1,
-      action2
+    IntegerEntry(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller)), gwxNumber),
+    action1,
+    action2
   ]
 }
 
 @Callable(i)
 func deleteVote(proposalIndex: Int) = {
   strict checks = [
-      lastBlock.height < this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError(),
-      getInteger(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller))) != unit || noVoteError()
+    lastBlock.height < this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError(),
+    getInteger(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))) != unit || noVoteError()
   ]
   let action = if (getIntegerValue(keyUserChoice(proposalIndex, toString(i.caller))) == 1) 
   then {
-      IntegerEntry(keyTotalPositiveVoteByProposal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex)) - getIntegerValue(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller))))
+    IntegerEntry(keyTotalPositiveVoteByProposal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex)) - getIntegerValue(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))))
   } else {
-      IntegerEntry(keyTotalNegativeVoteByProposal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)) - getIntegerValue(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller))))
+    IntegerEntry(keyTotalNegativeVoteByProposal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)) - getIntegerValue(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))))
   }
   
   [
-      action,
-      DeleteEntry(keyUserNumberVotesGwxInProposal(proposalIndex, toString(i.caller))),
-      DeleteEntry(keyUserChoice(proposalIndex, toString(i.caller)))
+    action,
+    DeleteEntry(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))),
+    DeleteEntry(keyUserChoice(proposalIndex, toString(i.caller)))
   ]
 }
 
 @Callable(i)
 func getResultREADONLY(proposalIndex: Int) = {
-    let positiveVotes = getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex))
-    let negativeVotes = getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex))
+  let positiveVotes = getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex))
+  let negativeVotes = getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex))
 
-    ([], [positiveVotes, negativeVotes])
+  ([], [positiveVotes, negativeVotes])
 }
 
 @Callable(i)
 func finalise(proposalIndex: Int) = {
-    strict checks = [
-        lastBlock.height >= this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError()
-    ]
+  strict checks = [
+    lastBlock.height >= this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError()
+  ]
 
-    [
-        IntegerEntry(keyTotalPositiveVoteByProposalFinal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex))),
-        IntegerEntry(keyTotalNegativeVoteByProposalFinal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)))
-    ]
+  [
+    IntegerEntry(keyTotalPositiveVoteByProposalFinal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex))),
+    IntegerEntry(keyTotalNegativeVoteByProposalFinal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)))
+  ]
 }
 
 @Callable(i)
 func getFinalResultREADONLY(proposalIndex: Int) = {
-    let positiveVotes = getIntegerValue(keyTotalPositiveVoteByProposalFinal(proposalIndex))
-    let negativeVotes = getIntegerValue(keyTotalNegativeVoteByProposalFinal(proposalIndex))
+  let positiveVotes = getIntegerValue(keyTotalPositiveVoteByProposalFinal(proposalIndex))
+  let negativeVotes = getIntegerValue(keyTotalNegativeVoteByProposalFinal(proposalIndex))
 
-    ([], [positiveVotes, negativeVotes])
+  ([], [positiveVotes, negativeVotes])
 }
 
 
