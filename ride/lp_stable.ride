@@ -1032,6 +1032,12 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
 }
 
 @Callable(i)
+func refreshDlp() = {
+  # WIP
+  []
+}
+
+@Callable(i)
 func getOneTknV2READONLY(
   outAssetId: String,
   lpAssetAmount: Int

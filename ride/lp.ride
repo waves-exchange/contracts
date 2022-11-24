@@ -112,6 +112,10 @@ let keyFee = "%s__fee"
 let feeDefault = fraction(10, scale8, 10_000)
 let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
 
+let keyKLp = ["%s", "keyKlp"].makeString(SEP)
+let keyLastKLpRefreshed = ["%s", "keyLastKLpRefreshed"].makeString(SEP)
+let keyRefreshKLpDelay = ["%s", "keyRefreshKLpDelay"].makeString(SEP)
+
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
@@ -141,6 +145,14 @@ func getStringOrFail(address: Address, key: String) = address.getString(key).val
 func getIntOrFail(address: Address, key: String) = address.getInteger(key).valueOrErrorMessage(makeString(["mandatory ", address.toString(), ".", key, " is not defined"], ""))
 
 func throwErr(msg: String) = ["lp.ride:", msg].makeString(" ").throw()
+func fmtErr(msg: String) = ["lp.ride:", msg].makeString(" ")
+
+func asInt(val: Any) = {
+  match val {
+    case valInt: Int => valInt
+    case _ => throw("fail to cast into Int")
+  }
+}
 
 let factoryContract = addressFromStringValue(getStringOrFail(this, fc()))
 
@@ -677,6 +689,26 @@ func calcGetOneToken(
   (totalAmount, commonState, feeAmount, loss)
 }
 
+func calcKLp(amountBalance: Int, priceBalance: Int, lpEmission: Int) = {
+  let updatedKLp = pow(amountBalance * priceBalance, 0, 5, 1, 0, DOWN) / lpEmission
+
+  updatedKLp
+}
+
+func refreshKLpInternal() = {
+  let cfg = getPoolConfig()
+  let lpAssetId = cfg[idxPoolLPAssetId].fromBase58String()
+  let amountAssetId = cfg[idxAmtAssetId]
+  let priceAssetId = cfg[idxPriceAssetId]
+  let amountAssetBalance = amountAssetId.getAccBalance()
+  let priceAssetBalance = priceAssetId.getAccBalance()
+  let lpEmission = assetInfo(lpAssetId).valueOrErrorMessage("Asset " + lpAssetId.toBase58String() + " doesn't exist").quantity
+
+  let updatedKLp = calcKLp(amountAssetBalance, priceAssetBalance, lpEmission)
+  
+  updatedKLp
+}
+
 func managerPublicKeyOrUnit() = match mpk().getString() {
   case s: String => s.fromBase58String()
   case _: Unit => unit
@@ -999,6 +1031,23 @@ func activate(amtAssetStr: String, priceAssetStr: String) = {
             ],
         "success")
     }
+}
+
+@Callable(i)
+func refreshKLp() = {
+  let lastRefreshedBlockHeight = keyLastKLpRefreshed.getInteger().valueOrElse(0)
+  let delayNotReachedErrorMessage = [
+      keyRefreshKLpDelay.getString().value(),
+      "blocks have not passed since the previous call"
+    ].makeString(" ").throwErr()
+  strict checkLastRefreshedBlockHeight = height - lastRefreshedBlockHeight >= 30 || delayNotReachedErrorMessage
+
+  let updatedKLp = refreshKLpInternal().asInt()
+
+  [
+    IntegerEntry(keyLastKLpRefreshed, height),
+    IntegerEntry(keyKLp, updatedKLp)
+  ]
 }
 
 # API wrappers
