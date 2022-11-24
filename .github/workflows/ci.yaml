@@ -9,7 +9,13 @@ jobs:
     runs-on: self-hosted
     container:
       image: golang:1.18
+      options: --user root
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Compile .ride files
@@ -22,19 +28,26 @@ jobs:
 
   deploy_testnet:
     env:
+      BRANCH: ${{ github.ref_name }}
       NETWORK: testnet
       NODE: ${{ secrets.TESTNETNODE }}
       MONGOURI: ${{ secrets.TESTNETMONGOURI }}
       MONGODATABASENAME: ${{ secrets.TESTNETMONGODATABASENAME }}
       MONGOCOLLECTIONCONTRACTS: ${{ secrets.TESTNETMONGOCOLLECTIONCONTRACTS }}
+      MONGOCOLLECTIONBRANCHES: ${{ secrets.TESTNETMONGOCOLLECTIONBRANCHES }}
       COMPARELPSCRIPTADDRESS: 3N6wAa7PMFZJu4Zrmp3avXmMnRTrRpMM9Lh # WX/USDN pool
       COMPARELPSTABLESCRIPTADDRESS: 3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT # USDT/USDN pool
       COMPARELPSTABLEADDONSCRIPTADDRESS: 3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV # USDT/USDN pool addon
-    if: github.ref_name == '14-11-22-release'
     runs-on: self-hosted
     container:
       image: golang:1.19
+      options: --user root
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Deploy changed contracts
@@ -47,11 +60,13 @@ jobs:
 
   deploy_mainnet:
     env:
+      BRANCH: ${{ github.ref_name }}
       NETWORK: mainnet
       NODE: ${{ secrets.MAINNETNODE }}
       MONGOURI: ${{ secrets.MAINNETMONGOURI }}
       MONGODATABASENAME: ${{ secrets.MAINNETMONGODATABASENAME }}
       MONGOCOLLECTIONCONTRACTS: ${{ secrets.MAINNETMONGOCOLLECTIONCONTRACTS }}
+      MONGOCOLLECTIONBRANCHES: ${{ secrets.MAINNETMONGOCOLLECTIONBRANCHES }}
       COMPARELPSCRIPTADDRESS: 3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99 # WX/USDN pool
       COMPARELPSTABLESCRIPTADDRESS: 3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz # USDT/USDN pool
       COMPARELPSTABLEADDONSCRIPTADDRESS: 3P36szQtxxpSaefdqaFjbM9Ush8ieCjVZVw # USDT/USDN pool addon
@@ -59,7 +74,13 @@ jobs:
     runs-on: self-hosted
     container:
       image: golang:1.19
+      options: --user root
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Compare contracts and print diff. Deploy changed lp.ride
@@ -74,7 +95,13 @@ jobs:
     runs-on: self-hosted
     container:
       image: golang:1.18
+      options: --user root
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Check .go code gofmt-formatted
@@ -88,7 +115,13 @@ jobs:
     runs-on: self-hosted
     container:
       image: node:18.1
+      options: --user root
     steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Check .js and .mjs code eslint-formatted
@@ -96,6 +129,33 @@ jobs:
           cd test
           npm i
           npm run lint
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
+        if: always()
+
+  test:
+    runs-on: self-hosted
+    container:
+      image: node:18.1
+      options: --user root
+    services:
+      waves-private-node:
+        image: wavesplatform/waves-private-node
+    env:
+      API_NODE_URL: http://waves-private-node:6869
+    steps:
+      - name: Clean step
+        uses: mickem/clean-after-action@v1
+        if: always()
+        with:
+          keepGit: true
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Run tests on private node
+        run: |
+          cd test
+          npm i
+          npm run ci-test
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()

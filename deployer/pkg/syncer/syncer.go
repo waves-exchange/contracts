@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
+	"github.com/waves-exchange/contracts/deployer/pkg/branch"
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
 	"github.com/waves-exchange/contracts/deployer/pkg/contract"
 	"github.com/wavesplatform/gowaves/pkg/client"
@@ -37,6 +38,8 @@ type Syncer struct {
 	client                            *client.Client
 	contractsFolder                   string
 	contractModel                     contract.Model
+	branch                            string
+	branchModel                       branch.Model
 	compareLpScriptAddress            proto.WavesAddress
 	compareLpStableScriptAddress      proto.WavesAddress
 	compareLpStableAddonScriptAddress proto.WavesAddress
@@ -54,7 +57,9 @@ func NewSyncer(
 	logger zerolog.Logger,
 	network config.Network,
 	node string,
+	branch string,
 	contractModel contract.Model,
+	branchModel branch.Model,
 	compareLpScriptAddress, compareLpStableScriptAddress, compareLpStableAddonScriptAddress string,
 ) (*Syncer, error) {
 	cl, err := client.NewClient(
@@ -77,16 +82,14 @@ func NewSyncer(
 		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
 	}
 
-	logger.Info().
-		Str("network", string(network)).
-		Msg("syncer init")
-
 	return &Syncer{
 		logger:                            logger,
 		network:                           network,
 		client:                            cl,
 		contractsFolder:                   path.Join("..", "ride"),
+		branch:                            branch,
 		contractModel:                     contractModel,
+		branchModel:                       branchModel,
 		compareLpScriptAddress:            compareLpScriptAddr,
 		compareLpStableScriptAddress:      compareLpStableScriptAddr,
 		compareLpStableAddonScriptAddress: compareLpStableAddonScriptAddr,
@@ -98,6 +101,39 @@ func NewSyncer(
 func (s *Syncer) ApplyChanges(c context.Context) error {
 	ctx, cancel := context.WithTimeout(c, 8*time.Hour)
 	defer cancel()
+
+	branchTestnet, err := s.branchModel.GetTestnetBranch(ctx)
+	if err != nil {
+		return fmt.Errorf("s.branchModel.GetTestnetBranch: %w", err)
+	}
+
+	if s.network == config.Testnet {
+		if branchTestnet != s.branch {
+			s.logger.Info().Msgf(
+				"nothing to do: branch for '%s' network is '%s', but current branch is '%s'",
+				config.Testnet,
+				branchTestnet,
+				s.branch,
+			)
+			return nil
+		}
+
+		s.logger.Info().Msgf(
+			"syncer start: branch for '%s' network is '%s' and current branch is '%s'",
+			config.Testnet,
+			branchTestnet,
+			s.branch,
+		)
+	} else if s.network == config.Mainnet {
+		s.logger.Info().Msgf(
+			"syncer start: branch for '%s' network is '%s' and current branch is '%s'",
+			config.Mainnet,
+			"main",
+			s.branch,
+		)
+	} else {
+		return errors.New("unknown network=" + string(s.network))
+	}
 
 	files, err := os.ReadDir(s.contractsFolder)
 	if err != nil {
@@ -173,39 +209,6 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	}
 
 	s.logger.Info().Msg("changes applied")
-
-	//if s.network == config.Mainnet {
-	//	const blocks = 10
-	//	s.logger.Info().Msgf("wait %d blocks and ensure there is no diff", blocks)
-	//	er := s.waitNBlocks(ctx, blocks)
-	//	if er != nil {
-	//		return fmt.Errorf("s.waitNBlocks: %w", er)
-	//	}
-	//
-	//	isChanged := false
-	//	for _, fl := range files {
-	//		isChn, er2 := s.doFile(
-	//			ctx,
-	//			fl.Name(),
-	//			contracts,
-	//			mainnetLpHashEmpty,
-	//			mainnetLpStableHashEmpty,
-	//			mainnetLpStableAddonHashEmpty,
-	//			false,
-	//		)
-	//		if er2 != nil {
-	//			return fmt.Errorf("s.doFile: %w", er2)
-	//		}
-	//		if isChn {
-	//			isChanged = true
-	//		}
-	//	}
-	//
-	//	if isChanged {
-	//		return errors.New("diff found after deploy, try again")
-	//	}
-	//	s.logger.Info().Msg("done: no diff")
-	//}
 
 	return nil
 }

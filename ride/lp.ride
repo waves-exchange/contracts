@@ -719,6 +719,13 @@ func pendingManagerPublicKeyOrUnit() = match pmpk().getString() {
   case _: Unit => unit
 }
 
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
+
 func mustManager(i: Invocation) = {
   let pd = "Permission denied".throw()
 
@@ -805,11 +812,15 @@ func putForFree(maxSlippage: Int) = {
 
 @Callable(i)
 func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
-  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean]
   let isPutDisabled = isGlobalShutdown() || cfgPoolStatus == PoolPutDisabled || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isPutDisabled || "put operation is blocked by admin".throwErr(),
+    !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
@@ -849,11 +860,15 @@ func putOneTknREADONLY(paymentAssetId: String, paymentAmountRaw: Int) = {
 
 @Callable(i)
 func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean]
   let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
@@ -890,11 +905,15 @@ func getOneTknREADONLY(outAssetId: String, paymentAmount: Int) = {
 
 @Callable(i)
 func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean]
   let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
     i.payments.size() == 0 || "no payments are expected".throwErr()
   ]
 

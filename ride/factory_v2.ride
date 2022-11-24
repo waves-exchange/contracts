@@ -689,9 +689,9 @@ func isPoolOneTokenOperationsDisabledREADONLY(poolAddress: String) = {
   let poolConfig = poolAddress.getPoolConfig()
   let assetsInternal = (poolConfig[idxIAmtAssetId].parseIntValue(), poolConfig[idxIPriceAssetId].parseIntValue())
   let poolOneTokenOperationsDisabled = assetsInternal.keyPoolOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
-  let allPoolsOntTokenOperationsDisabled = keyAllPoolsOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
+  let allPoolsOneTokenOperationsDisabled = keyAllPoolsOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
 
-  ([], allPoolsOntTokenOperationsDisabled || poolOneTokenOperationsDisabled)
+  ([], allPoolsOneTokenOperationsDisabled || poolOneTokenOperationsDisabled)
 }
 
 @Verifier(tx)
