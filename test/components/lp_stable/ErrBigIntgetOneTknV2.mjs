@@ -5,7 +5,7 @@ import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 
 chai.use(chaiAsPromised);
-const { expect } = chai;
+// const { expect } = chai;
 
 const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
@@ -19,12 +19,12 @@ describe('lp_stable: getOneTknV2.mjs', /** @this {MochaSuiteModified} */() => {
     const usdnAmount = 300000e6;
     const minOutAmount = 0;
 
-    const expectedPriceLast = 9662694654;
-    const expectedPriceHistory = 9662694654;
+    // const expectedPriceLast = 9662694654;
+    // const expectedPriceHistory = 9662694654;
     const expectedOutAmAmt = 109636695646259;
-    const sum = 173205080756 + 109463490565503; // lp after put + lp after putOneTknV2
-    const expectedFee = 198865;
-    const expectedOutPrAmt = 0;
+    // const sum = 173205080756 + 109463490565503; // lp after put + lp after putOneTknV2
+    // const expectedFee = 198865;
+    // const expectedOutPrAmt = 0;
 
     const lpStable = address(this.accounts.lpStable, chainId);
 
@@ -44,7 +44,7 @@ describe('lp_stable: getOneTknV2.mjs', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(put, {});
-    const { stateChanges: stateChangesPut } = await ni.waitForTx(put.id, { apiBase });
+    await ni.waitForTx(put.id, { apiBase });
 
     const putOneTknV2 = invokeScript({
       dApp: lpStable,
@@ -61,10 +61,7 @@ describe('lp_stable: getOneTknV2.mjs', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(putOneTknV2, {});
-    const {
-      height,
-      stateChanges: stateChangesPutOneTknV2,
-    } = await ni.waitForTx(putOneTknV2.id, { apiBase });
+    await ni.waitForTx(putOneTknV2.id, { apiBase });
 
     const getOneTknV2 = invokeScript({
       dApp: lpStable,
@@ -81,11 +78,7 @@ describe('lp_stable: getOneTknV2.mjs', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(getOneTknV2, {});
-    const {
-      height: heightAfterGetOneTkn,
-      stateChanges,
-      id,
-    } = await ni.waitForTx(getOneTknV2.id, { apiBase });
+    await ni.waitForTx(getOneTknV2.id, { apiBase });
 
     // const { timestamp } = await api.blocks.fetchHeadersAt(heightAfterGetOneTkn);
     // const keyPriceHistory = `%s%s%d%d__price__history__${heightAfterGetOneTkn}__${timestamp}`;
@@ -93,7 +86,8 @@ describe('lp_stable: getOneTknV2.mjs', /** @this {MochaSuiteModified} */() => {
     // expect(stateChanges.data).to.eql([{
     //   key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${id}`,
     //   type: 'string',
-    //   value: `%d%d%d%d%d%d__${expectedOutAmAmt}__${expectedOutPrAmt}__${outLp}__${expectedPriceLast}__${heightAfterGetOneTkn}__${timestamp}`,
+    //   value: `%d%d%d%d%d%d__${expectedOutAmAmt}__${expectedOutPrAmt}__${outLp}__
+    //   ${expectedPriceLast}__${heightAfterGetOneTkn}__${timestamp}`,
     // }, {
     //   key: '%s%s__price__last',
     //   type: 'integer',

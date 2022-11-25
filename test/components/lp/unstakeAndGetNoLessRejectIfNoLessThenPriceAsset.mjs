@@ -3,7 +3,6 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { checkStateChanges } from '../../utils/utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
