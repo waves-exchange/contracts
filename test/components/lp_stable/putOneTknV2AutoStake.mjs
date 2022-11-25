@@ -26,6 +26,7 @@ describe('lp_stable: putOneTknV2AutoStake.mjs', /** @this {MochaSuiteModified} *
     const expectedWriteAmAmt = 1e8;
     const expectedWritePrAmt = 0;
     const expectedEmitLpAmt = 4994065300;
+    const expectedFee = 100000;
     const expectedSlippageCalc = 0;
     const expectedAmDiff = 0;
     const expectedPrDiff = 0;
@@ -79,7 +80,7 @@ describe('lp_stable: putOneTknV2AutoStake.mjs', /** @this {MochaSuiteModified} *
     }]);
 
     expect(
-      await checkStateChanges(stateChanges, 3, 2, 0, 0, 0, 0, 0, 0, 3),
+      await checkStateChanges(stateChanges, 3, 1, 0, 0, 0, 0, 0, 0, 3),
     ).to.eql(true);
 
     expect(stateChanges.data).to.eql([{
@@ -95,6 +96,13 @@ describe('lp_stable: putOneTknV2AutoStake.mjs', /** @this {MochaSuiteModified} *
       type: 'string',
       value: `%d%d%d%d%d%d%d%d%d%d__${expectedWriteAmAmt}__${expectedWritePrAmt}__${expectedEmitLpAmt}__${expectedPriceLast}__${slippage}__${expectedSlippageCalc}__${height}__${timestamp}__${expectedAmDiff}__${expectedPrDiff}`,
     }]);
+
+    expect(stateChanges.transfers).to.eql([
+      {
+        address: address(this.accounts.feeCollector, chainId),
+        asset: this.usdtAssetId,
+        amount: expectedFee,
+      }]);
 
     const { invokes } = stateChanges;
     expect(invokes.length).to.eql(expectedInvokesCount);

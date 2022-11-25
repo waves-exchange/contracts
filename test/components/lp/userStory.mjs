@@ -1,13 +1,16 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address, publicKey } from '@waves/ts-lib-crypto';
-import { data, invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import {
+  data, invokeScript, nodeInteraction as ni, transfer,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { checkStateChanges } from '../../utils/utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
+const seed = 'waves private node seed with waves tokens';
 const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
 
@@ -33,6 +36,17 @@ describe('lp: userStory.mjs', /** @this {MochaSuiteModified} */() => {
 
     const usdnAmountUser3 = 25000e6;
     const shouldAutoStakeUser3 = true;
+
+    // transfer shib
+    // ___________________________________________________________________________________________
+
+    const signedTranserTx = transfer({
+      assetId: this.shibAssetId,
+      amount: shibAmountUser2,
+      recipient: address(this.accounts.user2, chainId),
+    }, seed);
+    await api.transactions.broadcast(signedTranserTx, {});
+    await ni.waitForTx(signedTranserTx.id, { apiBase });
 
     // set Fee for LP
     // ___________________________________________________________________________________________

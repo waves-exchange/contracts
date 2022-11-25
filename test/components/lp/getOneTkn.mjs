@@ -87,7 +87,9 @@ describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(getOneTkn, {});
-    const { height, stateChanges, id } = await ni.waitForTx(getOneTkn.id, { apiBase });
+    const {
+      height, stateChanges, id, payment,
+    } = await ni.waitForTx(getOneTkn.id, { apiBase });
 
     const supplyLp = supplyLpAfterPut + lpAmountAfterPutOneTkn;
 
@@ -118,6 +120,11 @@ describe('lp: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     const expectedPriceHistory = expectedPriceLast;
     const expectedFeeAmount = feeAmount;
     const expectedInvokesCount = 2;
+
+    expect(payment).to.eql([{
+      amount: lpAmountAfterPutOneTkn,
+      assetId: this.lpAssetId,
+    }]);
 
     expect(
       await checkStateChanges(stateChanges, 3, 2, 0, 0, 0, 0, 0, 0, 2),

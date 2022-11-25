@@ -1,0 +1,68 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let SEP = "__"
+
+func throwErr(msg: String) = ["lp_putOneTknAndGetOneTkn.ride:", msg].makeString(" ").throw()
+
+@Callable(i)
+func putOneTknAndGetOneTkn(dAppLp: String) = {
+
+  strict checks = [
+    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr(),
+    i.caller != this || "DApp self-payment is forbidden".throwErr()
+  ]
+
+  let amountAssetId = dAppLp.addressFromStringValue().getString("%s__amountAsset").value()
+  let priceAssetId = dAppLp.addressFromStringValue().getString("%s__priceAsset").value()
+  let dAppFactory = dAppLp.addressFromStringValue().getString("%s__factoryContract").value()
+  let amountAssetInternalId = dAppFactory.addressFromStringValue().getInteger("%s%s%s__mappings__baseAsset2internalId__" + amountAssetId).value()
+  let priceAssetInternalId = dAppFactory.addressFromStringValue().getInteger("%s%s%s__mappings__baseAsset2internalId__" + priceAssetId).value()
+
+  let factoryConfig = dAppFactory.addressFromStringValue().getString("%d%d%s__" + amountAssetInternalId.toString() + SEP + priceAssetInternalId.toString() + "__config").value()
+  let factoryConfigList = factoryConfig.split(SEP)
+  let lpAssetId = factoryConfigList[3]
+
+  strict balanceLpBefore  = this.assetBalance(lpAssetId.fromBase58String())
+
+  let putOneTknREADONLYArgs = [i.payments[0].assetId.value().toBase58String(), i.payments[0].amount.value()]
+
+  strict (expectedLpAmount, feeAmount, lost) = invoke(
+    dAppLp.addressFromStringValue(),
+    "putOneTknREADONLY",
+    putOneTknREADONLYArgs,
+    []
+  ).exactAs[(Int, Int, Int)]
+
+  let minOutAmount = 0
+  let autoStake = false
+  let putOneTknArgs = [minOutAmount, autoStake]
+  let putOneTknPayments = [AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount)]
+
+  strict emitAmount = invoke(
+    dAppLp.addressFromStringValue(),
+    "putOneTkn",
+    putOneTknArgs,
+    putOneTknPayments
+  ).exactAs[Int]
+
+  let balanceLpAfter = this.assetBalance(lpAssetId.fromBase58String())
+  let balanceLpDiff = balanceLpAfter - balanceLpBefore
+
+  strict checkLpAmount = balanceLpDiff == expectedLpAmount && emitAmount == expectedLpAmount || "unexpected LP amount".throwErr()
+
+  let lpAmount = expectedLpAmount
+  let outAssetIdStr = i.payments[0].assetId.value().toBase58String()
+  let getOneTknArgs = [outAssetIdStr, minOutAmount]
+  let getOneTknPayments = [AttachedPayment(lpAssetId.fromBase58String(), lpAmount)]
+
+  strict resGetOneTkn = invoke(
+    dAppLp.addressFromStringValue(),
+    "getOneTkn",
+    getOneTknArgs,
+    getOneTknPayments
+  )
+
+  []
+}

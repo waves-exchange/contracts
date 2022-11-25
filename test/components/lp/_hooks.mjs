@@ -56,11 +56,6 @@ export const mochaHooks = {
     await setScriptFromFile(slippagePath, this.accounts.slippage);
     await setScriptFromFile(assetsStorePath, this.accounts.store);
 
-    console.log('account addresses:');
-    for (const [key, value] of Object.entries(this.accounts)) {
-      console.log('  ', key, address(value, chainId));
-    }
-
     const usdnIssueTx = issue({
       name: 'USDN',
       description: '',
@@ -96,7 +91,7 @@ export const mochaHooks = {
 
     const shibAmount = 30000e2;
     const massTransferTxSHIB = massTransfer({
-      transfers: names.slice(-3).map((name) => ({
+      transfers: names.slice(-1).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: shibAmount,
       })),
       assetId: this.shibAssetId,
@@ -176,10 +171,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(activateNewPoolTx, {});
     const { stateChanges } = await waitForTx(activateNewPoolTx.id, { apiBase });
     this.lpAssetId = stateChanges.issues[0].assetId;
-
-    console.log('   usdnAssetId', this.usdnAssetId);
-    console.log('   shibAssetId', this.shibAssetId);
-    console.log('   lpAssetId', this.lpAssetId);
 
     const setManagerFactoryV2Tx = data({
       additionalFee: 4e5,
