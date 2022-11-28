@@ -685,9 +685,7 @@ func calcGetOneToken(
 }
 
 func calcKLp(amountBalance: Int, priceBalance: Int, lpEmission: Int) = {
-  let updatedKLp = pow(amountBalance * priceBalance, 0, 5, 1, 0, DOWN) / lpEmission
-
-  updatedKLp
+  fraction(amountBalance, priceBalance, lpEmission)
 }
 
 func refreshKLpInternal() = {
