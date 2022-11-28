@@ -92,9 +92,9 @@ func voteFor(proposalIndex: Int, choice: Boolean) = {
     this.getString(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))) == unit || alreadyVoteError()
   ]
   let gwxNumber = invoke(
-    addressFromString(gwxContractAddress()).value(),
-    "calcUserGwxAmountAtHeight",
-    [i.caller, getIntegerValue(keyProposalEnd(proposalIndex))],
+    addressFromStringValue(getStringValue(gwxContractAddress())),
+    "getUserGwxAmountAtHeightREADONLY",
+    [i.caller.toString(), getIntegerValue(keyProposalEnd(proposalIndex))],
     []
   ).asInt()
 
@@ -139,8 +139,9 @@ func deleteVote(proposalIndex: Int) = {
 func getResultREADONLY(proposalIndex: Int) = {
   let positiveVotes = getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex))
   let negativeVotes = getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex))
+  let quorumNumber = getIntegerValue(keyQuorumQuantity(proposalIndex))
 
-  ([], [positiveVotes, negativeVotes])
+  ([], [positiveVotes, negativeVotes, quorumNumber])
 }
 
 @Callable(i)
