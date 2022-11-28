@@ -472,7 +472,12 @@ func validateMatcherOrderAllowed(order: Order) = {
 
   let isOrderPriceValid = if(order.orderType == Buy) then castedOrderPrice <= curPrice else castedOrderPrice >= curPrice
   #if(!isOrderPriceValid) then throw("Order price leads to K decrease. castedOrderPrice="+castedOrderPrice.toString() + " curPrice="+curPrice.toString()) else
-  true
+
+  let kLp = this.getInteger(keyKLp).valueOrErrorMessage("kLp is required".fmtErr())
+  let kLpNew = 0 # calcKLp()
+  let isOrderValid = kLpNew > kLp
+
+  isOrderValid
 }
 
 func commonGet(i: Invocation) = {
