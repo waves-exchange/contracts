@@ -112,9 +112,11 @@ let keyFee = "%s__fee"
 let feeDefault = fraction(10, scale8, 10_000)
 let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
 
-let keyKLp = ["%s", "keyKlp"].makeString(SEP)
-let keyLastKLpRefreshed = ["%s", "keyLastKLpRefreshed"].makeString(SEP)
-let keyRefreshKLpDelay = ["%s", "keyRefreshKLpDelay"].makeString(SEP)
+let keyKLp = ["%s", "kLp"].makeString(SEP)
+let keyKLpRefreshedHeight = ["%s", "kLpRefreshedHeight"].makeString(SEP)
+let keyKLpRefreshDelay = ["%s", "refreshKLpDelay"].makeString(SEP)
+let kLpRefreshDelayDefault = 30
+let kLpRefreshDelay = this.getInteger(keyKLpRefreshDelay).valueOrElse(kLpRefreshDelayDefault)
 
 #------------------------
 # KEYS ON OTHER CONTRACTS
@@ -146,13 +148,6 @@ func getIntOrFail(address: Address, key: String) = address.getInteger(key).value
 
 func throwErr(msg: String) = ["lp.ride:", msg].makeString(" ").throw()
 func fmtErr(msg: String) = ["lp.ride:", msg].makeString(" ")
-
-func asInt(val: Any) = {
-  match val {
-    case valInt: Int => valInt
-    case _ => throw("fail to cast into Int")
-  }
-}
 
 let factoryContract = addressFromStringValue(getStringOrFail(this, fc()))
 
@@ -696,13 +691,11 @@ func calcKLp(amountBalance: Int, priceBalance: Int, lpEmission: Int) = {
 }
 
 func refreshKLpInternal() = {
-  let cfg = getPoolConfig()
-  let lpAssetId = cfg[idxPoolLPAssetId].fromBase58String()
-  let amountAssetId = cfg[idxAmtAssetId]
-  let priceAssetId = cfg[idxPriceAssetId]
-  let amountAssetBalance = amountAssetId.getAccBalance()
-  let priceAssetBalance = priceAssetId.getAccBalance()
-  let lpEmission = assetInfo(lpAssetId).valueOrErrorMessage("Asset " + lpAssetId.toBase58String() + " doesn't exist").quantity
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance()
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance()
+  let lpEmission = assetInfo(cfgLpAssetId).valueOrErrorMessage(
+    ["Asset ", cfgLpAssetId.toBase58String(), " doesn't exist"].makeString("").fmtErr()
+  ).quantity
 
   let updatedKLp = calcKLp(amountAssetBalance, priceAssetBalance, lpEmission)
   
@@ -1054,17 +1047,18 @@ func activate(amtAssetStr: String, priceAssetStr: String) = {
 
 @Callable(i)
 func refreshKLp() = {
-  let lastRefreshedBlockHeight = keyLastKLpRefreshed.getInteger().valueOrElse(0)
-  let delayNotReachedErrorMessage = [
-      keyRefreshKLpDelay.getString().value(),
-      "blocks have not passed since the previous call"
-    ].makeString(" ").throwErr()
-  strict checkLastRefreshedBlockHeight = height - lastRefreshedBlockHeight >= 30 || delayNotReachedErrorMessage
+  let lastRefreshedBlockHeight = keyKLpRefreshedHeight.getInteger().valueOrElse(0)
+  strict checkLastRefreshedBlockHeight = if (height - lastRefreshedBlockHeight >= kLpRefreshDelay) then unit else {
+    [
+      kLpRefreshDelay.toString(),
+      " blocks have not passed since the previous call"
+    ].makeString("").throwErr()
+  }
 
-  let updatedKLp = refreshKLpInternal().asInt()
+  let updatedKLp = refreshKLpInternal()
 
   [
-    IntegerEntry(keyLastKLpRefreshed, height),
+    IntegerEntry(keyKLpRefreshedHeight, height),
     IntegerEntry(keyKLp, updatedKLp)
   ]
 }
