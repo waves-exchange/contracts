@@ -766,7 +766,7 @@ func getOneTknV2Internal(
   let amBalance = amId.getAccBalance()
   let prBalance = prId.getAccBalance()
 
-  let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
+  strict (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
 
   let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
@@ -947,7 +947,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   let pmtAssetId = pmt.assetId.value().toBase58String()
   let pmtAmt = pmt.amount
 
-  let (estimLP, state, feeAmount) = calcPutOneTkn(
+  strict (estimLP, state, feeAmount) = calcPutOneTkn(
     pmtAmt,
     pmtAssetId,
     userAddress.toString(),
