@@ -195,7 +195,15 @@ func TotalsEntry(
   let newClaimedIdoAssetAmount =
     claimedIdoAssetAmount + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement] + priceAssetBalancePriceAssetDecimals
 
-  if (newRemainingAmount < 0) then throw("invalid math") else
+  if (newRemainingAmount < 0) then {
+    [
+      "invalid math",
+      remainingAmount.toString(),
+      incrementDiff[IdxDiffRemainingPriceAmountIncrement].toString(),
+      newRemainingAmount.toString(),
+      incrementDiff[IdxDiffTotalIncrement].toString()
+    ].makeString(" ").throwErr()
+  } else
 
   StringEntry(key,
       formatInvestor(newTotalAmount,          # 1
