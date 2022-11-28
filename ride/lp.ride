@@ -693,9 +693,8 @@ func calcKLp(amountBalance: Int, priceBalance: Int, lpEmission: Int) = {
 func refreshKLpInternal() = {
   let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance()
   let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance()
-  let lpEmission = assetInfo(cfgLpAssetId).valueOrErrorMessage(
-    ["Asset ", cfgLpAssetId.toBase58String(), " doesn't exist"].makeString("").fmtErr()
-  ).quantity
+  # TODO: can be moved outside functions
+  let lpEmission = assetInfo(cfgLpAssetId).value().quantity
 
   let updatedKLp = calcKLp(amountAssetBalance, priceAssetBalance, lpEmission)
   
