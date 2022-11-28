@@ -438,6 +438,36 @@ func estimatePutOperation(txId58: String, slippageTolerance: Int, inAmAssetAmt: 
     )
 }
 
+func calcKLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
+  let updatedKLp = fraction(
+    pow(amountBalance * priceBalance, 0, 5.toBigInt(), 1, 0, DOWN),
+    scale18,
+    lpEmission
+  )
+
+  updatedKLp
+}
+
+func refreshKLpInternal(
+  amountAssetBalanceDelta: Int,
+  priceAssetBalanceDelta: Int,
+  lpAssetEmissionDelta: Int
+) = {
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance() + amountAssetBalanceDelta
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance() + priceAssetBalanceDelta
+  # TODO: can be moved outside functions
+  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity + lpAssetEmissionDelta
+
+  let updatedKLp = calcKLp(amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpAssetEmission.toBigInt())
+
+  let actions = [
+    IntegerEntry(keyKLpRefreshedHeight, height),
+    StringEntry(keyKLp, updatedKLp.toString())
+  ]
+  
+  (actions, updatedKLp)
+}
+
 func validateMatcherOrderAllowed(order: Order) = {
   let cfg = getPoolConfig()
   let amtAssetId = cfg[idxAmtAssetId]
@@ -446,35 +476,28 @@ func validateMatcherOrderAllowed(order: Order) = {
   let amtAssetDcm = cfg[idxAmtAssetDcm].parseIntValue()
   let priceAssetDcm = cfg[idxPriceAssetDcm].parseIntValue()
 
-  # get current balances from acc
-  let accAmtAssetBalance = getAccBalance(amtAssetId)
-  let accPriceAssetBalance = getAccBalance(priceAssetId)
-
-  let curPriceX18 = if(order.orderType == Buy)
-      then privateCalcPrice(amtAssetDcm, priceAssetDcm, accAmtAssetBalance + order.amount, accPriceAssetBalance)
-      else privateCalcPrice(amtAssetDcm, priceAssetDcm, accAmtAssetBalance - order.amount, accPriceAssetBalance)
-  let curPrice = curPriceX18.fromX18(scale8)
+  let amountAssetAmount = order.amount
+  # TODO: check order.priceMode when available
+  let priceAssetAmount = fraction(order.amount, order.price, scale8)
+  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = if (order.orderType == Buy) then {
+    (amountAssetAmount, -priceAssetAmount)
+  } else {
+    (-amountAssetAmount, priceAssetAmount)
+  }
 
   # validate status
   if (isGlobalShutdown() || poolStatus == PoolMatcherDisabled || poolStatus == PoolShutdown) then throw("Exchange operations disabled") else
 
   # validate pairs
-  let orderAmtAsset = order.assetPair.amountAsset
-  let orderAmtAssetStr = if( orderAmtAsset == unit) then "WAVES" else toBase58String(orderAmtAsset.value())
-  let orderPriceAsset = order.assetPair.priceAsset
-  let orderPriceAssetStr = if( orderPriceAsset == unit) then "WAVES" else toBase58String(orderPriceAsset.value())
+  let orderAmtAssetStr = order.assetPair.amountAsset.value().assetIdToString()
+  let orderPriceAssetStr = order.assetPair.priceAsset.value().assetIdToString()
   if(orderAmtAssetStr != amtAssetId ||  orderPriceAssetStr != priceAssetId) then throw("Wrong order assets.") else
 
-  let orderPrice = order.price
-  #priceDecimals = 8 + priceAssetDcm - amtAssetDcm
-  let priceDcm = fraction(scale8, priceAssetDcm, amtAssetDcm)
-  let castedOrderPrice = orderPrice.toScale(scale8, priceDcm)
-
-  let isOrderPriceValid = if(order.orderType == Buy) then castedOrderPrice <= curPrice else castedOrderPrice >= curPrice
-  #if(!isOrderPriceValid) then throw("Order price leads to K decrease. castedOrderPrice="+castedOrderPrice.toString() + " curPrice="+curPrice.toString()) else
-
-  let kLp = this.getInteger(keyKLp).valueOrErrorMessage("kLp is required".fmtErr())
-  let kLpNew = 0 # calcKLp()
+  let kLp = this.getString(keyKLp)
+    .valueOrErrorMessage("kLp is required".fmtErr())
+    .parseBigInt()
+    .valueOrErrorMessage("invalid kLp".fmtErr())
+  let (unusedActions, kLpNew) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
   let isOrderValid = kLpNew > kLp
 
   isOrderValid
@@ -687,36 +710,6 @@ func calcGetOneToken(
   }
 
   (totalAmount, commonState, feeAmount, loss, outInAmountAsset)
-}
-
-func calcKLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
-  let updatedKLp = fraction(
-    pow(amountBalance * priceBalance, 0, 5.toBigInt(), 1, 0, DOWN),
-    scale18,
-    lpEmission
-  )
-
-  updatedKLp
-}
-
-func refreshKLpInternal(
-  amountAssetBalanceDelta: Int,
-  priceAssetBalanceDelta: Int,
-  lpAssetEmissionDelta: Int
-) = {
-  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance() + amountAssetBalanceDelta
-  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance() + priceAssetBalanceDelta
-  # TODO: can be moved outside functions
-  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity + lpAssetEmissionDelta
-
-  let updatedKLp = calcKLp(amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpAssetEmission.toBigInt())
-
-  let actions = [
-    IntegerEntry(keyKLpRefreshedHeight, height),
-    StringEntry(keyKLp, updatedKLp.toString())
-  ]
-  
-  (actions, updatedKLp)
 }
 
 func managerPublicKeyOrUnit() = match mpk().getString() {
