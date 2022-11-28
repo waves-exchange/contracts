@@ -684,32 +684,6 @@ func calcGetOneToken(
   (totalAmount, commonState, feeAmount, loss)
 }
 
-func calcKLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
-  let updatedKLp = fraction(
-    pow(amountBalance * priceBalance, 0, 5.toBigInt(), 1, 0, DOWN),
-    scale18,
-    lpEmission
-  )
-
-  updatedKLp
-}
-
-func refreshKLpInternal() = {
-  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance()
-  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance()
-  # TODO: can be moved outside functions
-  let lpEmission = assetInfo(cfgLpAssetId).value().quantity
-
-  let updatedKLp = calcKLp(amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpEmission.toBigInt())
-
-  let actions = [
-    IntegerEntry(keyKLpRefreshedHeight, height),
-    StringEntry(keyKLp, updatedKLp.toString())
-  ]
-  
-  (actions, updatedKLp)
-}
-
 func managerPublicKeyOrUnit() = match mpk().getString() {
   case s: String => s.fromBase58String()
   case _: Unit => unit
@@ -1063,9 +1037,23 @@ func refreshKLp() = {
     ].makeString("").throwErr()
   }
 
-  let (actions, updatedKLp) = refreshKLpInternal()
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
+  # TODO: can be moved outside functions
+  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
 
-  (actions, updatedKLp)
+  let updatedKLp = fraction(
+    pow(amountAssetBalance * priceAssetBalance, 0, 5.toBigInt(), 1, 0, DOWN),
+    scale18,
+    lpAssetEmission
+  )
+
+  let actions = [
+    IntegerEntry(keyKLpRefreshedHeight, height),
+    StringEntry(keyKLp, updatedKLp.toString())
+  ]
+
+  (actions, updatedKLp.toString())
 }
 
 # API wrappers
