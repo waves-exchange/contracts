@@ -4,13 +4,13 @@
 
 let SEP = "__"
 
-func throwErr(msg: String) = ["lp_putOneTknAndGetOneTkn.ride:", msg].makeString(" ").throw()
+func throwErr(msg: String) = ["dAppUser.ride:", msg].makeString(" ").throw()
 
 @Callable(i)
 func putOneTknAndGetOneTkn(dAppLp: String) = {
 
   strict checks = [
-    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr(),
+    i.payments.size() == 1 || "exactly 1 payment expected".throwErr(),
     i.caller != this || "DApp self-payment is forbidden".throwErr()
   ]
 

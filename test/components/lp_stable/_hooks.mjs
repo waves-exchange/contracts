@@ -28,7 +28,21 @@ const gwxRewardPath = format({ dir: mockRidePath, base: 'gwx_reward.mock.ride' }
 
 export const mochaHooks = {
   async beforeAll() {
-    const names = ['lpStable', 'lpStableAddon', 'factoryV2', 'staking', 'slippage', 'gwxReward', 'manager', 'store', 'feeCollector', 'rest', 'user1'];
+    const names = [
+      'lpStable',
+      'lpStableAddon',
+      'factoryV2',
+      'staking',
+      'slippage',
+      'gwxReward',
+      'manager',
+      'store',
+      'feeCollector',
+      'rest',
+      'user3',
+      'user2',
+      'user1',
+    ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
@@ -60,7 +74,7 @@ export const mochaHooks = {
 
     const usdnAmount = 1e16;
     const massTransferTxUSDN = massTransfer({
-      transfers: names.slice(-1).map((name) => ({
+      transfers: names.slice(-2).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: usdnAmount,
       })),
       assetId: this.usdnAssetId,
@@ -82,7 +96,7 @@ export const mochaHooks = {
 
     const usdtAmount = 1e16;
     const massTransferTxUSDT = massTransfer({
-      transfers: names.slice(-1).map((name) => ({
+      transfers: names.slice(-2).map((name) => ({
         recipient: address(this.accounts[name], chainId), amount: usdtAmount,
       })),
       assetId: this.usdtAssetId,
