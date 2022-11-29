@@ -105,6 +105,12 @@ func ada() = "%s__addonAddr"
 let keyFee = "%s__fee"
 let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
 
+let keyDLp = ["%s", "dLp"].makeString(SEP)
+let keyDLpRefreshedHeight = ["%s", "dLpRefreshedHeight"].makeString(SEP)
+let keyDLpRefreshDelay = ["%s", "refreshDLpDelay"].makeString(SEP)
+let dLpRefreshDelayDefault = 30
+let dLpRefreshDelay = this.getInteger(keyDLpRefreshDelay).valueOrElse(dLpRefreshDelayDefault)
+
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
@@ -147,6 +153,7 @@ func strf(addr: Address, key: String) = addr.getString(key).valueOrErrorMessage(
 func intf(addr: Address, key: String) = addr.getInteger(key).valueOrErrorMessage(makeString(["mandatory ", addr.toString(), ".", key, " not defined"], ""))
 
 func throwErr(msg: String) = ["lp_stable.ride:", msg].makeString(" ").throw()
+func fmtErr(msg: String) = ["lp_stable.ride:", msg].makeString(" ")
 
 # factoryContract
 let fca = addressFromStringValue(strf(this, fc()))
@@ -491,6 +498,36 @@ func epo(txId58: String,
       inAmId,                   # 12
       inPrId                    # 13
     )
+}
+
+func calcDLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
+  let updatedDLp = fraction(
+    amountBalance * priceBalance,
+    scale18,
+    lpEmission
+  )
+
+  updatedDLp
+}
+
+func refreshDLpInternal(
+  amountAssetBalanceDelta: Int,
+  priceAssetBalanceDelta: Int,
+  lpAssetEmissionDelta: Int
+) = {
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance() + amountAssetBalanceDelta
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance() + priceAssetBalanceDelta
+  # TODO: can be moved outside functions
+  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity + lpAssetEmissionDelta
+
+  let updatedDLp = calcDLp(amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpAssetEmission.toBigInt())
+
+  let actions = [
+    IntegerEntry(keyDLpRefreshedHeight, height),
+    StringEntry(keyDLp, updatedDLp.toString())
+  ]
+
+  (actions, updatedDLp)
 }
 
 # validateMatcherOrderAllowed
