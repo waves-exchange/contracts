@@ -195,23 +195,33 @@ func TotalsEntry(
   let newClaimedIdoAssetAmount =
     claimedIdoAssetAmount + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement] + priceAssetBalancePriceAssetDecimals
 
-  if (newRemainingAmount < 0) then {
-    [
-      "invalid math",
-      remainingAmount.toString(),
-      incrementDiff[IdxDiffRemainingPriceAmountIncrement].toString(),
-      newRemainingAmount.toString(),
-      incrementDiff[IdxDiffTotalIncrement].toString()
-    ].makeString(" ").throwErr()
-  } else
+  let entries = if (newRemainingAmount < 0) then {
+    let newLogicRemainingAmount = newTotalAmount - newClaimedPriceAssetAmount - newClaimedIdoAssetAmount
+    
+    StringEntry(
+      key,
+      formatInvestor(
+        newTotalAmount,             # 1
+        newLogicRemainingAmount,    # 2
+        newClaimedPriceAssetAmount, # 3
+        newClaimedIdoAssetAmount,   # 4
+        newLastClaimedHeight        # 5
+      )
+    )
+  } else {
+    StringEntry(
+      key,
+      formatInvestor(
+        newTotalAmount,             # 1
+        newRemainingAmount,         # 2
+        newClaimedPriceAssetAmount, # 3
+        newClaimedIdoAssetAmount,   # 4
+        newLastClaimedHeight        # 5
+      )
+    )
+  }
 
-  StringEntry(key,
-      formatInvestor(newTotalAmount,          # 1
-                  newRemainingAmount,         # 2
-                  newClaimedPriceAssetAmount, # 3
-                  newClaimedIdoAssetAmount,   # 4
-                  newLastClaimedHeight)       # 5
-  )
+  entries
 }
 
 func InvestOperationHistoryEntry(userAddress: String, priceAssetAmount: Int, idoAssetAmount: Int, txId: ByteVector) = {
