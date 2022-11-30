@@ -469,13 +469,6 @@ func refreshKLpInternal(
 }
 
 func validateMatcherOrderAllowed(order: Order) = {
-  let cfg = getPoolConfig()
-  let amtAssetId = cfg[idxAmtAssetId]
-  let priceAssetId = cfg[idxPriceAssetId]
-  let poolStatus = cfg[idxPoolStatus].parseIntValue()
-  let amtAssetDcm = cfg[idxAmtAssetDcm].parseIntValue()
-  let priceAssetDcm = cfg[idxPriceAssetDcm].parseIntValue()
-
   let amountAssetAmount = order.amount
   # TODO: check order.priceMode when available
   let priceAssetAmount = fraction(order.amount, order.price, scale8)
@@ -486,12 +479,10 @@ func validateMatcherOrderAllowed(order: Order) = {
   }
 
   # validate status
-  if (isGlobalShutdown() || poolStatus == PoolMatcherDisabled || poolStatus == PoolShutdown) then throw("Exchange operations disabled") else
+  if (isGlobalShutdown() || cfgPoolStatus == PoolMatcherDisabled || cfgPoolStatus == PoolShutdown) then throw("Exchange operations disabled") else
 
   # validate pairs
-  let orderAmtAssetStr = order.assetPair.amountAsset.value().assetIdToString()
-  let orderPriceAssetStr = order.assetPair.priceAsset.value().assetIdToString()
-  if(orderAmtAssetStr != amtAssetId ||  orderPriceAssetStr != priceAssetId) then throw("Wrong order assets.") else
+  if (order.assetPair.amountAsset != cfgAmountAssetId ||  order.assetPair.priceAsset != cfgPriceAssetId) then throw("Wrong order assets.") else
 
   let kLp = this.getString(keyKLp)
     .valueOrErrorMessage("kLp is required".fmtErr())
