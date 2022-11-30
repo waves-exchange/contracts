@@ -196,7 +196,7 @@ func TotalsEntry(
     claimedIdoAssetAmount + incrementDiff[IdxDiffClaimedIdoAssetAmountIncrement] + priceAssetBalancePriceAssetDecimals
 
   let entries = if (newRemainingAmount < 0) then {
-    let newLogicRemainingAmount = newTotalAmount - newClaimedPriceAssetAmount
+    let newLogicRemainingAmount = newTotalAmount - newClaimedPriceAssetAmount - newClaimedIdoAssetAmount
     
     StringEntry(
       key,
