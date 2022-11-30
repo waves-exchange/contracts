@@ -826,7 +826,15 @@ func getOneTknV2Internal(
     [pmtAmt],
     [AttachedPayment(pmtAssetId, pmtAmt)]
   )
-  (state, totalAmount)
+
+  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
+    let feeAmountForCalc = if (this == feeCollectorAddress) then 0 else feeAmount
+    let outInAmountAsset = if (outAssetId.parseAssetId() == cfgAmountAssetId) then true else false
+    if (outInAmountAsset) then (-(totalGet + feeAmountForCalc), 0) else (0, -(totalGet + feeAmountForCalc))
+  }
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+
+  (state ++ refreshDLpActions, totalAmount)
 }
 
 # managerPublicKeyOrUnit
@@ -942,8 +950,12 @@ func put(slip: Int, autoStake: Boolean) = {
     let lpTrnsfr =
       if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
       else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
+    
+    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
-    state++lpTrnsfr
+    state
+    ++ lpTrnsfr
+    ++ refreshDLpActions
 }
 
 @Callable(i)
@@ -999,7 +1011,22 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
 
   let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, pmtAssetId.fromBase58String())] else []
 
-  (state ++ lpTrnsfr ++ sendFeeToMatcher, emitLpAmt)
+  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
+    if (this == feeCollectorAddress) then (0, 0) else {
+      # full payment asset id validation is in calcPutOneTkn
+      let paymentInAmountAsset = if (pmt.assetId == cfgAmountAssetId) then true else false
+      if (paymentInAmountAsset) then (-feeAmount, 0) else (0, -feeAmount)
+    }
+  }
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+
+  (
+    state
+    ++ lpTrnsfr
+    ++ sendFeeToMatcher
+    ++ refreshDLpActions,
+    emitLpAmt
+  )
 }
 
 # Put without LP emission
@@ -1017,7 +1044,12 @@ func putForFree(maxSlpg: Int) = {
                           true,
                           0,
                           "")
-    estPut._9
+
+    let state = estPut._9
+
+    let (refreshDLpActions, updatedKLp) = refreshDLpInternal(0, 0, 0)
+
+    state ++ refreshDLpActions
 }
 
 # Called by: LP
@@ -1043,7 +1075,10 @@ func get() = {
                     "burn",
                     [pmtAmt],
                     [AttachedPayment(pmtAssetId, pmtAmt)])
-  state
+
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmtAmt, -outPrAmt, 0)
+
+  state ++ refreshDLpActions
 }
 
 @Callable(i)
@@ -1166,7 +1201,10 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
                                   "burn",
                                   [pmtAmt],
                                   [AttachedPayment(pmtAssetId, pmtAmt)])
-  state
+
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
+
+  state ++ refreshDLpActions
 }
 
 # Unstake LP tokens and exit from pool
@@ -1184,6 +1222,8 @@ func unstakeAndGet(amount: Int) = {
   strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
 
   let r = ego(i.transactionId.toBase58String(), lpAssetId.toBase58String(), amount, i.caller)
+  let outAmAmt = r._1
+  let outPrAmt = r._2
   let sts = r._9.parseIntValue()
   let state = r._10
 
@@ -1191,7 +1231,9 @@ func unstakeAndGet(amount: Int) = {
 
   strict burnA = invoke(fca, "burn", [amount], [AttachedPayment(lpAssetId, amount)])
 
-  state
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
+
+  state ++ refreshDLpActions
 }
 
 @Callable(i)
@@ -1217,7 +1259,9 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
   strict burnLPAssetOnFactory = fca.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
 
-  state
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
+
+  state ++ refreshDLpActions
 }
 
 @Callable(i)
