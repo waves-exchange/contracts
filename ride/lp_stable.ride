@@ -532,40 +532,29 @@ func refreshDLpInternal(
 
 # validateMatcherOrderAllowed
 func moa(order: Order) = {
-  let cfg = gpc()
-  let amtAsId = cfg[idxAmAsId]
-  let prAsId = cfg[idxPrAsId]
-  let sts = cfg[idxPoolSt].parseIntValue()
-  let amtAsDcm = cfg[idxAmtAsDcm].parseIntValue()
-  let prAsDcm = cfg[idxPriceAsDcm].parseIntValue()
-
-  # get current balances from acc
-  let accAmtAsBalance = getAccBalance(amtAsId)
-  let accPrAsBalance = getAccBalance(prAsId)
-
-  let curPriceX18 = if(order.orderType == Buy)
-      then pcp(amtAsDcm, prAsDcm, accAmtAsBalance + order.amount, accPrAsBalance)
-      else pcp(amtAsDcm, prAsDcm, accAmtAsBalance - order.amount, accPrAsBalance)
-  let curPrice = curPriceX18.f1(scale8)
+  let amountAssetAmount = order.amount
+  # TODO: check order.priceMode when available
+  let priceAssetAmount = fraction(order.amount, order.price, scale8)
+  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = if (order.orderType == Buy) then {
+    (amountAssetAmount, -priceAssetAmount)
+  } else {
+    (-amountAssetAmount, priceAssetAmount)
+  }
 
   # validate status
-  if (igs() || sts == PoolMatcherDis || sts == PoolShutdown) then throw("Admin blocked") else
+  if (igs() || cfgPoolStatus == PoolMatcherDis || cfgPoolStatus == PoolShutdown) then throw("Admin blocked") else
 
   # validate pairs
-  let orAmtAsset = order.assetPair.amountAsset
-  let orAmtAsStr = if( orAmtAsset == unit) then "WAVES" else toBase58String(orAmtAsset.value())
-  let orPrAsset = order.assetPair.priceAsset
-  let orPrAsStr = if( orPrAsset == unit) then "WAVES" else toBase58String(orPrAsset.value())
-  if(orAmtAsStr != amtAsId ||  orPrAsStr != prAsId) then throw("Wr assets") else
+  if (order.assetPair.amountAsset != cfgAmountAssetId || order.assetPair.priceAsset != cfgPriceAssetId) then throw("Wr assets") else
 
-  let orderPrice = order.price
-  #priceDecimals = 8 + priceAssetDcm - amtAssetDcm
-  let priceDcm = fraction(scale8, prAsDcm, amtAsDcm)
-  let castOrderPrice = orderPrice.ts(scale8, priceDcm)
-
-  let isOrderPriceValid = if(order.orderType == Buy) then castOrderPrice <= curPrice else castOrderPrice >= curPrice
-  #if(!isOrderPriceValid) then throw("Order price leads to K decrease. castedOrderPrice="+castedOrderPrice.toString() + " curPrice="+curPrice.toString()) else
-  true
+  let dLp = this.getString(keyDLp)
+    .valueOrErrorMessage("dLp is required".fmtErr())
+    .parseBigInt()
+    .valueOrErrorMessage("invalid dLp".fmtErr())
+  let (unusedActions, dLpNew) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+  let isOrderValid = dLpNew > dLp
+  
+  isOrderValid
 }
 
 # commonGet
@@ -1083,10 +1072,20 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
   (state, totalAmount)
 }
 
+
 @Callable(i)
-func refreshDlp() = {
-  # WIP
-  []
+func refreshDLp() = {
+  let lastRefreshedBlockHeight = keyDLpRefreshedHeight.getInteger().valueOrElse(0)
+  strict checkLastRefreshedBlockHeight = if (height - lastRefreshedBlockHeight >= dLpRefreshDelay) then unit else {
+    [
+      dLpRefreshDelay.toString(),
+      " blocks have not passed since the previous call"
+    ].makeString("").throwErr()
+  }
+
+  let (actions, updatedKLp) = refreshDLpInternal(0, 0, 0)
+
+  (actions, updatedKLp.toString())
 }
 
 @Callable(i)
