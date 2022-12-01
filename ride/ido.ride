@@ -675,12 +675,12 @@ func cleanRemaingAmount(userAddress58: String) = {
   let priceAssetId58 = readConfigArray()[IdxCfgPriceAssetId]
 
   strict evaluateResult = this.invoke(
-    "claimV2READONLY", [priceAssetId58, userAddress58], []
+    "claimREADONLY", [priceAssetId58, userAddress58], []
   ).asString().split(SEP)
 
-  let periodMinAvailableToClaim = evaluateResult[2].parseIntValue()
+  let availablePriceAmountToClaim = evaluateResult[3].parseIntValue()
 
-  strict checkUnclaimedAssets = periodMinAvailableToClaim == 0 || "user have unclaimed assets".throwErr()
+  strict checkUnclaimedAssets = availablePriceAmountToClaim == 0 || "user have unclaimed assets".throwErr()
 
   let investor = keyInvestor(userAddress58).getString().value().split(SEP)
   let investorTotalAmount       = investor[IdxInvTotalAmount].parseIntValue()
