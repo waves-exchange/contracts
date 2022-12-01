@@ -144,7 +144,8 @@ func keyUsdtAssetId() = ["%s", "usdtAssetId"].makeString(SEP)
 
 func keyPriceAssetBalance(address: String) = ["%s%s", "priceAssetBalance", address].makeString(SEP)
 
-func keyRemainingAmount(address: String) = ["%s%s", "remainingAmount", address].makeString(SEP)
+func keyInvestorRemainingAmount(address: String) = ["%s%s", "investorRemainingAmount", address].makeString(SEP)
+func keyTotalRemainingAmount() = ["%s", "totalRemainingAmount"].makeString(SEP)
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
@@ -560,7 +561,7 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
     let updatedPeriodTotalAvailableToClaim = periodTotalAvailableToClaim - periodMinAvailableToClaim
     let updatedPeriodUserAvailableToClaim  = periodUserAvailableToClaim - periodMinAvailableToClaim
 
-    let entries = if priceAssetBalance >= periodMinAvailableToClaim then {
+    let entries = if priceAssetBalance > periodMinAvailableToClaim then {
       [
         ScriptTransfer(i.caller, periodMinAvailableToClaim, outAssetId),
         IntegerEntry(keyPriceAssetBalance(userAddress58), priceAssetBalance - periodMinAvailableToClaim)
@@ -604,8 +605,11 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
           totalsLastClaimedHeight.toString()
         ]
 
+        let newTotalRemainingAmount = keyTotalRemainingAmount().getInteger().valueOrElse(0) - investorRemainingAmount
+
         [
-          StringEntry(keyRemainingAmount(userAddress58), investorRemainingAmount.toString()),
+          StringEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount.toString()),
+          StringEntry(keyTotalRemainingAmount(), newTotalRemainingAmount.toString()),
           TotalsEntry(keyInvestor(userAddress58), newInvestArray, totalsDiff, newClaimPeriodHeight, 0),
           TotalsEntry(keyTotals(), newTotalArray, totalsDiff, newClaimPeriodHeight, 0)
         ]
@@ -766,8 +770,11 @@ func cleanRemaingAmount(userAddress58: String) = {
     totalsLastClaimedHeight.toString()
   ].makeString(SEP)
 
+  let newTotalRemainingAmount = keyTotalRemainingAmount().getInteger().valueOrElse(0) - investorRemainingAmount
+
   [
-    StringEntry(keyRemainingAmount(userAddress58), investorRemainingAmount.toString()),
+    StringEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount.toString()),
+    StringEntry(keyTotalRemainingAmount(), newTotalRemainingAmount.toString()),
     StringEntry(keyInvestor(userAddress58), newInvestor),
     StringEntry(keyTotals(), newTotals)
   ]
