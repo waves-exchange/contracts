@@ -692,6 +692,7 @@ func cleanRemaingAmount(userAddress58: String) = {
   strict investorRemainingAmountCheck = investorRemainingAmount != 0 || "investorRemainingAmount already zero".throwErr()
 
   let newInvestor = [
+    "%d%d%d%d%d",
     investorTotalAmount.toString(),
     "0",
     investorPriceAssetBalance.toString(),
@@ -700,13 +701,14 @@ func cleanRemaingAmount(userAddress58: String) = {
   ].makeString(SEP)
 
   let totals = keyTotals().getString().value().split(SEP)
-  let totalsTotalAmount              = totals[IdxInvTotalAmount - 1].parseIntValue()
-  let totalsRemainingAmount          = totals[IdxInvRemainingAmount - 1].parseIntValue()
-  let totalsClaimedPriceAssetAmount  = totals[IdxInvRemainingAmount - 1].parseIntValue()
-  let totalsClaimedIdoAssetAmount    = totals[IdxInvClaimedPriceAssetAmount - 1].parseIntValue()
-  let totalsLastClaimedHeight        = totals[IdxInvLastClaimedHeight - 1].parseIntValue()
+  let totalsTotalAmount              = totals[IdxInvTotalAmount].parseIntValue()
+  let totalsRemainingAmount          = totals[IdxInvRemainingAmount].parseIntValue()
+  let totalsClaimedPriceAssetAmount  = totals[IdxInvRemainingAmount].parseIntValue()
+  let totalsClaimedIdoAssetAmount    = totals[IdxInvClaimedPriceAssetAmount].parseIntValue()
+  let totalsLastClaimedHeight        = totals[IdxInvLastClaimedHeight].parseIntValue()
 
   let newTotals = [
+    "%d%d%d%d%d",
     totalsTotalAmount.toString(),
     (totalsRemainingAmount - investorRemainingAmount).toString(),
     totalsClaimedPriceAssetAmount.toString(),
