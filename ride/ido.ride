@@ -608,8 +608,8 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
     } else {
       let lastClaimEntries = if availablePriceAmountToClaim == periodMinAvailableToClaim then {
         [
-          StringEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount.toString()),
-          StringEntry(keyTotalRemainingAmount(), newTotalRemainingAmount.toString()),
+          IntegerEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount),
+          IntegerEntry(keyTotalRemainingAmount(), newTotalRemainingAmount),
           TotalsEntry(keyInvestor(userAddress58), newInvestArray, totalsDiff, newClaimPeriodHeight, 0),
           TotalsEntry(keyTotals(), newTotalArray, totalsDiff, newClaimPeriodHeight, 0)
         ]
@@ -656,15 +656,28 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
       scale8, pow(10, 0, priceAssetDecimals, 0, 0, DOWN)
     )
 
+    let claimStart = cfgArray[IdxCfgClaimStart].parseIntValue()
+    let claimDuration = cfgArray[IdxCfgClaimDuration].parseIntValue()
+    let claimEnd = claimStart + claimDuration
+
+    let entries = if height > claimEnd then {
+      [
+        IntegerEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount),
+        IntegerEntry(keyTotalRemainingAmount(), newTotalRemainingAmount),
+        TotalsEntry(keyInvestor(userAddress58), newInvestArray, totalsDiff, newClaimPeriodHeight, priceAssetBalance),
+        TotalsEntry(keyTotals(), newTotalArray, totalsDiff, newClaimPeriodHeight, priceAssetBalance)
+      ]
+    } else {
+      [
+        TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight, priceAssetBalance),
+        TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight, priceAssetBalance)
+      ]
+    }
+
     (
       [
-        StringEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount.toString()),
-        StringEntry(keyTotalRemainingAmount(), newTotalRemainingAmount.toString()),
         ScriptTransfer(i.caller, outAmount + priceAssetBalanceIdoDecimals, outAssetId),
         IntegerEntry(keyPriceAssetBalance(userAddress58), 0),
-        TotalsEntry(keyInvestor(userAddress58), newInvestArray, totalsDiff, newClaimPeriodHeight, priceAssetBalance),
-        TotalsEntry(keyTotals(), newTotalArray, totalsDiff, newClaimPeriodHeight, priceAssetBalance),
-
         # TODO consider to add more data into history: operationPrice, realPrice
         ClaimOperationHistoryEntry(
           userAddress58,
@@ -672,7 +685,7 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
           claimedIdoAssetAmountFromDiff + priceAssetBalanceIdoDecimals,
           i.transactionId
         )
-      ],
+      ] ++ entries,
       unit
     )
   }
@@ -775,8 +788,8 @@ func cleanRemaingAmount(userAddress58: String) = {
   let newTotalRemainingAmount = keyTotalRemainingAmount().getInteger().valueOrElse(0) + investorRemainingAmount
 
   [
-    StringEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount.toString()),
-    StringEntry(keyTotalRemainingAmount(), newTotalRemainingAmount.toString()),
+    IntegerEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount),
+    IntegerEntry(keyTotalRemainingAmount(), newTotalRemainingAmount),
     StringEntry(keyInvestor(userAddress58), newInvestor),
     StringEntry(keyTotals(), newTotals)
   ]
