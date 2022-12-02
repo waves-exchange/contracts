@@ -605,7 +605,7 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
           totalsLastClaimedHeight.toString()
         ]
 
-        let newTotalRemainingAmount = keyTotalRemainingAmount().getInteger().valueOrElse(0) - investorRemainingAmount
+        let newTotalRemainingAmount = keyTotalRemainingAmount().getInteger().valueOrElse(0) + investorRemainingAmount
 
         [
           StringEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount.toString()),
@@ -770,7 +770,7 @@ func cleanRemaingAmount(userAddress58: String) = {
     totalsLastClaimedHeight.toString()
   ].makeString(SEP)
 
-  let newTotalRemainingAmount = keyTotalRemainingAmount().getInteger().valueOrElse(0) - investorRemainingAmount
+  let newTotalRemainingAmount = keyTotalRemainingAmount().getInteger().valueOrElse(0) + investorRemainingAmount
 
   [
     StringEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount.toString()),
