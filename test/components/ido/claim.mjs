@@ -116,32 +116,6 @@ describe('ido: claim.mjs', /** @this {MochaSuiteModified} */() => {
 
       expect(
         await checkStateChanges(
-          stateChanges.invokes[0].stateChanges,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-        ),
-      ).to.eql(true);
-
-      expect(stateChanges.invokes[0].dApp).to.eql(address(this.accounts.lpStable, chainId));
-      expect(stateChanges.invokes[0].call.function).to.eql('putOneTknV2WithoutTakeFeeREADONLY');
-      expect(stateChanges.invokes[0].call.args).to.eql([{
-        type: 'Int',
-        value: expectedPutOneTknV2PriceAssetAmount,
-      }, {
-        type: 'String',
-        value: this.usdnAssetId,
-      }]);
-      expect(stateChanges.invokes[0].payment).to.eql([]);
-
-      expect(
-        await checkStateChanges(
           stateChanges.invokes[1].stateChanges,
           0,
           0,
@@ -156,8 +130,34 @@ describe('ido: claim.mjs', /** @this {MochaSuiteModified} */() => {
       ).to.eql(true);
 
       expect(stateChanges.invokes[1].dApp).to.eql(address(this.accounts.lpStable, chainId));
-      expect(stateChanges.invokes[1].call.function).to.eql('getOneTknV2READONLY');
+      expect(stateChanges.invokes[1].call.function).to.eql('putOneTknV2WithoutTakeFeeREADONLY');
       expect(stateChanges.invokes[1].call.args).to.eql([{
+        type: 'Int',
+        value: expectedPutOneTknV2PriceAssetAmount,
+      }, {
+        type: 'String',
+        value: this.usdnAssetId,
+      }]);
+      expect(stateChanges.invokes[1].payment).to.eql([]);
+
+      expect(
+        await checkStateChanges(
+          stateChanges.invokes[2].stateChanges,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+        ),
+      ).to.eql(true);
+
+      expect(stateChanges.invokes[2].dApp).to.eql(address(this.accounts.lpStable, chainId));
+      expect(stateChanges.invokes[2].call.function).to.eql('getOneTknV2READONLY');
+      expect(stateChanges.invokes[2].call.args).to.eql([{
         type: 'String',
         value: this.usdtAssetId,
       }, {
