@@ -732,7 +732,7 @@ func cleanRemaingAmount(userAddress58: String) = {
     "claimREADONLY", [priceAssetId58, userAddress58], []
   ).asString().split(SEP)
 
-  let availablePriceAmountToClaim = evaluateResult[3].parseIntValue()
+  let availablePriceAmountToClaim = evaluateResult[2].parseIntValue()
 
   strict checkUnclaimedAssets = availablePriceAmountToClaim == 0 || "user have unclaimed assets".throwErr()
 
@@ -757,8 +757,8 @@ func cleanRemaingAmount(userAddress58: String) = {
   let totals = keyTotals().getString().value().split(SEP)
   let totalsTotalAmount              = totals[IdxInvTotalAmount].parseIntValue()
   let totalsRemainingAmount          = totals[IdxInvRemainingAmount].parseIntValue()
-  let totalsClaimedPriceAssetAmount  = totals[IdxInvRemainingAmount].parseIntValue()
-  let totalsClaimedIdoAssetAmount    = totals[IdxInvClaimedPriceAssetAmount].parseIntValue()
+  let totalsClaimedPriceAssetAmount  = totals[IdxInvClaimedPriceAssetAmount].parseIntValue()
+  let totalsClaimedIdoAssetAmount    = totals[IdxInvClaimedIdoAssetAmount].parseIntValue()
   let totalsLastClaimedHeight        = totals[IdxInvLastClaimedHeight].parseIntValue()
 
   let newTotals = [
