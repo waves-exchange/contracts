@@ -572,8 +572,8 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
   let totals = readTotalsArrayOrDefault()
   let totalsTotalAmount              = totals[IdxInvTotalAmount].parseIntValue()
   let totalsRemainingAmount          = totals[IdxInvRemainingAmount].parseIntValue()
-  let totalsClaimedPriceAssetAmount  = totals[IdxInvRemainingAmount].parseIntValue()
-  let totalsClaimedIdoAssetAmount    = totals[IdxInvClaimedPriceAssetAmount].parseIntValue()
+  let totalsClaimedPriceAssetAmount  = totals[IdxInvClaimedPriceAssetAmount].parseIntValue()
+  let totalsClaimedIdoAssetAmount    = totals[IdxInvClaimedIdoAssetAmount].parseIntValue()
   let totalsLastClaimedHeight        = totals[IdxInvLastClaimedHeight].parseIntValue()
 
   let newTotalsRemainingAmount = totalsRemainingAmount - investorRemainingAmount
