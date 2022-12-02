@@ -10,6 +10,13 @@ let scale8 = 100_000_000 # 10^8
 
 func throwErr(msg: String) = ["ido.ride:", msg].makeString(" ").throw()
 
+func asString(val: Any) = {
+  match val {
+    case valStr: String => valStr
+    case _ => throw("fail to cast into String")
+  }
+}
+
 # Convertion between Assets - utility functions
 func convertPriceAssetIntoIdoAsset(priceAssetAmount: Int, priceAssetMULT: Int, price: Int, priceMULT: Int, idoAssetMULT: Int) = {
   let bPriceAssetMULT = priceAssetMULT.toBigInt()
@@ -136,6 +143,9 @@ func keyUsdtPriceAssetStablePool() = ["%s", "usdtPriceAssetStablePool"].makeStri
 func keyUsdtAssetId() = ["%s", "usdtAssetId"].makeString(SEP)
 
 func keyPriceAssetBalance(address: String) = ["%s%s", "priceAssetBalance", address].makeString(SEP)
+
+func keyInvestorRemainingAmount(address: String) = ["%s%s", "investorRemainingAmount", address].makeString(SEP)
+func keyTotalRemainingAmount() = ["%s", "totalRemainingAmount"].makeString(SEP)
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
@@ -551,19 +561,70 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
     let updatedPeriodTotalAvailableToClaim = periodTotalAvailableToClaim - periodMinAvailableToClaim
     let updatedPeriodUserAvailableToClaim  = periodUserAvailableToClaim - periodMinAvailableToClaim
 
-    let entries = if priceAssetBalance >= periodMinAvailableToClaim then {
+    let entries = if priceAssetBalance > periodMinAvailableToClaim then {
       [
         ScriptTransfer(i.caller, periodMinAvailableToClaim, outAssetId),
         IntegerEntry(keyPriceAssetBalance(userAddress58), priceAssetBalance - periodMinAvailableToClaim)
       ]
     } else {
+      strict evaluateResult = this.invoke(
+        "claimREADONLY", [priceAssetId58, userAddress58], []
+      ).asString().split(SEP)
+
+      let availablePriceAmountToClaim = evaluateResult[3].parseIntValue()
+
+      let lastClaimEntries = if availablePriceAmountToClaim == periodMinAvailableToClaim then {
+        let investorTotalAmount       = origInvestArray[IdxInvTotalAmount].parseIntValue()
+        let investorRemainingAmount   = origInvestArray[IdxInvRemainingAmount].parseIntValue()
+        let investorPriceAssetBalance = origInvestArray[IdxInvClaimedPriceAssetAmount].parseIntValue()
+        let investorIdoAssetBalance   = origInvestArray[IdxInvClaimedIdoAssetAmount].parseIntValue()
+        let investorLastClaimedHeight = origInvestArray[IdxInvLastClaimedHeight].parseIntValue()
+
+        let newInvestArray = [
+          investorTotalAmount.toString(),
+          "0",
+          investorPriceAssetBalance.toString(),
+          investorIdoAssetBalance.toString(),
+          investorLastClaimedHeight.toString()
+        ]
+
+        let totals = readTotalsArrayOrDefault()
+        let totalsTotalAmount              = totals[IdxInvTotalAmount].parseIntValue()
+        let totalsRemainingAmount          = totals[IdxInvRemainingAmount].parseIntValue()
+        let totalsClaimedPriceAssetAmount  = totals[IdxInvRemainingAmount].parseIntValue()
+        let totalsClaimedIdoAssetAmount    = totals[IdxInvClaimedPriceAssetAmount].parseIntValue()
+        let totalsLastClaimedHeight        = totals[IdxInvLastClaimedHeight].parseIntValue()
+
+        let newTotalsRemainingAmount = totalsRemainingAmount - investorRemainingAmount
+
+        let newTotalArray = [
+          totalsTotalAmount.toString(),
+          newTotalsRemainingAmount.toString(),
+          totalsClaimedPriceAssetAmount.toString(),
+          totalsClaimedIdoAssetAmount.toString(),
+          totalsLastClaimedHeight.toString()
+        ]
+
+        let newTotalRemainingAmount = keyTotalRemainingAmount().getInteger().valueOrElse(0) + investorRemainingAmount
+
+        [
+          StringEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount.toString()),
+          StringEntry(keyTotalRemainingAmount(), newTotalRemainingAmount.toString()),
+          TotalsEntry(keyInvestor(userAddress58), newInvestArray, totalsDiff, newClaimPeriodHeight, 0),
+          TotalsEntry(keyTotals(), newTotalArray, totalsDiff, newClaimPeriodHeight, 0)
+        ]
+      } else {
+        [
+          TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight, 0),
+          TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight, 0)
+        ]
+      }
+
       let updatedPriceAssetBalance = priceAssetBalance + outAmount - periodMinAvailableToClaim
       [
         ScriptTransfer(i.caller, periodMinAvailableToClaim, outAssetId),
-        TotalsEntry(keyInvestor(userAddress58), origInvestArray, totalsDiff, newClaimPeriodHeight, 0),
-        TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), totalsDiff, newClaimPeriodHeight, 0),
         IntegerEntry(keyPriceAssetBalance(userAddress58), updatedPriceAssetBalance)
-      ]
+      ] ++ lastClaimEntries
     }
 
     (
@@ -661,6 +722,62 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
   #   RESULT
   #       _lastClaimedH 103
   #       user spent remaining 6 price assets
+}
+
+@Callable(i)
+func cleanRemaingAmount(userAddress58: String) = {
+  let priceAssetId58 = readConfigArray()[IdxCfgPriceAssetId]
+
+  strict evaluateResult = this.invoke(
+    "claimREADONLY", [priceAssetId58, userAddress58], []
+  ).asString().split(SEP)
+
+  let availablePriceAmountToClaim = evaluateResult[2].parseIntValue()
+
+  strict checkUnclaimedAssets = availablePriceAmountToClaim == 0 || "user have unclaimed assets".throwErr()
+
+  let investor = keyInvestor(userAddress58).getString().value().split(SEP)
+  let investorTotalAmount       = investor[IdxInvTotalAmount].parseIntValue()
+  let investorRemainingAmount   = investor[IdxInvRemainingAmount].parseIntValue()
+  let investorPriceAssetBalance = investor[IdxInvClaimedPriceAssetAmount].parseIntValue()
+  let investorIdoAssetBalance   = investor[IdxInvClaimedIdoAssetAmount].parseIntValue()
+  let investorLastClaimedHeight = investor[IdxInvLastClaimedHeight].parseIntValue()
+
+  strict investorRemainingAmountCheck = investorRemainingAmount != 0 || "investorRemainingAmount already zero".throwErr()
+
+  let newInvestor = [
+    "%d%d%d%d%d",
+    investorTotalAmount.toString(),
+    "0",
+    investorPriceAssetBalance.toString(),
+    investorIdoAssetBalance.toString(),
+    investorLastClaimedHeight.toString()
+  ].makeString(SEP)
+
+  let totals = keyTotals().getString().value().split(SEP)
+  let totalsTotalAmount              = totals[IdxInvTotalAmount].parseIntValue()
+  let totalsRemainingAmount          = totals[IdxInvRemainingAmount].parseIntValue()
+  let totalsClaimedPriceAssetAmount  = totals[IdxInvClaimedPriceAssetAmount].parseIntValue()
+  let totalsClaimedIdoAssetAmount    = totals[IdxInvClaimedIdoAssetAmount].parseIntValue()
+  let totalsLastClaimedHeight        = totals[IdxInvLastClaimedHeight].parseIntValue()
+
+  let newTotals = [
+    "%d%d%d%d%d",
+    totalsTotalAmount.toString(),
+    (totalsRemainingAmount - investorRemainingAmount).toString(),
+    totalsClaimedPriceAssetAmount.toString(),
+    totalsClaimedIdoAssetAmount.toString(),
+    totalsLastClaimedHeight.toString()
+  ].makeString(SEP)
+
+  let newTotalRemainingAmount = keyTotalRemainingAmount().getInteger().valueOrElse(0) + investorRemainingAmount
+
+  [
+    StringEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount.toString()),
+    StringEntry(keyTotalRemainingAmount(), newTotalRemainingAmount.toString()),
+    StringEntry(keyInvestor(userAddress58), newInvestor),
+    StringEntry(keyTotals(), newTotals)
+  ]
 }
 
 @Callable(i)
