@@ -212,13 +212,6 @@ func keyUserBoostClaimed(userNum: String)                     = makeString(["%s%
 func keyTotalCachedGwx()                               = "%s%s__gwxCached__total"
 func keyTotalCachedGwxCorrective() = "%s__gwxCachedTotalCorrective"
 
-func getTotalCachedGwx() = {
-  let totalCachedGwxRaw = this.getInteger(keyTotalCachedGwx()).valueOrElse(0)
-  let corrective = this.getInteger(keyTotalCachedGwxCorrective()).valueOrElse(0)
-
-  max([0, totalCachedGwxRaw + corrective])
-}
-
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
 let factoryContract   = readFactoryAddressOrFail()
@@ -226,6 +219,26 @@ let factoryCfg        = factoryContract.readFactoryCfgOrFail()
 let emissionContract  = factoryCfg.getEmissionAddressOrFail()
 let stakingContract   = factoryCfg.getStakingAddressOrFail()
 let gwxRewardContract = factoryCfg.getGwxRewardAddressOrFail()
+
+func getTotalCachedGwx() = {
+  let keyVotingEmissionContract = ["%s", "votingEmissionContract"].makeString(SEP)
+  let votingEmissionContract = factoryContract.getStringValue(keyVotingEmissionContract).addressFromStringValue()
+
+  let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(SEP)
+  let currentEpochUi = votingEmissionContract.getIntegerValue(keyCurrentEpochUi)
+
+  let keyTargetEpoch = ["%s", "totalCachedGwxCorrection__activationEpoch"].makeString(SEP)
+  let targetEpochOption = this.getInteger(keyTargetEpoch)
+
+  let totalCachedGwxRaw = this.getInteger(keyTotalCachedGwx()).valueOrElse(0)
+
+  let isCorrectionActivated = targetEpochOption.isDefined() && (currentEpochUi >= targetEpochOption.value())
+  let corrective = if (isCorrectionActivated) then {
+    this.getInteger(keyTotalCachedGwxCorrective()).valueOrElse(0)
+  } else 0
+
+  max([0, totalCachedGwxRaw + corrective])
+}
 
 func HistoryEntry(type: String, user: String, amount: Int, lockStart: Int, duration: Int, k: Int, b: Int, i: Invocation) = {
   let historyKEY = makeString(["%s%s%s%s__history", type, user, i.transactionId.toBase58String()], SEP)
