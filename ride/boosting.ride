@@ -227,7 +227,7 @@ func getTotalCachedGwx(correct: Boolean) = {
   let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(SEP)
   let currentEpochUi = votingEmissionContract.getIntegerValue(keyCurrentEpochUi)
 
-  let keyTargetEpoch = ["%s", "totalCachedGwxCorrection__activationEpoch"].makeString(SEP)
+  let keyTargetEpoch = ["%s%s", "totalCachedGwxCorrection__activationEpoch"].makeString(SEP)
   let targetEpochOption = this.getInteger(keyTargetEpoch)
 
   let totalCachedGwxRaw = this.getInteger(keyTotalCachedGwx()).valueOrElse(0)
