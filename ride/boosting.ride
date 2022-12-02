@@ -210,6 +210,14 @@ func keyUserBoostAvalaibleToClaimTotal(userNum: String)       = makeString(["%s%
 func keyUserBoostClaimed(userNum: String)                     = makeString(["%s%d__userBoostClaimed", userNum], SEP)
 
 func keyTotalCachedGwx()                               = "%s%s__gwxCached__total"
+func keyTotalCachedGwxCorrective() = "%s__gwxCachedTotalCorrective"
+
+func getTotalCachedGwx() = {
+  let totalCachedGwxRaw = this.getInteger(keyTotalCachedGwx()).valueOrElse(0)
+  let corrective = this.getInteger(keyTotalCachedGwxCorrective()).valueOrElse(0)
+
+  max([0, totalCachedGwxRaw - corrective])
+}
 
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
@@ -359,8 +367,7 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   let userMaxBoostInt = this.ioz(userMaxBoostIntegralKEY)
   let totalMaxBoostInt = this.ioz(totalMaxBoostIntegralKEY)
 
-  let totalCachedGwxKEY = keyTotalCachedGwx()
-  let totalCachedGwx = this.getInteger(totalCachedGwxKEY).valueOrElse(0)
+  let totalCachedGwx = getTotalCachedGwx()
   let userCurrGwx = calcCurrentGwxAmount(userAddressStr)
 
   let userBoostAvalaibleToClaimTotalKEY = keyUserBoostAvalaibleToClaimTotal(userNumStr)
@@ -466,8 +473,7 @@ func lockActions(i: Invocation, duration: Int) = {
   let userMaxBoostInt = (gWxAmountStart * duration) / 2
   let totalMaxBoostInt = this.ioz(totalMaxBoostIntegralKEY)
 
-  let totalCachedGwxKEY = keyTotalCachedGwx()
-  let totalCachedGwx = this.getInteger(totalCachedGwxKEY).valueOrElse(0)
+  let totalCachedGwx = getTotalCachedGwx()
 
   let arr = if (userIsExisting) then [] else [
     IntegerEntry(nextUserNumKEY, userNum + 1),
@@ -482,7 +488,7 @@ func lockActions(i: Invocation, duration: Int) = {
     IntegerEntry(userBoostEmissionLastIntegralKEY, boostEmissionIntegral),
     #IntegerEntry(userMaxBoostIntegralKEY, userMaxBoostInt),
     #IntegerEntry(totalMaxBoostIntegralKEY, totalMaxBoostInt + userMaxBoostInt),
-    IntegerEntry(totalCachedGwxKEY, totalCachedGwx + gWxAmountStart)], gWxAmountStart)
+    IntegerEntry(keyTotalCachedGwx(), totalCachedGwx + gWxAmountStart)], gWxAmountStart)
 }
 
 @Callable(i)
@@ -579,8 +585,7 @@ func increaseLock(deltaDuration: Int) = {
   let currUserGwx = calcCurrentGwxAmount(userAddressStr)
   let gwxDiff = gWxAmountStart - currUserGwx
   if (gwxDiff < 0) then throw("gwxDiff is less then 0: " + gwxDiff.toString()) else
-  let totalCachedGwxKEY = keyTotalCachedGwx()
-  let totalCachedGwx = this.getInteger(totalCachedGwxKEY).valueOrElse(0)
+  let totalCachedGwx = getTotalCachedGwx()
 
   let userBoostAvalaibleToClaimTotalKEY = keyUserBoostAvalaibleToClaimTotal(userNumStr)
 
@@ -601,7 +606,7 @@ func increaseLock(deltaDuration: Int) = {
     #IntegerEntry(totalMaxBoostIntegralKEY, totalMaxBoostInt + userMaxBoostIntDiff),
     #IntegerEntry(userBoostAvalaibleToClaimTotalKEY, userBoostAvaliableToClaimTotalNew),
     #IntegerEntry(userBoostEmissionLastIntegralKEY, boostEmissionIntegral),
-    IntegerEntry(totalCachedGwxKEY, totalCachedGwx + gwxDiff)]
+    IntegerEntry(keyTotalCachedGwx(), totalCachedGwx + gwxDiff)]
 }
 
 @Callable(i)
@@ -654,6 +659,11 @@ func getUserGwxAmountAtHeightREADONLY(userAddress: String, targetHeight: Int) = 
   let gwxAmount = userAddress.calcUserGwxAmountAtHeight(targetHeight)
 
   ([], gwxAmount)
+}
+
+@Callable(i)
+func getTotalCachedGwxREADONLY() = {
+  ([], getTotalCachedGwx())
 }
 
 @Callable(i)
