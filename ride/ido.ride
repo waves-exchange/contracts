@@ -725,62 +725,6 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
 }
 
 @Callable(i)
-func cleanRemaingAmount(userAddress58: String) = {
-  let priceAssetId58 = readConfigArray()[IdxCfgPriceAssetId]
-
-  strict evaluateResult = this.invoke(
-    "claimREADONLY", [priceAssetId58, userAddress58], []
-  ).asString().split(SEP)
-
-  let availablePriceAmountToClaim = evaluateResult[2].parseIntValue()
-
-  strict checkUnclaimedAssets = availablePriceAmountToClaim == 0 || "user have unclaimed assets".throwErr()
-
-  let investor = keyInvestor(userAddress58).getString().value().split(SEP)
-  let investorTotalAmount       = investor[IdxInvTotalAmount].parseIntValue()
-  let investorRemainingAmount   = investor[IdxInvRemainingAmount].parseIntValue()
-  let investorPriceAssetBalance = investor[IdxInvClaimedPriceAssetAmount].parseIntValue()
-  let investorIdoAssetBalance   = investor[IdxInvClaimedIdoAssetAmount].parseIntValue()
-  let investorLastClaimedHeight = investor[IdxInvLastClaimedHeight].parseIntValue()
-
-  strict investorRemainingAmountCheck = investorRemainingAmount != 0 || "investorRemainingAmount already zero".throwErr()
-
-  let newInvestor = [
-    "%d%d%d%d%d",
-    investorTotalAmount.toString(),
-    "0",
-    investorPriceAssetBalance.toString(),
-    investorIdoAssetBalance.toString(),
-    investorLastClaimedHeight.toString()
-  ].makeString(SEP)
-
-  let totals = keyTotals().getString().value().split(SEP)
-  let totalsTotalAmount              = totals[IdxInvTotalAmount].parseIntValue()
-  let totalsRemainingAmount          = totals[IdxInvRemainingAmount].parseIntValue()
-  let totalsClaimedPriceAssetAmount  = totals[IdxInvClaimedPriceAssetAmount].parseIntValue()
-  let totalsClaimedIdoAssetAmount    = totals[IdxInvClaimedIdoAssetAmount].parseIntValue()
-  let totalsLastClaimedHeight        = totals[IdxInvLastClaimedHeight].parseIntValue()
-
-  let newTotals = [
-    "%d%d%d%d%d",
-    totalsTotalAmount.toString(),
-    (totalsRemainingAmount - investorRemainingAmount).toString(),
-    totalsClaimedPriceAssetAmount.toString(),
-    totalsClaimedIdoAssetAmount.toString(),
-    totalsLastClaimedHeight.toString()
-  ].makeString(SEP)
-
-  let newTotalRemainingAmount = keyTotalRemainingAmount().getInteger().valueOrElse(0) + investorRemainingAmount
-
-  [
-    StringEntry(keyInvestorRemainingAmount(userAddress58), investorRemainingAmount.toString()),
-    StringEntry(keyTotalRemainingAmount(), newTotalRemainingAmount.toString()),
-    StringEntry(keyInvestor(userAddress58), newInvestor),
-    StringEntry(keyTotals(), newTotals)
-  ]
-}
-
-@Callable(i)
 func claimREADONLY(claimedAssetId58: String, userAddress58: String) = {
   let claimResultTuple = internalClaim(claimedAssetId58, userAddress58.addressFromStringValue(), "".fromBase58String())
   let totalsDiff            = claimResultTuple._1
