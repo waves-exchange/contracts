@@ -216,7 +216,7 @@ func getTotalCachedGwx() = {
   let totalCachedGwxRaw = this.getInteger(keyTotalCachedGwx()).valueOrElse(0)
   let corrective = this.getInteger(keyTotalCachedGwxCorrective()).valueOrElse(0)
 
-  max([0, totalCachedGwxRaw - corrective])
+  max([0, totalCachedGwxRaw + corrective])
 }
 
 # GLOBAL VARIABLES
