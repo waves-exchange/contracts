@@ -1047,7 +1047,7 @@ func putForFree(maxSlpg: Int) = {
 
     let state = estPut._9
 
-    let (refreshDLpActions, updatedKLp) = refreshDLpInternal(0, 0, 0)
+    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
     state ++ refreshDLpActions
 }
@@ -1118,9 +1118,15 @@ func refreshDLp() = {
     ].makeString("").throwErr()
   }
 
-  let (actions, updatedKLp) = refreshDLpInternal(0, 0, 0)
+  let dLp = this.getString(keyDLp)
+    .valueOrElse("0")
+    .parseBigInt()
+    .valueOrErrorMessage("invalid dLp".fmtErr())
 
-  (actions, updatedKLp.toString())
+  let (dLpUpdateActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
+  let actions = if (dLp != updatedDLp) then dLpUpdateActions else "nothing to refresh".throwErr()
+
+  (actions, updatedDLp.toString())
 }
 
 @Callable(i)

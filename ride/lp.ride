@@ -1112,7 +1112,13 @@ func refreshKLp() = {
     ].makeString("").throwErr()
   }
 
-  let (actions, updatedKLp) = refreshKLpInternal(0, 0, 0)
+  let kLp = this.getString(keyKLp)
+    .valueOrElse("0")
+    .parseBigInt()
+    .valueOrErrorMessage("invalid kLp".fmtErr())
+
+  let (kLpUpdateActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
+  let actions = if (kLp != updatedKLp) then kLpUpdateActions else "nothing to refresh".throwErr()
 
   (actions, updatedKLp.toString())
 }
