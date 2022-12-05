@@ -147,5 +147,10 @@ describe('Factory V2 - activateNewPool', /** @this {MochaSuiteModified} */() => 
         [address(this.accounts.store, chainId), 'addAssetsLink'],
         [address(this.accounts.store, chainId), 'increaseAssetPoolsNumber'],
       ]);
+    expect(stateChanges.data).to.deep.include({
+      key: `%s%s__spread__${address(this.accounts.lp, chainId)}`,
+      type: 'integer',
+      value: 2000000,
+    });
   });
 });
