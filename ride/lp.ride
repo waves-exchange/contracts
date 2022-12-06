@@ -503,7 +503,7 @@ func validateMatcherOrderAllowed(order: Order) = {
     .parseBigInt()
     .valueOrErrorMessage("invalid kLp".fmtErr())
   let (unusedActions, kLpNew) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
-  let isOrderValid = kLpNew > kLp
+  let isOrderValid = kLpNew >= kLp
 
   isOrderValid
 }

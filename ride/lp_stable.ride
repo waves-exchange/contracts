@@ -634,7 +634,7 @@ func validateMatcherOrderAllowed(order: Order) = {
 
   let dLp = this.getStringValue(keyDLp).parseBigIntValue()
   let (unusedActions, dLpNew) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
-  let isOrderValid = dLpNew > dLp
+  let isOrderValid = dLpNew >= dLp
   
   isOrderValid
 }
