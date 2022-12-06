@@ -510,6 +510,16 @@ func calcDLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = 
   updatedDLp
 }
 
+func calcCurrentDLp(amountAssetDelta: BigInt, priceAssetDelta: BigInt, lpAssetEmissionDelta: BigInt) = {
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amountAssetDelta
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - priceAssetDelta
+  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt() - lpAssetEmissionDelta
+
+  let currentDLp = calcDLp(amountAssetBalance, priceAssetBalance, lpAssetEmission)
+
+  currentDLp
+}
+
 func refreshDLpInternal(
   amountAssetBalanceDelta: Int,
   priceAssetBalanceDelta: Int,
@@ -530,14 +540,8 @@ func refreshDLpInternal(
   (actions, updatedDLp)
 }
 
-func validateUpdatedDLp(updatedDLp: BigInt) = {
-  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance()
-  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance()
-  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity
-
-  let currentDLp = calcDLp(amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpAssetEmission.toBigInt())
-
-  updatedDLp >= currentDLp || "updated DLp lower than current DLp".throwErr()
+func validateUpdatedDLp(oldDLp: BigInt, updatedDLp: BigInt) = {
+  updatedDLp >= oldDLp || "updated KLp lower than current KLp".throwErr()
 }
 
 # validateMatcherOrderAllowed
@@ -795,6 +799,8 @@ func getOneTknV2Internal(
   let pmtAssetId = pmt.assetId.value()
   let pmtAmt = pmt.amount
 
+  let currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), pmtAmt.toBigInt())
+
   let txId58 = transactionId.toBase58String()
 
   if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
@@ -844,7 +850,7 @@ func getOneTknV2Internal(
   }
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
-  strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
   (state ++ refreshDLpActions, totalAmount)
 }
@@ -929,6 +935,11 @@ func put(slip: Int, autoStake: Boolean) = {
     let slipCntr = addressFromString(factCfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
     if(slip < 0) then throw("Wrong slippage") else
     if (i.payments.size() != 2) then throw("2 pmnts expd") else
+
+    let amAssetPmt = i.payments[0].value().amount.toBigInt()
+    let prAssetPmt = i.payments[1].value().amount.toBigInt()
+
+    strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
     # estPut
     let e = cp(i.caller.toString(),
                           i.transactionId.toBase58String(),
@@ -965,7 +976,7 @@ func put(slip: Int, autoStake: Boolean) = {
     
     let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
-    strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+    strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
     state
     ++ lpTrnsfr
@@ -1063,9 +1074,14 @@ func putForFree(maxSlpg: Int) = {
 
     let state = estPut._9
 
+    let amAssetPmt = i.payments[0].value().amount.toBigInt()
+    let prAssetPmt = i.payments[1].value().amount.toBigInt()
+
+    strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
+
     let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
-    strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+    strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
     state ++ refreshDLpActions
 }
@@ -1094,9 +1110,11 @@ func get() = {
                     [pmtAmt],
                     [AttachedPayment(pmtAssetId, pmtAmt)])
 
+  let currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), pmtAmt.toBigInt())
+
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmtAmt, -outPrAmt, 0)
 
-  strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
   state ++ refreshDLpActions
 }
@@ -1223,6 +1241,8 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
   if (outAmAmt < noLessThenAmtAsset) then throw("Failed:  " + outAmAmt.toString() + " < " + noLessThenAmtAsset.toString()) else
   if (outPrAmt < noLessThenPriceAsset) then throw("Failed: " + outPrAmt.toString() + " < " + noLessThenPriceAsset.toString()) else
 
+  let currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), pmtAmt.toBigInt())
+
   strict burnLPAssetOnFactory = invoke(fca,
                                   "burn",
                                   [pmtAmt],
@@ -1230,7 +1250,7 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
 
-  strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
   state ++ refreshDLpActions
 }
@@ -1245,6 +1265,8 @@ func unstakeAndGet(amount: Int) = {
 
   let lpAssetId = cfg[idxLPAsId].fromBase58String()
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
+
+  let currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   # negative amount will not pass
   strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
@@ -1261,7 +1283,7 @@ func unstakeAndGet(amount: Int) = {
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
 
-  strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
   state ++ refreshDLpActions
 }
@@ -1274,6 +1296,8 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
     !isGetDisabled || "get operation is blocked by admin".throw(),
     i.payments.size() == 0 || "no payments are expected".throw()
   ]
+
+  let currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
 
@@ -1291,7 +1315,7 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
 
-  strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
   state ++ refreshDLpActions
 }
