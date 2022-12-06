@@ -530,6 +530,16 @@ func refreshDLpInternal(
   (actions, updatedDLp)
 }
 
+func validateUpdatedDLp(updatedDLp: BigInt) = {
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance()
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance()
+  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity
+
+  let currentDLp = calcDLp(amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpAssetEmission.toBigInt())
+
+  updatedDLp >= currentDLp || "updated DLp lower than current DLp".throwErr()
+}
+
 # validateMatcherOrderAllowed
 func moa(order: Order) = {
   let amountAssetAmount = order.amount
@@ -834,6 +844,8 @@ func getOneTknV2Internal(
   }
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
+  strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+
   (state ++ refreshDLpActions, totalAmount)
 }
 
@@ -953,6 +965,8 @@ func put(slip: Int, autoStake: Boolean) = {
     
     let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
+    strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+
     state
     ++ lpTrnsfr
     ++ refreshDLpActions
@@ -1020,6 +1034,8 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   }
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
+
+
   (
     state
     ++ lpTrnsfr
@@ -1049,6 +1065,8 @@ func putForFree(maxSlpg: Int) = {
 
     let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
+    strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+
     state ++ refreshDLpActions
 }
 
@@ -1077,6 +1095,8 @@ func get() = {
                     [AttachedPayment(pmtAssetId, pmtAmt)])
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmtAmt, -outPrAmt, 0)
+
+  strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
 
   state ++ refreshDLpActions
 }
@@ -1210,6 +1230,8 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
 
+  strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+
   state ++ refreshDLpActions
 }
 
@@ -1239,6 +1261,8 @@ func unstakeAndGet(amount: Int) = {
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
 
+  strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
+
   state ++ refreshDLpActions
 }
 
@@ -1266,6 +1290,8 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
   strict burnLPAssetOnFactory = fca.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
+
+  strict isUpdatedDLpValid = validateUpdatedDLp(updatedDLp)
 
   state ++ refreshDLpActions
 }

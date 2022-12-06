@@ -468,6 +468,16 @@ func refreshKLpInternal(
   (actions, updatedKLp)
 }
 
+func validateUpdatedKLp(updatedKLp: BigInt) = {
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance()
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance()
+  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity
+
+  let currentKLp = calcKLp(amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpAssetEmission.toBigInt())
+
+  updatedKLp >= currentKLp || "updated KLp lower than current KLp".throwErr()
+}
+
 func validateMatcherOrderAllowed(order: Order) = {
   let amountAssetAmount = order.amount
   # TODO: check order.priceMode when available
@@ -794,6 +804,8 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
 
     let (refreshKLpActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
 
+    strict isUpdatedKLpValid = validateUpdatedKLp(updatedKLp)
+
     state
       ++ lpTransfer
       ++ refreshKLpActions
@@ -807,6 +819,8 @@ func putForFree(maxSlippage: Int) = {
     let state     = estPut._9
 
     let (refreshKLpActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
+
+    strict isUpdatedKLpValid = validateUpdatedKLp(updatedKLp)
 
     state ++ refreshKLpActions
 }
@@ -832,7 +846,6 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   let userAddress = i.caller
   let txId = i.transactionId
 
-
   strict (emitAmountEstimated, commonState, feeAmount, bonus, paymentInAmountAsset) = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
   let emitAmount = if (minOutAmount > 0 && emitAmountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
@@ -855,6 +868,8 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
     }
   }
   let (refreshKLpActions, updatedKLp) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+
+  strict isUpdatedKLpValid = validateUpdatedKLp(updatedKLp)
 
   (
     commonState
@@ -913,6 +928,8 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
   }
   let (refreshKLpActions, updatedKLp) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
+  strict isUpdatedKLpValid = validateUpdatedKLp(updatedKLp)
+
   (
     commonState
     ++ assetTransfer
@@ -966,6 +983,8 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
   }
   let (refreshKLpActions, updatedKLp) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
+  strict isUpdatedKLpValid = validateUpdatedKLp(updatedKLp)
+
   (
     commonState
     ++ assetTransfer
@@ -1001,6 +1020,8 @@ func get() = {
   
   let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmtAmt, -outPrAmt, 0)
 
+  strict isUpdatedKLpValid = validateUpdatedKLp(updatedKLp)
+
   state ++ refreshKLpActions
 }
 
@@ -1021,6 +1042,8 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
                                   [AttachedPayment(pmtAssetId, pmtAmt)])
 
   let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmAmt, -outPrAmt, 0)
+
+  strict isUpdatedKLpValid = validateUpdatedKLp(updatedKLp)
 
   state ++ refreshKLpActions
 }
@@ -1050,6 +1073,8 @@ func unstakeAndGet(amount: Int) = {
   strict burnLPAssetOnFactory = invoke(factoryContract, "burn", [amount], [AttachedPayment(lpAssetId, amount)])
 
   let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmAmt, -outPrAmt, 0)
+  
+  strict isUpdatedKLpValid = validateUpdatedKLp(updatedKLp)
 
   state ++ refreshKLpActions
 }
@@ -1078,6 +1103,8 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
   strict burnLPAssetOnFactory = factoryContract.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
 
   let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmAmt, -outPrAmt, 0)
+
+  strict isUpdatedKLpValid = validateUpdatedKLp(updatedKLp)
 
   state ++ refreshKLpActions
 }
