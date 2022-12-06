@@ -297,12 +297,11 @@ func calcBoostREADONLY(deltaWxAmount: Int, deltaLockPeriodInBlocks: Int, deltaLp
   let period = gWxParamsResultList[2].asInt().toString()
 
   let totalMaxBoostIntegralKEY = keyTotalMaxBoostINTEGRAL()
-  let totalCachedGwxKEY = keyTotalCachedGwx()
 
   let userMaxBoostIntNew = (gWxAmountStartNew * lockDurationNew) / 2
 
   let totalMaxBoostInt = boostingDapp.getIntOrZero(totalMaxBoostIntegralKEY)
-  let totalCachedGwx = boostingDapp.getInteger(totalCachedGwxKEY).valueOrElse(0)
+  let totalCachedGwx = boostingDapp.invoke("getTotalCachedGwxREADONLY", [], []).exactAs[Int]
 
   # TODO MOVE TO emission contract
   let MULT3 = 1000

@@ -67,7 +67,7 @@ describe('ido: claim.mjs', /** @this {MochaSuiteModified} */() => {
       expect(payment).to.eql([]);
 
       expect(
-        await checkStateChanges(stateChanges, 9, 1, 0, 0, 0, 0, 0, 0, 2),
+        await checkStateChanges(stateChanges, 9, 1, 0, 0, 0, 0, 0, 0, 3),
       ).to.eql(true);
 
       expect(stateChanges.data).to.eql([{
@@ -95,6 +95,10 @@ describe('ido: claim.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'string',
         value: `%d%d%d%d__${height}__${timestamp}__${expectedUsdnAmount}__0`,
       }, {
+        key: `%s%s__priceAssetBalance__${address(this.accounts.user1, chainId)}`,
+        type: 'integer',
+        value: expectedPriceAssetBalance,
+      }, {
         key: `%s__${address(this.accounts.user1, chainId)}`,
         type: 'string',
         value: `%d%d%d%d%d__${expectedTotalAmount}__${expectedRemainingAmount}__${expectedClaimedPriceAssetAmount}__${expectedClaimedIdoAssetAmount}__${expectedLastClaimedHeight}`,
@@ -102,10 +106,6 @@ describe('ido: claim.mjs', /** @this {MochaSuiteModified} */() => {
         key: '%s__totals',
         type: 'string',
         value: `%d%d%d%d%d__${expectedTotalAmount}__${expectedRemainingAmount}__${expectedClaimedPriceAssetAmount}__${expectedClaimedIdoAssetAmount}__${expectedLastClaimedHeight}`,
-      }, {
-        key: `%s%s__priceAssetBalance__${address(this.accounts.user1, chainId)}`,
-        type: 'integer',
-        value: expectedPriceAssetBalance,
       }]);
 
       expect(stateChanges.transfers).to.eql([{
