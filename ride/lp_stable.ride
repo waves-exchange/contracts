@@ -43,6 +43,8 @@ let zeroBigInt = 0.toBigInt()
 let big0 = 0.toBigInt()
 let big1 = 1.toBigInt()
 let big2 = 2.toBigInt()
+let big3 = 3.toBigInt()
+let big4 = 4.toBigInt()
 let slippage4D = (scale8 - scale8 * 1 / scale8).toBigInt() # 9999999 or error of 0.0000001
 let wavesString = "WAVES"
 
@@ -500,9 +502,83 @@ func epo(txId58: String,
     )
 }
 
+func getD(xp: List[BigInt]) = {
+  let xp0 = xp[0]
+  let xp1 = xp[1]
+  let s = xp0 + xp1
+  if (s == big0) then big0 else {
+    let a = A.parseIntValue()
+    let ann = a * 2
+    let p = fraction(xp0, xp1, big1)
+    let xp0_xp1_n_n = fraction(p, big4, big1)
+    let ann_s = fraction(ann.toBigInt(), s, big1)
+    let ann_1 = (ann - 1).toBigInt()
+    func calcDNext(d: BigInt) = {
+      let dd = fraction(d, d, big1)
+      let ddd = fraction(dd, d, big1)
+      let dp = fraction(ddd, big1, xp0_xp1_n_n)
+      fraction(
+        ann_s + fraction(dp, big2, big1),
+        d,
+        fraction(ann_1, d, big1) + fraction(big3, dp, big1)
+      )
+    }
+    func calc(acc: (BigInt, Boolean), i: Int) = {
+      if (acc._2) then acc else {
+        let d = acc._1
+        let dNext = d.calcDNext()
+        let dDiffRaw = (dNext - d.value()).toInt()
+        let dDiff = if (dDiffRaw < 0) then -dDiffRaw else dDiffRaw
+        if (dDiff <= 1) then {
+          (dNext, true)
+        } else {
+          (dNext, false)
+        }
+      }
+    }
+    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    let (d, found) = FOLD<15>(arr, (s, false), calc)
+    if (found) then {
+      d
+    } else {
+      { "D calculation error, D = " + d.toString() }.throw()
+    }
+  }
+}
+
+func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
+  let n = big2
+  let x = xp[if (i == 0) then 1 else 0]
+  let aPrecision = Amult.parseBigIntValue()
+  let a = A.parseBigIntValue() * aPrecision
+  let s = x
+  let ann = a * n
+  let c = D * D / (x * n) * D * aPrecision / (ann * n)
+  let b = s + D * aPrecision / ann - D
+  func calc(acc: (BigInt, Int|Unit), cur: Int) = {
+    let (y, found) = acc
+    if (found != unit) then acc else {
+      let yNext = (y * y + c) / (big2 * y + b)
+      let yDiff = absBigInt(yNext - y.value())
+      if (yDiff <= big1) then {
+        (yNext, cur)
+      } else {
+        (yNext, unit)
+      }
+    }
+  }
+  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  let (y, found) = FOLD<15>(arr, (D, unit), calc)
+  if (found != unit) then {
+    y
+  } else {
+    { "Y calculation error, Y = " + y.toString() }.throw()
+  }
+}
+
 func calcDLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
   let updatedDLp = fraction(
-    amountBalance * priceBalance,
+    [amountBalance, priceBalance].getD(),
     scale18,
     lpEmission
   )
@@ -520,11 +596,7 @@ func calcCurrentDLp(amountAssetDelta: BigInt, priceAssetDelta: BigInt, lpAssetEm
   currentDLp
 }
 
-func refreshDLpInternal(
-  amountAssetBalanceDelta: Int,
-  priceAssetBalanceDelta: Int,
-  lpAssetEmissionDelta: Int
-) = {
+func refreshDLpInternal(amountAssetBalanceDelta: Int, priceAssetBalanceDelta: Int, lpAssetEmissionDelta: Int) = {
   let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance() + amountAssetBalanceDelta
   let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance() + priceAssetBalanceDelta
   # TODO: can be moved outside functions
@@ -544,11 +616,10 @@ func validateUpdatedDLp(oldDLp: BigInt, updatedDLp: BigInt) = {
   updatedDLp >= oldDLp || "updated KLp lower than current KLp".throwErr()
 }
 
-# validateMatcherOrderAllowed
-func moa(order: Order) = {
+func validateMatcherOrderAllowed(order: Order) = {
   let amountAssetAmount = order.amount
   # TODO: check order.priceMode when available
-  let priceAssetAmount = fraction(order.amount, order.price, scale8)
+  let priceAssetAmount = fraction(order.amount, order.price, scale8, FLOOR)
   let (amountAssetBalanceDelta, priceAssetBalanceDelta) = if (order.orderType == Buy) then {
     (amountAssetAmount, -priceAssetAmount)
   } else {
@@ -561,10 +632,7 @@ func moa(order: Order) = {
   # validate pairs
   if (order.assetPair.amountAsset != cfgAmountAssetId || order.assetPair.priceAsset != cfgPriceAssetId) then throw("Wr assets") else
 
-  let dLp = this.getString(keyDLp)
-    .valueOrErrorMessage("dLp is required".fmtErr())
-    .parseBigInt()
-    .valueOrErrorMessage("invalid dLp".fmtErr())
+  let dLp = this.getStringValue(keyDLp).parseBigIntValue()
   let (unusedActions, dLpNew) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
   let isOrderValid = dLpNew > dLp
   
@@ -624,75 +692,6 @@ func cp(caller: String,
     let sts  = r._8.parseIntValue()
     if(igs() || sts == PoolPutDis || sts == PoolShutdown) then throw("Blocked:" + sts.toString()) else
     r
-}
-
-func getD(xp: List[BigInt]) = {
-  let n = big2
-  let xp0 = xp[0]
-  let xp1 = xp[1]
-  # TODO: A in state should be multiplied
-  let aPrecision = Amult.parseBigIntValue()
-  let a = A.parseBigIntValue() * aPrecision
-  let s = xp0 + xp1
-  if (s == big0) then {
-    big0
-  } else {
-    let ann = a * n
-    let xp0_xp1_n_n = xp0 * xp1 * n * n
-    let ann_s_aPrecision = ann * s / aPrecision
-    let ann_aPrecision = ann - aPrecision
-    let n1 = n + big1
-    func calc(acc: (BigInt, Int|Unit), cur: Int) = {
-      let (d, found) = acc
-      if (found != unit) then acc else {
-        let dp = d * d * d / xp0_xp1_n_n
-        let dNext = (ann_s_aPrecision + dp * n) * d / (ann_aPrecision * d / aPrecision + n1 * dp)
-        let dDiff = absBigInt(dNext - d.value())
-        if (dDiff <= big1) then {
-          (dNext, cur)
-        } else {
-          (dNext, unit)
-        }
-      }
-    }
-    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-    let (d, found) = FOLD<15>(arr, (s, unit), calc)
-    if (found != unit) then {
-      d
-    } else {
-      { "D calculation error, D = " + d.toString() }.throw()
-    }
-  }
-}
-
-func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
-  let n = big2
-  let x = xp[if (i == 0) then 1 else 0]
-  let aPrecision = Amult.parseBigIntValue()
-  let a = A.parseBigIntValue() * aPrecision
-  let s = x
-  let ann = a * n
-  let c = D * D / (x * n) * D * aPrecision / (ann * n)
-  let b = s + D * aPrecision / ann - D
-  func calc(acc: (BigInt, Int|Unit), cur: Int) = {
-    let (y, found) = acc
-    if (found != unit) then acc else {
-      let yNext = (y * y + c) / (big2 * y + b)
-      let yDiff = absBigInt(yNext - y.value())
-      if (yDiff <= big1) then {
-        (yNext, cur)
-      } else {
-        (yNext, unit)
-      }
-    }
-  }
-  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-  let (y, found) = FOLD<15>(arr, (D, unit), calc)
-  if (found != unit) then {
-    y
-  } else {
-    { "Y calculation error, Y = " + y.toString() }.throw()
-  }
 }
 
 func calcPutOneTkn(
@@ -1532,7 +1531,7 @@ func verify() = {
   match tx {
     case order: Order =>
       let matcherPub    = mp()
-      let orderValid    = moa(order)
+      let orderValid    = validateMatcherOrderAllowed(order)
       let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
       let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
 
