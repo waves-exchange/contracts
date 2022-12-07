@@ -223,7 +223,7 @@ func getAccBalance(assetId: String) = {
 }
 
 func calcPriceBigInt(prAmtX18: BigInt, amAmtX18: BigInt) = {
-  fraction(prAmtX18, scale18, amAmtX18, HALFUP)
+  fraction(prAmtX18, scale18, amAmtX18)
 }
 
 # cast assets and calc price
