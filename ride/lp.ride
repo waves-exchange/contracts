@@ -819,7 +819,8 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
       if(shouldAutoStake) then strict slpStakeInv = stakingContract.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
       else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
 
-    let (refreshKLpActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
+    strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
+    strict (refreshKLpActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
 
     strict error = [
       amountAssetBalance.toString(),
@@ -827,7 +828,11 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
       lpAssetEmission.toString(),
       currentKLp.toString(),
       updatedKLp.toString(),
-      emitLpAmt.toString()
+      emitLpAmt.toString(),
+      amDiff.toString(),
+      prDiff.toString(),
+      lpAssetEmission.toString(),
+      lpAssetEmissionAfter.toString()
     ].makeString(" ").throwErr()
 
     strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
