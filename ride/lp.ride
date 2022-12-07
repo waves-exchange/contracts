@@ -379,8 +379,8 @@ func estimatePutOperation(txId58: String, slippageTolerance: Int, inAmAssetAmt: 
 
         let lpEmissionX18 = lpEmission.toX18(scale8)
         # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
-        let prViaAmX18 = fraction(inAmAssetAmtX18, curPriceX18, scale18)
-        let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, curPriceX18)
+        let prViaAmX18 = fraction(inAmAssetAmtX18, curPriceX18, scale18, CEILING)
+        let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, curPriceX18, CEILING)
 
         # calculate amount and price assets to perform pool deposit in proportion to current pool price
         let expectedAmts= if (prViaAmX18 > inPrAssetAmtX18)
@@ -440,7 +440,7 @@ func estimatePutOperation(txId58: String, slippageTolerance: Int, inAmAssetAmt: 
 
 func calcKLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
   let updatedKLp = fraction(
-    pow(amountBalance * priceBalance, 0, 5.toBigInt(), 1, 12, DOWN),
+    pow(amountBalance * priceBalance, 0, 5.toBigInt(), 1, 18, DOWN),
     big1,
     lpEmission
   )
@@ -799,6 +799,9 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
     let amAssetPmt = i.payments[0].value().amount.toBigInt()
     let prAssetPmt = i.payments[1].value().amount.toBigInt()
 
+    strict amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amAssetPmt
+    strict priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - prAssetPmt
+    strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
     strict currentKLp = calcCurrentKLp(amAssetPmt, prAssetPmt, 0.toBigInt())
 
     # emit lp on factory
@@ -816,7 +819,21 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
       if(shouldAutoStake) then strict slpStakeInv = stakingContract.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
       else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
 
+    strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
     strict (refreshKLpActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
+
+    strict error = [
+      amountAssetBalance.toString(),
+      priceAssetBalance.toString(),
+      lpAssetEmission.toString(),
+      currentKLp.toString(),
+      updatedKLp.toString(),
+      emitLpAmt.toString(),
+      amDiff.toString(),
+      prDiff.toString(),
+      lpAssetEmission.toString(),
+      lpAssetEmissionAfter.toString()
+    ].makeString(" ").throwErr()
 
     strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 

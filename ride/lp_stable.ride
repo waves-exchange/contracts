@@ -616,10 +616,9 @@ func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
 }
 
 func calcDLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
-  let scale = 1_000_000_000_000.toBigInt()
   let updatedDLp = fraction(
     [amountBalance, priceBalance].getD(),
-    scale,
+    scale18,
     lpEmission
   )
 
