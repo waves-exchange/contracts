@@ -440,7 +440,7 @@ func estimatePutOperation(txId58: String, slippageTolerance: Int, inAmAssetAmt: 
 
 func calcKLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
   let updatedKLp = fraction(
-    pow(amountBalance * priceBalance, 0, 5.toBigInt(), 1, 18, DOWN),
+    pow(amountBalance * priceBalance, 0, 5.toBigInt(), 1, 12, DOWN),
     big1,
     lpEmission
   )
