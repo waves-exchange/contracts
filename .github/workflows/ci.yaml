@@ -38,6 +38,7 @@ jobs:
       COMPARELPSCRIPTADDRESS: 3N6wAa7PMFZJu4Zrmp3avXmMnRTrRpMM9Lh # WX/USDN pool
       COMPARELPSTABLESCRIPTADDRESS: 3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT # USDT/USDN pool
       COMPARELPSTABLEADDONSCRIPTADDRESS: 3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV # USDT/USDN pool addon
+      FEESEED: ${{ secrets.TESTNETFEESEED }}
     runs-on: self-hosted
     container:
       image: golang:1.19
@@ -70,6 +71,7 @@ jobs:
       COMPARELPSCRIPTADDRESS: 3PCENpEKe8atwELZ7oCSmcdEfcRuKTrUx99 # WX/USDN pool
       COMPARELPSTABLESCRIPTADDRESS: 3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz # USDT/USDN pool
       COMPARELPSTABLEADDONSCRIPTADDRESS: 3P36szQtxxpSaefdqaFjbM9Ush8ieCjVZVw # USDT/USDN pool addon
+      FEESEED: ${{ secrets.MAINNETFEESEED }}
     if: github.ref_name == 'main'
     runs-on: self-hosted
     container:

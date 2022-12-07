@@ -14,6 +14,7 @@ type Config struct {
 	CompareLpScriptAddress            string  `required:"true"`
 	CompareLpStableScriptAddress      string  `required:"true"`
 	CompareLpStableAddonScriptAddress string  `required:"true"`
+	FeeSeed                           string  `required:"true"`
 
 	// Testnet only
 	Branch                  string
