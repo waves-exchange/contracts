@@ -248,7 +248,7 @@ func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee ui
 		e := s.sendTx(
 			ctx,
 			proto.NewUnsignedTransferWithProofs(
-				1,
+				3,
 				s.feePub,
 				proto.NewOptionalAssetWaves(),
 				proto.NewOptionalAssetWaves(),
