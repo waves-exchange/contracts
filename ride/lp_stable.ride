@@ -622,7 +622,7 @@ func calcDLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = 
     lpEmission
   )
 
-  updatedDLp
+  if (lpEmission == big0) then big0 else updatedDLp
 }
 
 func calcCurrentDLp(amountAssetDelta: BigInt, priceAssetDelta: BigInt, lpAssetEmissionDelta: BigInt) = {

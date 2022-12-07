@@ -445,7 +445,7 @@ func calcKLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = 
     lpEmission
   )
 
-  updatedKLp
+  if (lpEmission == big0) then big0 else updatedKLp
 }
 
 func calcCurrentKLp(amountAssetDelta: BigInt, priceAssetDelta: BigInt, lpAssetEmissionDelta: BigInt) = {
