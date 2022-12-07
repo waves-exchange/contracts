@@ -226,6 +226,10 @@ func calcPriceBigInt(prAmtX18: BigInt, amAmtX18: BigInt) = {
   fraction(prAmtX18, scale18, amAmtX18)
 }
 
+func calcPriceBigIntRound(prAmtX18: BigInt, amAmtX18: BigInt, round: Down|HalfUp|HalfEven|Ceiling|Floor) = {
+  fraction(prAmtX18, scale18, amAmtX18, round)
+}
+
 # cast assets and calc price
 func privateCalcPrice(amAssetDcm: Int, prAssetDcm: Int, amAmt: Int, prAmt: Int) = {
     let amtAssetAmtX18 = amAmt.toX18(amAssetDcm)
@@ -379,8 +383,8 @@ func estimatePutOperation(txId58: String, slippageTolerance: Int, inAmAssetAmt: 
 
         let lpEmissionX18 = lpEmission.toX18(scale8)
         # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
-        let prViaAmX18 = fraction(inAmAssetAmtX18, curPriceX18, scale18, CEILING)
-        let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, curPriceX18, CEILING)
+        let prViaAmX18 = fraction(inAmAssetAmtX18, calcPriceBigIntRound(prBalanceX18, amBalanceX18, CEILING), scale18, CEILING)
+        let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, calcPriceBigIntRound(prBalanceX18, amBalanceX18, FLOOR), CEILING)
 
         # calculate amount and price assets to perform pool deposit in proportion to current pool price
         let expectedAmts= if (prViaAmX18 > inPrAssetAmtX18)
@@ -390,7 +394,7 @@ func estimatePutOperation(txId58: String, slippageTolerance: Int, inAmAssetAmt: 
         let expAmtAssetAmtX18   = expectedAmts._1
         let expPriceAssetAmtX18 = expectedAmts._2
         # calculate LP amount that user
-        let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18)
+        let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18, FLOOR)
 
         (
           lpAmtX18.fromX18(scale8),
