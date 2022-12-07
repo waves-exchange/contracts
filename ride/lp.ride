@@ -826,7 +826,8 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
       priceAssetBalance.toString(),
       lpAssetEmission.toString(),
       currentKLp.toString(),
-      updatedKLp.toString()
+      updatedKLp.toString(),
+      emitLpAmt.toString()
     ].makeString(" ").throwErr()
 
     strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
