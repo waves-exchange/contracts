@@ -837,7 +837,7 @@ func getOneTknV2Internal(
   let pmtAssetId = pmt.assetId.value()
   let pmtAmt = pmt.amount
 
-  let currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), pmtAmt.toBigInt())
+  strict currentDLp = calcCurrentDLp(big0, big0, big0)
 
   let txId58 = transactionId.toBase58String()
 
