@@ -818,6 +818,18 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
 
     let (refreshKLpActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
 
+    let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amAssetPmt
+    let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - prAssetPmt
+    let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
+
+    strict error = [
+      amountAssetBalance.toString(),
+      priceAssetBalance.toString(),
+      lpAssetEmission.toString(),
+      currentKLp.toString(),
+      updatedKLp.toString()
+    ].makeString(" ").throwErr()
+
     strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
     state
@@ -897,14 +909,6 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   let (refreshKLpActions, updatedKLp) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
   let kLp = keyKLp.getString().value()
-
-  strict error = [
-    amountAssetBalanceDelta.toString(),
-    priceAssetBalanceDelta.toString(),
-    kLp,
-    currentKLp.toString(),
-    updatedKLp.toString()
-  ].makeString(" ").throwErr()
 
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
