@@ -490,7 +490,7 @@ func validateUpdatedKLp(oldKLp: BigInt, updatedKLp: BigInt) = {
 func validateMatcherOrderAllowed(order: Order) = {
   let amountAssetAmount = order.amount
   # TODO: check order.priceMode when available
-  let priceAssetAmount = fraction(order.amount, order.price, scale8)
+  let priceAssetAmount = fraction(order.amount, order.price, scale8, FLOOR)
   let (amountAssetBalanceDelta, priceAssetBalanceDelta) = if (order.orderType == Buy) then {
     (amountAssetAmount, -priceAssetAmount)
   } else {
