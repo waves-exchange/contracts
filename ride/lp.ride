@@ -896,6 +896,16 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   }
   let (refreshKLpActions, updatedKLp) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
+  let kLp = keyKLp.getString().value()
+
+  strict error = [
+    amountAssetBalanceDelta.toString(),
+    priceAssetBalanceDelta.toString(),
+    kLp,
+    currentKLp.toString(),
+    updatedKLp.toString()
+  ].makeString(" ").throwErr()
+
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
   (
