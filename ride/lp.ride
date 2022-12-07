@@ -799,6 +799,9 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
     let amAssetPmt = i.payments[0].value().amount.toBigInt()
     let prAssetPmt = i.payments[1].value().amount.toBigInt()
 
+    strict amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amAssetPmt
+    strict priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - prAssetPmt
+    strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
     strict currentKLp = calcCurrentKLp(amAssetPmt, prAssetPmt, 0.toBigInt())
 
     # emit lp on factory
@@ -817,10 +820,6 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
       else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
 
     let (refreshKLpActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
-
-    let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amAssetPmt
-    let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - prAssetPmt
-    let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
 
     strict error = [
       amountAssetBalance.toString(),
