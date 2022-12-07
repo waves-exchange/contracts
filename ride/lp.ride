@@ -799,9 +799,6 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
     let amAssetPmt = i.payments[0].value().amount.toBigInt()
     let prAssetPmt = i.payments[1].value().amount.toBigInt()
 
-    strict amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amAssetPmt
-    strict priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - prAssetPmt
-    strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
     strict currentKLp = calcCurrentKLp(amAssetPmt, prAssetPmt, 0.toBigInt())
 
     # emit lp on factory
@@ -819,21 +816,7 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
       if(shouldAutoStake) then strict slpStakeInv = stakingContract.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
       else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
 
-    strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
     strict (refreshKLpActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
-
-    strict error = [
-      amountAssetBalance.toString(),
-      priceAssetBalance.toString(),
-      lpAssetEmission.toString(),
-      currentKLp.toString(),
-      updatedKLp.toString(),
-      emitLpAmt.toString(),
-      amDiff.toString(),
-      prDiff.toString(),
-      lpAssetEmission.toString(),
-      lpAssetEmissionAfter.toString()
-    ].makeString(" ").throwErr()
 
     strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
