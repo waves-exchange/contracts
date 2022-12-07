@@ -479,7 +479,12 @@ func refreshKLpInternal(
 }
 
 func validateUpdatedKLp(oldKLp: BigInt, updatedKLp: BigInt) = {
-  updatedKLp >= oldKLp || "updated KLp lower than current KLp".throwErr()
+  updatedKLp >= oldKLp || 
+  [
+    "updated KLp lower than current KLp",
+    oldKLp.toString(),
+    updatedKLp.toString()
+  ].makeString(" ").throwErr()
 }
 
 func validateMatcherOrderAllowed(order: Order) = {
