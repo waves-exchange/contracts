@@ -44,6 +44,7 @@ func main() {
 		cfg.CompareLpScriptAddress,
 		cfg.CompareLpStableScriptAddress,
 		cfg.CompareLpStableAddonScriptAddress,
+		cfg.FeeSeed,
 	)
 	if err != nil {
 		panic(fmt.Errorf("syncer.NewSyncer: %w", err))
