@@ -19,6 +19,9 @@ let keyNextPool = ["%s", "nextPool"].makeString(separator)
 let keyNextUser = ["%s", "nextUser"].makeString(separator)
 let keyStartHeight = ["%s", "startHeight"].makeString(separator)
 
+let keyIsMigr = ["%s", "isMigr"].makeString(separator)
+let keyHeightDiff = ["%s", "heightDiff"].makeString(separator)
+
 let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(separator)
 let keyStartHeightUi = ["%s", "startHeightUi"].makeString(separator)
 
@@ -317,6 +320,7 @@ func vote(amountAssetId: String, priceAssetId: String, amount: Int) = {
   let newVote = vote + amount
   let wxEmission = pool.checkWxEmissionPoolLabel()
   strict checks = [
+    this.getBoolean(keyIsMigr()) == unit || "migrating".throw(),
     pool.keyInList().getBoolean() != unit || "invalid assets".throw(),
     height < endHeight || "invalid height".throw(),
     finalizationStageOrUnit == unit || "finalization in progress".throw(),
@@ -354,6 +358,7 @@ func cancelVote(amountAssetId: String, priceAssetId: String) = {
   let poolResult = this.getInteger(pool.keyVotingResult(epoch)).valueOrElse(0)
   let totalVotes = this.getInteger(epoch.keyTotalVotes()).valueOrElse(0)
   strict checks = [
+    this.getBoolean(keyIsMigr()) == unit || "migrating".throw(),
     pool.keyInList().getBoolean() != unit || "invalid assets".throw(),
     height < endHeight || "invalid height".throw(),
     finalizationStageOrUnit == unit || "finalization in progress".throw(),
@@ -500,6 +505,28 @@ func processPoolINTERNAL(poolStr: String) = {
       false
     )
   }
+}
+
+@Callable(i)
+func startMigr() = {
+  strict check = i.mustManager()
+
+  let epoch = this.getIntOrFail(keyCurrentEpoch)
+  let startHeight = this.getIntOrFail(epoch.keyStartHeightByEpoch())
+
+  [
+    BooleanEntry(keyIsMigr(), true),
+    IntegerEntry(keyEpochLength(), height-startHeight+1),
+  ]
+}
+
+@Callable(i)
+func endMigr() = {
+  strict check = i.mustManager()
+
+  [
+    DeleteEntry(keyIsMigr())
+  ]
 }
 
 # Может вызвать любой
