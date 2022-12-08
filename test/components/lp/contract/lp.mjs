@@ -85,6 +85,32 @@ export const lp = {
     return broadcastAndWait(invokeTx);
   },
 
+  unstakeAndGetOneTkn: async ({
+    dApp, caller,
+    unstakeAmount,
+    outAssetId,
+    minOutAmount = 0,
+  }) => {
+    const invokeTx = invokeScript(
+      {
+        dApp,
+        call: {
+          function: 'unstakeAndGetOneTkn',
+          args: [
+            { type: 'integer', value: unstakeAmount },
+            { type: 'string', value: outAssetId },
+            { type: 'integer', value: minOutAmount },
+          ],
+        },
+        payment: [],
+        additionalFee: 4e5,
+        chainId,
+      },
+      caller,
+    );
+    return broadcastAndWait(invokeTx);
+  },
+
   setFee: async ({
     senderPublicKey, caller,
     value,
