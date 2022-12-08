@@ -7,7 +7,7 @@ import { chainId } from '../../utils/api.mjs';
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('lp: put one token, get one token', /** @this {MochaSuiteModified} */() => {
+describe('lp: put one token, get one token with staking', /** @this {MochaSuiteModified} */() => {
   before(async function () {
     await lp.setFee({
       senderPublicKey: publicKey(this.accounts.lp),
