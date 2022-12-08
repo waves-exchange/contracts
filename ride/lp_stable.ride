@@ -793,7 +793,7 @@ func calcPutOneTkn(
 
   strict checkD = D1 > D0 || throw()
 
-  let lpAmount = lpAssetEmission.fraction(D1 - D0, D0)
+  let lpAmount = lpAssetEmission.fraction(D1 - D0, D0, FLOOR)
 
   let curPrice = cpbi(prBalanceNew.t1(priceDcm), amBalanceNew.t1(amtDcm)).f1(scale8)
 
