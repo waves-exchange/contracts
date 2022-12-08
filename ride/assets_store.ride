@@ -2,6 +2,7 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+let testdelll = 1
 let SEP = "__"
 let EMPTY = ""
 let statusVerified = 2
