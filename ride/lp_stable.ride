@@ -520,7 +520,8 @@ func getD(xp: List[BigInt]) = {
       fraction(
         ann_s + fraction(dp, big2, big1),
         d,
-        fraction(ann_1, d, big1) + fraction(big3, dp, big1)
+        fraction(ann_1, d, big1) + fraction(big3, dp, big1),
+        CEILING
       )
     }
     func calc(acc: (BigInt, Boolean), i: Int) = {
