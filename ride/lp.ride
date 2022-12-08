@@ -79,7 +79,7 @@ let idxFactorySlippageContract     = 7
 #-------------------------
 func toX18(origVal: Int, origScaleMult: Int)          = fraction(origVal.toBigInt(), scale18, origScaleMult.toBigInt())
 func fromX18(val: BigInt, resultScaleMult: Int)       = fraction(val, resultScaleMult.toBigInt(), scale18).toInt()
-func fromX18Round(val: BigInt, resultScaleMult: Int, round: Down|Ceiling|Floor) = fraction(val, resultScaleMult.toBigInt(), scale18, round).toInt()
+func fromX18Round(val: BigInt, resultScaleMult: Int, round: Ceiling|Floor) = fraction(val, resultScaleMult.toBigInt(), scale18, round).toInt()
 
 # cast passed amount to specified 'resScale' scale value from 'curScale' scale value
 func toScale(amt: Int, resScale: Int, curScale: Int)  = fraction(amt, resScale, curScale)
@@ -227,7 +227,7 @@ func calcPriceBigInt(prAmtX18: BigInt, amAmtX18: BigInt) = {
   fraction(prAmtX18, scale18, amAmtX18)
 }
 
-func calcPriceBigIntRound(prAmtX18: BigInt, amAmtX18: BigInt, round: Down|HalfUp|HalfEven|Ceiling|Floor) = {
+func calcPriceBigIntRound(prAmtX18: BigInt, amAmtX18: BigInt, round: Ceiling|Floor) = {
   fraction(prAmtX18, scale18, amAmtX18, round)
 }
 
