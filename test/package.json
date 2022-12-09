@@ -15,7 +15,7 @@
     "test-vesting": "node_modules/.bin/mocha --parallel --require components/vesting/_hooks.mjs components/vesting --timeout 999999",
     "test-vesting-multiasset": "node_modules/.bin/mocha --parallel --require components/vesting_multiasset/_hooks.mjs components/vesting_multiasset --timeout 999999",
     "test-voting-emission-candidate": "node_modules/.bin/mocha --parallel --require components/voting_emission_candidate/_hooks.mjs components/voting_emission_candidate --timeout 999999",
-    "test-voting-emission": "node_modules/.bin/mocha --parallel --require components/voting_emission/_hooks.mjs components/voting_emission",
+    "test-voting-emission": "mocha -r dotenv/config --parallel --require components/voting_emission/_hooks.mjs components/voting_emission",
     "test-lp-staking-v2": "node_modules/.bin/mocha --parallel --require components/lp_staking_v2/_hooks.mjs components/lp_staking_v2",
     "test-lp": "node_modules/.bin/mocha --parallel --require components/lp/_hooks.mjs components/lp",
     "test-lp-stable": "node_modules/.bin/mocha --parallel --require components/lp_stable/_hooks.mjs components/lp_stable",

@@ -1,10 +1,10 @@
 import { create } from '@waves/node-api-js';
 import { nodeInteraction } from '@waves/waves-transactions';
 
-const apiBase = process.env.API_NODE_URL;
+export const { API_NODE_URL: apiBase, CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 
-export const chainId = 'R';
 export const api = create(apiBase);
+export const largeNumbeConvertHeader = { headers: { Accept: 'application/json;large-significand-format=string' } };
 
 export const broadcastAndWait = async (tx) => {
   await api.transactions.broadcast(tx, {});
