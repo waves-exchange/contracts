@@ -1,4 +1,4 @@
-lockfileVersion: 5.3
+lockfileVersion: 5.4
 
 specifiers:
   '@types/chai': ^4.3.0
@@ -8,11 +8,13 @@ specifiers:
   '@waves/node-api-js': ^1.2.6
   '@waves/ride-js': ^2.2.0
   '@waves/ts-lib-crypto': ^1.4.4-beta.1
+  '@waves/ts-types': ^1.1.0
   '@waves/waves-transactions': ^4.2.5-beta.3
   axios: ^0.26.1
   chai: ^4.3.6
   chai-as-promised: ^7.1.1
   concurrently: ^7.1.0
+  dotenv: ^16.0.3
   eslint: ^8.10.0
   eslint-config-airbnb-base: ^15.0.0
   eslint-plugin-import: ^2.25.4
@@ -30,19 +32,23 @@ dependencies:
   '@waves/node-api-js': 1.2.8
   '@waves/ride-js': 2.2.0
   '@waves/ts-lib-crypto': 1.4.4-beta.1
+  '@waves/ts-types': 1.1.0
   '@waves/waves-transactions': 4.2.5-beta.3
   axios: 0.26.1
   chai: 4.3.6
   chai-as-promised: 7.1.1_chai@4.3.6
   concurrently: 7.1.0
   eslint: 8.10.0
-  eslint-config-airbnb-base: 15.0.0_8b406960a2a06af75ddac353adbd0cfd
+  eslint-config-airbnb-base: 15.0.0_rnagsyfcubvpoxo2ynj23pim7u
   eslint-plugin-import: 2.25.4_eslint@8.10.0
   level: 8.0.0
   mocha: 9.2.1
   ora: 6.1.0
   prompts: 2.4.2
   table: 6.8.0
+
+devDependencies:
+  dotenv: 16.0.3
 
 packages:
 
@@ -292,7 +298,7 @@ packages:
     dependencies:
       '@types/node-fetch': 2.6.1
       '@waves/bignumber': 1.1.1
-      '@waves/ts-types': 1.0.12
+      '@waves/ts-types': 1.1.0
       node-fetch: 2.6.7
       typed-ts-events: 1.2.1
     transitivePeerDependencies:
@@ -316,6 +322,8 @@ packages:
       '@jest/globals': 27.5.1
       '@waves/ts-lib-crypto': 1.4.3
       axios: 0.19.2
+    transitivePeerDependencies:
+      - supports-color
     dev: false
 
   /@waves/ts-lib-crypto/1.4.3:
@@ -332,12 +340,12 @@ packages:
       node-forge: 0.10.0
     dev: false
 
-  /@waves/ts-types/1.0.12:
-    resolution: {integrity: sha512-1CxNGbPbBBzprJHcrLT6ToSe1vwHHeDAQEeljk1w4rJorJ75f5ZnNogpMrYVyAnmBGdr1AgInJyarpyt8F+rJg==}
-    dev: false
-
   /@waves/ts-types/1.0.6-beta.4:
     resolution: {integrity: sha512-TyFzgYiWkJ5PF7F3XxAE1dudti5a9MVh2BgtGhYKIrSanXNPXhT9KYYRkQRIemYP+HQ4y89rEBf/CUszTdnaag==}
+    dev: false
+
+  /@waves/ts-types/1.1.0:
+    resolution: {integrity: sha512-SGHj4cIIvMAhDPiDhbpEzP2UqNF3VgTssGf6UaJ7vwzxq0W1pqz2lKMDe9pZup9p9rEETGW4Yy3+K1G7OGOLxA==}
     dev: false
 
   /@waves/waves-transactions/4.2.5-beta.3:
@@ -352,6 +360,7 @@ packages:
       long: 4.0.0
     transitivePeerDependencies:
       - encoding
+      - supports-color
     dev: false
 
   /abstract-level/1.0.3:
@@ -483,6 +492,8 @@ packages:
     deprecated: Critical security vulnerability fixed in v0.21.1. For more information, see https://github.com/axios/axios/pull/3410
     dependencies:
       follow-redirects: 1.5.10
+    transitivePeerDependencies:
+      - supports-color
     dev: false
 
   /axios/0.26.1:
@@ -745,18 +756,33 @@ packages:
 
   /debug/2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
     dependencies:
       ms: 2.0.0
     dev: false
 
   /debug/3.1.0:
     resolution: {integrity: sha512-OX8XqP7/1a9cqkxYw2yXss15f26NKWBpDXQd0/uK/KPqdQhxbPa994hnzjcE2VqQpDslf55723cKPUOGSmMY3g==}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
     dependencies:
       ms: 2.0.0
     dev: false
 
   /debug/3.2.7:
     resolution: {integrity: sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
     dependencies:
       ms: 2.1.3
     dev: false
@@ -844,6 +870,11 @@ packages:
       esutils: 2.0.3
     dev: false
 
+  /dotenv/16.0.3:
+    resolution: {integrity: sha512-7GO6HghkA5fYG9TYnNxi14/7K9f5occMlp3zXAuSxn7CKCxt9xbNWG7yF8hTCSUchlfWSe3uLmlPfigevRItzQ==}
+    engines: {node: '>=12'}
+    dev: true
+
   /emoji-regex/8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
     dev: false
@@ -903,7 +934,7 @@ packages:
     engines: {node: '>=10'}
     dev: false
 
-  /eslint-config-airbnb-base/15.0.0_8b406960a2a06af75ddac353adbd0cfd:
+  /eslint-config-airbnb-base/15.0.0_rnagsyfcubvpoxo2ynj23pim7u:
     resolution: {integrity: sha512-xaX3z4ZZIcFLvh2oUNvcX5oEofXda7giYmuplVxoOg5A7EXJMrUyqRgR+mhDhPK8LZ4PttFOBvCYDbX3sUoUig==}
     engines: {node: ^10.12.0 || >=12.0.0}
     peerDependencies:
@@ -923,21 +954,44 @@ packages:
     dependencies:
       debug: 3.2.7
       resolve: 1.22.0
+    transitivePeerDependencies:
+      - supports-color
     dev: false
 
-  /eslint-module-utils/2.7.3:
+  /eslint-module-utils/2.7.3_ulu2225r2ychl26a37c6o2rfje:
     resolution: {integrity: sha512-088JEC7O3lDZM9xGe0RerkOMd0EjFl+Yvd1jPWIkMT5u3H9+HC34mWWPnqPrN13gieT9pBOO+Qt07Nb/6TresQ==}
     engines: {node: '>=4'}
+    peerDependencies:
+      '@typescript-eslint/parser': '*'
+      eslint-import-resolver-node: '*'
+      eslint-import-resolver-typescript: '*'
+      eslint-import-resolver-webpack: '*'
+    peerDependenciesMeta:
+      '@typescript-eslint/parser':
+        optional: true
+      eslint-import-resolver-node:
+        optional: true
+      eslint-import-resolver-typescript:
+        optional: true
+      eslint-import-resolver-webpack:
+        optional: true
     dependencies:
       debug: 3.2.7
+      eslint-import-resolver-node: 0.3.6
       find-up: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
     dev: false
 
   /eslint-plugin-import/2.25.4_eslint@8.10.0:
     resolution: {integrity: sha512-/KJBASVFxpu0xg1kIBn9AUa8hQVnszpwgE7Ld0lKAlx7Ie87yzEzCgSkekt+le/YVhiaosO4Y14GDAOc41nfxA==}
     engines: {node: '>=4'}
     peerDependencies:
+      '@typescript-eslint/parser': '*'
       eslint: ^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8
+    peerDependenciesMeta:
+      '@typescript-eslint/parser':
+        optional: true
     dependencies:
       array-includes: 3.1.4
       array.prototype.flat: 1.2.5
@@ -945,7 +999,7 @@ packages:
       doctrine: 2.1.0
       eslint: 8.10.0
       eslint-import-resolver-node: 0.3.6
-      eslint-module-utils: 2.7.3
+      eslint-module-utils: 2.7.3_ulu2225r2ychl26a37c6o2rfje
       has: 1.0.3
       is-core-module: 2.8.1
       is-glob: 4.0.3
@@ -953,6 +1007,10 @@ packages:
       object.values: 1.1.5
       resolve: 1.22.0
       tsconfig-paths: 3.12.0
+    transitivePeerDependencies:
+      - eslint-import-resolver-typescript
+      - eslint-import-resolver-webpack
+      - supports-color
     dev: false
 
   /eslint-scope/7.1.1:
@@ -1143,6 +1201,8 @@ packages:
     engines: {node: '>=4.0'}
     dependencies:
       debug: 3.1.0
+    transitivePeerDependencies:
+      - supports-color
     dev: false
 
   /form-data/3.0.1:
