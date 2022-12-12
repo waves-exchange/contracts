@@ -3,11 +3,9 @@ import { massTransfer, nodeInteraction } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
+import { apiBase, baseSeed, chainId } from '../../utils/api.mjs';
 
 const { waitForTx } = nodeInteraction;
-const apiBase = process.env.API_NODE_URL;
-const baseSeed = 'waves private node seed with waves tokens';
-const chainId = 'R';
 const api = create(apiBase);
 const nonceLength = 3;
 const ridePath = '../ride';

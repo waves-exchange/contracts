@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/waves-exchange/contracts/deployer/pkg/branch"
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
 	"github.com/waves-exchange/contracts/deployer/pkg/contract"
 	"github.com/waves-exchange/contracts/deployer/pkg/logger"
@@ -28,14 +29,22 @@ func main() {
 		panic(fmt.Errorf("mongo.NewConn: %w", err))
 	}
 
+	branchModel, err := branch.NewModel(db.Collection(cfg.MongoCollectionBranches))
+	if err != nil {
+		panic(fmt.Errorf("branch.NewModel: %w", err))
+	}
+
 	sc, err := syncer.NewSyncer(
 		logg.ZL,
 		cfg.Network,
 		cfg.Node,
+		cfg.Branch,
 		contract.NewModel(db.Collection(cfg.MongoCollectionContracts)),
+		branchModel,
 		cfg.CompareLpScriptAddress,
 		cfg.CompareLpStableScriptAddress,
 		cfg.CompareLpStableAddonScriptAddress,
+		cfg.FeeSeed,
 	)
 	if err != nil {
 		panic(fmt.Errorf("syncer.NewSyncer: %w", err))

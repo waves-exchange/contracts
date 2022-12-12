@@ -16,6 +16,7 @@ let MULT18  = 1000_000_000_000_000_000.toBigInt() # 10^18
 let POOLWEIGHTMULT = MULT8
 let GWXvirtualPOOL = "GWXvirtualPOOL"
 let labelPoolsLp = "POOLS_LP"
+let defaultSpread = 2000000 # 2 / 100 * 10^8
 
 let decimalsMultPrice = 100 * 1000 * 1000 # 10^8
 let SEP = "__"
@@ -102,6 +103,8 @@ func keyMappingLpAssetToPoolAssets(lpAssetStr: String)
        = "%s%s%s__" + lpAssetStr + "__mappings__lpAsset2Pool"
 func keyMappingPoolAssetsToLpasset(internalAmountAssetIdStr: String, internalPriceAssetIdStr: String)
       = "%d%d%s%s__" + internalAmountAssetIdStr + "__" + internalPriceAssetIdStr + "__mappings__PoolAssets2LpAsset"
+func keyPoolSpread(poolAddress: String)
+      = "%s%s__spread__" + poolAddress
 
 func keyMappingPoolContractAddressToPoolAssets(poolContractAddress: String)
       = "%s%s%s__" + poolContractAddress + "__mappings__poolContract2PoolAssets"
@@ -483,7 +486,8 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
 
                   StringEntry(keyMappingPoolLPAssetToPoolContractAddress(lpAssetIdStr), poolAddress),
                   StringEntry(keyMappingPoolContractToLPAsset(poolAddress), lpAssetIdStr),
-                  IntegerEntry(keyPoolToWeight(poolAddress),poolWeight)
+                  IntegerEntry(keyPoolToWeight(poolAddress),poolWeight),
+                  IntegerEntry(keyPoolSpread(poolAddress),defaultSpread)
               ]
               , lpAssetIdStr
             )
@@ -689,9 +693,9 @@ func isPoolOneTokenOperationsDisabledREADONLY(poolAddress: String) = {
   let poolConfig = poolAddress.getPoolConfig()
   let assetsInternal = (poolConfig[idxIAmtAssetId].parseIntValue(), poolConfig[idxIPriceAssetId].parseIntValue())
   let poolOneTokenOperationsDisabled = assetsInternal.keyPoolOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
-  let allPoolsOntTokenOperationsDisabled = keyAllPoolsOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
+  let allPoolsOneTokenOperationsDisabled = keyAllPoolsOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
 
-  ([], allPoolsOntTokenOperationsDisabled || poolOneTokenOperationsDisabled)
+  ([], allPoolsOneTokenOperationsDisabled || poolOneTokenOperationsDisabled)
 }
 
 @Verifier(tx)

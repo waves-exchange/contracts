@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 type Contract struct {
@@ -41,7 +42,10 @@ func NewModel(coll *mongo.Collection) Model {
 	}
 }
 
-func (m Model) GetAll(ctx context.Context) ([]Contract, error) {
+func (m Model) GetAll(c context.Context) ([]Contract, error) {
+	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	defer cancel()
+
 	cur, err := m.coll.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("m.coll.Find: %w", err)
@@ -63,7 +67,10 @@ func (m Model) GetAll(ctx context.Context) ([]Contract, error) {
 	return res, nil
 }
 
-func (m Model) IsCompact(ctx context.Context, fileName string) (bool, error) {
+func (m Model) IsCompact(c context.Context, fileName string) (bool, error) {
+	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	defer cancel()
+
 	cur, err := m.coll.Find(ctx, bson.M{"file": fileName})
 	if err != nil {
 		return false, fmt.Errorf("m.coll.FindOne: %w", err)

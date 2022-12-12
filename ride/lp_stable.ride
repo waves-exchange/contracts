@@ -766,7 +766,7 @@ func getOneTknV2Internal(
   let amBalance = amId.getAccBalance()
   let prBalance = prId.getAccBalance()
 
-  let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
+  strict (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
 
   let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
@@ -816,6 +816,13 @@ func pm() = match pmpk().getString() {
 }
 
 let pd = "Permission denied".throw()
+
+func isManager(i: Invocation) = {
+  match m() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
 
 # mustManager
 func mm(i: Invocation) = {
@@ -915,11 +922,15 @@ func put(slip: Int, autoStake: Boolean) = {
 
 @Callable(i)
 func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = fca.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean]
   let isPutDisabled = igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isPutDisabled || "put operation is blocked by admin".throwErr(),
+    !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
@@ -936,7 +947,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   let pmtAssetId = pmt.assetId.value().toBase58String()
   let pmtAmt = pmt.amount
 
-  let (estimLP, state, feeAmount) = calcPutOneTkn(
+  strict (estimLP, state, feeAmount) = calcPutOneTkn(
     pmtAmt,
     pmtAssetId,
     userAddress.toString(),
@@ -1011,11 +1022,15 @@ func get() = {
 
 @Callable(i)
 func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = fca.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean]
   let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
@@ -1165,11 +1180,15 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
 @Callable(i)
 func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = fca.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean]
   let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
     i.payments.size() == 0 || "no payments are expected".throwErr()
   ]
 

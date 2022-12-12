@@ -22,6 +22,8 @@ let keyStartHeight = ["%s", "startHeight"].makeString(separator)
 let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(separator)
 let keyStartHeightUi = ["%s", "startHeightUi"].makeString(separator)
 
+let keyFinalizationShouldBeForced = ["%s", "force"].makeString(separator)
+
 # start height will be set after first pool adding
 func keyStartHeightByEpoch(epoch: Int) = ["%s%d", "startHeight", epoch.toString()].makeString(separator)
 func keyFinalized(epoch: Int) = ["%s%d", "finalized", epoch.toString()].makeString(separator)
@@ -468,9 +470,13 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
 }
 
 @Callable(i)
-func processPoolINTERNAL(poolStr: String) = {
+func processPoolINTERNAL(poolStr: String, force: Boolean) = {
   strict checkCaller = i.mustThis()
-  let targetEpoch = this.getIntOrFail(keyCurrentEpoch) - 1
+  let targetEpoch = {
+    let currentEpoch = this.getIntOrFail(keyCurrentEpoch)
+    # if force then epoch was not increased, so use current one
+    if (force) then currentEpoch else currentEpoch - 1
+  }
   strict checkTargetEpoch = targetEpoch >= 0 || "processPoolINTERNAL: invalid target epoch".throw()
   let pool = poolStr.stringToPool()
   let (amountAssetId, priceAssetId) = pool
@@ -487,7 +493,7 @@ func processPoolINTERNAL(poolStr: String) = {
     let votingResult = this.getInteger(pool.keyVotingResult(targetEpoch)).valueOrElse(0)
     let share = if (totalVotes == 0 || !wxEmission) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
     strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, share], [])
-    let poolsListActions = if (wxEmission) then [] else {
+    let poolsListActions = if (wxEmission || force) then [] else {
       [
         DeleteEntry(pool.keyInList())
       ] ++ poolsListName.deleteNodeActions(poolStr)
@@ -507,6 +513,7 @@ func processPoolINTERNAL(poolStr: String) = {
 # Обновляем высоту сразу, так как для переноса голоса нужно знать, куда переносить
 @Callable(i)
 func finalizeHelper() = {
+  let force = keyFinalizationShouldBeForced.getBoolean().valueOrElse(false)
   let epoch = this.getInteger(keyCurrentEpoch).valueOrElse(0)
   let previousEpoch = epoch - 1
   let startHeight = this.getIntOrFail(epoch.keyStartHeightByEpoch())
@@ -514,7 +521,7 @@ func finalizeHelper() = {
   let endHeight = startHeight + epochLength
   let finalizationStageOrUnit = this.getInteger(keyFinalizationStage)
   # если пора начинать финализацию, обновляем высоту, эпоху и этап финализации
-  if (height >= endHeight && finalizationStageOrUnit == unit) then {
+  if (height >= endHeight && finalizationStageOrUnit == unit && !force) then {
     let newEpoch = epoch + 1
     (
       [
@@ -522,6 +529,13 @@ func finalizeHelper() = {
         IntegerEntry(keyStartHeight, height),
         IntegerEntry(keyCurrentEpoch, newEpoch),
         IntegerEntry(keyFinalizationStage, finalizationStageTotal)
+      ],
+      true
+    )
+  } else if (force && finalizationStageOrUnit == unit) then {
+    (
+      [
+        IntegerEntry(keyFinalizationStage, finalizationStageShares)
       ],
       true
     )
@@ -608,12 +622,20 @@ func finalizeHelper() = {
       case _: Unit => {
         match poolsListName.keyListHead().getString() {
           case _: Unit => {
-            ([
-              DeleteEntry(keyFinalizationStage),
-              BooleanEntry(previousEpoch.keyFinalized(), true),
-              IntegerEntry(keyCurrentEpochUi, epoch),
-              IntegerEntry(keyStartHeightUi, startHeight)
-            ], true)
+            let actions = if (force) then {
+              [
+                DeleteEntry(keyFinalizationStage),
+                DeleteEntry(keyFinalizationShouldBeForced)
+              ]
+            } else {
+              [
+                DeleteEntry(keyFinalizationStage),
+                BooleanEntry(previousEpoch.keyFinalized(), true),
+                IntegerEntry(keyCurrentEpochUi, epoch),
+                IntegerEntry(keyStartHeightUi, startHeight)
+              ]
+            }
+            (actions, true)
           }
           case nextPoolStr: String => {
             ([StringEntry(keyNextPool, nextPoolStr)], true)
@@ -622,19 +644,28 @@ func finalizeHelper() = {
       }
       case poolStr: String => {
         strict nextPoolOrUnit = poolsListName.keyListNext(poolStr).getString()
-        strict r = this.invoke("processPoolINTERNAL", [poolStr], []).exactAs[Boolean]
+        strict r = this.invoke("processPoolINTERNAL", [poolStr, force], []).exactAs[Boolean]
         if (r) then {
           ([], true)
         } else {
           match nextPoolOrUnit {
             case _: Unit => {
-              ([
-                DeleteEntry(keyFinalizationStage),
-                BooleanEntry(previousEpoch.keyFinalized(), true),
-                IntegerEntry(keyCurrentEpochUi, epoch),
-                IntegerEntry(keyStartHeightUi, startHeight),
-                DeleteEntry(keyNextPool)
-              ], true)
+              let actions = if (force) then {
+                [
+                  DeleteEntry(keyFinalizationStage),
+                  DeleteEntry(keyFinalizationShouldBeForced),
+                  DeleteEntry(keyNextPool)
+                ]
+              } else {
+                [
+                  DeleteEntry(keyFinalizationStage),
+                  BooleanEntry(previousEpoch.keyFinalized(), true),
+                  IntegerEntry(keyCurrentEpochUi, epoch),
+                  IntegerEntry(keyStartHeightUi, startHeight),
+                  DeleteEntry(keyNextPool)
+                ]
+              }
+              (actions, true)
             }
             case nextPoolStr: String => {
               ([StringEntry(keyNextPool, nextPoolStr)], true)

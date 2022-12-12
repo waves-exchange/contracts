@@ -687,6 +687,13 @@ func pendingManagerPublicKeyOrUnit() = match pmpk().getString() {
   case _: Unit => unit
 }
 
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
+
 func mustManager(i: Invocation) = {
   let pd = "Permission denied".throw()
 
@@ -773,11 +780,15 @@ func putForFree(maxSlippage: Int) = {
 
 @Callable(i)
 func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
-  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean]
   let isPutDisabled = isGlobalShutdown() || cfgPoolStatus == PoolPutDisabled || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isPutDisabled || "put operation is blocked by admin".throwErr(),
+    !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
@@ -789,7 +800,7 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   let txId = i.transactionId
 
 
-  let (emitAmountEstimated, commonState, feeAmount, bonus) = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
+  strict (emitAmountEstimated, commonState, feeAmount, bonus) = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
   let emitAmount = if (minOutAmount > 0 && emitAmountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else emitAmountEstimated
@@ -817,11 +828,15 @@ func putOneTknREADONLY(paymentAssetId: String, paymentAmountRaw: Int) = {
 
 @Callable(i)
 func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean]
   let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
@@ -834,7 +849,7 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
   let userAddress = i.caller
   let txId = i.transactionId
 
-  let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, paymentAmount, paymentAssetId, userAddress, txId)
+  strict (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, paymentAmount, paymentAssetId, userAddress, txId)
 
   let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
@@ -858,11 +873,15 @@ func getOneTknREADONLY(outAssetId: String, paymentAmount: Int) = {
 
 @Callable(i)
 func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = factoryContract.invoke("isPoolOneTokenOperationsDisabledREADONLY", [this.toString()], []).exactAs[Boolean]
+  let isPoolOneTokenOperationsDisabled = factoryContract.invoke(
+    "isPoolOneTokenOperationsDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean]
   let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isGetDisabled || "get operation is blocked by admin".throwErr(),
+    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
     i.payments.size() == 0 || "no payments are expected".throwErr()
   ]
 
@@ -871,7 +890,7 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
   let txId = i.transactionId
 
   strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
-  let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, unstakeAmount, cfgLpAssetId, userAddress, txId)
+  strict (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, unstakeAmount, cfgLpAssetId, userAddress, txId)
 
   let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
