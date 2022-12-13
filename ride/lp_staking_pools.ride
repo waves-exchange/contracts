@@ -76,12 +76,16 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
   case _: Unit => unit
 }
 
-func mustManager(i: Invocation) = {
-  let pd = "permission denied".throwErr()
+let permissionDeniedError = "Permission denied".throw()
 
+func mustThis(i: Invocation) = {
+  i.caller == this || permissionDeniedError
+}
+
+func mustManager(i: Invocation) = {
   match managerPublicKeyOrUnit() {
-    case pk: ByteVector => i.callerPublicKey == pk || pd
-    case _: Unit => i.caller == this || pd
+    case pk: ByteVector => i.callerPublicKey == pk || permissionDeniedError
+    case _: Unit => i.mustThis()
   }
 }
 
@@ -189,21 +193,36 @@ func create(
 @Callable(i)
 func put() = {
   let pmt = if (i.payments.size() == 1) then i.payments[0] else "exactly 1 payment is expected".throwErr()
+  let baseAssetId = pmt.assetId
+  let userAddress = i.caller
   strict checks = [
-    pmt.assetId.keyShareAssetId().getString().isDefined() || "invalid asset".throwErr()
+    baseAssetId.keyShareAssetId().getString().isDefined() || "invalid asset".throwErr()
   ]
-  let (poolAddress, lpAssetId) = pmt.assetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
-  # increase baseAssetAmountToConvert for current period
-  # call claimShareAsset if userBaseAssetAmountToConvertPeriod ≥ current period
-  # increase userBaseAssetAmountToConvert
-  # write userBaseAssetAmountToConvertPeriod (current period)
+  let (poolAddress, lpAssetId) = baseAssetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
+  let period = baseAssetId.keyPeriod().getInteger().value()
+  let userBaseAssetAmountToConvertPeriodOption = baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress).getInteger()
+  # call claimShareAsset if current period > userBaseAssetAmountToConvertPeriod
+  strict claimShareAssetInvocation = if (userBaseAssetAmountToConvertPeriodOption == unit) then unit else {
+    let userBaseAssetAmountToConvertPeriod = userBaseAssetAmountToConvertPeriodOption.value()
+    if (userBaseAssetAmountToConvertPeriod == period) then unit else {
+      this.invoke("claimShareAsset", [userAddress], [])
+    }
+  }
+  let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
+  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
 
-  ([], unit)
+  ([
+    IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), baseAssetAmountToConvert + pmt.amount),
+    IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), userBaseAssetAmountToConvert + pmt.amount),
+    IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress), period)
+  ], unit)
 }
 
 # finish put
 @Callable(i)
-func claimShareAsset() = {
+func claimShareAsset(userAddressStr: String) = {
+  # if userAddressStr != "" then i.mustThis()
+  # if userAddressStr == "" then use i.caller
   # current period should be ≥ userBaseAssetAmountToConvertPeriod
   # claim share asset with the last price (base asset / share asset ?)
   # reset userBaseAssetAmountToConvert
