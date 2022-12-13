@@ -4,6 +4,7 @@
 
 # Required state entries:
 # * "%s__factoryContract": String
+# * "%s__lpStakingContract": String
 # * "%s__usdnAssetId": String
 
 let separator = "__"
@@ -26,6 +27,7 @@ func assetIdToString(input: ByteVector|Unit) = {
 }
 
 func keyFactoryContract() = ["%s", "factoryContract"].makeString(separator)
+func keyLpStakingContract() = ["%s", "lpStakingContract"].makeString(separator)
 func keyAssetsStoreContract() = ["%s", "assetsStoreContract"].makeString(separator)
 func keyUsdnAssetId() = ["%s", "usdnAssetId"].makeString(separator)
 
@@ -84,6 +86,7 @@ func mustManager(i: Invocation) = {
 }
 
 let factoryContract = this.getStrOrFail(keyFactoryContract()).addressFromStringValue()
+let lpStakingContract = this.getStrOrFail(keyLpStakingContract()).addressFromStringValue()
 let assetsStoreContract = factoryContract.getStrOrFail(keyAssetsStoreContract()).addressFromStringValue()
 let usdnAssetId = this.getStrOrFail(keyUsdnAssetId()).parseAssetId()
 
@@ -142,6 +145,7 @@ func confirmManager() = {
 @Callable(i)
 func create(
   baseAssetIdStr: String,
+  shareAssetIdStr: String,
   shareAssetName: String,
   shareAssetDescription: String,
   shareAssetLogo: String
@@ -153,21 +157,33 @@ func create(
     i.mustManager(),
     baseAssetId.getPoolInfo().isDefined() || "invalid base asset".throwErr()
   ]
+  
+  let commonState = [
+    IntegerEntry(baseAssetId.keyPeriod(), 0)
+  ]
+  if (shareAssetIdStr == "") then {
+    let shareAssetIssueAmount = 1
+    let shareAssetIssueAction = Issue(shareAssetName, shareAssetDescription, shareAssetIssueAmount, shareAssetDecimals, true)
+    let calculatedShareAssetId = shareAssetIssueAction.calculateAssetId()
+    let shareAssetBurnAction = Burn(calculatedShareAssetId, shareAssetIssueAmount)
+    let calculatedShareAssetIdStr = calculatedShareAssetId.toBase58String()
+    strict createOrUpdate = assetsStoreContract.invoke("createOrUpdate", [calculatedShareAssetIdStr, shareAssetLogo, false], [])
+    strict addLabel = assetsStoreContract.invoke("addLabel", [calculatedShareAssetIdStr, shareAssetLabel], [])
 
-  let shareAssetIssueAmount = 1
-  let shareAssetIssueAction = Issue(shareAssetName, shareAssetDescription, shareAssetIssueAmount, shareAssetDecimals, true)
-  let shareAssetId = shareAssetIssueAction.calculateAssetId()
-  let shareAssetBurnAction = Burn(shareAssetId, shareAssetIssueAmount)
-  let shareAssetIdStr = shareAssetId.toBase58String()
-  strict createOrUpdate = assetsStoreContract.invoke("createOrUpdate", [shareAssetIdStr, shareAssetLogo, false], [])
-  strict addLabel = assetsStoreContract.invoke("addLabel", [shareAssetIdStr, shareAssetLabel], [])
-  # write current period 0 for base asset
+    (commonState ++ [
+      shareAssetIssueAction,
+      shareAssetBurnAction,
+      StringEntry(baseAssetId.keyShareAssetId(), calculatedShareAssetIdStr)
+    ], calculatedShareAssetIdStr)
+  } else {
+    let shareAssetId = shareAssetIdStr.fromBase58String()
+    let shareAssetInfo = shareAssetId.assetInfo().valueOrErrorMessage("invalid share asset id".wrapErr())
+    strict checkIssuer = shareAssetInfo.issuer == lpStakingContract || "invalid share asset id issuer".throwErr()
 
-  ([
-    shareAssetIssueAction,
-    shareAssetBurnAction,
-    StringEntry(baseAssetId.keyShareAssetId(), shareAssetIdStr)
-  ], unit)
+    (commonState ++ [
+      StringEntry(baseAssetId.keyShareAssetId(), shareAssetIdStr)
+    ], shareAssetIdStr)
+  }
 }
 
 @Callable(i)
@@ -185,6 +201,7 @@ func put() = {
   ([], unit)
 }
 
+# finish put
 @Callable(i)
 func claimShareAsset() = {
   # current period should be ≥ userBaseAssetAmountToConvertPeriod
@@ -203,6 +220,7 @@ func get() = {
   ([], unit)
 }
 
+# finish get
 @Callable(i)
 func claimBaseAsset() = {
   # burn share assets

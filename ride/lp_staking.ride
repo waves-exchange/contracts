@@ -1,8 +1,14 @@
-{-# STDLIB_VERSION 4 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+# Required state entries:
+# * "%s__lpStakingPoolsContract": String
+
 let SEP = "__"
+
+func wrapErr(msg: String) = ["lp_staking.ride:", msg].makeString(" ").throw()
+func throwErr(msg: String) = msg.wrapErr().throw()
 
 func getStringOrFail(key: String) = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}
 func getBooleanOrFail(key: String) = {this.getBoolean(key).valueOrErrorMessage("No data for this.key=" + key)}
@@ -354,6 +360,26 @@ func topUpBalance(baseAssetStr: String) = {
   IntegerEntry(keyPriceHistory(internalBaseAssetStr, height, lastBlock.timestamp), price),
   IntegerEntry(topUpLastHeightKEY, height)
   ]
+}
+
+@Callable(i)
+func emit(assetId: ByteVector, amount: Int) = {
+  let lpStakingPoolsContract = ["%s", "lpStakingPoolsContract"].makeString(SEP)
+    .getString().valueOrErrorMessage("lp_staking_pools contract address is undefined".wrapErr())
+    .addressFromString().valueOrErrorMessage("invalid lp_staking_pools contract address".wrapErr())
+
+  strict checks = [
+    i.caller == lpStakingPoolsContract || "permission denied".throwErr(),
+    amount > 0 || "invalid amount to emit".throwErr(),
+    assetId.toBase58String().keyMappingsShare2baseAssetId().getString() != unit || "invalid assetId".throwErr()
+  ]
+
+  let isReissuable = true
+
+  ([
+    Reissue(assetId, amount, isReissuable),
+    ScriptTransfer(lpStakingPoolsContract, amount, assetId)
+  ], amount)
 }
 
 @Callable(i)
