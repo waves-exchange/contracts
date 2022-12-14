@@ -401,7 +401,7 @@ func poolStatsREADONLY(lpAsset: String) = {
   (
     [],
     makeString([
-      "%d%d%d%d%d%d%d%d%s",
+      "%d%d%d%d%d%d%d%d%d%s",
       accAmtAssetBalance.toString(),
       accPriceAssetBalance.toString(),
       poolLPBalance.toString(),
