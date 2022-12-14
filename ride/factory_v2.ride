@@ -122,12 +122,12 @@ func keyWxEmission(amountAssetId: String, priceAssetId: String)
 func keyInFee(poolAddress: String)
       = "%s%s__inFee__" + poolAddress
 func keyInFeeDefault()
-	  = "%s__inFeeDefault"
+      = "%s__inFeeDefault"
 
 func keyOutFee(poolAddress: String)
       = "%s%s__outFee__" + poolAddress
 func keyOutFeeDefault()
-	  = "%s__outFeeDefault"
+      = "%s__outFeeDefault"
 
 #------------------------
 # GLOBAL FUNCTIONS
