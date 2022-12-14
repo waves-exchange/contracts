@@ -102,9 +102,6 @@ func pa() = {"%s__priceAsset"}
 func amp() = {"%s__amp"}
 func ada() = "%s__addonAddr"
 
-let inFee = factoryContract.invoke("getInFeeREADONLY", [this.toString()], []).exactAs[Int]
-let outFee = factoryContract.invoke("getOutFeeREADONLY", [this.toString()], []).exactAs[Int]
-
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
@@ -150,6 +147,9 @@ func throwErr(msg: String) = ["lp_stable.ride:", msg].makeString(" ").throw()
 
 # factoryContract
 let fca = addressFromStringValue(strf(this, fc()))
+
+let inFee = fca.invoke("getInFeeREADONLY", [this.toString()], []).exactAs[Int]
+let outFee = fca.invoke("getOutFeeREADONLY", [this.toString()], []).exactAs[Int]
 
 let A = strf(this, amp())
 
