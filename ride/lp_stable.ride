@@ -102,8 +102,8 @@ func pa() = {"%s__priceAsset"}
 func amp() = {"%s__amp"}
 func ada() = "%s__addonAddr"
 
-let keyFee = "%s__fee"
-let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
+let inFee = factoryContract.invoke("getInFeeREADONLY", [this.toString()], []).exactAs[Int]
+let outFee = factoryContract.invoke("getOutFeeREADONLY", [this.toString()], []).exactAs[Int]
 
 #------------------------
 # KEYS ON OTHER CONTRACTS
@@ -285,8 +285,8 @@ func calculatePrices(amAmt: Int, prAmt: Int, lpAmt: Int) = {
         p[2].f1(scale8)]
 }
 
-func takeFee(amount: Int) = {
-  let feeAmount = fraction(amount, fee, scale8)
+func takeFee(amount: Int, fee: Int) = {
+  let feeAmount = if (fee == 0) then 0 else fraction(amount, fee, scale8)
   (amount - feeAmount, feeAmount)
 }
 
@@ -694,9 +694,9 @@ func calcPutOneTkn(
 
   let (amAmount, prAmount, feeAmount) = if (withTakeFee) then {
     (
-      amAmountRaw.takeFee()._1,
-      prAmountRaw.takeFee()._1,
-      pmtAmtRaw.takeFee()._2
+      amAmountRaw.takeFee(inFee)._1,
+      prAmountRaw.takeFee(inFee)._1,
+      pmtAmtRaw.takeFee(inFee)._2
     )
   } else {
     (
@@ -1069,7 +1069,7 @@ func getOneTknV2READONLY(
   let newY = xp.getYD(index, D1)
   let dy = xp[index] - newY
   let totalGetRaw = [0, { dy - big1 }.toInt()].max()
-  let (totalGet, feeAmount) = totalGetRaw.takeFee()
+  let (totalGet, feeAmount) = totalGetRaw.takeFee(outFee)
 
   (nil, (totalGet, feeAmount))
 }
