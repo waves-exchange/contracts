@@ -302,9 +302,14 @@ func finalize(baseAssetIdStr: String) = {
     }
     case _ => "invalid lock params".throwErr()
   }
-  
-  # 50% convert to base asset via wx/usdn pool
+
+  # 50% convert to base asset via wx/usdn pool and base pool
+  let (wxUsdnPoolAddress, wxUsdnLpAssetId) = wxAssetId.getPoolInfo().valueOrErrorMessage("can't find wx/usdn pool".wrapErr())
+  strict convertedAmount = wxUsdnPoolAddress.invoke("swap", [], [AttachedPayment(baseAssetId, convertPart)]).exactAs[Int]
+
   # putOneTkn and stake
+  # stable or not?
+  strict putOneTkn = poolAddress.invoke("putOneTknV2", [], [AttachedPayment(baseAssetId, convertedAmount)])
 
   # update price last and price for period (share asset / lp asset)
   # convert shareAssetAmountToConvert to lp tokens using price (share asset / lp asset)
