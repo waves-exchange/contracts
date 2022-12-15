@@ -511,6 +511,7 @@ func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String) = {
 
   let minRewardPart = availableToClaim
   let boostRewardPart = min([minRewardPart * 2.toBigInt(), wxAmountBoostTotal.toBigInt()])
+  let totalReward = minRewardPart + boostRewardPart
 
   let wxAssetId = emissionContract.invoke("emit", [minRewardPart.toInt()], []).asAnyList()[0].asByteVector()
   strict emitBoost = emissionContract.invoke("emit", [boostRewardPart.toInt()], []).asAnyList()
@@ -520,13 +521,15 @@ func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String) = {
   let claimedByUserBoostRewardPlusBoostRewardPart = claimedByUserMinReward + minRewardPart
   let claimedTotalPlusAvailableToClaim = claimedByUserMinReward + minRewardPart
 
-  [StringEntry(claimedByUserKEY, claimedByUserValue.toString()),
-  StringEntry(claimedByUserMinRewardKEY, claimedByUserMinRewardPlusPart.toString()),
-  StringEntry(claimedByUserBoostRewardKEY, claimedByUserBoostRewardPlusBoostRewardPart.toString()),
-  StringEntry(claimedTotalKEY, claimedTotalPlusAvailableToClaim.toString()),
-  ScriptTransfer(userAddress, minRewardPart.toInt(), wxAssetId),
-  ScriptTransfer(userAddress, boostRewardPart.toInt(), wxAssetId),
-  OperationHistoryEntry("claim", userAddressStr, lpAssetIdStr, availableToClaim.toInt(), i.transactionId)]
+  ([
+    StringEntry(claimedByUserKEY, claimedByUserValue.toString()),
+    StringEntry(claimedByUserMinRewardKEY, claimedByUserMinRewardPlusPart.toString()),
+    StringEntry(claimedByUserBoostRewardKEY, claimedByUserBoostRewardPlusBoostRewardPart.toString()),
+    StringEntry(claimedTotalKEY, claimedTotalPlusAvailableToClaim.toString()),
+    ScriptTransfer(userAddress, minRewardPart.toInt(), wxAssetId),
+    ScriptTransfer(userAddress, boostRewardPart.toInt(), wxAssetId),
+    OperationHistoryEntry("claim", userAddressStr, lpAssetIdStr, availableToClaim.toInt(), i.transactionId)
+  ], totalReward)
 }
 
 @Callable(i)

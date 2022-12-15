@@ -4,8 +4,12 @@
 
 # Required state entries:
 # * "%s__factoryContract": String
+# * "%s__assetsStoreContract": String
 # * "%s__lpStakingContract": String
+# * "%s__stakingContract": String
+# * "%s__boostingContract": String
 # * "%s__usdnAssetId": String
+# * "%s__wxAssetId": String
 
 let separator = "__"
 let shareAssetDecimals = 8
@@ -28,8 +32,11 @@ func assetIdToString(input: ByteVector|Unit) = {
 
 func keyFactoryContract() = ["%s", "factoryContract"].makeString(separator)
 func keyLpStakingContract() = ["%s", "lpStakingContract"].makeString(separator)
+func keyStakingContract() = ["%s", "stakingContract"].makeString(separator)
+func keyBoostingContract() = ["%s", "boostingContract"].makeString(separator)
 func keyAssetsStoreContract() = ["%s", "assetsStoreContract"].makeString(separator)
 func keyUsdnAssetId() = ["%s", "usdnAssetId"].makeString(separator)
+func keyWxAssetId() = ["%s", "wxAssetId"].makeString(separator)
 
 func keyMinDelay() = ["%s", "minDelay"].makeString(separator)
 func keyShareAssetId(baseAssetId: ByteVector|Unit) = {
@@ -63,8 +70,17 @@ func keyUserShareAssetAmountToConvertPeriod(baseAssetId: ByteVector|Unit, userAd
 func keyPriceLast(baseAssetId: ByteVector|Unit) = {
   ["%s%s%s", baseAssetId.assetIdToString(), "price", "last"].makeString(separator)
 }
+# lp asset / share asset price
 func keyPricePeriod(baseAssetId: ByteVector|Unit, period: Int) = {
-  ["%s%s%s", baseAssetId.assetIdToString(), "price", period.toString()].makeString(separator)
+  ["%s%s%d", baseAssetId.assetIdToString(), "price", period.toString()].makeString(separator)
+}
+# base asset / share asset price for claimShareAsset
+func keyPricePeriodPut(baseAssetId: ByteVector|Unit, period: Int) = {
+  ["%s%s%d%s", baseAssetId.assetIdToString(), "price", period.toString(), "put"].makeString(separator)
+}
+# base asset / share asset price for claimBaseAsset
+func keyPricePeriodGet(baseAssetId: ByteVector|Unit, period: Int) = {
+  ["%s%s%d%s", baseAssetId.assetIdToString(), "price", period.toString(), "get"].makeString(separator)
 }
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
@@ -95,8 +111,11 @@ func mustManager(i: Invocation) = {
 
 let factoryContract = this.getStrOrFail(keyFactoryContract()).addressFromStringValue()
 let lpStakingContract = this.getStrOrFail(keyLpStakingContract()).addressFromStringValue()
-let assetsStoreContract = factoryContract.getStrOrFail(keyAssetsStoreContract()).addressFromStringValue()
+let stakingContract = this.getStrOrFail(keyStakingContract()).addressFromStringValue()
+let boostingContract = this.getStrOrFail(keyBoostingContract()).addressFromStringValue()
+let assetsStoreContract = this.getStrOrFail(keyAssetsStoreContract()).addressFromStringValue()
 let usdnAssetId = this.getStrOrFail(keyUsdnAssetId()).parseAssetId()
+let wxAssetId = this.getStrOrFail(keyWxAssetId()).parseAssetId()
 
 let minDelayDefault = 1440
 let minDelay = this.getInteger(keyMinDelay()).valueOrElse(minDelayDefault)
@@ -252,6 +271,7 @@ func claimBaseAsset() = {
   ([], unit)
 }
 
+# TODO: handle staking auto claims
 @Callable(i)
 func finalize(baseAssetIdStr: String) = {
   let baseAssetId = baseAssetIdStr.parseAssetId()
@@ -265,12 +285,27 @@ func finalize(baseAssetIdStr: String) = {
     }
   }
 
+  let (poolAddress, lpAssetId) = baseAssetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
+  # call gwx_reward.claimReward? rewards are burned
   # call staking.claimWx
-  # call gwx_reward.claimReward
-  # use wx on the balance (balance, not variable, because there could be auto-claims)
-    # 50% lock in boosting
-    # 50% convert to base asset via wx/usdn pool
-    # putOneTkn and stake
+  strict stakingReward = stakingContract.invoke("claimWx", [lpAssetId.assetIdToString()], []).exactAs[Int]
+
+  let lockPart = stakingReward / 2
+  let convertPart = stakingReward - lockPart
+
+  # 50% lock in boosting
+  let r = boostingContract.invoke("userMaxDurationREADONLY", [this.toString()], [])
+  strict lock = match r {
+    case (function: String, duration: Int) => {
+      # check function?
+      boostingContract.invoke(function, [duration], [AttachedPayment(wxAssetId, lockPart)])
+    }
+    case _ => "invalid lock params".throwErr()
+  }
+  
+  # 50% convert to base asset via wx/usdn pool
+  # putOneTkn and stake
+
   # update price last and price for period (share asset / lp asset)
   # convert shareAssetAmountToConvert to lp tokens using price (share asset / lp asset)
   # unstake and getOneTkn, calculate price for claimBaseAsset (base asset / share asset)

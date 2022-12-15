@@ -668,6 +668,26 @@ func gwxUserInfoREADONLY(userAddress: String) = {
     ([], [gwxAmount])
 }
 
+# for lp_staking_pools
+@Callable(i)
+func userMaxDurationREADONLY(userAddressStr: String) = {
+  let cfgArray = readConfigArrayOrFail()
+  let maxLockDuration = cfgArray[IdxCfgMaxLockDuration].parseIntValue()
+
+  let userRecordOption = this.getString(userAddressStr.keyLockParamsRecord())
+  if (userRecordOption == unit) then ([], ("lock", maxLockDuration)) else {
+    let userRecordArray = userRecordOption.value().split(SEP)
+    let lockStart = userRecordArray[IdxLockStart].parseIntValue()
+    let lockDuration = userRecordArray[IdxLockDuration].parseIntValue()
+    let lockEnd = lockStart + lockDuration
+    let remainingDuration = max([lockEnd - height, 0])
+
+    let maxDeltaDuration = maxLockDuration - remainingDuration
+
+    ([], ("increaseLock", maxDeltaDuration))
+  }
+}
+
 @Callable(i)
 func getUserGwxAmountAtHeightREADONLY(userAddress: String, targetHeight: Int) = {
   let gwxAmount = userAddress.calcUserGwxAmountAtHeight(targetHeight)
