@@ -294,8 +294,8 @@ func estimateGetOperation(txId58: String, pmtAssetId: String, pmtLpAmt: Int, use
   let outAmAmtX18 = fraction(amBalanceX18, pmtLpAmtX18, lpEmissionX18)
   let outPrAmtX18 = fraction(prBalanceX18, pmtLpAmtX18, lpEmissionX18)
   # cast amounts to asset decimals
-  let outAmAmt = outAmAmtX18.fromX18(amAssetDcm)
-  let outPrAmt = outPrAmtX18.fromX18(prAssetDcm)
+  let outAmAmt = outAmAmtX18.fromX18Round(amAssetDcm, FLOOR)
+  let outPrAmt = outPrAmtX18.fromX18Round(prAssetDcm, FLOOR)
 
   let state = if (txId58 == "") then [] else
   [
@@ -632,7 +632,7 @@ func calcPutOneToken(
   let depositBigInt = paymentAmount.toBigInt()
   let issueAmount = [
     0,
-    { supplyBigInt * (sqrt(scale18 + (depositBigInt * scale18) / paymentBalanceBigInt, 18, 18, DOWN) - scale18) / scale18 }.toInt()
+    fraction(supplyBigInt, (sqrt(scale18 + (depositBigInt * scale18) / paymentBalanceBigInt, 18, 18, DOWN) - scale18), scale18).fromX18Round(scale8, FLOOR)
   ].max()
 
   let commonState = if (isEval) then [] else [
@@ -670,6 +670,10 @@ func calcGetOneToken(
 ) = {
   let isEval = txId == unit
 
+  let cfg = getPoolConfig()
+  let amtAssetDcm   = cfg[idxAmtAssetDcm].parseIntValue()
+  let priceAssetDcm = cfg[idxPriceAssetDcm].parseIntValue()
+
   strict checks = [
     paymentAssetId == cfgLpAssetId || "invalid lp asset".throwErr()
   ]
@@ -686,6 +690,12 @@ func calcGetOneToken(
     cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
   }
 
+  let outInAmountAssetDecimals = if (outInAmountAsset) then {
+    amtAssetDcm
+  } else {
+    priceAssetDcm
+  }
+
   let amBalanceOld = cfgAmountAssetId.assetIdToString().getAccBalance()
   let prBalanceOld = cfgPriceAssetId.assetIdToString().getAccBalance()
 
@@ -695,7 +705,7 @@ func calcGetOneToken(
   let redeemedBigInt = paymentAmount.toBigInt()
   let amountRaw = [
     0,
-    { balanceBigInt * (scale18 - pow(scale18 - redeemedBigInt * scale18 / supplyBigInt, 18, big2, 0, 18, DOWN)) / scale18 }.toInt()
+    fraction(balanceBigInt, scale18 - pow(scale18 - redeemedBigInt * scale18 / supplyBigInt, 18, big2, 0, 18, DOWN), scale18).fromX18Round(outInAmountAssetDecimals, FLOOR)
   ].max()
   let (totalAmount, feeAmount) = amountRaw.takeFee()
 
@@ -884,7 +894,7 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   let paymentAssetId = payment.assetId
   let paymentAmountRaw = payment.amount
 
-  let currentKLp = if (paymentAssetId == cfgAmountAssetId) then {
+  strict currentKLp = if (paymentAssetId == cfgAmountAssetId) then {
     calcCurrentKLp(paymentAmountRaw.toBigInt(), 0.toBigInt(), 0.toBigInt())
   } else if paymentAssetId == cfgPriceAssetId then {
     calcCurrentKLp(0.toBigInt(), paymentAmountRaw.toBigInt(), 0.toBigInt())
@@ -958,7 +968,7 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
   let paymentAssetId = payment.assetId
   let paymentAmount = payment.amount
 
-  let currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), paymentAmount.toBigInt())
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   let userAddress = i.caller
   let txId = i.transactionId
@@ -1069,7 +1079,7 @@ func get() = {
   let pmtAssetId   = res._4
   let state        = res._5
 
-  let currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), pmtAmt.toBigInt())
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict burnLPAssetOnFactory = invoke(factoryContract,
                                   "burn",

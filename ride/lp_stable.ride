@@ -79,6 +79,11 @@ let feeDefault = fraction(10, scale8, 10_000)
 #-------------------------
 func t1(origVal: Int, origScaleMult: Int)        = fraction(origVal.toBigInt(), scale18, origScaleMult.toBigInt())
 func f1(val: BigInt, resultScaleMult: Int)       = fraction(val, resultScaleMult.toBigInt(), scale18).toInt()
+func fromX18Round(
+  val: BigInt,
+  resultScaleMult: Int,
+  round: Ceiling|Floor
+) = fraction(val, resultScaleMult.toBigInt(), scale18, round).toInt()
 
 # cast passed amount to specified 'resScale' scale value from 'curScale' scale value
 func ts(amt: Int, resScale: Int, curScale: Int)  = fraction(amt, resScale, curScale)
@@ -331,8 +336,8 @@ func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address
   let outPrAmtX18 = fraction(prBalanceX18, pmtLpAmtX18, lpEmissX18)
 
   # cast amounts to asset decimals
-  let outAmAmt = outAmAmtX18.f1(amDcm)
-  let outPrAmt = outPrAmtX18.f1(prDcm)
+  let outAmAmt = outAmAmtX18.fromX18Round(amDcm, FLOOR)
+  let outPrAmt = outPrAmtX18.fromX18Round(prDcm, FLOOR)
 
   let state = if (txId58 == "") then [] else
   [
@@ -451,9 +456,9 @@ func epo(txId58: String,
             # calculate LP amount that user
             let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18)
             (
-              lpAmtX18.f1(scale8),
-              expAmtAssetAmtX18.f1(amtDcm),
-              expPriceAssetAmtX18.f1(priceDcm),
+              lpAmtX18.fromX18Round(scale8, FLOOR),
+              expAmtAssetAmtX18.fromX18Round(amtDcm, CEILING),
+              expPriceAssetAmtX18.fromX18Round(priceDcm, CEILING),
               curPriceX18,
               slippageX18
             )
@@ -978,6 +983,9 @@ func put(slip: Int, autoStake: Boolean) = {
     let amAssetPmt = i.payments[0].value().amount.toBigInt()
     let prAssetPmt = i.payments[1].value().amount.toBigInt()
 
+    strict amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amAssetPmt
+    strict priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - prAssetPmt
+    strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
     strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
     # estPut
     let e = cp(i.caller.toString(),
@@ -1015,7 +1023,24 @@ func put(slip: Int, autoStake: Boolean) = {
     
     let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
-    strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+    # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+    # strict check = updatedDLp >= currentDLp || "updated DLp lower than current DLp".throwErr()
+
+    strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
+
+    strict error = updatedDLp >= currentDLp || [
+      "updated DLp lower than current DLp",
+      amountAssetBalance.toString(),
+      priceAssetBalance.toString(),
+      lpAssetEmission.toString(),
+      currentDLp.toString(),
+      updatedDLp.toString(),
+      emitLpAmt.toString(),
+      amDiff.toString(),
+      prDiff.toString(),
+      lpAssetEmission.toString(),
+      lpAssetEmissionAfter.toString()
+    ].makeString(" ").throwErr()
 
     state
     ++ lpTrnsfr
@@ -1048,6 +1073,12 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   let pmt = i.payments[0].value()
   let pmtAssetId = pmt.assetId.value().toBase58String()
   let pmtAmt = pmt.amount
+
+  strict currentDLp = if (pmt.assetId == cfgAmountAssetId) then {
+    calcCurrentDLp(pmtAmt.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  } else {
+    calcCurrentDLp(0.toBigInt(), pmtAmt.toBigInt(), 0.toBigInt())
+  }
 
   strict (estimLP, state, feeAmount) = calcPutOneTkn(
     pmtAmt,
@@ -1084,7 +1115,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   }
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
-
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
   (
     state
@@ -1138,6 +1169,8 @@ func putForFree(maxSlpg: Int) = {
 #    transfer to user his share of pool tokens base on passed lp token amount
 @Callable(i)
 func get() = {
+  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+
   let r = cg(i)
   let outAmtAmt    = r._1
   let outPrAmt     = r._2
@@ -1148,8 +1181,6 @@ func get() = {
                     "burn",
                     [pmtAmt],
                     [AttachedPayment(pmtAssetId, pmtAmt)])
-
-  let currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), pmtAmt.toBigInt())
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmtAmt, -outPrAmt, 0)
 
