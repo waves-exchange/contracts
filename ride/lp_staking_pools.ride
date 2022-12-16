@@ -384,9 +384,13 @@ func finalize(baseAssetIdStr: String) = {
     ).as[Int].valueOrErrorMessage("invalid putOneTknV2 result".wrapErr())
   }
   # convert lpAsset amount to share asset amount using price (share asset / lp asset)
-  let shareAssetAmount = fraction(lpAssetAmount.toBigInt(), price, scale18BigInt, FLOOR)
+  let shareAssetAmount = fraction(lpAssetAmount.toBigInt(), price, scale18BigInt, FLOOR).toInt()
+  let isReissuable = true
+  let shareAssetReissueActions = [
+    Reissue(shareAssetId, shareAssetAmount, isReissuable)
+  ]
   # save new price for claimShareAsset (base asset / share asset)
-  let pricePut = fraction(baseAssetAmountToConvert.toBigInt(), scale18BigInt, shareAssetAmount)
+  let pricePut = fraction(baseAssetAmountToConvert.toBigInt(), scale18BigInt, shareAssetAmount.toBigInt())
   let pricePutUpdateActions = [
     BinaryEntry(baseAssetId.keyPricePeriodPut(period), pricePut.toBytes())
   ]
@@ -400,7 +404,7 @@ func finalize(baseAssetIdStr: String) = {
     IntegerEntry(baseAssetId.keyShareAssetAmountToConvert(), 0),
     # reset baseAssetAmountToConvert
     IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), 0)
-  ] ++ priceGetUpdateActions ++ pricePutUpdateActions
+  ] ++ shareAssetReissueActions ++ priceGetUpdateActions ++ pricePutUpdateActions
 
   (actions, price.toBytes())
 }
