@@ -33,6 +33,10 @@ func assetIdToString(input: ByteVector|Unit) = {
   if (input == unit) then wavesString else input.value().toBase58String()
 }
 
+func ensurePositive(v: Int) = {
+  if (v > 0) then v else "value should be positive".throwErr()
+}
+
 func keyFactoryContract() = ["%s", "factoryContract"].makeString(separator)
 func keyLpStakingContract() = ["%s", "lpStakingContract"].makeString(separator)
 func keyStakingContract() = ["%s", "stakingContract"].makeString(separator)
@@ -248,13 +252,33 @@ func put() = {
 
 # finish put
 @Callable(i)
-func claimShareAsset(userAddressStr: String) = {
+func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
   # if userAddressStr != "" then i.mustThis()
   # if userAddressStr == "" then use i.caller
+  strict userAddress = if (userAddressStr == "") then i.caller else {
+    strict checkCaller = i.mustThis()
+    userAddressStr.addressFromString().valueOrErrorMessage("invalid user address".wrapErr())
+  }
+  let baseAssetId = baseAssetIdStr.parseAssetId()
+  strict shareAssetId = baseAssetId.keyShareAssetId()
+    .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
+  strict period = baseAssetId.keyPeriod().getInteger().valueOrErrorMessage("invalid period".wrapErr())
+  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
+  strict checkAmountToConvert = userBaseAssetAmountToConvert > 0 || "nothing to claim".throwErr()
+  let userBaseAssetAmountToConvertPeriod = baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
   # current period should be > userBaseAssetAmountToConvertPeriod
+  strict checkPeriod = period > userBaseAssetAmountToConvertPeriod
+  let price = baseAssetId.keyPricePeriodPut(userBaseAssetAmountToConvertPeriod).getBinary().valueOrErrorMessage("failed to get price".wrapErr()).toBigInt()
   # claim share asset with the last price (base asset / share asset ?)
-  # reset userBaseAssetAmountToConvert
-  ([], unit)
+  let shareAssetAmount = fraction(userBaseAssetAmountToConvert.toBigInt(), scale18BigInt, price).toInt()
+  let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
+  let baseAssetAmountToConvertNew = baseAssetAmountToConvert - userBaseAssetAmountToConvert
+
+  ([
+    IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), baseAssetAmountToConvertNew.ensurePositive()),
+    IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), 0),
+    ScriptTransfer(userAddress, shareAssetAmount, shareAssetId)
+  ], unit)
 }
 
 @Callable(i)
@@ -269,7 +293,9 @@ func get() = {
 
 # finish get
 @Callable(i)
-func claimBaseAsset() = {
+func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
+  # if userAddressStr != "" then i.mustThis()
+  # if userAddressStr == "" then use i.caller
   # burn share assets
   # claim base asset with the price for userShareAssetAmountToConvertPeriod
   # reset userShareAssetAmountToConvert
