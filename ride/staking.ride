@@ -588,6 +588,13 @@ func claimWxREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
 }
 
 @Callable(i)
+func stakedByUserREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+  let stakedByUser = userAddressStr.keyStakedByUser(lpAssetIdStr).getInteger().valueOrElse(0)
+
+  ([], stakedByUser)
+}
+
+@Callable(i)
 func usersListTraversal(lpAssetId: String) = {
   strict checkCaller = i.caller.bytes.toBase58String() == this.getString(keyVotingEmissionContract()).valueOrElse("") || i.mustManager()
   let listName = lpAssetId.getUsersListName()
