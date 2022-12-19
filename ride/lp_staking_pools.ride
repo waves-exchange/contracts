@@ -34,7 +34,7 @@ func assetIdToString(input: ByteVector|Unit) = {
 }
 
 func ensurePositive(v: Int) = {
-  if (v > 0) then v else "value should be positive".throwErr()
+  if (v >= 0) then v else "value should be positive".throwErr()
 }
 
 func keyFactoryContract() = ["%s", "factoryContract"].makeString(separator)
@@ -316,8 +316,7 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
 
   ([
     IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), 0),
-    ScriptTransfer(userAddress, baseAssetAmount, baseAssetId),
-    Burn(shareAssetId, userShareAssetAmountToConvert)
+    ScriptTransfer(userAddress, baseAssetAmount, baseAssetId)
   ], unit)
 }
 
@@ -382,63 +381,73 @@ func finalize(baseAssetIdStr: String) = {
     ).as[Int].valueOrErrorMessage("invalid putOneTknV2 result".wrapErr())
   }
 
-  # update price last and price for period (share asset / lp asset)
-  # price = share asset emission / staked lp asset amount
+  # update price last and price for period (lp asset / share asset)
+  # price = staked lp asset amount / share asset emission
   let shareAssetInfo = shareAssetId.assetInfo().valueOrErrorMessage("failed to get share asset info")
+  let shareAssetEmission = shareAssetInfo.quantity
   let stakedAmount = stakingContract.invoke(
     "stakedByUserREADONLY",
     [lpAssetId.assetIdToString(), this.toString()],
     []
-  ).as[Int].valueOrErrorMessage("invalid stakedByUserREADONLY result".wrapErr())
-  # TODO: handle stakedAmount = 0
-  # subtract shareAssetAmountToConvert?
-  strict price = fraction(shareAssetInfo.quantity.toBigInt(), scale18BigInt, stakedAmount.toBigInt(), FLOOR)
-  # TODO: if 0 do not unstake and do not save price
-  # convert shareAssetAmountToConvert to lp tokens using price (share asset / lp asset)
-  let shareAssetAmountToConvert = baseAssetId.keyShareAssetAmountToConvert().getInteger().valueOrElse(0)
-  let unstakeAmount = fraction(shareAssetAmountToConvert.toBigInt(), scale18BigInt, price, FLOOR)
-  # unstake and getOneTkn, calculate price for claimBaseAsset (base asset / share asset)
-  strict baseAssetAmount = {
-    let outAssetId = baseAssetId
-    let minOutAmount = 0
-    poolAddress.invoke(
-      "unstakeAndGetOneTknV2",
-      [
-        unstakeAmount,
-        outAssetId.assetIdToString(),
-        minOutAmount
-      ],
-      []
-    ).as[Int].valueOrErrorMessage("invalid unstakeAndGetOneTknV2 result".wrapErr())
+  ).as[Int].valueOrErrorMessage("invalid stakedByUserREADONLY result".wrapErr()).ensurePositive()
+  strict price = if (shareAssetEmission == 0) then scale18BigInt else {
+    fraction(stakedAmount.toBigInt(), scale18BigInt, shareAssetEmission.toBigInt(), FLOOR)
   }
-  let priceGet = fraction(baseAssetAmount.toBigInt(), scale18BigInt, shareAssetAmountToConvert.toBigInt(), FLOOR)
-  let priceGetUpdateActions = [
-    BinaryEntry(baseAssetId.keyPricePeriodGet(period), priceGet.toBytes())
-  ]
 
-  # TODO: handle 0
+  # convert shareAssetAmountToConvert to lp tokens using price (lp asset / share asset)
+  let shareAssetAmountToConvert = baseAssetId.keyShareAssetAmountToConvert().getInteger().valueOrElse(0)
+  let getActions = if (shareAssetAmountToConvert > 0) then {
+    let unstakeAmount = fraction(shareAssetAmountToConvert.toBigInt(), price, scale18BigInt, FLOOR)
+    # unstake and getOneTkn, calculate price for claimBaseAsset (base asset / share asset)
+    strict baseAssetAmount = {
+      let outAssetId = baseAssetId
+      let minOutAmount = 0
+      poolAddress.invoke(
+        "unstakeAndGetOneTknV2",
+        [
+          unstakeAmount,
+          outAssetId.assetIdToString(),
+          minOutAmount
+        ],
+        []
+      ).as[Int].valueOrErrorMessage("invalid unstakeAndGetOneTknV2 result".wrapErr())
+    }
+    let shareAssetBurnActions = [
+      Burn(shareAssetId, shareAssetAmountToConvert)
+    ]
+    let priceGet = fraction(baseAssetAmount.toBigInt(), scale18BigInt, shareAssetAmountToConvert.toBigInt(), FLOOR)
+    let priceGetUpdateActions = [
+      BinaryEntry(baseAssetId.keyPricePeriodGet(period), priceGet.toBytes())
+    ]
+
+    shareAssetBurnActions ++ priceGetUpdateActions
+  } else []
+
   # putOneTkn and stake baseAssetAmountToConvert
   let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
-  strict lpAssetAmount = {
-    let minOutAmount = 0
-    let autoStake = true
-    poolAddress.invoke(
-      "putOneTknV2",
-      [minOutAmount, autoStake],
-      [AttachedPayment(baseAssetId, baseAssetAmountToConvert)]
-    ).as[Int].valueOrErrorMessage("invalid putOneTknV2 result".wrapErr())
-  }
-  # convert lpAsset amount to share asset amount using price (share asset / lp asset)
-  let shareAssetAmount = fraction(lpAssetAmount.toBigInt(), price, scale18BigInt, FLOOR).toInt()
-  let isReissuable = true
-  let shareAssetReissueActions = [
-    Reissue(shareAssetId, shareAssetAmount, isReissuable)
-  ]
-  # save new price for claimShareAsset (base asset / share asset)
-  let pricePut = fraction(baseAssetAmountToConvert.toBigInt(), scale18BigInt, shareAssetAmount.toBigInt())
-  let pricePutUpdateActions = [
-    BinaryEntry(baseAssetId.keyPricePeriodPut(period), pricePut.toBytes())
-  ]
+  let putActions = if (baseAssetAmountToConvert > 0) then {
+    strict lpAssetAmount = {
+      let minOutAmount = 0
+      let autoStake = true
+      poolAddress.invoke(
+        "putOneTknV2",
+        [minOutAmount, autoStake],
+        [AttachedPayment(baseAssetId, baseAssetAmountToConvert)]
+      ).as[Int].valueOrErrorMessage("invalid putOneTknV2 result".wrapErr())
+    }
+    # convert lpAsset amount to share asset amount using price (lp asset / share asset)
+    let shareAssetAmount = fraction(lpAssetAmount.toBigInt(), scale18BigInt, price, FLOOR).toInt()
+    let isReissuable = true
+    let shareAssetReissueActions = [
+      Reissue(shareAssetId, shareAssetAmount, isReissuable)
+    ]
+    # save new price for claimShareAsset (base asset / share asset)
+    let pricePut = fraction(baseAssetAmountToConvert.toBigInt(), scale18BigInt, shareAssetAmount.toBigInt())
+    let pricePutUpdateActions = [
+      BinaryEntry(baseAssetId.keyPricePeriodPut(period), pricePut.toBytes())
+    ]
+    shareAssetReissueActions ++ pricePutUpdateActions
+  } else []
 
   let newPeriod = period + 1
 
@@ -449,7 +458,7 @@ func finalize(baseAssetIdStr: String) = {
     IntegerEntry(baseAssetId.keyShareAssetAmountToConvert(), 0),
     # reset baseAssetAmountToConvert
     IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), 0)
-  ] ++ shareAssetReissueActions ++ priceGetUpdateActions ++ pricePutUpdateActions
+  ] ++ putActions ++ getActions
 
   (actions, price.toBytes())
 }
