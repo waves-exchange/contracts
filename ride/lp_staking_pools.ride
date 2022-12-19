@@ -18,7 +18,7 @@ let wavesString = "WAVES"
 let scale18 = 1_000_000_000_000_000_000
 let scale18BigInt = scale18.toBigInt()
 
-func wrapErr(msg: String) = ["lp_staking_pools.ride:", msg].makeString(" ").throw()
+func wrapErr(msg: String) = ["lp_staking_pools.ride:", msg].makeString(" ")
 func throwErr(msg: String) = msg.wrapErr().throw()
 
 func errKeyIsNotDefined(address: Address, key: String) = ["mandatory ", address.toString(), ".", key, " is not defined"].makeString("").wrapErr()
