@@ -2,6 +2,7 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+let ttesssttt = 1
 let SEP = "__"
 
 func getStringOrFail(key: String)   = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}
