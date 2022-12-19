@@ -135,28 +135,13 @@ let minDelay = this.getInteger(keyMinDelay()).valueOrElse(minDelayDefault)
 func getPoolInfo(amountAssetId: ByteVector|Unit) = {
   let amountAssetIdStr = amountAssetId.assetIdToString()
   let priceAssetIdStr = usdnAssetId.assetIdToString()
+  let poolInfoOption = factoryContract.invoke(
+    "poolInfoREADONLY",
+    [amountAssetIdStr, priceAssetIdStr],
+    []
+  ).exactAs[(Address, ByteVector)|Unit]
 
-  func keyMappingsBaseAsset2internalId(baseAssetStr: String) = {
-    ["%s%s%s", "mappings", "baseAsset2internalId", baseAssetStr].makeString(separator)
-  }
-  func keyMappingPoolAssetsToPoolContractAddress(internalAmountAssetIdStr: Int, internalPriceAssetIdStr: Int) = {
-    ["%d%d%s%s", internalAmountAssetIdStr.toString(), internalPriceAssetIdStr.toString(), "mappings", "poolAssets2PoolContract"].makeString(separator)
-  }
-  func keyMappingPoolContractToLpAsset(poolContractAddress: String) = {
-    ["%s%s%s", poolContractAddress, "mappings", "poolContract2LpAsset"].makeString(separator)
-  }
-
-  let amountAssetInternalIdOption = factoryContract.getInteger(amountAssetIdStr.keyMappingsBaseAsset2internalId())
-  let priceAssetInternalIdOption = factoryContract.getInteger(priceAssetIdStr.keyMappingsBaseAsset2internalId())
-  let poolContractAddressOption = factoryContract.getString(keyMappingPoolAssetsToPoolContractAddress(amountAssetInternalIdOption.value(), priceAssetInternalIdOption.value()))
-  let lpAssetIdOption = factoryContract.getString(poolContractAddressOption.value().keyMappingPoolContractToLpAsset())
-  let poolExists = amountAssetInternalIdOption.isDefined() && priceAssetInternalIdOption.isDefined() && poolContractAddressOption.isDefined()
-
-  let poolInfo = if (poolExists) then {
-    (poolContractAddressOption.value().addressFromStringValue(), lpAssetIdOption.value().parseAssetId())
-  } else unit
-
-  poolInfo
+  poolInfoOption
 }
 
 @Callable(i)
