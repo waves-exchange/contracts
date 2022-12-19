@@ -1027,7 +1027,8 @@ func put(slip: Int, autoStake: Boolean) = {
     # strict check = updatedDLp >= currentDLp || "updated DLp lower than current DLp".throwErr()
 
     strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
-
+    
+    # TODO remove throw()
     strict error = updatedDLp >= currentDLp || [
       "updated DLp lower than current DLp",
       amountAssetBalance.toString(),
@@ -1169,6 +1170,11 @@ func putForFree(maxSlpg: Int) = {
 #    transfer to user his share of pool tokens base on passed lp token amount
 @Callable(i)
 func get() = {
+
+  strict amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
+  strict priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
+  strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
+  strict lpAssetEmissionAfter = lpAssetEmission - i.payments[0].value().amount.toBigInt()
   strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   let r = cg(i)
@@ -1184,7 +1190,17 @@ func get() = {
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmtAmt, -outPrAmt, 0)
 
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+  # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+  strict error = updatedDLp >= currentDLp || [
+      "updated DLp lower than current DLp",
+      amountAssetBalance.toString(),
+      priceAssetBalance.toString(),
+      lpAssetEmission.toString(),
+      currentDLp.toString(),
+      updatedDLp.toString(),
+      lpAssetEmission.toString(),
+      lpAssetEmissionAfter.toString()
+    ].makeString(" ").throwErr()
 
   state ++ refreshDLpActions
 }
