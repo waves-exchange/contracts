@@ -239,7 +239,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	return nil
 }
 
-func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee uint64) error {
+func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee uint64, fileName string) error {
 	bal, _, err := s.client().Addresses.Balance(ctx, to)
 	if err != nil {
 		return fmt.Errorf("s.client().Addresses.Balance: %w", err)
@@ -264,6 +264,7 @@ func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee ui
 			s.feePrv,
 			false,
 			false,
+			fileName,
 		)
 		if e != nil {
 			return fmt.Errorf("s.sendTx: %w", e)
@@ -356,7 +357,7 @@ func (s *Syncer) doHash(
 		}
 
 		if actualHash != newHashStr {
-			e := s.sendTx(ctx, dataTx, prvSigner, false, true)
+			e := s.sendTx(ctx, dataTx, prvSigner, false, true, fileName)
 			if e != nil {
 				return false, fmt.Errorf("sendTx %s: %w", fileName, e)
 			}
@@ -424,7 +425,7 @@ func (s *Syncer) doHash(
 				return false, fmt.Errorf("s.printDiff: %w", e)
 			}
 
-			e = s.ensureHasFee(ctx, addr, fee)
+			e = s.ensureHasFee(ctx, addr, fee, fileName)
 			if e != nil {
 				return false, fmt.Errorf("s.ensureHasFee: %w", e)
 			}
@@ -608,7 +609,7 @@ func (s *Syncer) doFile(
 				continue
 			}
 
-			er2 = s.ensureHasFee(ctx, addr, setScriptFee)
+			er2 = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
 			if er2 != nil {
 				return false, fmt.Errorf("s.ensureHasFee: %w", er2)
 			}
@@ -626,6 +627,7 @@ func (s *Syncer) doFile(
 				prvSigner,
 				true,
 				true,
+				fileName,
 			)
 			if er2 != nil {
 				return false, fmt.Errorf(
@@ -693,6 +695,7 @@ func (s *Syncer) doFile(
 					crypto.SecretKey{},
 					true,
 					true,
+					fileName,
 				)
 				if er != nil {
 					return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
@@ -706,7 +709,7 @@ func (s *Syncer) doFile(
 					return false, fmt.Errorf("s.sendTx: %w", er)
 				}
 
-				er = s.ensureHasFee(ctx, addr, setScriptFee)
+				er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
 				if er != nil {
 					return false, fmt.Errorf("s.ensureHasFee: %w", er)
 				}
@@ -809,6 +812,7 @@ func (s *Syncer) sendTx(
 	prv crypto.SecretKey,
 	async bool,
 	ensureFee bool,
+	fileName string,
 ) error {
 	_, err := tx.Validate(s.networkByte)
 	if err != nil {
@@ -842,7 +846,7 @@ func (s *Syncer) sendTx(
 				return fmt.Errorf("sender.ToWavesAddress: %w", e)
 			}
 
-			e = s.ensureHasFee(ctx, senderAddr, tx.GetFee())
+			e = s.ensureHasFee(ctx, senderAddr, tx.GetFee(), fileName)
 			if e != nil {
 				return fmt.Errorf("s.ensureHasFee: %w", e)
 			}
@@ -850,7 +854,7 @@ func (s *Syncer) sendTx(
 
 		_, e := s.client().Transactions.Broadcast(ctx, tx)
 		if e != nil {
-			return fmt.Errorf("s.client().Transactions.Broadcast: %w", e)
+			return fmt.Errorf("s.client().Transactions.Broadcast %s: %w", fileName, e)
 		}
 
 		e = s.waitMined(ctx, txHash)
