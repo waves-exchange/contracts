@@ -137,13 +137,13 @@ func getPoolInfo(amountAssetId: ByteVector|Unit) = {
   let priceAssetIdStr = usdnAssetId.assetIdToString()
 
   func keyMappingsBaseAsset2internalId(baseAssetStr: String) = {
-    "%s%s%s__mappings__baseAsset2internalId__" + baseAssetStr
+    ["%s%s%s", "mappings", "baseAsset2internalId", baseAssetStr].makeString(separator)
   }
   func keyMappingPoolAssetsToPoolContractAddress(internalAmountAssetIdStr: Int, internalPriceAssetIdStr: Int) = {
-    "%d%d%s%s__" + internalAmountAssetIdStr.toString() + "__" + internalPriceAssetIdStr.toString() + "__mappings__poolAssets2PoolContract"
+    ["%d%d%s%s", internalAmountAssetIdStr.toString(), internalPriceAssetIdStr.toString(), "mappings", "poolAssets2PoolContract"].makeString(separator)
   }
   func keyMappingPoolContractToLpAsset(poolContractAddress: String) = {
-    "%s%s%s__" + poolContractAddress + "__mappings__poolContract2LpAsset"
+    ["%s%s%s", poolContractAddress, "mappings", "poolContract2LpAsset"].makeString(separator)
   }
 
   let amountAssetInternalIdOption = factoryContract.getInteger(amountAssetIdStr.keyMappingsBaseAsset2internalId())
