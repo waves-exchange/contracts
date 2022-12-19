@@ -358,7 +358,7 @@ func (s *Syncer) doHash(
 		if actualHash != newHashStr {
 			e := s.sendTx(ctx, dataTx, prvSigner, false, true)
 			if e != nil {
-				return false, fmt.Errorf("sendTx: %w", e)
+				return false, fmt.Errorf("sendTx %s: %w", fileName, e)
 			}
 
 			s.logger.Info().
@@ -695,7 +695,7 @@ func (s *Syncer) doFile(
 					true,
 				)
 				if er != nil {
-					return false, fmt.Errorf("s.client().Transactions.Broadcast: %w", er)
+					return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
 				}
 
 				isChanged = true
