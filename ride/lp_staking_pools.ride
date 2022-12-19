@@ -345,41 +345,47 @@ func finalize(baseAssetIdStr: String) = {
     []
   ).as[Int].valueOrErrorMessage("invalid claimWx result".wrapErr())
 
-  let lockPart = stakingReward / 2
-  let convertPart = stakingReward - lockPart
+  strict useStakingReward = if (stakingReward > 0) then {
+    let lockPart = stakingReward / 2
+    let convertPart = stakingReward - lockPart
 
-  # 50% lock in boosting
-  let r = boostingContract.invoke("userMaxDurationREADONLY", [this.toString()], [])
-  strict lock = match r {
-    case (function: String, duration: Int) => {
-      # check function?
-      boostingContract.invoke(function, [duration], [AttachedPayment(wxAssetId, lockPart)])
+    # 50% lock in boosting
+    let r = boostingContract.invoke("userMaxDurationREADONLY", [this.toString()], [])
+    strict lock = match r {
+      case (function: String, duration: Int) => {
+        # check function?
+        if (lockPart > 0) then {
+          boostingContract.invoke(function, [duration], [AttachedPayment(wxAssetId, lockPart)])
+        } else unit
+      }
+      case _ => "invalid lock params".throwErr()
     }
-    case _ => "invalid lock params".throwErr()
-  }
 
-  # 50% convert to base asset (or usdn?)
-  # let (wxUsdnPoolAddress, wxUsdnLpAssetId) = wxAssetId.getPoolInfo().valueOrErrorMessage("can't find wx/usdn pool".wrapErr())
-  strict convertedAmount = {
-    let inAssetId = wxAssetId
-    let outAssetId = usdnAssetId
-    swapContract.invoke(
-      "swap",
-      [outAssetId.assetIdToString()],
-      [AttachedPayment(inAssetId, convertPart)]
-    ).as[Int].valueOrErrorMessage("invalid swap result".wrapErr())
-  }
+    # 50% convert to base asset (or usdn?)
+    # let (wxUsdnPoolAddress, wxUsdnLpAssetId) = wxAssetId.getPoolInfo().valueOrErrorMessage("can't find wx/usdn pool".wrapErr())
+    strict convertedAmount = {
+      let inAssetId = wxAssetId
+      let outAssetId = usdnAssetId
+      swapContract.invoke(
+        "swap",
+        [outAssetId.assetIdToString()],
+        [AttachedPayment(inAssetId, convertPart)]
+      ).as[Int].valueOrErrorMessage("invalid swap result".wrapErr())
+    }
 
-  # putOneTkn and stake
-  strict lpAssetAmountUnused = {
-    let minOutAmount = 0
-    let autoStake = true
-    poolAddress.invoke(
-      "putOneTknV2",
-      [minOutAmount, autoStake],
-      [AttachedPayment(usdnAssetId, convertedAmount)]
-    ).as[Int].valueOrErrorMessage("invalid putOneTknV2 result".wrapErr())
-  }
+    # putOneTkn and stake
+    strict lpAssetAmount = {
+      let minOutAmount = 0
+      let autoStake = true
+      poolAddress.invoke(
+        "putOneTknV2",
+        [minOutAmount, autoStake],
+        [AttachedPayment(usdnAssetId, convertedAmount)]
+      ).as[Int].valueOrErrorMessage("invalid putOneTknV2 result".wrapErr())
+    }
+
+    lpAssetAmount
+  } else unit
 
   # update price last and price for period (lp asset / share asset)
   # price = staked lp asset amount / share asset emission
