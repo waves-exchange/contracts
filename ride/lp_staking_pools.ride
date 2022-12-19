@@ -50,6 +50,9 @@ func keyMinDelay() = ["%s", "minDelay"].makeString(separator)
 func keyShareAssetId(baseAssetId: ByteVector|Unit) = {
   ["%s%s", baseAssetId.assetIdToString(), "shareAssetId"].makeString(separator)
 }
+func keyBaseAssetId(shareAssetId: ByteVector|Unit) = {
+  ["%s%s", shareAssetId.assetIdToString(), "baseAssetId"].makeString(separator)
+}
 func keyPeriod(baseAssetId: ByteVector|Unit) = {
   ["%s%s", baseAssetId.assetIdToString(), "period"].makeString(separator)
 }
@@ -209,7 +212,8 @@ func create(
     (commonState ++ [
       shareAssetIssueAction,
       shareAssetBurnAction,
-      StringEntry(baseAssetId.keyShareAssetId(), calculatedShareAssetIdStr)
+      StringEntry(baseAssetId.keyShareAssetId(), calculatedShareAssetIdStr),
+      StringEntry(calculatedShareAssetId.keyBaseAssetId(), baseAssetIdStr)
     ], calculatedShareAssetIdStr)
   } else {
     let shareAssetId = shareAssetIdStr.fromBase58String()
@@ -217,7 +221,8 @@ func create(
     strict checkIssuer = shareAssetInfo.issuer == lpStakingContract || "invalid share asset id issuer".throwErr()
 
     (commonState ++ [
-      StringEntry(baseAssetId.keyShareAssetId(), shareAssetIdStr)
+      StringEntry(baseAssetId.keyShareAssetId(), shareAssetIdStr),
+      StringEntry(shareAssetId.keyShareAssetId(), baseAssetIdStr)
     ], shareAssetIdStr)
   }
 }
@@ -237,7 +242,7 @@ func put() = {
   strict claimShareAssetInvocation = if (userBaseAssetAmountToConvertPeriodOption == unit) then unit else {
     let userBaseAssetAmountToConvertPeriod = userBaseAssetAmountToConvertPeriodOption.value()
     if (userBaseAssetAmountToConvertPeriod == period) then unit else {
-      this.invoke("claimShareAsset", [userAddress], [])
+      this.invoke("claimShareAsset", [baseAssetId.assetIdToString(), userAddress.toString()], [])
     }
   }
   let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
@@ -267,15 +272,12 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
   strict checkAmountToConvert = userBaseAssetAmountToConvert > 0 || "nothing to claim".throwErr()
   let userBaseAssetAmountToConvertPeriod = baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
   # current period should be > userBaseAssetAmountToConvertPeriod
-  strict checkPeriod = period > userBaseAssetAmountToConvertPeriod
+  strict checkPeriod = period > userBaseAssetAmountToConvertPeriod || "invalid period".throwErr()
   let price = baseAssetId.keyPricePeriodPut(userBaseAssetAmountToConvertPeriod).getBinary().valueOrErrorMessage("failed to get price".wrapErr()).toBigInt()
   # claim share asset with the last price (base asset / share asset ?)
   let shareAssetAmount = fraction(userBaseAssetAmountToConvert.toBigInt(), scale18BigInt, price).toInt()
-  let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
-  let baseAssetAmountToConvertNew = baseAssetAmountToConvert - userBaseAssetAmountToConvert
 
   ([
-    IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), baseAssetAmountToConvertNew.ensurePositive()),
     IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), 0),
     ScriptTransfer(userAddress, shareAssetAmount, shareAssetId)
   ], unit)
@@ -283,23 +285,55 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
 
 @Callable(i)
 func get() = {
-  # call claimBaseAsset if there's pricePeriod for userShareAssetAmountToConvertPeriod
-  # increase shareAssetAmountToConvert
-  # increase userShareAssetAmountToConvert
-  # save next period in userShareAssetAmountToConvertPeriod
-    # this period's price will be used in claimBaseAsset
-  ([], unit)
+  let pmt = if (i.payments.size() == 1) then i.payments[0] else "exactly 1 payment is expected".throwErr()
+  let shareAssetId = pmt.assetId
+  strict baseAssetId = shareAssetId.keyBaseAssetId()
+    .getString().valueOrErrorMessage("invalid share asset id".wrapErr()).parseAssetId().value()
+  let userAddress = i.caller
+  let (poolAddress, lpAssetId) = baseAssetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
+  let period = baseAssetId.keyPeriod().getInteger().value()
+  let userShareAssetAmountToConvertPeriodOption = baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress).getInteger()
+  # call claimBaseAsset
+  strict claimBaseAssetInvocation = if (userShareAssetAmountToConvertPeriodOption == unit) then unit else {
+    let userShareAssetAmountToConvertPeriod = userShareAssetAmountToConvertPeriodOption.value()
+    if (userShareAssetAmountToConvertPeriod == period) then unit else {
+      this.invoke("claimBaseAsset", [userAddress], [])
+    }
+  }
+  let shareAssetAmountToConvert = baseAssetId.keyShareAssetAmountToConvert().getInteger().valueOrElse(0)
+  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
+
+  ([
+    IntegerEntry(baseAssetId.keyShareAssetAmountToConvert(), shareAssetAmountToConvert + pmt.amount),
+    IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), userShareAssetAmountToConvert + pmt.amount),
+    IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress), period)
+  ], unit)
 }
 
 # finish get
 @Callable(i)
 func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
-  # if userAddressStr != "" then i.mustThis()
-  # if userAddressStr == "" then use i.caller
-  # burn share assets
-  # claim base asset with the price for userShareAssetAmountToConvertPeriod
-  # reset userShareAssetAmountToConvert
-  ([], unit)
+  strict userAddress = if (userAddressStr == "") then i.caller else {
+    strict checkCaller = i.mustThis()
+    userAddressStr.addressFromString().valueOrErrorMessage("invalid user address".wrapErr())
+  }
+  let baseAssetId = baseAssetIdStr.parseAssetId()
+  strict shareAssetId = baseAssetId.keyShareAssetId()
+    .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
+  strict period = baseAssetId.keyPeriod().getInteger().valueOrErrorMessage("invalid period".wrapErr())
+  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
+  strict checkAmountToConvert = userShareAssetAmountToConvert > 0 || "nothing to claim".throwErr()
+  let userShareAssetAmountToConvertPeriod = baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
+  strict checkPeriod = period > userShareAssetAmountToConvertPeriod || "invalid period".throwErr()
+  let price = baseAssetId.keyPricePeriodGet(userShareAssetAmountToConvertPeriod).getBinary().valueOrErrorMessage("failed to get price".wrapErr()).toBigInt()
+  # claim base asset with the last price (base asset / share asset ?)
+  let baseAssetAmount = fraction(userShareAssetAmountToConvert.toBigInt(), price, scale18BigInt).toInt()
+
+  ([
+    IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), 0),
+    ScriptTransfer(userAddress, baseAssetAmount, baseAssetId),
+    Burn(shareAssetId, userShareAssetAmountToConvert)
+  ], unit)
 }
 
 # TODO: handle staking auto claims
