@@ -1,4 +1,6 @@
-import { address, publicKey, random } from '@waves/ts-lib-crypto';
+import {
+  address, privateKey, publicKey, random,
+} from '@waves/ts-lib-crypto';
 import {
   massTransfer, issue, data,
 } from '@waves/waves-transactions';
@@ -53,7 +55,7 @@ export const mochaHooks = {
     this.usdnAssetId = usdnIssueTx.id;
 
     const usdtIssueTx = issue({
-      name: 'USDN',
+      name: 'USDT',
       description: '',
       quantity: 1e12 * 1e6,
       decimals: 6,
@@ -65,7 +67,7 @@ export const mochaHooks = {
     const wxIssueTx = issue({
       name: 'WX Token',
       description: '',
-      quantity: 1e12 * 1e6,
+      quantity: 1e12 * 1e8,
       decimals: 8,
       chainId,
     }, baseSeed);
@@ -90,7 +92,7 @@ export const mochaHooks = {
     await broadcastAndWait(setRequiredStateTx);
 
     const accountsInfo = Object.entries(this.accounts)
-      .map(([name, { seed, addr }]) => [name, seed, addr]);
+      .map(([name, { seed, addr }]) => [name, seed, privateKey(seed), addr]);
     console.log(table(accountsInfo, {
       border: getBorderCharacters('norc'),
       drawHorizontalLine: (index, size) => index === 0 || index === 1 || index === size,
