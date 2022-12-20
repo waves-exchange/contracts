@@ -47,7 +47,7 @@ export const mochaHooks = {
     const usdnIssueTx = issue({
       name: 'USDN',
       description: '',
-      quantity: 1e12 * 1e6,
+      quantity: 1e10 * 1e6,
       decimals: 6,
       chainId,
     }, baseSeed);
@@ -57,7 +57,7 @@ export const mochaHooks = {
     const usdtIssueTx = issue({
       name: 'USDT',
       description: '',
-      quantity: 1e12 * 1e6,
+      quantity: 1e10 * 1e6,
       decimals: 6,
       chainId,
     }, baseSeed);
@@ -67,7 +67,7 @@ export const mochaHooks = {
     const wxIssueTx = issue({
       name: 'WX Token',
       description: '',
-      quantity: 1e12 * 1e8,
+      quantity: 1e10 * 1e8,
       decimals: 8,
       chainId,
     }, baseSeed);
