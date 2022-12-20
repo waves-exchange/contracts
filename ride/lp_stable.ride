@@ -1023,25 +1023,10 @@ func put(slip: Int, autoStake: Boolean) = {
     
     let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
-    # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-    # strict check = updatedDLp >= currentDLp || "updated DLp lower than current DLp".throwErr()
+    strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+    strict check = updatedDLp >= currentDLp || "updated DLp lower than current DLp".throwErr()
 
     strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
-    
-    # TODO remove throw()
-    strict error = updatedDLp >= currentDLp || [
-      "updated DLp lower than current DLp",
-      amountAssetBalance.toString(),
-      priceAssetBalance.toString(),
-      lpAssetEmission.toString(),
-      currentDLp.toString(),
-      updatedDLp.toString(),
-      emitLpAmt.toString(),
-      amDiff.toString(),
-      prDiff.toString(),
-      lpAssetEmission.toString(),
-      lpAssetEmissionAfter.toString()
-    ].makeString(" ").throwErr()
 
     state
     ++ lpTrnsfr
@@ -1128,34 +1113,34 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
 }
 
 # Put without LP emission
-@Callable(i)
-func putForFree(maxSlpg: Int) = {
-  if(maxSlpg < 0) then throw("Wrong slpg") else
-  if (i.payments.size() != 2) then throw("2 pmnts expd") else
-    let estPut = cp(i.caller.toString(),
-                          i.transactionId.toBase58String(),
-                          AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
-                          i.payments[1],
-                          maxSlpg,
-                          false,
-                          false,
-                          true,
-                          0,
-                          "")
+# @Callable(i)
+# func putForFree(maxSlpg: Int) = {
+#   if(maxSlpg < 0) then throw("Wrong slpg") else
+#   if (i.payments.size() != 2) then throw("2 pmnts expd") else
+#     let estPut = cp(i.caller.toString(),
+#                           i.transactionId.toBase58String(),
+#                           AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
+#                           i.payments[1],
+#                           maxSlpg,
+#                           false,
+#                           false,
+#                           true,
+#                           0,
+#                           "")
 
-    let state = estPut._9
+#     let state = estPut._9
 
-    let amAssetPmt = i.payments[0].value().amount.toBigInt()
-    let prAssetPmt = i.payments[1].value().amount.toBigInt()
+#     let amAssetPmt = i.payments[0].value().amount.toBigInt()
+#     let prAssetPmt = i.payments[1].value().amount.toBigInt()
 
-    strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
+#     strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
 
-    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
+#     let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
-    strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+#     strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
-    state ++ refreshDLpActions
-}
+#     state ++ refreshDLpActions
+# }
 
 # Called by: LP
 #
@@ -1170,11 +1155,14 @@ func putForFree(maxSlpg: Int) = {
 #    transfer to user his share of pool tokens base on passed lp token amount
 @Callable(i)
 func get() = {
-
-  strict amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
-  strict priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
-  strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
-  strict lpAssetEmissionAfter = lpAssetEmission - i.payments[0].value().amount.toBigInt()
+  # amountAssetBalance
+  strict aab = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
+  # priceAssetBalance
+  strict pab = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
+  # lpAssetEmission
+  strict lae = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
+  # lpAssetEmissionAfter
+  strict laea = lae - i.payments[0].value().amount.toBigInt()
   strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   let r = cg(i)
@@ -1192,15 +1180,14 @@ func get() = {
 
   # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
   strict error = updatedDLp >= currentDLp || [
-      "updated DLp lower than current DLp",
-      amountAssetBalance.toString(),
-      priceAssetBalance.toString(),
-      lpAssetEmission.toString(),
-      currentDLp.toString(),
-      updatedDLp.toString(),
-      lpAssetEmission.toString(),
-      lpAssetEmissionAfter.toString()
-    ].makeString(" ").throwErr()
+    "updated DLp lower than current DLp",
+    aab.toString(),
+    pab.toString(),
+    currentDLp.toString(),
+    updatedDLp.toString(),
+    lae.toString(),
+    laea.toString()
+  ].makeString(" ").throwErr()
 
   state ++ refreshDLpActions
 }
