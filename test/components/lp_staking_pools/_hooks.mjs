@@ -13,7 +13,10 @@ const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 const nonceLength = 3;
 
 const ridePath = '../ride';
+const mockPath = './components/lp_staking_pools/mock';
 const lpStakingPoolsPath = format({ dir: ridePath, base: 'lp_staking_pools.ride' });
+const factoryMockPath = format({ dir: mockPath, base: 'factory_v2.ride' });
+const assetsStoreMockPath = format({ dir: mockPath, base: 'assets_store.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -75,7 +78,19 @@ export const mochaHooks = {
     await broadcastAndWait(wxIssueTx);
     this.wxAssetId = wxIssueTx.id;
 
+    const lpAssetIssueTx = issue({
+      name: 'USDTUSDNLP',
+      description: '',
+      quantity: 1e10 * 1e8,
+      decimals: 8,
+      chainId,
+    }, this.accounts.factory.seed);
+    await broadcastAndWait(lpAssetIssueTx);
+    this.lpAssetId = lpAssetIssueTx.id;
+
     await setScriptFromFile(lpStakingPoolsPath, this.accounts.lpStakingPools.seed);
+    await setScriptFromFile(factoryMockPath, this.accounts.factory.seed);
+    await setScriptFromFile(assetsStoreMockPath, this.accounts.assetsStore.seed);
 
     const setRequiredStateTx = data({
       data: [

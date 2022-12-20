@@ -139,7 +139,7 @@ func getPoolInfo(amountAssetId: ByteVector|Unit) = {
     "poolInfoREADONLY",
     [amountAssetIdStr, priceAssetIdStr],
     []
-  ).exactAs[(Address, ByteVector)|Unit]
+  ).as[(Address, ByteVector)]
 
   poolInfoOption
 }

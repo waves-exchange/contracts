@@ -21,7 +21,7 @@ export const lpStakingPools = {
           ],
         },
         payment: [],
-        additionalFee: 4e5,
+        additionalFee: 1e8,
         chainId,
       },
       caller,
