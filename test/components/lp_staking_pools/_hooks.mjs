@@ -21,6 +21,7 @@ export const mochaHooks = {
     // setup accounts
     const contractNames = [
       'lpStakingPools',
+      'lpStable',
       'factory',
       'assetsStore',
       'lpStaking',
