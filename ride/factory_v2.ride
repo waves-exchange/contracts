@@ -119,6 +119,16 @@ func keyMappingPoolLPAssetToPoolContractAddress(lpAssetStr: String)
 func keyWxEmission(amountAssetId: String, priceAssetId: String)
       = "%s%s%s__wxEmission__" + amountAssetId + "__" + priceAssetId
 
+func keyInFee(poolAddress: String)
+      = "%s%s__inFee__" + poolAddress
+func keyInFeeDefault()
+      = "%s__inFeeDefault"
+
+func keyOutFee(poolAddress: String)
+      = "%s%s__outFee__" + poolAddress
+func keyOutFeeDefault()
+      = "%s__outFeeDefault"
+
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------
@@ -293,6 +303,10 @@ func mustAdmin(i: Invocation) = {
     strict isManager = i.mustManager()
     true
   }
+}
+
+func intOrDefaultOrFallback(key: String, keyDefault: String, valueFallback: Int) = {
+  this.getInteger(key).valueOrElse(this.getInteger(keyDefault).valueOrElse(valueFallback))
 }
 
 @Callable(i)
@@ -696,6 +710,18 @@ func isPoolOneTokenOperationsDisabledREADONLY(poolAddress: String) = {
   let allPoolsOneTokenOperationsDisabled = keyAllPoolsOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
 
   ([], allPoolsOneTokenOperationsDisabled || poolOneTokenOperationsDisabled)
+}
+
+@Callable(i)
+func getInFeeREADONLY(poolAddress: String) = {
+  let fee = intOrDefaultOrFallback(keyInFee(poolAddress), keyInFeeDefault(), 0)
+  ([], fee)
+}
+
+@Callable(i)
+func getOutFeeREADONLY(poolAddress: String) = {
+  let fee = intOrDefaultOrFallback(keyOutFee(poolAddress), keyOutFeeDefault(), fraction(10, MULT8, 10_000))
+  ([], fee)
 }
 
 @Verifier(tx)

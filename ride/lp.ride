@@ -108,10 +108,6 @@ func aa() = {"%s__amountAsset"}
 # keyPriceAsset
 func pa() = {"%s__priceAsset"}
 
-let keyFee = "%s__fee"
-let feeDefault = fraction(10, scale8, 10_000)
-let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
-
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
@@ -145,6 +141,9 @@ func throwErr(msg: String) = ["lp.ride:", msg].makeString(" ").throw()
 let factoryContract = addressFromStringValue(getStringOrFail(this, fc()))
 
 let feeCollectorAddress = factoryContract.getStringOrFail(keyFeeCollectorAddress).addressFromStringValue()
+
+let inFee = factoryContract.invoke("getInFeeREADONLY", [this.toString()], []).exactAs[Int]
+let outFee = factoryContract.invoke("getOutFeeREADONLY", [this.toString()], []).exactAs[Int]
 
 # check that global shutdown is take place
 func isGlobalShutdown() = {
@@ -526,8 +525,8 @@ func emit(amount: Int) = {
   amount
 }
 
-func takeFee(amount: Int) = {
-  let feeAmount = fraction(amount, fee, scale8)
+func takeFee(amount: Int, fee: Int) = {
+  let feeAmount = if (fee == 0) then 0 else fraction(amount, fee, scale8)
   (amount - feeAmount, feeAmount)
 }
 
@@ -565,9 +564,9 @@ func calcPutOneToken(
     (0, paymentAmountRaw)
   }
 
-  let amountAssetAmount = amountAssetAmountRaw.takeFee()._1
-  let priceAssetAmount = priceAssetAmountRaw.takeFee()._1
-  let (paymentAmount, feeAmount) = paymentAmountRaw.takeFee()
+  let amountAssetAmount = amountAssetAmountRaw.takeFee(inFee)._1
+  let priceAssetAmount = priceAssetAmountRaw.takeFee(inFee)._1
+  let (paymentAmount, feeAmount) = paymentAmountRaw.takeFee(inFee)
 
   let amountBalanceNew = amountBalanceOld + amountAssetAmount
   let priceBalanceNew = priceBalanceOld + priceAssetAmount
@@ -647,7 +646,7 @@ func calcGetOneToken(
     0,
     { balanceBigInt * (scale18 - pow(scale18 - redeemedBigInt * scale18 / supplyBigInt, 18, big2, 0, 18, DOWN)) / scale18 }.toInt()
   ].max()
-  let (totalAmount, feeAmount) = amountRaw.takeFee()
+  let (totalAmount, feeAmount) = amountRaw.takeFee(outFee)
 
   let (outAmAmount, outPrAmount, amBalanceNew, prBalanceNew) = if (outInAmountAsset) then {
     (totalAmount, 0, amBalanceOld - amountRaw, prBalanceOld)

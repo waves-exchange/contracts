@@ -184,6 +184,22 @@ export const mochaHooks = {
     await api.transactions.broadcast(setFeeCollectorFactoryV2Tx, {});
     await waitForTx(setFeeCollectorFactoryV2Tx.id, { apiBase });
 
+    const setDefaultInOutFeeTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__inFeeDefault',
+        type: 'integer',
+        value: '100000',
+      }, {
+        key: '$s__outFeeDefault',
+        type: 'integer',
+        value: '100000',
+      }],
+      chainId,
+    }, this.accounts.factoryV2);
+    await api.transactions.broadcast(setDefaultInOutFeeTx, {});
+    await waitForTx(setDefaultInOutFeeTx.id, { apiBase });
+
     const setManagerFactoryV2Tx = data({
       additionalFee: 4e5,
       data: [{

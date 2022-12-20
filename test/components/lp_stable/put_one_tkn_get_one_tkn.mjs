@@ -15,7 +15,7 @@ describe('lp_stable: put one token, get one token', /** @this {MochaSuiteModifie
       value: 0,
     });
   });
-  it('user should reveive the same amount after get', async function () {
+  it('user should receive the same amount after get minus fees', async function () {
     const dApp = address(this.accounts.lpStable, chainId);
     const caller = this.accounts.user1;
     const amountAssetId = this.usdtAssetId;
@@ -32,6 +32,10 @@ describe('lp_stable: put one token, get one token', /** @this {MochaSuiteModifie
     });
 
     const priceAssetAmount = 5e6;
+    const inFee = 100000;
+    const outFee = 100000;
+    let expectedReceivedAmount = priceAssetAmount - (priceAssetAmount * (inFee / 10 ** 8));
+    expectedReceivedAmount -= (expectedReceivedAmount * (outFee / 10 ** 8));
     const putOneTknInfo = await lpStable.putOneTknV2({
       dApp,
       caller,
@@ -70,6 +74,7 @@ describe('lp_stable: put one token, get one token', /** @this {MochaSuiteModifie
     }
 
     const allowableError = 2;
-    expect(outAssetAmount).to.be.within(priceAssetAmount - allowableError, priceAssetAmount);
+    expect(outAssetAmount).to.be
+      .within(expectedReceivedAmount - allowableError, expectedReceivedAmount);
   });
 });
