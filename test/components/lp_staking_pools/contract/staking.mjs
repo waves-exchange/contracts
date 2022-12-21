@@ -16,4 +16,19 @@ export const stakingMock = {
 
     return broadcastAndWait(dataTx);
   },
+
+  setStakedByUser: async ({
+    caller,
+    value,
+  }) => {
+    const dataTx = data({
+      data: [
+        { key: 'stakedByUser', type: 'integer', value },
+      ],
+      additionalFee: 4e5,
+      chainId,
+    }, caller);
+
+    return broadcastAndWait(dataTx);
+  },
 };

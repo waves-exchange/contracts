@@ -405,7 +405,7 @@ func finalize(baseAssetIdStr: String) = {
   # convert shareAssetAmountToConvert to lp tokens using price (lp asset / share asset)
   let shareAssetAmountToConvert = baseAssetId.keyShareAssetAmountToConvert().getInteger().valueOrElse(0)
   let getActions = if (shareAssetAmountToConvert > 0) then {
-    let unstakeAmount = fraction(shareAssetAmountToConvert.toBigInt(), price, scale18BigInt, FLOOR)
+    let unstakeAmount = fraction(shareAssetAmountToConvert.toBigInt(), price, scale18BigInt, FLOOR).toInt()
     # unstake and getOneTkn, calculate price for claimBaseAsset (base asset / share asset)
     strict baseAssetAmount = {
       let outAssetId = baseAssetId

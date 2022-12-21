@@ -6,3 +6,8 @@
 func claimWx(lpAssetIdStr: String) = {
   (nil, "totalReward".getInteger().valueOrElse(0))
 }
+
+@Callable(i)
+func stakedByUserREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+  (nil, "stakedByUser".getInteger().valueOrElse(0))
+}
