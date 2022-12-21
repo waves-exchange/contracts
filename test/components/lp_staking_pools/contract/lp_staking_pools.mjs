@@ -4,8 +4,8 @@ import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 export const lpStakingPools = {
   create: async ({
     dApp, caller,
-    baseAssetId, shareAssetId,
-    shareAssetName, shareAssetDescription, shareAssetLogo,
+    baseAssetId, shareAssetId = '',
+    shareAssetName = '', shareAssetDescription = '', shareAssetLogo = '',
   }) => {
     const invokeTx = invokeScript(
       {
