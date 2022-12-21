@@ -1,26 +1,19 @@
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { transfer } from '@waves/waves-transactions';
+// import { api } from '../../utils/api.mjs';
+
 import { lpStakingPools } from './contract/lp_staking_pools.mjs';
 import { factoryMock } from './contract/factory_v2.mjs';
-import { broadcastAndWait, chainId, baseSeed } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 
-describe(`${process.pid}: lp_staking_pools: put`, () => {
+describe(`${process.pid}: lp_staking_pools: finalize`, () => {
   before(async function () {
     await factoryMock.setPoolAndAsset({
       poolAddress: this.accounts.lpStable.addr,
       lpAssetId: this.lpAssetId,
       caller: this.accounts.factory.seed,
     });
-
-    await broadcastAndWait(transfer({
-      recipient: this.accounts.user.addr,
-      assetId: this.usdtAssetId,
-      amount: 100 * 1e6,
-      chainId,
-    }, baseSeed));
 
     await lpStakingPools.create({
       dApp: this.accounts.lpStakingPools.addr,
@@ -29,13 +22,11 @@ describe(`${process.pid}: lp_staking_pools: put`, () => {
       shareAssetName: 'usdt share asset',
     });
   });
-  it('should successfully put', async function () {
-    const baseAssetAmount = 100 * 1e6;
-    const txInfo = await lpStakingPools.put({
+  it('should successfully finalize', async function () {
+    const txInfo = await lpStakingPools.finalize({
       dApp: this.accounts.lpStakingPools.addr,
-      caller: this.accounts.user.seed,
+      caller: this.accounts.pacemaker.seed,
       baseAssetId: this.usdtAssetId,
-      baseAssetAmount,
     });
     expect(txInfo.applicationStatus).to.equal('succeeded');
   });

@@ -15,7 +15,7 @@ describe(`${process.pid}: lp_staking_pools: create`, () => {
       caller: this.accounts.factory.seed,
     });
   });
-  it('successfull create', async function () {
+  it('should successfully create', async function () {
     const { addr: dApp, seed: caller } = this.accounts.lpStakingPools;
     const baseAssetId = this.usdtAssetId;
     const shareAssetId = '';

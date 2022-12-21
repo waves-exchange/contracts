@@ -17,6 +17,7 @@ const mockPath = './components/lp_staking_pools/mock';
 const lpStakingPoolsPath = format({ dir: ridePath, base: 'lp_staking_pools.ride' });
 const factoryMockPath = format({ dir: mockPath, base: 'factory_v2.ride' });
 const assetsStoreMockPath = format({ dir: mockPath, base: 'assets_store.ride' });
+const stakingMockPath = format({ dir: mockPath, base: 'staking.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -91,6 +92,7 @@ export const mochaHooks = {
     await setScriptFromFile(lpStakingPoolsPath, this.accounts.lpStakingPools.seed);
     await setScriptFromFile(factoryMockPath, this.accounts.factory.seed);
     await setScriptFromFile(assetsStoreMockPath, this.accounts.assetsStore.seed);
+    await setScriptFromFile(stakingMockPath, this.accounts.staking.seed);
 
     const setRequiredStateTx = data({
       data: [
