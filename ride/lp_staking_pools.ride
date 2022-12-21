@@ -270,6 +270,7 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
 
 @Callable(i)
 func get() = {
+  # TODO: check staked amount and payment amount
   let pmt = if (i.payments.size() == 1) then i.payments[0] else "exactly 1 payment is expected".throwErr()
   let shareAssetId = pmt.assetId
   strict baseAssetId = shareAssetId.keyBaseAssetId()

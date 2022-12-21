@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { transfer } from '@waves/waves-transactions';
 import { lpStakingPools } from './contract/lp_staking_pools.mjs';
 import { factoryMock } from './contract/factory_v2.mjs';
-import { broadcastAndWait } from '../../utils/api.mjs';
+import { broadcastAndWait, chainId, baseSeed } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 
@@ -19,7 +19,8 @@ describe(`${process.pid}: lp_staking_pools: put`, () => {
       recipient: this.accounts.user.addr,
       assetId: this.usdtAssetId,
       amount: 100 * 1e6,
-    }, this.baseSeed));
+      chainId,
+    }, baseSeed));
 
     await lpStakingPools.create({
       dApp: this.accounts.lpStakingPools.addr,

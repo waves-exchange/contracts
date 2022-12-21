@@ -20,7 +20,6 @@ const assetsStoreMockPath = format({ dir: mockPath, base: 'assets_store.ride' })
 
 export const mochaHooks = {
   async beforeAll() {
-    this.baseSeed = baseSeed;
     const nonce = random(nonceLength, 'Buffer').toString('hex');
     // setup accounts
     const contractNames = [
