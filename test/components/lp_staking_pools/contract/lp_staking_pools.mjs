@@ -52,7 +52,8 @@ export const lpStakingPools = {
 
   claimShareAsset: async ({
     dApp, caller,
-    baseAssetId, userAddress,
+    baseAssetId,
+    userAddress = '',
   }) => {
     const invokeTx = invokeScript(
       {

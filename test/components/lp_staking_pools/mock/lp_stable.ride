@@ -1,0 +1,18 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+# TODO: handle multiple calls
+@Callable(i)
+func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
+  let emitLpAmt = "putOneTknV2Result".getInteger().valueOrElse(0)
+
+  (nil, emitLpAmt)
+}
+
+@Callable(i)
+func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
+  let totalAmount = "unstakeAndGetOneTknV2Result".getInteger().valueOrElse(0)
+
+  (nil, totalAmount)
+}
