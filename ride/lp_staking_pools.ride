@@ -82,13 +82,22 @@ func keyUserShareAssetAmountToConvertPeriod(baseAssetId: ByteVector|Unit, userAd
 func keyPricePeriod(baseAssetId: ByteVector|Unit, period: Int) = {
   ["%s%s%d", baseAssetId.assetIdToString(), "price", period.toString()].makeString(separator)
 }
+func keyPriceHistory(baseAssetId: ByteVector|Unit) = {
+  ["%s%s%s%s%d%d", baseAssetId.assetIdToString(), "price", "history", lastBlock.height.toString(), lastBlock.timestamp.toString()].makeString(separator)
+}
 # base asset / share asset price for claimShareAsset
 func keyPricePeriodPut(baseAssetId: ByteVector|Unit, period: Int) = {
   ["%s%s%d%s", baseAssetId.assetIdToString(), "price", period.toString(), "put"].makeString(separator)
 }
+func keyPricePutHistory(baseAssetId: ByteVector|Unit) = {
+  ["%s%s%s%s%d%d", baseAssetId.assetIdToString(), "price", "history", "put", lastBlock.height.toString(), lastBlock.timestamp.toString()].makeString(separator)
+}
 # base asset / share asset price for claimBaseAsset
 func keyPricePeriodGet(baseAssetId: ByteVector|Unit, period: Int) = {
   ["%s%s%d%s", baseAssetId.assetIdToString(), "price", period.toString(), "get"].makeString(separator)
+}
+func keyPriceGetHistory(baseAssetId: ByteVector|Unit) = {
+  ["%s%s%s%s%d%d", baseAssetId.assetIdToString(), "price", "history", "get", lastBlock.height.toString(), lastBlock.timestamp.toString()].makeString(separator)
 }
 func keyHistoryEntry(baseAssetId: ByteVector|Unit, operation: String, period: Int, userAddress: Address, txId: ByteVector) = {
   ["%s%s%s%s", "history", operation, userAddress.toString(), txId.toBase58String(), height.toString()].makeString(separator)
@@ -443,7 +452,8 @@ func finalize(baseAssetIdStr: String) = {
     ]
     let priceGet = fraction(baseAssetAmount.toBigInt(), scale18BigInt, shareAssetAmountToConvert.toBigInt(), FLOOR)
     let priceGetUpdateActions = [
-      BinaryEntry(baseAssetId.keyPricePeriodGet(period), priceGet.toBytes())
+      BinaryEntry(baseAssetId.keyPricePeriodGet(period), priceGet.toBytes()),
+      BinaryEntry(baseAssetId.keyPriceGetHistory(), priceGet.toBytes())
     ]
 
     shareAssetBurnActions ++ priceGetUpdateActions
@@ -471,7 +481,8 @@ func finalize(baseAssetIdStr: String) = {
     # save new price for claimShareAsset (base asset / share asset)
     let pricePut = fraction(baseAssetAmountToConvert.toBigInt(), scale18BigInt, shareAssetAmount.toBigInt())
     let pricePutUpdateActions = [
-      BinaryEntry(baseAssetId.keyPricePeriodPut(period), pricePut.toBytes())
+      BinaryEntry(baseAssetId.keyPricePeriodPut(period), pricePut.toBytes()),
+      BinaryEntry(baseAssetId.keyPricePutHistory(), pricePut.toBytes())
     ]
     shareAssetReissueActions ++ pricePutUpdateActions
   } else []
@@ -485,7 +496,8 @@ func finalize(baseAssetIdStr: String) = {
     IntegerEntry(baseAssetId.keyShareAssetAmountToConvert(), 0),
     # reset baseAssetAmountToConvert
     IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), 0),
-    StringEntry(baseAssetId.keyPricePeriod(period), price.toString())
+    BinaryEntry(baseAssetId.keyPricePeriod(period), price.toBytes()),
+    BinaryEntry(baseAssetId.keyPriceHistory(), price.toBytes())
   ] ++ putActions ++ getActions
 
   (actions, price.toBytes())
