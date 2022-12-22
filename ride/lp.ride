@@ -1037,7 +1037,7 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
   let userAddress = i.caller
   let txId = i.transactionId
 
-  let currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
   strict (amountEstimated, commonState, feeAmount, bonus, outInAmountAsset) = calcGetOneToken(outAssetId, unstakeAmount, cfgLpAssetId, userAddress, txId)
