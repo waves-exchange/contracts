@@ -78,9 +78,6 @@ func keyUserShareAssetAmountToConvert(baseAssetId: ByteVector|Unit, userAddress:
 func keyUserShareAssetAmountToConvertPeriod(baseAssetId: ByteVector|Unit, userAddress: Address) = {
   ["%s%s%s%s", baseAssetId.assetIdToString(), userAddress.toString(), "shareAssetAmountToConvert", "period"].makeString(separator)
 }
-func keyPriceLast(baseAssetId: ByteVector|Unit) = {
-  ["%s%s%s", baseAssetId.assetIdToString(), "price", "last"].makeString(separator)
-}
 # lp asset / share asset price
 func keyPricePeriod(baseAssetId: ByteVector|Unit, period: Int) = {
   ["%s%s%d", baseAssetId.assetIdToString(), "price", period.toString()].makeString(separator)
@@ -487,7 +484,8 @@ func finalize(baseAssetIdStr: String) = {
     # reset shareAssetAmountToConvert
     IntegerEntry(baseAssetId.keyShareAssetAmountToConvert(), 0),
     # reset baseAssetAmountToConvert
-    IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), 0)
+    IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), 0),
+    StringEntry(baseAssetId.keyPricePeriod(period), price.toString())
   ] ++ putActions ++ getActions
 
   (actions, price.toBytes())
