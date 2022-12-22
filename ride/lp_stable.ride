@@ -312,7 +312,7 @@ func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address
   let lpEmiss = assetInfo(lpId).valueOrErrorMessage("Wrong LP id").quantity
 
   # validation block
-  if (lpId.toUtf8String() != pmtAssetId) then throw("Wrong pmt asset") else
+  if (lpId.toBase58String() != pmtAssetId) then throw("Wrong pmt asset") else
 
   let amBalance = getAccBalance(amId)
   let amBalanceX18 = amBalance.t1(amDcm)
