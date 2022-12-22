@@ -93,6 +93,9 @@ func keyPricePeriodPut(baseAssetId: ByteVector|Unit, period: Int) = {
 func keyPricePeriodGet(baseAssetId: ByteVector|Unit, period: Int) = {
   ["%s%s%d%s", baseAssetId.assetIdToString(), "price", period.toString(), "get"].makeString(separator)
 }
+func keyHistoryEntry(baseAssetId: ByteVector|Unit, operation: String, period: Int, userAddress: Address, txId: ByteVector) = {
+  ["%s%s%s%s", "history", operation, userAddress.toString(), txId.toBase58String(), height.toString()].makeString(separator)
+}
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
@@ -236,7 +239,11 @@ func put() = {
   ([
     IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), baseAssetAmountToConvert + pmt.amount),
     IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), userBaseAssetAmountToConvert + pmt.amount),
-    IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress), period)
+    IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress), period),
+    IntegerEntry(
+      baseAssetId.keyHistoryEntry("put", period, userAddress, i.transactionId),
+      pmt.amount
+    )
   ], unit)
 }
 
@@ -264,7 +271,11 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
 
   ([
     IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), 0),
-    ScriptTransfer(userAddress, shareAssetAmount, shareAssetId)
+    ScriptTransfer(userAddress, shareAssetAmount, shareAssetId),
+    IntegerEntry(
+      baseAssetId.keyHistoryEntry("claimShareAsset", period, userAddress, i.transactionId),
+      shareAssetAmount
+    )
   ], unit)
 }
 
@@ -292,7 +303,11 @@ func get() = {
   ([
     IntegerEntry(baseAssetId.keyShareAssetAmountToConvert(), shareAssetAmountToConvert + pmt.amount),
     IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), userShareAssetAmountToConvert + pmt.amount),
-    IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress), period)
+    IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress), period),
+    IntegerEntry(
+      baseAssetId.keyHistoryEntry("get", period, userAddress, i.transactionId),
+      pmt.amount
+    )
   ], unit)
 }
 
@@ -317,7 +332,11 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
 
   ([
     IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), 0),
-    ScriptTransfer(userAddress, baseAssetAmount, baseAssetId)
+    ScriptTransfer(userAddress, baseAssetAmount, baseAssetId),
+    IntegerEntry(
+      baseAssetId.keyHistoryEntry("claimBaseAsset", period, userAddress, i.transactionId),
+      baseAssetAmount
+    )
   ], unit)
 }
 
