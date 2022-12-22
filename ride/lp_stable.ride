@@ -1310,7 +1310,7 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
   if (outAmAmt < noLessThenAmtAsset) then throw("Failed:  " + outAmAmt.toString() + " < " + noLessThenAmtAsset.toString()) else
   if (outPrAmt < noLessThenPriceAsset) then throw("Failed: " + outPrAmt.toString() + " < " + noLessThenPriceAsset.toString()) else
 
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), pmtAmt.toBigInt())
+  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict burnLPAssetOnFactory = invoke(fca,
                                   "burn",
@@ -1320,6 +1320,12 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
 
   # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+  # 31172425392
+  # 525347935525
+  # 6599503952160739
+  # 6599425119994711
+  # 83715875950959
+  # 83714875950959
   strict error = updatedDLp >= currentDLp || [
     "updated DLp lower than current DLp",
     aab.toString(),
