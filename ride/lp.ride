@@ -1104,7 +1104,7 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
   if (outAmAmt < noLessThenAmtAsset) then throw("noLessThenAmtAsset failed:  " + outAmAmt.toString() + " < " + noLessThenAmtAsset.toString()) else
   if (outPrAmt < noLessThenPriceAsset) then throw("noLessThenPriceAsset failed: " + outPrAmt.toString() + " < " + noLessThenPriceAsset.toString()) else
 
-  let currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), pmtAmt.toBigInt())
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict burnLPAssetOnFactory = invoke(factoryContract,
                                   "burn",
@@ -1127,7 +1127,7 @@ func unstakeAndGet(amount: Int) = {
 
   let lpAssetId = cfg[idxPoolLPAssetId].fromBase58String()
 
-  let currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   # negative amount will not pass
   strict unstakeInv = stakingContract.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
@@ -1160,7 +1160,7 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
     i.payments.size() == 0 || "no payments are expected".throw()
   ]
 
-  let currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
 
