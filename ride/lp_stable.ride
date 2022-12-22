@@ -147,13 +147,6 @@ func toe(orV: Boolean, sendrV: Boolean, matchV: Boolean) = {
 # GLOBAL FUNCTIONS
 #------------------------
 
-func str(val: Any) = {
-  match val {
-    case valStr: String => valStr
-    case _ => throw("fail cast to String")
-  }
-}
-
 # getStringOrFail
 func strf(addr: Address, key: String) = addr.getString(key).valueOrErrorMessage(makeString(["mandatory ", addr.toString(), ".", key, " not defined"], ""))
 # getIntOrFail
@@ -206,7 +199,9 @@ func parsePoolConfig(poolConfig: List[String]) = {
     poolConfig[idxAmAsId].parseAssetId(),
     poolConfig[idxPrAsId].parseAssetId(),
     poolConfig[idxAmtAsDcm].parseIntValue(),
-    poolConfig[idxPriceAsDcm].parseIntValue()
+    poolConfig[idxPriceAsDcm].parseIntValue(),
+    poolConfig[idxIAmtAsId].fromBase58String(),
+    poolConfig[idxIPriceAsId].fromBase58String()
   )
 }
 
@@ -218,7 +213,9 @@ let (
   cfgAmountAssetId,
   cfgPriceAssetId,
   cfgAmountAssetDecimals,
-  cfgPriceAssetDecimals
+  cfgPriceAssetDecimals,
+  cfgInAmountAssedId,
+  cfgInPriceAssetId
 ) = poolConfigParsed
 
 # getFactoryConfig
@@ -275,9 +272,8 @@ func pcp(amAssetDcm: Int, prAssetDcm: Int, amAmt: Int, prAmt: Int) = {
 
 # used only in stats endpoint, so result values are in scale8 as required
 func calcPrices(amAmt: Int, prAmt: Int, lpAmt: Int) = {
-  let cfg = gpc()
-  let amtAsDcm = cfg[idxAmtAsDcm].parseIntValue()
-  let prAsDcm = cfg[idxPriceAsDcm].parseIntValue()
+  let amtAsDcm = cfgAmountAssetDecimals
+  let prAsDcm = cfgPriceAssetDecimals
 
   let priceX18 = pcp(amtAsDcm, prAsDcm, amAmt, prAmt)
 
@@ -306,19 +302,17 @@ func takeFee(amount: Int) = {
 
 # estimateGetOperation
 func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address) = {
-  # data from pool config
-  let cfg             = gpc()
-  let lpId       = cfg[idxLPAsId]
-  let amId       = cfg[idxAmAsId]
-  let prId       = cfg[idxPrAsId]
-  let amDcm      = cfg[idxAmtAsDcm].parseIntValue()
-  let prDcm      = cfg[idxPriceAsDcm].parseIntValue()
-  let sts      = cfg[idxPoolSt]
+  let lpId   = cfgLpAssetId
+  let amId   = cfgAmountAssetId.value().toBase58String()
+  let prId   = cfgPriceAssetId.value().toBase58String()
+  let amDcm  = cfgAmountAssetDecimals
+  let prDcm  = cfgPriceAssetDecimals
+  let sts    = cfgPoolStatus.toString()
 
-  let lpEmiss = assetInfo(lpId.fromBase58String()).valueOrErrorMessage("Wrong LP id").quantity
+  let lpEmiss = assetInfo(lpId).valueOrErrorMessage("Wrong LP id").quantity
 
   # validation block
-  if (lpId != pmtAssetId) then throw("Wrong pmt asset") else
+  if (lpId.toUtf8String() != pmtAssetId) then throw("Wrong pmt asset") else
 
   let amBalance = getAccBalance(amId)
   let amBalanceX18 = amBalance.t1(amDcm)
@@ -378,16 +372,14 @@ func epo(txId58: String,
                           validateSlippage: Boolean,
                           pmtAmt: Int,
                           pmtId: String) = {
-    # data from pool config
-    let cfg           = gpc()
-    let lpId     = cfg[idxLPAsId].fromBase58String()
-    let amIdStr  = cfg[idxAmAsId]
-    let prIdStr  = cfg[idxPrAsId]
-    let inAmIdStr   = cfg[idxIAmtAsId]
-    let inPrIdStr = cfg[idxIPriceAsId]
-    let amtDcm   = cfg[idxAmtAsDcm].parseIntValue()
-    let priceDcm = cfg[idxPriceAsDcm].parseIntValue()
-    let sts    = cfg[idxPoolSt]
+    let lpId      = cfgLpAssetId
+    let amIdStr   = cfgAmountAssetId.value().toBase58String()
+    let prIdStr   = cfgPriceAssetId.value().toBase58String()
+    let inAmIdStr = cfgInAmountAssedId
+    let inPrIdStr = cfgInPriceAssetId
+    let amtDcm    = cfgAmountAssetDecimals
+    let priceDcm  = cfgPriceAssetDecimals
+    let sts       = cfgPoolStatus.toString()
 
     let lpEm = assetInfo(lpId).valueOrErrorMessage("Wr lp as").quantity
 
@@ -746,14 +738,13 @@ func calcPutOneTkn(
   txId: String,
   withTakeFee: Boolean
 ) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId]
-  let amtDcm = poolConfig[idxAmtAsDcm].parseIntValue()
-  let priceDcm = poolConfig[idxPriceAsDcm].parseIntValue()
+  let amId = cfgAmountAssetId.value().toBase58String()
+  let prId = cfgPriceAssetId.value().toBase58String()
+  let lpId = cfgLpAssetId
+  let amtDcm = cfgAmountAssetDecimals
+  let priceDcm = cfgPriceAssetDecimals
 
-  let lpAssetEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
+  let lpAssetEmission = lpId.assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   strict chechEmission = lpAssetEmission > big0 || "initial deposit requires all coins".throw()
 
   let amBalance = amId.getAccBalance()
@@ -829,13 +820,12 @@ func getOneTknV2Internal(
   originCaller: Address,
   transactionId: ByteVector
 ) = {
-  let poolConfig = gpc()
-  let lpId = poolConfig[idxLPAsId]
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let amDecimals = poolConfig[idxAmtAsDcm].parseIntValue()
-  let prDecimals = poolConfig[idxPriceAsDcm].parseIntValue()
-  let poolStatus = poolConfig[idxPoolSt]
+  let lpId = cfgLpAssetId.value().toBase58String()
+  let amId = cfgAmountAssetId.value().toBase58String()
+  let prId = cfgPriceAssetId.value().toBase58String()
+  let amDecimals = cfgAmountAssetDecimals
+  let prDecimals = cfgPriceAssetDecimals
+  let poolStatus = cfgPoolStatus
 
   let userAddress = if (caller == restContract) then originCaller else caller
 
@@ -1047,12 +1037,11 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId].fromBase58String()
-  let amDecimals = poolConfig[idxAmtAsDcm].parseIntValue()
-  let prDecimals = poolConfig[idxPriceAsDcm].parseIntValue()
+  let amId = cfgAmountAssetId.value().toBase58String()
+  let prId = cfgPriceAssetId.value().toBase58String()
+  let lpId = cfgLpAssetId
+  let amDecimals = cfgAmountAssetDecimals
+  let prDecimals = cfgPriceAssetDecimals
 
   let userAddress = if (i.caller == this) then i.originCaller else i.caller
 
@@ -1245,10 +1234,9 @@ func getOneTknV2READONLY(
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId]
+  let amId = cfgAmountAssetId.value().toBase58String()
+  let prId = cfgPriceAssetId.value().toBase58String()
+  let lpId = cfgLpAssetId.value().toBase58String()
   let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
   let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   let D0 = xp.getD()
@@ -1273,10 +1261,9 @@ func getOneTknV2WithBonusREADONLY(
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId]
+  let amId = cfgAmountAssetId.value().toBase58String()
+  let prId = cfgPriceAssetId.value().toBase58String()
+  let lpId = cfgLpAssetId.value().toBase58String()
 
   let amBalance = amId.getAccBalance()
   let prBalance = prId.getAccBalance()
@@ -1333,10 +1320,9 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
 func unstakeAndGet(amount: Int) = {
   strict checkPayments = if (i.payments.size() != 0) then throw("No pmnts expd") else true
 
-  let cfg = gpc()
   let factoryCfg = gfc()
 
-  let lpAssetId = cfg[idxLPAsId].fromBase58String()
+  let lpAssetId = cfgLpAssetId
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
 
   let currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
@@ -1407,10 +1393,9 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
     i.payments.size() == 0 || "no payments are expected".throwErr()
   ]
 
-  let cfg = gpc()
   let factoryCfg = gfc()
 
-  let lpAssetId = cfg[idxLPAsId].fromBase58String()
+  let lpAssetId = cfgLpAssetId
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
 
   strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), unstakeAmount], [])
@@ -1428,11 +1413,6 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
 
 @Callable(i)
 func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId]
-
   let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", true)
 
   (nil, (lpAmount, feeAmount, bonus))
@@ -1440,11 +1420,6 @@ func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String)
 
 @Callable(i)
 func putOneTknV2WithoutTakeFeeREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId]
-
   let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", false)
 
   (nil, (lpAmount, feeAmount, bonus))
