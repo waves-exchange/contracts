@@ -1145,13 +1145,13 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
 @Callable(i)
 func get() = {
   # amountAssetBalance
-  strict aab = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
-  # priceAssetBalance
-  strict pab = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
-  # lpAssetEmission
-  strict lae = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
-  # lpAssetEmissionAfter
-  strict laea = lae - i.payments[0].value().amount.toBigInt()
+  # strict aab = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
+  # # priceAssetBalance
+  # strict pab = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
+  # # lpAssetEmission
+  # strict lae = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
+  # # lpAssetEmissionAfter
+  # strict laea = lae - i.payments[0].value().amount.toBigInt()
   strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   let r = cg(i)
@@ -1167,16 +1167,16 @@ func get() = {
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmtAmt, -outPrAmt, 0)
 
-  # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-  strict error = updatedDLp >= currentDLp || [
-    "updated DLp lower than current DLp",
-    aab.toString(),
-    pab.toString(),
-    currentDLp.toString(),
-    updatedDLp.toString(),
-    lae.toString(),
-    laea.toString()
-  ].makeString(" ").throwErr()
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+  # strict error = updatedDLp >= currentDLp || [
+  #   "updated DLp lower than current DLp",
+  #   aab.toString(),
+  #   pab.toString(),
+  #   currentDLp.toString(),
+  #   updatedDLp.toString(),
+  #   lae.toString(),
+  #   laea.toString()
+  # ].makeString(" ").throwErr()
 
   state ++ refreshDLpActions
 }
@@ -1292,6 +1292,15 @@ func getOneTknV2WithBonusREADONLY(
 
 @Callable(i)
 func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
+  # amountAssetBalance
+  strict aab = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
+  # priceAssetBalance
+  strict pab = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
+  # lpAssetEmission
+  strict lae = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
+  # lpAssetEmissionAfter
+  strict laea = lae - i.payments[0].value().amount.toBigInt()
+
   let r = cg(i)
   let outAmAmt    = r._1
   let outPrAmt    = r._2
@@ -1310,7 +1319,16 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
 
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+  # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+  strict error = updatedDLp >= currentDLp || [
+    "updated DLp lower than current DLp",
+    aab.toString(),
+    pab.toString(),
+    currentDLp.toString(),
+    updatedDLp.toString(),
+    lae.toString(),
+    laea.toString()
+  ].makeString(" ").throwErr()
 
   state ++ refreshDLpActions
 }
