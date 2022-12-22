@@ -367,10 +367,12 @@ func finalize(baseAssetIdStr: String) = {
     # let (wxUsdnPoolAddress, wxUsdnLpAssetId) = wxAssetId.getPoolInfo().valueOrErrorMessage("can't find wx/usdn pool".wrapErr())
     strict convertedAmount = {
       let inAssetId = wxAssetId
-      let outAssetId = usdnAssetId
+      let minimumToReceive = 0
+      let outAssetIdStr = usdnAssetId.assetIdToString()
+      let targetAddress = ""
       swapContract.invoke(
         "swap",
-        [outAssetId.assetIdToString()],
+        [minimumToReceive, outAssetIdStr, targetAddress],
         [AttachedPayment(inAssetId, convertPart)]
       ).as[Int].valueOrErrorMessage("invalid swap result".wrapErr())
     }
