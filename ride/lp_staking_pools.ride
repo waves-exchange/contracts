@@ -83,7 +83,7 @@ func keyPricePeriod(baseAssetId: ByteVector|Unit, period: Int) = {
   ["%s%s%d", baseAssetId.assetIdToString(), "price", period.toString()].makeString(separator)
 }
 func keyPriceHistory(baseAssetId: ByteVector|Unit) = {
-  ["%s%s%s%s%d%d", baseAssetId.assetIdToString(), "price", "history", lastBlock.height.toString(), lastBlock.timestamp.toString()].makeString(separator)
+  ["%s%s%s%d%d", baseAssetId.assetIdToString(), "price", "history", lastBlock.height.toString(), lastBlock.timestamp.toString()].makeString(separator)
 }
 # base asset / share asset price for claimShareAsset
 func keyPricePeriodPut(baseAssetId: ByteVector|Unit, period: Int) = {
