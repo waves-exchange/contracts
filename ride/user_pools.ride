@@ -215,7 +215,7 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
       0,
       false
     ], [
-      AttachedPayment(amountAssetId.fromBase58String(), keyAmountAssetAmount(amountAssetId, priceAssetId).getInteger().value()),
+      AttachedPayment(if (amountAssetId == "WAVES") then unit else amountAssetId.fromBase58String(), keyAmountAssetAmount(amountAssetId, priceAssetId).getInteger().value()),
       AttachedPayment(if (priceAssetId == "WAVES") then unit else priceAssetId.fromBase58String(), keyPriceAssetAmount(amountAssetId, priceAssetId).getInteger().value())
     ]
   )
