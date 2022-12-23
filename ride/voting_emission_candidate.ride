@@ -168,7 +168,7 @@ func suggest(amountAssetId: String, priceAssetId: String) = {
   let payment = i.payments[0].value()
   strict checkAmountAsset = if (amountAssetId == "WAVES") then unit else {
     let info = amountAssetId.fromBase58String().assetInfo().valueOrErrorMessage("invalid amountAssetId ID")
-    if (info.scripted) then "asset is smart".throw() else unit
+    info.scripted == false || "asset is smart".throw()
   }
 
   strict checks = [
