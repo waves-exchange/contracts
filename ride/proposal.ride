@@ -4,7 +4,7 @@
 
 let SEP = "__"
 
-func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyManagerPublicKey() = "%s__managerPublicpKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 
 func blockHeightError() = "The block's height is too big for this proposal".throw()
@@ -15,6 +15,7 @@ func gwxContractAddress() = ["%s", "gwxContractAddress"].makeString(SEP)
 
 func keyCurrentIndex() = ["%s", "currentIndex"].makeString(SEP)
 
+func keyProposalName(number: Int) = ["%s%d", "proposalName", number.toString()].makeString(SEP)
 func keyProposalDescription(number: Int) = ["%s%d", "proposalDescription", number.toString()].makeString(SEP)
 func keyProposalEnd(number: Int) = ["%s%d", "proposalEnd", number.toString()].makeString(SEP)
 
@@ -67,7 +68,7 @@ func constructor(gwxContractAddress: String) = {
 }
 
 @Callable(i)
-func startNewVote(description: String, expirationHeight: Int, quorumNumber: Int) = {
+func startNewVote(name: String, description: String, expirationHeight: Int, quorumNumber: Int) = {
   strict checks = [
     i.mustManager()
   ]
@@ -75,6 +76,7 @@ func startNewVote(description: String, expirationHeight: Int, quorumNumber: Int)
   
   [
     IntegerEntry(keyCurrentIndex(), theIndex + 1),
+    StringEntry(keyProposalName(theIndex), name),
     StringEntry(keyProposalDescription(theIndex), description),
     IntegerEntry(keyProposalEnd(theIndex), lastBlock.height + expirationHeight),
 
