@@ -1014,7 +1014,14 @@ func put(slip: Int, autoStake: Boolean) = {
     let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
     strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-    strict check = updatedDLp >= currentDLp || "updated DLp lower than current DLp".throwErr()
+    strict check = updatedDLp >= currentDLp || [
+      "updated DLp lower than current DLp",
+      amountAssetBalance.toString(),
+      priceAssetBalance.toString(),
+      lpAssetEmission.toString(),
+      currentDLp.toString(),
+      updatedDLp.toString()
+    ].makeString(" ").throwErr()
 
     strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
 
