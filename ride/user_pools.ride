@@ -180,7 +180,8 @@ func create() = {
     IntegerEntry(keyHeight(amountAssetId, priceAssetId), height),
     StringEntry(keyStatus(amountAssetId, priceAssetId), statusPending),
     IntegerEntry(keyAmountAssetAmount(amountAssetId, priceAssetId), amountAssetPayment.amount),
-    IntegerEntry(keyPriceAssetAmount(amountAssetId, priceAssetId), priceAssetPayment.amount)
+    IntegerEntry(keyPriceAssetAmount(amountAssetId, priceAssetId), priceAssetPayment.amount),
+    Burn(feeAssetId.fromBase58String(), feeAssetPayment.amount)
   ]
 }
 
