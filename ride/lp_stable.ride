@@ -431,7 +431,7 @@ func epo(txId58: String,
           slippageX18
         )
     } else {
-            let curPriceX18 = cpbir(prBalanceX18, amBalanceX18, CEILING)
+            let curPriceX18 = cpbi(prBalanceX18, amBalanceX18)
             let slippageRealX18 = fraction(abs(curPriceX18 - userPriceX18), scale18, curPriceX18)
             let slippageX18 = slippage.t1(scale8)
             # validate slippage
@@ -442,8 +442,8 @@ func epo(txId58: String,
 
             # let prViaAmX18 = fraction(inAmAssetAmtX18, curPriceX18, scale18)
             # let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, curPriceX18)
-            let prViaAmX18 = fraction(inAmAssetAmtX18, curPriceX18, scale18, CEILING)
-            let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, curPriceX18, CEILING)
+            let prViaAmX18 = fraction(inAmAssetAmtX18, cpbir(prBalanceX18, amBalanceX18, CEILING), scale18, CEILING)
+            let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, cpbir(prBalanceX18, amBalanceX18, FLOOR), CEILING)
 
             # calculate amount and price assets to perform pool deposit in proportion to current pool price
             let expectedAmts= if (prViaAmX18 > inPrAssetAmtX18)
@@ -453,7 +453,7 @@ func epo(txId58: String,
             let expAmtAssetAmtX18   = expectedAmts._1
             let expPriceAssetAmtX18 = expectedAmts._2
             # calculate LP amount that user
-            let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18)
+            let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18, FLOOR)
             (
               lpAmtX18.fromX18Round(scale8, FLOOR),
               expAmtAssetAmtX18.fromX18Round(amtDcm, CEILING),
@@ -1035,6 +1035,12 @@ func put(slip: Int, autoStake: Boolean) = {
     # 55966140078702
     # 6599425120503433
     # 6599425120499155
+
+    # 84822996586
+    # 284825395918
+    # 55966140078702
+    # 6599425120503433
+    # 6599425120492194
 
     # 84822996586
     # 284825395918
