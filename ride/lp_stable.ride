@@ -246,6 +246,10 @@ func cpbi(prAmtX18: BigInt, amAmtX18: BigInt) = {
   fraction(prAmtX18, scale18, amAmtX18)
 }
 
+func cpbir(prAmtX18: BigInt, amAmtX18: BigInt, round: Ceiling|Floor) = {
+  fraction(prAmtX18, scale18, amAmtX18, round)
+}
+
 # validateAbsDiff
 func vad(A1: BigInt, A2: BigInt, slippage: BigInt) = {
   let diff = fraction(A1 - A2, scale8BigInt, A2)
@@ -427,7 +431,7 @@ func epo(txId58: String,
           slippageX18
         )
     } else {
-            let curPriceX18 = cpbi(prBalanceX18, amBalanceX18)
+            let curPriceX18 = cpbir(prBalanceX18, amBalanceX18, CEILING)
             let slippageRealX18 = fraction(abs(curPriceX18 - userPriceX18), scale18, curPriceX18)
             let slippageX18 = slippage.t1(scale8)
             # validate slippage
@@ -1031,6 +1035,12 @@ func put(slip: Int, autoStake: Boolean) = {
     # 55966140078702
     # 6599425120503433
     # 6599425120499155
+
+    # 84822996586
+    # 284825395918
+    # 55966140078702
+    # 6599425120503433
+    # 6599425120492194
 
     strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
 
