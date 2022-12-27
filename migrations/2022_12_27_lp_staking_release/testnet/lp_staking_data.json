@@ -1,0 +1,51 @@
+{
+  "$schema": "https://raw.githubusercontent.com/wavesplatform/tx-json-schemas/master/src/schemas/TTx.json",
+  "version": 2,
+  "type": 12,
+  "chainId": 84,
+  "data": [
+    {
+      "key": "%s__factoryContract",
+      "type": "string",
+      "value": "3MsMP2pb2p8MDd6Rxb7XEXqqwEhE8ATfyai"
+    },
+    {
+      "key": "%s__assetsStoreContract",
+      "type": "string",
+      "value": "3N5BB6iE58rujeTEkymeLNcdsYF4f6iKoxr"
+    },
+    {
+      "key": "%s__lpStakingContract",
+      "type": "string",
+      "value": "3Mzt645zA6u2QG6jRPoo6H6CK89kVggFgNi"
+    },
+    {
+      "key": "%s__stakingContract",
+      "type": "string",
+      "value": "3Mx3zmXrMcLFCafMuPtXAzR4ZPVeZYb6qLz"
+    },
+    {
+      "key": "%s__boostingContract",
+      "type": "string",
+      "value": "3Myn55vLkduxbX3ZXfiDCZhaQsLxYp1kmCy"
+    },
+    {
+      "key": "%s__swapContract",
+      "type": "string",
+      "value": "3N6LHjfGb6Fgcy7YsVcNxGyPTj49XbQAijq"
+    },
+    {
+      "key": "%s__usdnAssetId",
+      "type": "string",
+      "value": "25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT"
+    },
+    {
+      "key": "%s__wxAssetId",
+      "type": "string",
+      "value": "EMAMLxDnv3xiz8RXg8Btj33jcEw3wLczL3JKYYmuubpc"
+    }
+  ],
+  "fee": 500000,
+  "proofs": [],
+  "senderPublicKey": "F4oaTkX67vt2MEsXLJJ8a7gaURGjW7x8fkvGfdEiH5oy"
+}

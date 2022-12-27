@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/wavesplatform/tx-json-schemas/master/src/schemas/TTx.json",
+  "version": 2,
+  "type": 12,
+  "chainId": 84,
+  "data": [
+    {
+      "key": "%s__adminPubKeys",
+      "type": "string",
+      "value": "2JEaBjtjvMoNGKZmL9QxYefa1VkMJM3vMW8rNvTs9R2H__C2aAS9D6FqfbrkCuCQCtPWAiopjyagvitFLjRuLcRPYt__7iXEgsFNsnbLZ3ca4tmz8jffnyxMu9keuBV6CuQPJLuA__4j5ighurrUZ2WcdBTRGqBfXs5fz9YDA76D4gtpZ9basj__BPiPT1AeigV21Ef1KUZe3T8ofjB5PbhsaPg9dwg4SZXV__F4oaTkX67vt2MEsXLJJ8a7gaURGjW7x8fkvGfdEiH5oy"
+    }
+  ],
+  "fee": 500000,
+  "proofs": [],
+  "senderPublicKey": "EtZZHS4uqNXY5WPneZ8jY2aA95peXwthJVLzAMxMp379"
+}
