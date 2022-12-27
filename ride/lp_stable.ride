@@ -440,7 +440,7 @@ func epo(txId58: String,
             let lpEmissionX18 = lpEm.t1(scale8)
             # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
 
-            let prViaAmX18 = fraction(inAmAssetAmtX18, cpbir(prBalanceX18, amBalanceX18, CEILING), scale18, FLOOR)
+            let prViaAmX18 = fraction(inAmAssetAmtX18, cpbir(prBalanceX18, amBalanceX18, FLOOR), scale18, FLOOR)
             let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, cpbir(prBalanceX18, amBalanceX18, FLOOR), FLOOR)
 
             # calculate amount and price assets to perform pool deposit in proportion to current pool price
