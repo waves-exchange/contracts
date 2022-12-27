@@ -440,8 +440,8 @@ func epo(txId58: String,
             let lpEmissionX18 = lpEm.t1(scale8)
             # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
 
-            let prViaAmX18 = fraction(inAmAssetAmtX18, cpbir(prBalanceX18, amBalanceX18, CEILING), scale18, CEILING)
-            let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, cpbir(prBalanceX18, amBalanceX18, FLOOR), CEILING)
+            let prViaAmX18 = fraction(inAmAssetAmtX18, cpbir(prBalanceX18, amBalanceX18, CEILING), scale18, FLOOR)
+            let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, cpbir(prBalanceX18, amBalanceX18, FLOOR), FLOOR)
 
             # calculate amount and price assets to perform pool deposit in proportion to current pool price
             let expectedAmts= if (prViaAmX18 > inPrAssetAmtX18)
@@ -1041,6 +1041,14 @@ func put(slip: Int, autoStake: Boolean) = {
     # 55966140078702
     # 6599425120503433
     # 6599425120492194
+
+    # 84822996586
+    # 284825395918
+    # 55966140078702
+    # 6599425120503433
+    # 6599425120492194
+    # 0
+    # 0
 
     strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
 
