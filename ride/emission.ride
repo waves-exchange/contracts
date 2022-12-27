@@ -12,9 +12,11 @@ func keyFactoryAddress()  = "%s%s__config__factoryAddress"
 
 let keyVotingVerifiedContract  = "%s%s__config__votingVerifiedContract"
 let keyVotingEmissionCandidateContract  = "%s%s__config__votingEmissionCandidateContract"
+let keyUserPoolsContract  = "%s%s__config__userPoolsContract"
 
 let votingVerifiedContract = this.getStringOrFail(keyVotingVerifiedContract).addressFromStringValue()
 let votingEmissionCandidateContract = this.getStringOrFail(keyVotingEmissionCandidateContract).addressFromStringValue()
+let userPoolsContract = this.getStringOrFail(keyUserPoolsContract).addressFromStringValue()
 
 let IdxFactoryCfgStakingDapp    = 1
 let IdxFactoryCfgBoostingDapp   = 2
@@ -133,7 +135,7 @@ func burn() = {
 
   let wxAssetId = this.getStringOrFail(keyConfig()).split(SEP)[1].fromBase58String()
   if (assetId != wxAssetId) then throw("invalid wxAssetId is passed") else
-  if (![boostingContract, votingVerifiedContract, votingEmissionCandidateContract].containsElement(i.caller)) then throw("permissions denied") else
+  if (![boostingContract, votingVerifiedContract, votingEmissionCandidateContract, userPoolsContract].containsElement(i.caller)) then throw("permissions denied") else
 
   [Burn(assetId, pmtAmount),
   StringEntry(
