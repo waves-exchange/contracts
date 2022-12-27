@@ -440,8 +440,6 @@ func epo(txId58: String,
             let lpEmissionX18 = lpEm.t1(scale8)
             # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
 
-            # let prViaAmX18 = fraction(inAmAssetAmtX18, curPriceX18, scale18)
-            # let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, curPriceX18)
             let prViaAmX18 = fraction(inAmAssetAmtX18, cpbir(prBalanceX18, amBalanceX18, CEILING), scale18, CEILING)
             let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, cpbir(prBalanceX18, amBalanceX18, FLOOR), CEILING)
 
@@ -1027,7 +1025,9 @@ func put(slip: Int, autoStake: Boolean) = {
       priceAssetBalance.toString(),
       lpAssetEmission.toString(),
       currentDLp.toString(),
-      updatedDLp.toString()
+      updatedDLp.toString(),
+      amDiff.toString(),
+      prDiff.toString()
     ].makeString(" ").throwErr()
 
     # 84822996586
@@ -1035,12 +1035,6 @@ func put(slip: Int, autoStake: Boolean) = {
     # 55966140078702
     # 6599425120503433
     # 6599425120499155
-
-    # 84822996586
-    # 284825395918
-    # 55966140078702
-    # 6599425120503433
-    # 6599425120492194
 
     # 84822996586
     # 284825395918
