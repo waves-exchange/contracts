@@ -29,6 +29,7 @@ export const mochaHooks = {
     const names = [
       'lp',
       'factoryV2',
+      'feeCollector',
       'staking',
       'slippage',
       'manager',
@@ -174,6 +175,34 @@ export const mochaHooks = {
     await api.transactions.broadcast(activateNewPoolTx, {});
     const { stateChanges } = await waitForTx(activateNewPoolTx.id, { apiBase });
     this.lpAssetId = stateChanges.issues[0].assetId;
+
+    const setFeeCollectorFactoryV2Tx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__feeCollectorAddress',
+        type: 'string',
+        value: address(this.accounts.feeCollector, chainId),
+      }],
+      chainId,
+    }, this.accounts.factoryV2);
+    await api.transactions.broadcast(setFeeCollectorFactoryV2Tx, {});
+    await waitForTx(setFeeCollectorFactoryV2Tx.id, { apiBase });
+
+    const setDefaultInOutFeeTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__inFeeDefault',
+        type: 'integer',
+        value: '100000',
+      }, {
+        key: '$s__outFeeDefault',
+        type: 'integer',
+        value: '100000',
+      }],
+      chainId,
+    }, this.accounts.factoryV2);
+    await api.transactions.broadcast(setDefaultInOutFeeTx, {});
+    await waitForTx(setDefaultInOutFeeTx.id, { apiBase });
 
     const setManagerFactoryV2Tx = data({
       additionalFee: 4e5,

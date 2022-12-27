@@ -15,7 +15,7 @@ describe('lp: put one token, get one token with staking', /** @this {MochaSuiteM
       value: 0,
     });
   });
-  it('user should reveive the same amount after get', async function () {
+  it('user should receive the same amount after get minus fees', async function () {
     const dApp = address(this.accounts.lp, chainId);
     const caller = this.accounts.user1;
     const amountAssetId = this.shibAssetId;
@@ -32,6 +32,10 @@ describe('lp: put one token, get one token with staking', /** @this {MochaSuiteM
     });
 
     const priceAssetAmount = 5e6;
+    const inFee = 100000;
+    const outFee = 100000;
+    let expectedReceivedAmount = priceAssetAmount - (priceAssetAmount * (inFee / 10 ** 8));
+    expectedReceivedAmount -= (expectedReceivedAmount * (outFee / 10 ** 8));
     const putOneTknInfo = await lp.putOneTkn({
       dApp,
       caller,
@@ -76,6 +80,7 @@ describe('lp: put one token, get one token with staking', /** @this {MochaSuiteM
     }
 
     const allowableError = 1;
-    expect(outAssetAmount).to.be.within(priceAssetAmount - allowableError, priceAssetAmount);
+    expect(outAssetAmount).to.be
+      .within(expectedReceivedAmount - allowableError, expectedReceivedAmount);
   });
 });
