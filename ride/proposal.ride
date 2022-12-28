@@ -15,19 +15,33 @@ func gwxContractAddress() = ["%s", "gwxContractAddress"].makeString(SEP)
 
 func keyCurrentIndex() = ["%s", "currentIndex"].makeString(SEP)
 
-func keyProposalName(number: Int) = ["%s%d", "proposalName", number.toString()].makeString(SEP)
-func keyProposalDescription(number: Int) = ["%s%d", "proposalDescription", number.toString()].makeString(SEP)
-func keyProposalEnd(number: Int) = ["%s%d", "proposalEnd", number.toString()].makeString(SEP)
-
-func keyTotalPositiveVoteByProposal(number: Int) = ["%s%d", "proposalTotalPositiveVoteNumber", number.toString()].makeString(SEP)
-func keyTotalNegativeVoteByProposal(number: Int) = ["%s%d", "proposalTotalNegativeVoteNumber", number.toString()].makeString(SEP)
-
-func keyUserChoice(number: Int, user: String) = ["%s%d%s", "usersChoicebyProposal", number.toString(), user].makeString(SEP)
-func keyUserNumberVotesGwxInProposal(number: Int, user: String) = ["%s%d%s", "usersGWXbyProposal", number.toString(), user].makeString(SEP)
-
-func keyQuorumQuantity(number: Int) = ["%s%d", "quorumQuantity", number.toString()].makeString(SEP)
+func keyProposalInfo(number: Int) = ["%s%d", "proposalInfo", number.toString()].makeString(SEP)
+func keyUserVoteOnProposal(number: Int, user: String) = ["%s%d%d", "userVoteOnProposal", number.toString(), user].makeString(SEP)
 
 func getCurrentIndex() = this.getIntegerValue(keyCurrentIndex())
+
+func formatProposalInfo(name: String, description: String, end: String, quorumNumber: String, positiveVotes: String, negativeVotes: String) = {
+  makeString([
+      "%d%d%d%d%d%d",       # 0
+      name,                 # 1
+      description,          # 2
+      end,                  # 3
+      quorumNumber,         # 4
+      positiveVotes,        # 5
+      negativeVotes         # 6
+      ],
+  SEP)
+}
+
+func formatUserVoteOnProposal(vote: String, gwxNumber: String) = {
+  makeString([
+      "%d%d",   # 0
+      vote,                 # 1
+      gwxNumber             # 2
+      ],
+  SEP)
+}
+
 
 func asInt(val: Any) = {
   match val {
@@ -76,42 +90,82 @@ func startNewVote(name: String, description: String, expirationHeight: Int, quor
   
   [
     IntegerEntry(keyCurrentIndex(), theIndex + 1),
-    StringEntry(keyProposalName(theIndex), name),
-    StringEntry(keyProposalDescription(theIndex), description),
-    IntegerEntry(keyProposalEnd(theIndex), lastBlock.height + expirationHeight),
 
-    IntegerEntry(keyTotalPositiveVoteByProposal(theIndex), 0),
-    IntegerEntry(keyTotalNegativeVoteByProposal(theIndex), 0),
-
-    IntegerEntry(keyQuorumQuantity(theIndex), quorumNumber)
+    StringEntry(
+      keyProposalInfo(theIndex),
+      formatProposalInfo(
+        name,
+        description,
+        (lastBlock.height + expirationHeight).toString(),
+        quorumNumber.toString(),
+        "0",
+        "0"
+      )
+    )
   ]
 }
 
 @Callable(i)
 func voteFor(proposalIndex: Int, choice: Boolean) = {
+  let EMPTY = "EMPTY"
+  let voteInfo = this.getString(keyProposalInfo(proposalIndex)).valueOrElse(EMPTY)
+  let voteInfoArray = voteInfo.split(SEP)
+  let userVoteInfo = this.getString(keyUserVoteOnProposal(proposalIndex, toString(i.caller))).valueOrElse(EMPTY)
   strict checks = [
-    lastBlock.height < this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError(),
-    this.getString(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))) == unit || alreadyVoteError()
+    voteInfo != EMPTY || "No such vote".throw(),
+    lastBlock.height < voteInfoArray[2].parseInt().value() || blockHeightError(),
+    userVoteInfo == EMPTY || alreadyVoteError()
   ]
   let gwxNumber = invoke(
     addressFromStringValue(getStringValue(gwxContractAddress())),
     "getUserGwxAmountAtHeightREADONLY",
-    [i.caller.toString(), getIntegerValue(keyProposalEnd(proposalIndex))],
+    [i.caller.toString(), voteInfoArray[2].parseInt()],
     []
   ).asInt()
 
   let (action1, action2) = if (choice) then {
-    let action1 = IntegerEntry(keyUserChoice(proposalIndex, toString(i.caller)), 1) 
-    let action2 = IntegerEntry(keyTotalPositiveVoteByProposal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex)) + gwxNumber)
+    let action1 = StringEntry(
+      keyProposalInfo(proposalIndex),
+      formatProposalInfo(
+        voteInfoArray[0],
+        voteInfoArray[1],
+        voteInfoArray[2],
+        voteInfoArray[3],
+        (voteInfoArray[4].parseInt().value() + gwxNumber).toString(),
+        voteInfoArray[5]
+      )
+    )
+    let action2 = StringEntry(
+      keyUserVoteOnProposal(proposalIndex, i.caller.toString()),
+      formatUserVoteOnProposal(
+        "1",
+        gwxNumber.toString()
+      )
+    )
     (action1, action2)
   } else {
-    let action1 = IntegerEntry(keyUserChoice(proposalIndex, toString(i.caller)), 0)
-    let action2 = IntegerEntry(keyTotalNegativeVoteByProposal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)) + gwxNumber)
+    let action1 = StringEntry(
+      keyProposalInfo(proposalIndex),
+      formatProposalInfo(
+        voteInfoArray[0],
+        voteInfoArray[1],
+        voteInfoArray[2],
+        voteInfoArray[3],
+        voteInfoArray[4],
+        (voteInfoArray[5].parseInt().value() + gwxNumber).toString()
+      )
+    )
+    let action2 = StringEntry(
+      keyUserVoteOnProposal(proposalIndex, i.caller.toString()),
+      formatUserVoteOnProposal(
+        "0",
+        gwxNumber.toString()
+      )
+    )
     (action1, action2)
   }
   
   [
-    IntegerEntry(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller)), gwxNumber),
     action1,
     action2
   ]
@@ -119,29 +173,60 @@ func voteFor(proposalIndex: Int, choice: Boolean) = {
 
 @Callable(i)
 func deleteVote(proposalIndex: Int) = {
+  let EMPTY = "EMPTY"
+  let voteInfo = this.getString(keyProposalInfo(proposalIndex)).valueOrElse(EMPTY)
+  let voteInfoArray = voteInfo.split(SEP)
+  let userVoteInfo = this.getString(keyUserVoteOnProposal(proposalIndex, i.caller.toString())).valueOrElse(EMPTY)
+  let userVoteInfoArray = voteInfo.split(SEP)
   strict checks = [
-    lastBlock.height < this.getIntegerValue(keyProposalEnd(proposalIndex)) || blockHeightError(),
-    getInteger(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))) != unit || noVoteError()
+    voteInfo != EMPTY || "No such vote".throw(),
+    lastBlock.height < voteInfoArray[2].parseInt().value() || blockHeightError(),
+    userVoteInfo != EMPTY ||  noVoteError()
   ]
-  let action = if (getIntegerValue(keyUserChoice(proposalIndex, toString(i.caller))) == 1) 
+  let action = if (userVoteInfoArray[0] == "1") 
   then {
-    IntegerEntry(keyTotalPositiveVoteByProposal(proposalIndex), getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex)) - getIntegerValue(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))))
+    StringEntry(
+      keyProposalInfo(proposalIndex),
+      formatProposalInfo(
+        voteInfoArray[0],
+        voteInfoArray[1],
+        voteInfoArray[2],
+        voteInfoArray[3],
+        (voteInfoArray[4].parseInt().value() - userVoteInfoArray[1].parseInt().value()).toString(),
+        voteInfoArray[5]
+      )
+    )
   } else {
-    IntegerEntry(keyTotalNegativeVoteByProposal(proposalIndex), getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex)) - getIntegerValue(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))))
+    StringEntry(
+      keyProposalInfo(proposalIndex),
+      formatProposalInfo(
+        voteInfoArray[0],
+        voteInfoArray[1],
+        voteInfoArray[2],
+        voteInfoArray[3],
+        voteInfoArray[4],
+        (voteInfoArray[5].parseInt().value() - userVoteInfoArray[1].parseInt().value()).toString()
+      )
+    )
   }
-  
   [
     action,
-    DeleteEntry(proposalIndex.keyUserNumberVotesGwxInProposal(toString(i.caller))),
-    DeleteEntry(keyUserChoice(proposalIndex, toString(i.caller)))
+    DeleteEntry(keyUserVoteOnProposal(proposalIndex, i.caller.toString()))
   ]
 }
 
 @Callable(i)
 func getResultREADONLY(proposalIndex: Int) = {
-  let positiveVotes = getIntegerValue(keyTotalPositiveVoteByProposal(proposalIndex))
-  let negativeVotes = getIntegerValue(keyTotalNegativeVoteByProposal(proposalIndex))
-  let quorumNumber = getIntegerValue(keyQuorumQuantity(proposalIndex))
+  let EMPTY = "EMPTY"
+  let voteInfo = this.getString(keyProposalInfo(proposalIndex)).valueOrElse(EMPTY)
+  let voteInfoArray = voteInfo.split(SEP)
+  strict checks = [
+    voteInfo != EMPTY || "No such vote".throw()
+  ]
+
+  let positiveVotes = voteInfoArray[4]
+  let negativeVotes = voteInfoArray[5]
+  let quorumNumber = voteInfoArray[3]
 
   ([], [positiveVotes, negativeVotes, quorumNumber])
 }
