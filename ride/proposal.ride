@@ -216,6 +216,73 @@ func deleteVote(proposalIndex: Int) = {
 }
 
 @Callable(i)
+func changeVote(proposalIndex: Int, choice: Boolean) = {
+  let EMPTY = "EMPTY"
+  let voteInfo = this.getString(keyProposalInfo(proposalIndex)).valueOrElse(EMPTY)
+  let voteInfoArray = voteInfo.split(SEP)
+  let userVoteInfo = this.getString(keyUserVoteOnProposal(proposalIndex, i.caller.toString())).valueOrElse(EMPTY)
+  let userVoteInfoArray = voteInfo.split(SEP)
+  strict checks = [
+    voteInfo != EMPTY || "No such vote".throw(),
+    lastBlock.height < voteInfoArray[2].parseInt().value() || blockHeightError(),
+    userVoteInfo != EMPTY ||  noVoteError()
+  ]
+  let gwxNumber = invoke(
+    addressFromStringValue(getStringValue(gwxContractAddress())),
+    "getUserGwxAmountAtHeightREADONLY",
+    [i.caller.toString(), voteInfoArray[2].parseInt()],
+    []
+  ).asInt()
+  let userPowerFor = 0
+  let userPowerAgainst = 0
+  let choiceInt
+  if (choice) then{
+    userPowerFor = gwxNumber
+    choiceInt = 1
+  } else {
+    userPowerAgainst = gwxNumber
+    choiceInt = 0
+  }
+
+  let action = if (userVoteInfoArray[0] == "1") 
+  then {
+    StringEntry(
+      keyProposalInfo(proposalIndex),
+      formatProposalInfo(
+        voteInfoArray[0],
+        voteInfoArray[1],
+        voteInfoArray[2],
+        voteInfoArray[3],
+        (voteInfoArray[4].parseInt().value() - userVoteInfoArray[1].parseInt().value() + userPowerFor).toString(),
+        (voteInfoArray[5].parseInt().value() + userPowerAgainst).toString()
+      )
+    )
+  } else {
+    StringEntry(
+      keyProposalInfo(proposalIndex),
+      formatProposalInfo(
+        voteInfoArray[0],
+        voteInfoArray[1],
+        voteInfoArray[2],
+        voteInfoArray[3],
+        (voteInfoArray[4].parseInt().value() + userPowerFor).toString(),
+        (voteInfoArray[5].parseInt().value() - userVoteInfoArray[1].parseInt().value() + userPowerAgainst).toString()
+      )
+    )
+  }
+  [
+    action,
+    StringEntry(
+      keyUserVoteOnProposal(proposalIndex, i.caller.toString()),
+      formatUserVoteOnProposal(
+        choiceInt.toString(),
+        gwxNumber.toString()
+      )
+    )
+  ]
+}
+
+@Callable(i)
 func getResultREADONLY(proposalIndex: Int) = {
   let EMPTY = "EMPTY"
   let voteInfo = this.getString(keyProposalInfo(proposalIndex)).valueOrElse(EMPTY)
