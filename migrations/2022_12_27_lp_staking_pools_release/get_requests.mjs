@@ -2,17 +2,20 @@ import { create } from '@waves/node-api-js'
 import { BigNumber } from '@waves/bignumber'
 import { data } from '@waves/waves-transactions'
 import { writeFile } from 'fs/promises'
+import * as dotenv from 'dotenv'
+
+dotenv.config()
 
 const {
-  NODE_URL = 'https://nodes.wavesnodes.com',
-  CHAIN_ID = 'W',
-  LP_STAKING_ADDRESS = '3P6SFR9ZZwKHZw5mMDZxpXHEhg1CXjBb51y',
-  LP_STAKING_POOLS_PUBLIC_KEY = 'F4oaTkX67vt2MEsXLJJ8a7gaURGjW7x8fkvGfdEiH5oy',
-  USDC_ASSET_ID = '6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ',
-  USDT_ASSET_ID = '34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ',
+  NODE_URL,
+  CHAIN_ID ,
+  LP_STAKING_ADDRESS,
+  LP_STAKING_POOLS_PUBLIC_KEY,
+  USDC_ASSET_ID,
+  USDT_ASSET_ID,
 } = process.env;
 const api = create(NODE_URL);
-// key operation ["%s%d%s%s", operationType, internalBaseAssetStr, userAddress, txId]
+
 const keyMapBaseToInternal = (baseAsset) =>
   `%s%s%s__mappings__baseAsset2internalId__${baseAsset}`;
 const { value: usdtInternalAssetId } = await api.addresses.fetchDataKey(
