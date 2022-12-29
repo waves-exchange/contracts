@@ -46,6 +46,7 @@ func keyAssetsStoreContract() = ["%s", "assetsStoreContract"].makeString(separat
 func keyUsdnAssetId() = ["%s", "usdnAssetId"].makeString(separator)
 func keyWxAssetId() = ["%s", "wxAssetId"].makeString(separator)
 
+func keyShutdown() = ["%s", "shutdown"].makeString(separator)
 func keyMinDelay() = ["%s", "minDelay"].makeString(separator)
 func keyShareAssetId(baseAssetId: ByteVector|Unit) = {
   ["%s%s", baseAssetId.assetIdToString(), "shareAssetId"].makeString(separator)
@@ -127,6 +128,11 @@ func mustManager(i: Invocation) = {
     case pk: ByteVector => i.callerPublicKey == pk || permissionDeniedError
     case _: Unit => i.mustThis()
   }
+}
+
+let shutdown = keyShutdown().getBoolean().valueOrElse(false)
+func shutdownCheck(i: Invocation) = {
+  !shutdown || i.mustManager() || "operation is disabled".throw()
 }
 
 let factoryContract = this.getStrOrFail(keyFactoryContract()).addressFromStringValue()
@@ -227,6 +233,7 @@ func put() = {
   let baseAssetId = pmt.assetId
   let userAddress = i.caller
   strict checks = [
+    i.shutdownCheck(),
     baseAssetId.keyShareAssetId().getString().isDefined() || "invalid asset".throwErr()
   ]
   let (poolAddress, lpAssetId) = baseAssetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
@@ -258,6 +265,9 @@ func put() = {
 func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
   # if userAddressStr != "" then i.mustThis()
   # if userAddressStr == "" then use i.caller
+  strict checks = [
+    i.shutdownCheck()
+  ]
   strict userAddress = if (userAddressStr == "") then i.caller else {
     strict checkCaller = i.mustThis()
     userAddressStr.addressFromString().valueOrErrorMessage("invalid user address".wrapErr())
@@ -287,6 +297,9 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
 
 @Callable(i)
 func get() = {
+  strict checks = [
+    i.shutdownCheck()
+  ]
   # TODO: check staked amount and payment amount
   let pmt = if (i.payments.size() == 1) then i.payments[0] else "exactly 1 payment is expected".throwErr()
   let shareAssetId = pmt.assetId
@@ -320,6 +333,9 @@ func get() = {
 # finish get
 @Callable(i)
 func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
+  strict checks = [
+    i.shutdownCheck()
+  ]
   strict userAddress = if (userAddressStr == "") then i.caller else {
     strict checkCaller = i.mustThis()
     userAddressStr.addressFromString().valueOrErrorMessage("invalid user address".wrapErr())
@@ -350,6 +366,9 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
 # TODO: throw an error if there's nothing to finalize?
 @Callable(i)
 func finalize(baseAssetIdStr: String) = {
+  strict checks = [
+    i.shutdownCheck()
+  ]
   let baseAssetId = baseAssetIdStr.parseAssetId()
   strict shareAssetId = baseAssetId.keyShareAssetId()
     .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
