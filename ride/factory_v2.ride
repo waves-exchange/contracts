@@ -724,6 +724,15 @@ func getOutFeeREADONLY(poolAddress: String) = {
   ([], fee)
 }
 
+@Callable(i)
+func getPoolStatusREADONLY(poolAddress: String) = {
+  let poolAssets = keyMappingPoolContractAddressToPoolAssets(poolAddress).getStringOrFail().split(SEP)
+  let amountAssetInternal = poolAssets[1]
+  let priceAssetInternal = poolAssets[2]
+  let cfg = keyPoolConfig(amountAssetInternal, priceAssetInternal).getStringOrFail().split(SEP)
+  ([], cfg[idxPoolStatus].parseIntValue())
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
