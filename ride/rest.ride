@@ -122,11 +122,6 @@ func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 
 # STABLE POOL API
 func keyAddonAddr() = "%s__addonAddr"
-func getPoolFee(poolAddress: Address) = {
-  let feeDefault = fraction(10, MULT8, 10_000)
-  let keyFee = "%s__fee"
-  poolAddress.getInteger(keyFee).valueOrElse(feeDefault)
-}
 
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
@@ -136,6 +131,14 @@ let emissionDapp  = factoryCfg.getEmissionAddressOrFail()
 let stakingDapp   = factoryCfg.getStakingAddressOrFail()
 let gwxRewardDapp = factoryCfg.getGwxRewardAddressOrFail()
 let boostingDapp  = factoryCfg.getBoostingAddressOrFail()
+
+func getPoolInFee(poolAddress: Address) = {
+  factoryDapp.invoke("getInFeeREADONLY", [poolAddress.toString()], []).exactAs[Int]
+}
+
+func getPoolOutFee(poolAddress: Address) = {
+  factoryDapp.invoke("getOutFeeREADONLY", [poolAddress.toString()], []).exactAs[Int]
+}
 
 func internalCurrentRewardRate(lpAssetId: String) = {
   let poolAddressStr = factoryDapp.getStringByAddressOrFail(lpAssetId.keyFactoryLpAssetToPoolContractAddress())
@@ -390,14 +393,15 @@ func poolStatsREADONLY(lpAsset: String) = {
   let lpPriceAssetShare = poolAddress.invoke("fromX18WrapperREADONLY", [pricesList[2], MULT8], []).asInt()
 
   let poolWeight = factoryDapp.getIntegerValue(poolAddress.toString().keyFactoryPoolWeight())
-  let fee = poolAddress.getPoolFee()
+  let inFee = poolAddress.getPoolInFee()
+  let outFee = poolAddress.getPoolOutFee()
 
   let poolOneTokenOperationsDisabled = factoryDapp.invoke("isPoolOneTokenOperationsDisabledREADONLY", [poolAddress.toString()], []).exactAs[Boolean]
   let poolOneTokenOperationsEnabled = !poolOneTokenOperationsDisabled
   (
     [],
     makeString([
-      "%d%d%d%d%d%d%d%d%s",
+      "%d%d%d%d%d%d%d%d%d%s",
       accAmtAssetBalance.toString(),
       accPriceAssetBalance.toString(),
       poolLPBalance.toString(),
@@ -405,7 +409,8 @@ func poolStatsREADONLY(lpAsset: String) = {
       lpAmtAssetShare.toString(),
       lpPriceAssetShare.toString(),
       poolWeight.toString(),
-      fee.toString(), 
+      inFee.toString(),
+      outFee.toString(),
       poolOneTokenOperationsEnabled.toString()
     ],
     SEP)

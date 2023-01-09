@@ -50,7 +50,7 @@ export const mochaHooks = {
     const usdnIssueTx = issue({
       name: 'USDN',
       description: '',
-      quantity: 10e16,
+      quantity: 10e17,
       decimals: 6,
       chainId,
     }, seed);
@@ -183,6 +183,22 @@ export const mochaHooks = {
     }, this.accounts.factoryV2);
     await api.transactions.broadcast(setFeeCollectorFactoryV2Tx, {});
     await waitForTx(setFeeCollectorFactoryV2Tx.id, { apiBase });
+
+    const setDefaultInOutFeeTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__inFeeDefault',
+        type: 'integer',
+        value: '100000',
+      }, {
+        key: '$s__outFeeDefault',
+        type: 'integer',
+        value: '100000',
+      }],
+      chainId,
+    }, this.accounts.factoryV2);
+    await api.transactions.broadcast(setDefaultInOutFeeTx, {});
+    await waitForTx(setDefaultInOutFeeTx.id, { apiBase });
 
     const setManagerFactoryV2Tx = data({
       additionalFee: 4e5,
