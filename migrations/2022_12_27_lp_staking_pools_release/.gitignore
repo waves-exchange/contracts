@@ -1,4 +1,3 @@
-/get_requests.json
-/reissues.json
+/txs
 .env
 pnpm-lock.yaml
