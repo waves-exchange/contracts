@@ -31,6 +31,7 @@ func keyMappingsBaseAsset2internalId(baseAssetStr: String) = {"%s%s%s__mappings_
 func keyMappingsShare2baseAssetId(shareAssetStr: String) = {"%s%s%s__mappings__share2baseAssetId__" + shareAssetStr}
 func keyMappingsBaseAsset2shareId(baseAssetStr: String) = {"%s%s%s__mappings__baseAsset2shareId__" + baseAssetStr}
 func keyShutdownPutOperation(internalBaseAssetStr: String) = {"%s%s%d__shutdown__put__" + internalBaseAssetStr}
+func keyShutdown(internalBaseAssetStr: String) = {"%s%d__shutdown__" + internalBaseAssetStr}
 func keyShutdownManager(internalBaseAssetStr: String) = {"%s%s%d__shutdown__manager__" + internalBaseAssetStr}
 
 let IdxCfgShareAssetId                        = 1
@@ -255,7 +256,8 @@ func put() = {
   let internalBaseAssetStr = cfgArray[IdxCfgInternalBaseAsset]
 
   let isPutBlocked = getBooleanOrFail(keyShutdownPutOperation(internalBaseAssetStr))
-  if (isPutBlocked) then throw("put operation is blocked") else
+  let shutdown = internalBaseAssetStr.keyShutdown().getBoolean().valueOrElse(false)
+  if (isPutBlocked || shutdown) then throw("put operation is blocked") else
 
   let price = calcPrice(internalBaseAssetStr, baseAssetId, shareAssetId, decimalsMultBothAssets, decimalsMultPrice)._1
   let shareAssetAmount = fraction(pmt.amount, decimalsMultPrice, price)
@@ -289,6 +291,9 @@ func submitGetRequest() = {
   let getDelayBlocks = cfgArray[IdxCfgGetDelayBlocks].parseIntValue()
   let internalBaseAssetStr = cfgArray[IdxCfgInternalBaseAsset]
 
+  let shutdown = internalBaseAssetStr.keyShutdown().getBoolean().valueOrElse(false)
+  if (shutdown) then throw("operation is blocked") else
+
   let price = calcPrice(internalBaseAssetStr, baseAssetId, shareAssetId, decimalsMultBothAssets, decimalsMultPrice)._1
   let baseAssetAmount = fraction(shareAssetAmount, price, decimalsMultPrice)
 
@@ -315,6 +320,9 @@ func executeGetRequest(baseAssetStr: String, userAddressStr: String, getTxIdStr:
   let shareAssetId = assetCfgArray[IdxCfgShareAssetId].fromBase58String()
   let baseAssetId = baseAssetStr.fromBase58String()
   let internalBaseAssetStr = assetCfgArray[IdxCfgInternalBaseAsset]
+
+  let shutdown = internalBaseAssetStr.keyShutdown().getBoolean().valueOrElse(false)
+  if (shutdown) then throw("operation is blocked") else
 
   let operationKey = keyOperation("G", internalBaseAssetStr, userAddressStr, getTxIdStr)
   let operationArray = getStringOrFail(operationKey)
@@ -350,6 +358,9 @@ func topUpBalance(baseAssetStr: String) = {
   let internalBaseAssetStr = assetCfgArray[IdxCfgInternalBaseAsset]
   let topUpLastHeightKEY = keyTopUpLastHeight(internalBaseAssetStr, i.caller.toString())
   let topUpLastHeight = this.getInteger(topUpLastHeightKEY).valueOrElse(0)
+
+  let shutdown = internalBaseAssetStr.keyShutdown().getBoolean().valueOrElse(false)
+  if (shutdown) then throw("operation is blocked") else
 
   if (baseAssetStr != pmtAssetStr) then throw("attached payment's asset id is NOT matched passed baseAssetStr") else
   if (i.payments.size() > 1) then throw("only one payment can be attached") else

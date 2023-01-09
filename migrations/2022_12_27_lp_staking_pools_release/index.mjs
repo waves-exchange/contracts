@@ -261,7 +261,7 @@ txs.push({
 });
 
 const keyShutdownPutOperation = (internalToBaseAssetId) =>
-  ['%s%s%d', 'shutdown', 'put', internalToBaseAssetId].join(separator);
+  ['%s%d', 'shutdown', internalToBaseAssetId].join(separator);
 txs.push({
   name: 'lp staking shutdown',
   tx: data({
