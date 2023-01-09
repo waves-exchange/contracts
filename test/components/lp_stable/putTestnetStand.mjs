@@ -15,17 +15,20 @@ const seed = 'waves private node seed with waves tokens';
 
 describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully put with shouldAutoStake false in testnet stand', async function () {
-    const transferAmountUsdn = 292756942463;
-    const transferAmountUsdt = 7730464966;
-    const emitAmountLp = 55966140078702;
+    const transferAmountUsdn = 298673733622;
+    const transferAmountUsdt = 71767708156;
+    const emitAmountLp = 55975813806103;
 
-    const usdnAmount = 1e16 / 10;
-    const usdtAmount = 1e8 / 10;
+    const usdnAmount = 4161673 * 1e3;
+    const usdtAmount = 10 * 1e8;
+    const slippage = 5 * 1e7;
     const expectedLpAmount = 1e13;
     const shouldAutoStake = false;
     const priceLast = 1e16;
     const priceHistory = 1e16;
 
+    const expectedPoolUsdtBalanceAfterPut = transferAmountUsdt + usdtAmount;
+    const expectedPoolUsdnBalanceAfterPut = transferAmountUsdn + usdnAmount;
     const lpStable = address(this.accounts.lpStable, chainId);
 
     const usdnTransferTx = transfer({
@@ -88,7 +91,7 @@ describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() =
       call: {
         function: 'put',
         args: [
-          { type: 'integer', value: 0 },
+          { type: 'integer', value: slippage },
           { type: 'boolean', value: shouldAutoStake },
         ],
       },
@@ -115,8 +118,8 @@ describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() =
       )
     )[0].quantity;
 
-    expect(poolUsdnBalanceAfterPut).to.equal(transferAmountUsdn);
-    expect(poolUsdtBalanceAfterPut).to.equal(transferAmountUsdt);
+    expect(poolUsdnBalanceAfterPut).to.equal(expectedPoolUsdnBalanceAfterPut);
+    expect(poolUsdtBalanceAfterPut).to.equal(expectedPoolUsdtBalanceAfterPut);
     expect(parseInt(lpQuantityAfterPut, 10)).to.equal(emitAmountLp);
 
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
