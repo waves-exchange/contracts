@@ -1033,26 +1033,6 @@ func put(slip: Int, autoStake: Boolean) = {
       prDiff.toString()
     ].makeString(" ").throwErr()
 
-    # 84822996586
-    # 284825395918
-    # 55966140078702
-    # 6599425120503433
-    # 6599425120499155
-
-    # 84822996586
-    # 284825395918
-    # 55966140078702
-    # 6599425120503433
-    # 6599425120492194
-
-    # 84822996586
-    # 284825395918
-    # 55966140078702
-    # 6599425120503433
-    # 6599425120492194
-    # 0
-    # 0
-
     strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
 
     state
