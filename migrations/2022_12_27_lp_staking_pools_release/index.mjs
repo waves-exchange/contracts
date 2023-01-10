@@ -99,7 +99,7 @@ const keyAssetConfig = (baseAsset) =>
 const actions = [];
 const reissues = [];
 const shareAssetTransfers = [];
-const shareAssets = {}
+const shareAssets = {};
 for (const baseAsset in requestsInfo) {
   const { value: baseAssetConfig } = await api.addresses.fetchDataKey(
     lpStakingAddress,
@@ -285,7 +285,7 @@ txs.push({
 txs.push({
   name: 'restart the script',
   tx: {
-    comment: 'restart the script after lp staking shutdown to get right values'
+    comment: 'restart the script after lp staking shutdown to get right values',
   },
 });
 
@@ -414,9 +414,7 @@ txs.push({
     dApp: lpStakingPoolsAddress,
     call: {
       function: 'finalize',
-      args: [
-        { type: 'string', value: USDC_ASSET_ID },
-      ],
+      args: [{ type: 'string', value: USDC_ASSET_ID }],
     },
     senderPublicKey: MANAGER_PUBLIC_KEY,
     additionalFee: scriptedSenderFee,
@@ -430,9 +428,7 @@ txs.push({
     dApp: lpStakingPoolsAddress,
     call: {
       function: 'finalize',
-      args: [
-        { type: 'string', value: USDT_ASSET_ID },
-      ],
+      args: [{ type: 'string', value: USDT_ASSET_ID }],
     },
     senderPublicKey: MANAGER_PUBLIC_KEY,
     additionalFee: scriptedSenderFee,
