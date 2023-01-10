@@ -277,6 +277,7 @@ txs.push({
         value: true,
       },
     ],
+    chainId: CHAIN_ID,
     senderPublicKey: LP_STAKING_PUBLIC_KEY,
     additionalFee: scriptedSenderFee,
   }),
@@ -301,6 +302,7 @@ txs.push({
     recipient: lpStakingPoolsAddress,
     additionalFee: scriptedSenderFee,
     senderPublicKey: LP_STAKING_PUBLIC_KEY,
+    chainId: CHAIN_ID,
   }),
 });
 const { balance: usdtBalance } = await api.assets.fetchBalanceAddressAssetId(
@@ -315,6 +317,7 @@ txs.push({
     recipient: lpStakingPoolsAddress,
     additionalFee: scriptedSenderFee,
     senderPublicKey: LP_STAKING_PUBLIC_KEY,
+    chainId: CHAIN_ID,
   }),
 });
 
