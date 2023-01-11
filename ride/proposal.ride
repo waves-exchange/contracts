@@ -177,7 +177,7 @@ func deleteVote(proposalIndex: Int) = {
   let voteInfo = this.getString(keyProposalInfo(proposalIndex)).valueOrElse(EMPTY)
   let voteInfoArray = voteInfo.split(SEP)
   let userVoteInfo = this.getString(keyUserVoteOnProposal(proposalIndex, i.caller.toString())).valueOrElse(EMPTY)
-  let userVoteInfoArray = voteInfo.split(SEP)
+  let userVoteInfoArray = userVoteInfo.split(SEP)
   strict checks = [
     voteInfo != EMPTY || "No such vote".throw(),
     lastBlock.height < voteInfoArray[3].parseInt().value() || blockHeightError(),
@@ -221,7 +221,7 @@ func changeVote(proposalIndex: Int, choice: Boolean) = {
   let voteInfo = this.getString(keyProposalInfo(proposalIndex)).valueOrElse(EMPTY)
   let voteInfoArray = voteInfo.split(SEP)
   let userVoteInfo = this.getString(keyUserVoteOnProposal(proposalIndex, i.caller.toString())).valueOrElse(EMPTY)
-  let userVoteInfoArray = voteInfo.split(SEP)
+  let userVoteInfoArray = userVoteInfo.split(SEP)
   strict checks = [
     voteInfo != EMPTY || "No such vote".throw(),
     lastBlock.height < voteInfoArray[3].parseInt().value() || blockHeightError(),
