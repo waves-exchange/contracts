@@ -40,6 +40,32 @@ let IdxCfgDecimalsMultBothAssets              = 3
 let IdxCfgDecimalsMultPrice                   = 4
 let IdxCfgGetDelayBlocks                      = 5
 
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+
+func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+let permissionDeniedError = "Permission denied".throw()
+
+func mustThis(i: Invocation) = {
+  i.caller == this || permissionDeniedError
+}
+
+func mustManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk || permissionDeniedError
+    case _: Unit => i.mustThis()
+  }
+}
+
 func dataAssetCfg(shareAssetStr: String, internalBaseAssetStr: String, decimalsMultBothAssets: Int,
                   decimalsMultPrice: Int, getDelayInBlocks: Int) = {
   makeString(["%s%d%d%d%d",
@@ -417,7 +443,34 @@ func currentSysParamsREST(baseAssetStr: String)= {
   throw(restData)
 }
 
-@Verifier(tx)
-func verify () = {
-  sigVerify(tx.bodyBytes, tx.proofs[0], fromBase58String("2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq"))
+@Callable(i)
+func setManager(pendingManagerPublicKey: String) = {
+  strict checkCaller = i.mustManager()
+  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
+
+  [
+    StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)
+  ]
 }
+
+@Callable(i)
+func confirmManager() = {
+  let pm = pendingManagerPublicKeyOrUnit()
+  strict hasPM = pm.isDefined() || "no pending manager".throwErr()
+  strict checkPM = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
+
+  [
+    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
+    DeleteEntry(keyPendingManagerPublicKey())
+  ]
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}
+
