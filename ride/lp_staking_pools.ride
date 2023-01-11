@@ -423,19 +423,21 @@ func finalize(baseAssetIdStr: String) = {
 
     # 50% lock in boosting
     let r = boostingContract.invoke("userMaxDurationREADONLY", [this.toString()], [])
-    strict lock = match r {
-      case (function: String, duration: Int) => {
-        # check function?
-        if (lockPart > 0) then {
-          boostingContract.invoke(function, [duration], [AttachedPayment(wxAssetId, lockPart)])
-        } else unit
+    strict lock = if (lockPart > 0) then {
+      match r {
+        case (function: String, duration: Int) => {
+          # check function?
+          if (lockPart > 0) then {
+            boostingContract.invoke(function, [duration], [AttachedPayment(wxAssetId, lockPart)])
+          } else unit
+        }
+        case _ => "invalid lock params".throwErr()
       }
-      case _ => "invalid lock params".throwErr()
-    }
+    } else unit
 
     # 50% convert to base asset (or usdn?)
     # let (wxUsdnPoolAddress, wxUsdnLpAssetId) = wxAssetId.getPoolInfo().valueOrErrorMessage("can't find wx/usdn pool".wrapErr())
-    strict convertedAmount = {
+    strict convertedAmount = if (convertPart > 0) then {
       let inAssetId = wxAssetId
       let minimumToReceive = 0
       let outAssetIdStr = usdnAssetId.assetIdToString()
@@ -445,10 +447,10 @@ func finalize(baseAssetIdStr: String) = {
         [minimumToReceive, outAssetIdStr, targetAddress],
         [AttachedPayment(inAssetId, convertPart)]
       ).as[Int].valueOrErrorMessage("invalid swap result".wrapErr())
-    }
+    } else 0
 
     # putOneTkn and stake
-    strict lpAssetAmount = {
+    strict lpAssetAmount = if (convertedAmount > 0) then {
       let minOutAmount = 0
       let autoStake = true
       poolAddress.invoke(
@@ -456,7 +458,7 @@ func finalize(baseAssetIdStr: String) = {
         [minOutAmount, autoStake],
         [AttachedPayment(usdnAssetId, convertedAmount)]
       ).as[Int].valueOrErrorMessage("invalid putOneTknV2 result".wrapErr())
-    }
+    } else 0
 
     lpAssetAmount
   } else unit
