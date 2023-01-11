@@ -456,9 +456,7 @@ func unstake(lpAssetIdStr: String, amount: Int) = {
   # todo: temporal fix, remove after node increase max possible script size and pool addon contract is removed
   let poolAddon = poolAddressStr.addressFromStringValue().getString(keyAddonAddr()).valueOrElse(poolAddressStr)
   let callerStr = i.caller.toString()
-  let userAddressStr = if (
-    (callerStr == poolAddressStr && i.originCaller != lpStakingPoolsContract) || callerStr == poolAddon
-  ) then i.originCaller.toString() else callerStr
+  let userAddressStr = if (callerStr == poolAddressStr || callerStr == poolAddon) then i.originCaller.toString() else callerStr
 
   let stakedByUserKEY = keyStakedByUser(userAddressStr, lpAssetIdStr)
   let stakedTotalKEY = keyStakedTotal(lpAssetIdStr)
