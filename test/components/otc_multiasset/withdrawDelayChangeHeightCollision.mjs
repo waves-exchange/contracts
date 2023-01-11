@@ -12,6 +12,7 @@ const { expect } = chai;
 const { waitForTx } = nodeInteraction;
 const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
+const addedDelay = 2;
 
 const api = create(apiBase);
 
@@ -37,20 +38,20 @@ describe('otc_multiasset: withdrawDelayChangeHeightCollision.mjs', /** @this {Mo
     await api.transactions.broadcast(swapAssetsAToBTx, {});
     await waitForTx(swapAssetsAToBTx.id, { apiBase });
 
-    const dataTx1 = data({
+    const increaseDelyaDataTx = data({
       data: [{
         key: `%s%s%s__withdrawDelay__${this.assetAId}__${this.assetBId}`,
         type: 'integer',
-        value: this.withdrawDelay * 2,
+        value: this.withdrawDelay + addedDelay,
       }],
       chainId,
       senderPublicKey: publicKey(this.accounts.otcMultiasset),
     }, this.accounts.manager);
 
-    await api.transactions.broadcast(dataTx1, {});
-    await waitForTx(dataTx1.id, { apiBase });
+    await api.transactions.broadcast(increaseDelyaDataTx, {});
+    await waitForTx(increaseDelyaDataTx.id, { apiBase });
 
-    const firstSwapBToATx = invokeScript({
+    const firstInitSwapBToATx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),
       payment: [{
         assetId: this.assetBId,
@@ -65,10 +66,10 @@ describe('otc_multiasset: withdrawDelayChangeHeightCollision.mjs', /** @this {Mo
       chainId,
     }, this.accounts.user1);
 
-    await api.transactions.broadcast(firstSwapBToATx, {});
-    const { height: heightInKey } = await waitForTx(firstSwapBToATx.id, { apiBase });
+    await api.transactions.broadcast(firstInitSwapBToATx, {});
+    const { height: heightInKey } = await waitForTx(firstInitSwapBToATx.id, { apiBase });
 
-    const dataTx2 = data({
+    const decreaseDelayDataTx = data({
       data: [{
         key: `%s%s%s__withdrawDelay__${this.assetAId}__${this.assetBId}`,
         type: 'integer',
@@ -78,12 +79,10 @@ describe('otc_multiasset: withdrawDelayChangeHeightCollision.mjs', /** @this {Mo
       senderPublicKey: publicKey(this.accounts.otcMultiasset),
     }, this.accounts.manager);
 
-    await api.transactions.broadcast(dataTx2, {});
-    await waitForTx(dataTx2.id, { apiBase });
+    await api.transactions.broadcast(decreaseDelayDataTx, {});
+    await waitForTx(decreaseDelayDataTx.id, { apiBase });
 
-    await waitForHeight(heightInKey + this.withdrawDelay);
-
-    const secondSwapBToATx = invokeScript({
+    const secondInitSwapBToATx = invokeScript({
       dApp: address(this.accounts.otcMultiasset, chainId),
       payment: [{
         assetId: this.assetBId,
@@ -98,8 +97,9 @@ describe('otc_multiasset: withdrawDelayChangeHeightCollision.mjs', /** @this {Mo
       chainId,
     }, this.accounts.user1);
 
+    await waitForHeight(heightInKey + addedDelay);
     await expect(
-      api.transactions.broadcast(secondSwapBToATx, {}),
+      api.transactions.broadcast(secondInitSwapBToATx, {}),
     ).to.be.rejectedWith('Error while executing dApp: otc_multiasset.ride: '
       + 'At this height, there is already an exchange of this pair.');
   });
