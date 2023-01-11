@@ -238,6 +238,38 @@ txs.push({
   }),
 });
 
+txs.push({
+  name: 'lp staking data',
+  tx: data({
+    data: [
+      {
+        key: '%s__lpStakingPoolsContract',
+        type: 'string',
+        value: lpStakingPoolsAddress,
+      },
+    ],
+    senderPublicKey: LP_STAKING_PUBLIC_KEY,
+    additionalFee: scriptedSenderFee,
+    chainId: CHAIN_ID,
+  }),
+});
+
+txs.push({
+  name: 'boosting data',
+  tx: data({
+    data: [
+      {
+        key: '%s__lpStakingPoolsContract',
+        type: 'string',
+        value: lpStakingPoolsAddress,
+      },
+    ],
+    senderPublicKey: BOOSTING_PUBLIC_KEY,
+    additionalFee: scriptedSenderFee,
+    chainId: CHAIN_ID,
+  }),
+});
+
 const keyAssetsStoreAdmins = '%s__adminPubKeys';
 const { value: assetsStoreAdminsString } = await api.addresses.fetchDataKey(
   assetsStoreAddress,

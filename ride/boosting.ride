@@ -7,11 +7,15 @@
 # * "%s__nextUserNum": Int
 # * "%s%s__config__factoryAddress": String
 # * "%s__config": String ("%s%d%d%d__<assetId__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>")
+# * "%s__lpStakingPoolsContract": String
 
 let SEP = "__"
 let SCALE8  = 8
 let MULT8   = 100000000
 let POOLWEIGHTMULT = MULT8
+
+func wrapErr(msg: String) = ["boosting.ride:", msg].makeString(" ")
+func throwErr(msg: String) = msg.wrapErr().throw()
 
 # getStringOrFail
 func strf(address: Address, key: String)   = address.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
@@ -219,6 +223,9 @@ let factoryCfg        = factoryContract.readFactoryCfgOrFail()
 let emissionContract  = factoryCfg.getEmissionAddressOrFail()
 let stakingContract   = factoryCfg.getStakingAddressOrFail()
 let gwxRewardContract = factoryCfg.getGwxRewardAddressOrFail()
+let lpStakingPoolsContract = ["%s", "lpStakingPoolsContract"].makeString(SEP)
+  .getString().valueOrErrorMessage("lp_staking_pools contract address is undefined".wrapErr())
+  .addressFromString().valueOrErrorMessage("invalid lp_staking_pools contract address".wrapErr())
 
 func getTotalCachedGwx(correct: Boolean) = {
   let keyVotingEmissionContract = ["%s", "votingEmissionContract"].makeString(SEP)
@@ -456,7 +463,7 @@ func lockActions(i: Invocation, duration: Int) = {
 
   let userAmountKEY   = keyLockParamUserAmount(userNumStr)
 
-  if (pmtAmount < minLockAmount) then throw("amount is less then minLockAmount=" + minLockAmount.toString()) else
+  if ((pmtAmount < minLockAmount) && i.caller != lpStakingPoolsContract) then throw("amount is less then minLockAmount=" + minLockAmount.toString()) else
   if (duration < minLockDuration) then throw("passed duration is less then minLockDuration=" + minLockDuration.toString()) else
   if (duration > maxLockDuration) then throw("passed duration is greater then maxLockDuration=" + maxLockDuration.toString()) else
   if (userIsExisting && (this.iof(startBlockKEY) + this.iof(durationKEY)) >= lockStart) then throw("there is an active lock - consider to use increaseLock") else
