@@ -48,6 +48,7 @@ func keyWxAssetId() = ["%s", "wxAssetId"].makeString(separator)
 
 func keyShutdown() = ["%s", "shutdown"].makeString(separator)
 func keyMinDelay() = ["%s", "minDelay"].makeString(separator)
+func keyLockFraction() = ["%s", "lockFraction"].makeString(separator)
 func keyShareAssetId(baseAssetId: ByteVector|Unit) = {
   ["%s%s", baseAssetId.assetIdToString(), "shareAssetId"].makeString(separator)
 }
@@ -146,6 +147,11 @@ let wxAssetId = this.getStrOrFail(keyWxAssetId()).parseAssetId()
 
 let minDelayDefault = 1440
 let minDelay = this.getInteger(keyMinDelay()).valueOrElse(minDelayDefault)
+
+let lockFractionMultiplier = 100_000_000
+# ½ * 1e8 → 50%
+let lockFractionDefault = fraction(1, lockFractionMultiplier, 2)
+let lockFraction = this.getInteger(keyLockFraction()).valueOrElse(lockFractionDefault)
 
 func getPoolInfo(amountAssetId: ByteVector|Unit) = {
   let amountAssetIdStr = amountAssetId.assetIdToString()
@@ -412,7 +418,7 @@ func finalize(baseAssetIdStr: String) = {
   ).as[Int].valueOrErrorMessage("invalid claimWx result".wrapErr())
 
   strict useStakingReward = if (stakingReward > 0) then {
-    let lockPart = stakingReward / 2
+    let lockPart = fraction(stakingReward, lockFraction, lockFractionMultiplier)
     let convertPart = stakingReward - lockPart
 
     # 50% lock in boosting
