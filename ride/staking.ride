@@ -2,6 +2,9 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+# Required state entries:
+# * "%s__lpStakingPoolsContract": String
+
 let SCALE8  = 8
 let MULT8   = 100000000
 let SCALE18 = 18
@@ -10,6 +13,9 @@ let SEP     = "__"
 let POOLWEIGHTMULT = MULT8
 let zeroBigInt = 0.toBigInt()
 let oneBigInt = 1.toBigInt()
+
+func wrapErr(msg: String) = ["staking.ride:", msg].makeString(" ").throw()
+func throwErr(msg: String) = msg.wrapErr().throw()
 
 func asAnyList(val: Any) = {
   match val {
@@ -144,6 +150,10 @@ let factoryContract   = factoryAddress.addressFromStringValue()
 let factoryCfg        = factoryContract.readFactoryCfgOrFail()
 let emissionContract  = factoryCfg.getEmissionAddressOrFail()
 let boostingContract  = factoryCfg.getBoostingAddressOrFail()
+
+let lpStakingPoolsContract = ["%s", "lpStakingPoolsContract"].makeString(SEP)
+  .getString().valueOrErrorMessage("lp_staking_pools contract address is undefined".wrapErr())
+  .addressFromString().valueOrErrorMessage("invalid lp_staking_pools contract address".wrapErr())
 
 func keyNextUser(lpAssetId: String) = ["%s%s", lpAssetId, "nextUser"].makeString(SEP)
 
@@ -446,7 +456,9 @@ func unstake(lpAssetIdStr: String, amount: Int) = {
   # todo: temporal fix, remove after node increase max possible script size and pool addon contract is removed
   let poolAddon = poolAddressStr.addressFromStringValue().getString(keyAddonAddr()).valueOrElse(poolAddressStr)
   let callerStr = i.caller.toString()
-  let userAddressStr = if (callerStr == poolAddressStr || callerStr == poolAddon) then i.originCaller.toString() else callerStr
+  let userAddressStr = if (
+    (callerStr == poolAddressStr && i.originCaller != lpStakingPoolsContract) || callerStr == poolAddon
+  ) then i.originCaller.toString() else callerStr
 
   let stakedByUserKEY = keyStakedByUser(userAddressStr, lpAssetIdStr)
   let stakedTotalKEY = keyStakedTotal(lpAssetIdStr)

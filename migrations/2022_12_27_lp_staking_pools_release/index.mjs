@@ -270,6 +270,22 @@ txs.push({
   }),
 });
 
+txs.push({
+  name: 'staking data',
+  tx: data({
+    data: [
+      {
+        key: '%s__lpStakingPoolsContract',
+        type: 'string',
+        value: lpStakingPoolsAddress,
+      },
+    ],
+    senderPublicKey: STAKING_PUBLIC_KEY,
+    additionalFee: scriptedSenderFee,
+    chainId: CHAIN_ID,
+  }),
+});
+
 const keyAssetsStoreAdmins = '%s__adminPubKeys';
 const { value: assetsStoreAdminsString } = await api.addresses.fetchDataKey(
   assetsStoreAddress,
