@@ -14,7 +14,7 @@ let POOLWEIGHTMULT = MULT8
 let zeroBigInt = 0.toBigInt()
 let oneBigInt = 1.toBigInt()
 
-func wrapErr(msg: String) = ["staking.ride:", msg].makeString(" ").throw()
+func wrapErr(msg: String) = ["staking.ride:", this.toString(), msg].makeString(" ")
 func throwErr(msg: String) = msg.wrapErr().throw()
 
 func asAnyList(val: Any) = {

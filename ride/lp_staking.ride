@@ -7,7 +7,7 @@
 
 let SEP = "__"
 
-func wrapErr(msg: String) = ["lp_staking.ride:", msg].makeString(" ").throw()
+func wrapErr(msg: String) = ["lp_staking.ride:", msg].makeString(" ")
 func throwErr(msg: String) = msg.wrapErr().throw()
 
 func getStringOrFail(key: String) = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}
