@@ -223,7 +223,7 @@ func adminRegisterAsset(baseAssetStr: String, shareAssetName: String, shareAsset
   let decimals = assetInfo(baseAssetId).value().decimals
   # TODO validate that BaseToken has not been specified before
   # validate admin public key - in our case contract PK
-  if (i.caller != this) then throw("permissions denied") else
+  strict checkCaller = i.mustManager()
   if (addressFromStringValue(shutdownManagerAddress).toString() != shutdownManagerAddress) then throw("invalid shutdownManagerAddress") else
   if (getDelayinBlocks < 0) then throw("invalid getDelayinBlocks=" + getDelayinBlocks.toString()) else
   let shareAssetIssueAction = Issue(shareAssetName, shareAssetDescr, 1, decimals, true)
