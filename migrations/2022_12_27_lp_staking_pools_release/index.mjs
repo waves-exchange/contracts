@@ -110,19 +110,21 @@ for (const baseAsset in requestsInfo) {
   reissues.push(
     reissue({
       assetId: shareAssetId,
-      quantity: requestsInfo[baseAsset]['totalAmount'].toString(),
+      quantity: requestsInfo[baseAsset]['totalAmount'].toNumber(),
       reissuable: true,
       senderPublicKey: LP_STAKING_PUBLIC_KEY,
       additionalFee: scriptedSenderFee,
+      chainId: CHAIN_ID,
     })
   );
   shareAssetTransfers.push(
     transfer({
       assetId: shareAssetId,
-      amount: requestsInfo[baseAsset]['totalAmount'].toString(),
+      amount: requestsInfo[baseAsset]['totalAmount'].toNumber(),
       senderPublicKey: LP_STAKING_PUBLIC_KEY,
       recipient: lpStakingPoolsAddress,
       additionalFee: scriptedSenderFee,
+      chainId: CHAIN_ID,
     })
   );
   actions.push({

@@ -529,7 +529,7 @@ func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String) = {
     ScriptTransfer(userAddress, minRewardPart.toInt(), wxAssetId),
     ScriptTransfer(userAddress, boostRewardPart.toInt(), wxAssetId),
     OperationHistoryEntry("claim", userAddressStr, lpAssetIdStr, availableToClaim.toInt(), i.transactionId)
-  ], totalReward)
+  ], totalReward.toInt())
 }
 
 @Callable(i)

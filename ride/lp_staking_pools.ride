@@ -404,6 +404,7 @@ func finalize(baseAssetIdStr: String) = {
   let (poolAddress, lpAssetId) = baseAssetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
   # call gwx_reward.claimReward? rewards are burned
   # call staking.claimWx
+  # TODO: what if nothing to claim?
   strict stakingReward = stakingContract.invoke(
     "claimWx",
     [lpAssetId.assetIdToString()],
