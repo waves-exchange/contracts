@@ -377,6 +377,46 @@ func mustManager(i: Invocation) = {
   }
 }
 
+func unstakeActions(
+  i: Invocation,
+  lpAssetId: ByteVector,
+  poolAddress: Address,
+  userAddress: Address,
+  lpAssetRecipientAddress: Address,
+  amount: Int
+) = {
+  let userAddressStr = userAddress.toString()
+  let lpAssetIdStr = lpAssetId.toBase58String()
+  let poolAddressStr = poolAddress.toString()
+
+  let stakedByUserKEY = keyStakedByUser(userAddressStr, lpAssetIdStr)
+  let stakedTotalKEY = keyStakedTotal(lpAssetIdStr)
+
+  let stakedByUser = stakedByUserKEY.readStaked()
+  let stakedTotal = stakedTotalKEY.readStaked()
+
+  # TODO обработать кейс когда эмиссия еще не началась
+  let integralSTATE = refreshINTEGRALS(lpAssetIdStr, userAddressStr, poolAddressStr, -amount)._2
+
+  let listName = lpAssetIdStr.getUsersListName()
+  let listActions = if (listName.containsNode(userAddressStr) && amount == stakedByUser) then {
+    listName.deleteNodeActions(userAddressStr)
+  } else []
+
+  let claimedByUser = this.getBigIntFromStringOrZero(lpAssetIdStr.keyClaimedByUser(userAddressStr))
+  let wxToClaimUserNew = refreshINTEGRALS(lpAssetIdStr, userAddressStr, poolAddressStr, 0)._1
+  let availableToClaim = wxToClaimUserNew - claimedByUser
+  strict r = if (availableToClaim > zeroBigInt) then this.invoke("claimWxINTERNAL", [lpAssetIdStr, userAddressStr], []) else unit
+
+  if (amount > stakedByUser) then throw("passed amount="+amount.toString()+" is greater than available="+stakedByUser.toString()+". lpAssetId="+lpAssetIdStr+". stakedByUserKEY="+stakedByUserKEY) else
+  [IntegerEntry(stakedByUserKEY, stakedByUser - amount),
+    IntegerEntry(stakedTotalKEY, stakedTotal - amount),
+    ScriptTransfer(lpAssetRecipientAddress, amount, lpAssetId),
+    OperationHistoryEntry("unstake", userAddressStr, lpAssetIdStr, amount, i.transactionId)]
+  ++ integralSTATE
+  ++ listActions
+}
+
 @Callable(i)
 func constructor(factoryAddressStr: String) = {
   strict checkCaller = i.mustManager()
@@ -453,38 +493,43 @@ func stake() = {
 func unstake(lpAssetIdStr: String, amount: Int) = {
   let lpAssetId = lpAssetIdStr.fromBase58String()
   let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
-  # todo: temporal fix, remove after node increase max possible script size and pool addon contract is removed
-  let poolAddon = poolAddressStr.addressFromStringValue().getString(keyAddonAddr()).valueOrElse(poolAddressStr)
+  let poolAddress = poolAddressStr.addressFromStringValue()
+  # TODO: temporal fix, remove after node increase max possible script size and pool addon contract is removed
+  let poolAddon = poolAddress.getString(keyAddonAddr()).valueOrElse(poolAddressStr)
   let callerStr = i.caller.toString()
-  let userAddressStr = if (callerStr == poolAddressStr || callerStr == poolAddon) then i.originCaller.toString() else callerStr
+  let userAddress = if (callerStr == poolAddressStr || callerStr == poolAddon) then i.originCaller else i.caller
+  let lpAssetRecipientAddress = i.caller
 
-  let stakedByUserKEY = keyStakedByUser(userAddressStr, lpAssetIdStr)
-  let stakedTotalKEY = keyStakedTotal(lpAssetIdStr)
+  i.unstakeActions(
+    lpAssetId,
+    poolAddress,
+    userAddress,
+    lpAssetRecipientAddress,
+    amount
+  )
+}
 
-  let stakedByUser = stakedByUserKEY.readStaked()
-  let stakedTotal = stakedTotalKEY.readStaked()
+@Callable(i)
+func unstakeINTERNAL(
+  lpAssetId: ByteVector,
+  amount: Int,
+  userAddress: ByteVector,
+  lpAssetRecipientAddress: ByteVector
+) = {
+  let lpAssetIdStr = lpAssetId.toBase58String()
+  let poolAddress = factoryContract
+    .getString(keyFactoryLp2AssetsMapping(lpAssetIdStr))
+    .valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
+    .addressFromStringValue()
+  strict checkCaller = i.caller == poolAddress || permissionDeniedError
 
-  # TODO обработать кейс когда эмиссия еще не началась
-  let integralSTATE = refreshINTEGRALS(lpAssetIdStr, userAddressStr, poolAddressStr, -amount)._2
-
-  let listName = lpAssetIdStr.getUsersListName()
-  let listActions = if (listName.containsNode(userAddressStr) && amount == stakedByUser) then {
-    listName.deleteNodeActions(userAddressStr)
-  } else []
-
-  let claimedByUser = this.getBigIntFromStringOrZero(lpAssetIdStr.keyClaimedByUser(userAddressStr))
-  let poolAddress = factoryContract.getStringByAddressOrFail(lpAssetIdStr.keyFactoryLpAssetToPoolContractAddress())
-  let wxToClaimUserNew = refreshINTEGRALS(lpAssetIdStr, userAddressStr, poolAddress, 0)._1
-  let availableToClaim = wxToClaimUserNew - claimedByUser
-  strict r = if (availableToClaim > zeroBigInt) then this.invoke("claimWxINTERNAL", [lpAssetIdStr, userAddressStr], []) else unit
-
-  if (amount > stakedByUser) then throw("passed amount="+amount.toString()+" is greater than available="+stakedByUser.toString()+". lpAssetId="+lpAssetIdStr+". stakedByUserKEY="+stakedByUserKEY) else
-  [IntegerEntry(stakedByUserKEY, stakedByUser - amount),
-    IntegerEntry(stakedTotalKEY, stakedTotal - amount),
-    ScriptTransfer(i.caller, amount, lpAssetId),
-    OperationHistoryEntry("unstake", userAddressStr, lpAssetIdStr, amount, i.transactionId)]
-  ++ integralSTATE
-  ++ listActions
+  i.unstakeActions(
+    lpAssetId,
+    poolAddress,
+    Address(userAddress),
+    Address(lpAssetRecipientAddress),
+    amount
+  )
 }
 
 @Callable(i)
