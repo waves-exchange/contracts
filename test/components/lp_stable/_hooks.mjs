@@ -25,6 +25,7 @@ const stakingPath = format({ dir: mockRidePath, base: 'staking.mock.ride' });
 const slippagePath = format({ dir: mockRidePath, base: 'slippage.mock.ride' });
 const assetsStorePath = format({ dir: mockRidePath, base: 'assets_store.mock.ride' });
 const gwxRewardPath = format({ dir: mockRidePath, base: 'gwx_reward.mock.ride' });
+const restPath = format({ dir: ridePath, base: 'rest.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -46,6 +47,7 @@ export const mochaHooks = {
     await setScriptFromFile(slippagePath, this.accounts.slippage);
     await setScriptFromFile(assetsStorePath, this.accounts.store);
     await setScriptFromFile(gwxRewardPath, this.accounts.gwxReward);
+    await setScriptFromFile(restPath, this.accounts.rest);
 
     const usdnIssueTx = issue({
       name: 'USDN',
@@ -172,6 +174,20 @@ export const mochaHooks = {
     await api.transactions.broadcast(constructorV5FactoryV2InvokeTx, {});
     await waitForTx(constructorV5FactoryV2InvokeTx.id, { apiBase });
 
+    const constructorRestInvokeTx = invokeScript({
+      dApp: address(this.accounts.rest, chainId),
+      additionalFee: 4e5,
+      call: {
+        function: 'constructor',
+        args: [
+          { type: 'string', value: address(this.accounts.factoryV2, chainId) },
+        ],
+      },
+      chainId,
+    }, this.accounts.rest);
+    await api.transactions.broadcast(constructorRestInvokeTx, {});
+    await waitForTx(constructorRestInvokeTx.id, { apiBase });
+
     const setFeeCollectorFactoryV2Tx = data({
       additionalFee: 4e5,
       data: [{
@@ -289,7 +305,7 @@ export const mochaHooks = {
       data: [{
         key: '%s__amp',
         type: 'string',
-        value: '1000',
+        value: '250',
       }],
       chainId,
     }, this.accounts.lpStable);

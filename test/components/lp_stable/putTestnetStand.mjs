@@ -15,21 +15,20 @@ const seed = 'waves private node seed with waves tokens';
 
 describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully put with shouldAutoStake false in testnet stand', async function () {
-    const transferAmountUsdn = 298673733622;
-    const transferAmountUsdt = 71767708156;
-    const emitAmountLp = 55975813806103;
+    const rest = address(this.accounts.rest, chainId);
+    const lpStable = address(this.accounts.lpStable, chainId);
 
-    const usdnAmount = 4161673 * 1e3;
-    const usdtAmount = 10 * 1e8;
-    const slippage = 5 * 1e7;
+    const transferAmountUsdn = 139018444021;
+    const transferAmountUsdt = 230660086797;
+    const emitAmountLp = 55919903290091;
+
+    const usdnAmount = 5 * 1e8;
+
+    const slippage = 1e8;
     const expectedLpAmount = 1e13;
     const shouldAutoStake = false;
     const priceLast = 1e16;
     const priceHistory = 1e16;
-
-    const expectedPoolUsdtBalanceAfterPut = transferAmountUsdt + usdtAmount;
-    const expectedPoolUsdnBalanceAfterPut = transferAmountUsdn + usdnAmount;
-    const lpStable = address(this.accounts.lpStable, chainId);
 
     const usdnTransferTx = transfer({
       amount: transferAmountUsdn,
@@ -81,6 +80,14 @@ describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() =
     expect(poolUsdnBalance).to.equal(transferAmountUsdn);
     expect(poolUsdtBalance).to.equal(transferAmountUsdt);
     expect(parseInt(lpQuantity, 10)).to.equal(emitAmountLp);
+
+    const expr = `poolEvaluatePutByPriceAssetREADONLY(\"${this.lpStableAssetId}\", ${usdnAmount})`;  /* eslint-disable-line */
+    const response = await api.utils.fetchEvaluate(rest, expr);
+    const splitResponse = response.result.value._2.value.split('__');  /* eslint-disable-line */
+    const usdtAmount = parseInt(splitResponse[splitResponse.length - 2], 10);
+
+    const expectedPoolUsdtBalanceAfterPut = transferAmountUsdt + usdtAmount;
+    const expectedPoolUsdnBalanceAfterPut = transferAmountUsdn + usdnAmount;
 
     const put = invokeScript({
       dApp: lpStable,

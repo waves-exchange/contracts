@@ -85,6 +85,9 @@ func fromX18Round(
   round: Ceiling|Floor
 ) = fraction(val, resultScaleMult.toBigInt(), scale18, round).toInt()
 
+func t2(origVal: BigInt, origScaleMult: Int) = fraction(origVal, scale18, origScaleMult.toBigInt()) 
+func f2(val: BigInt, resultScaleMult: Int) = fraction(val, resultScaleMult.toBigInt(), scale18)
+
 # cast passed amount to specified 'resScale' scale value from 'curScale' scale value
 func ts(amt: Int, resScale: Int, curScale: Int)  = fraction(amt, resScale, curScale)
 
@@ -443,8 +446,8 @@ func epo(txId58: String,
             let lpEmissionX18 = lpEm.t1(scale8)
             # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
 
-            let prViaAmX18 = fraction(inAmAssetAmtX18, cpbir(prBalanceX18, amBalanceX18, FLOOR), scale18, FLOOR)
-            let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, cpbir(prBalanceX18, amBalanceX18, FLOOR), FLOOR)
+            let prViaAmX18 = fraction(inAmAssetAmtX18, cpbir(prBalanceX18, amBalanceX18, CEILING), scale18, CEILING)
+            let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, cpbir(prBalanceX18, amBalanceX18, FLOOR), CEILING)
 
             # calculate amount and price assets to perform pool deposit in proportion to current pool price
             let expectedAmts= if (prViaAmX18 > inPrAssetAmtX18)
@@ -456,7 +459,7 @@ func epo(txId58: String,
             # calculate LP amount that user
             let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18, FLOOR)
             (
-              lpAmtX18.fromX18Round(scale8, FLOOR),
+              lpAmtX18.fromX18Round(scale8, FLOOR) - 100,
               expAmtAssetAmtX18.fromX18Round(amtDcm, CEILING),
               expPriceAssetAmtX18.fromX18Round(priceDcm, CEILING),
               curPriceX18,
