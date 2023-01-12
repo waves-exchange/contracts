@@ -401,13 +401,14 @@ func finalize(baseAssetIdStr: String) = {
   let periodStartHeightOption = baseAssetId.keyPeriodStartHeight(period).getInteger()
   strict checkDelay = if (periodStartHeightOption == unit) then unit else {
     let delay = height - periodStartHeightOption.value()
-    let blocksToWait = min([0, minDelay - delay])
+    let blocksToWait = max([0, minDelay - delay])
     if (blocksToWait == 0) then unit else {
       ["finalization will be possible in ", blocksToWait.toString(), " blocks"].makeString("").throwErr()
     }
   }
 
   let (poolAddress, lpAssetId) = baseAssetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
+
   # call gwx_reward.claimReward? rewards are burned
   # call staking.claimWx
   # TODO: what if nothing to claim?
@@ -416,6 +417,16 @@ func finalize(baseAssetIdStr: String) = {
     [lpAssetId.assetIdToString()],
     []
   ).as[Int].valueOrErrorMessage("invalid claimWx result".wrapErr())
+
+  # put requests
+  let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
+  # get requests
+  let shareAssetAmountToConvert = baseAssetId.keyShareAssetAmountToConvert().getInteger().valueOrElse(0)
+
+  strict checkFinalizationIsRequired = {
+    let isFinalizationRequired = stakingReward > 0 || baseAssetAmountToConvert > 0 || shareAssetAmountToConvert > 0
+    if (isFinalizationRequired) then true else "nothing to finalize".throwErr()
+  }
 
   strict useStakingReward = if (stakingReward > 0) then {
     let lockPart = fraction(stakingReward, lockFraction, lockFractionMultiplier)
@@ -464,7 +475,6 @@ func finalize(baseAssetIdStr: String) = {
   } else unit
 
   # convert shareAssetAmountToConvert to lp tokens using price (lp asset / share asset)
-  let shareAssetAmountToConvert = baseAssetId.keyShareAssetAmountToConvert().getInteger().valueOrElse(0)
   let getActions = if (shareAssetAmountToConvert > 0) then {
     strict price = calcPrice(lpAssetId, shareAssetId)
     let unstakeAmount = fraction(shareAssetAmountToConvert.toBigInt(), price, scale18BigInt, FLOOR).toInt()
@@ -495,7 +505,6 @@ func finalize(baseAssetIdStr: String) = {
   } else []
 
   # putOneTkn and stake baseAssetAmountToConvert
-  let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
   let putActions = if (baseAssetAmountToConvert > 0) then {
     strict lpAssetAmount = {
       let minOutAmount = 0
