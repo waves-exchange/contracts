@@ -94,6 +94,10 @@ const keyUserShareAssetAmountToConvert = (baseAssetId, userAddress) =>
   ['%s%s%s', baseAssetId, userAddress, 'shareAssetAmountToConvert'].join(
     separator
   );
+const keyUserShareAssetAmountToConvertPeriod = (baseAssetId, userAddress) =>
+  ['%s%s%s%s', baseAssetId, userAddress, 'shareAssetAmountToConvert', 'period'].join(
+    separator
+  );
 const keyAssetConfig = (baseAsset) =>
   ['%s%s%s', 'config', 'asset', baseAsset].join(separator);
 const actions = [];
@@ -132,12 +136,20 @@ for (const baseAsset in requestsInfo) {
     type: 'integer',
     value: requestsInfo[baseAsset]['totalAmount'].toString(),
   });
+  const period = 0;
   for (const userAddress in requestsInfo[baseAsset]['users']) {
-    actions.push({
-      key: keyUserShareAssetAmountToConvert(baseAsset, userAddress),
-      type: 'integer',
-      value: requestsInfo[baseAsset]['users'][userAddress].toString(),
-    });
+    actions.push(
+      {
+        key: keyUserShareAssetAmountToConvert(baseAsset, userAddress),
+        type: 'integer',
+        value: requestsInfo[baseAsset]['users'][userAddress].toString(),
+      },
+      {
+        key: keyUserShareAssetAmountToConvertPeriod(baseAsset, userAddress),
+        type: 'integer',
+        value: period,
+      }
+    );
   }
 }
 const chunkSize = 100;
