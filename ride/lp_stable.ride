@@ -1203,8 +1203,8 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
   strict unstakeInv = staking.invoke("unstakeINTERNAL", [
     lpAssetId.toBase58String(),
     unstakeAmount,
-    userAddress,
-    lpAssetRecipientAddress
+    userAddress.bytes,
+    lpAssetRecipientAddress.bytes
   ], [])
   let (state, totalAmount) = getOneTknV2Internal(
     outAssetId,
