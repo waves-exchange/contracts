@@ -411,9 +411,8 @@ func finalize(baseAssetIdStr: String) = {
 
   # call gwx_reward.claimReward? rewards are burned
   # call staking.claimWx
-  # TODO: what if nothing to claim?
   strict stakingReward = stakingContract.invoke(
-    "claimWx",
+    "claimWxclaimWxDoNotThrow",
     [lpAssetId.assetIdToString()],
     []
   ).as[Int].valueOrErrorMessage("invalid claimWx result".wrapErr())

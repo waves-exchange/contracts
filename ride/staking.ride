@@ -406,7 +406,8 @@ func unstakeActions(
   let claimedByUser = this.getBigIntFromStringOrZero(lpAssetIdStr.keyClaimedByUser(userAddressStr))
   let wxToClaimUserNew = refreshINTEGRALS(lpAssetIdStr, userAddressStr, poolAddressStr, 0)._1
   let availableToClaim = wxToClaimUserNew - claimedByUser
-  strict r = if (availableToClaim > zeroBigInt) then this.invoke("claimWxINTERNAL", [lpAssetIdStr, userAddressStr], []) else unit
+  let throwIfNothingToClaim = true
+  strict r = if (availableToClaim > zeroBigInt) then this.invoke("claimWxINTERNAL", [lpAssetIdStr, userAddressStr, throwIfNothingToClaim], []) else unit
 
   if (amount > stakedByUser) then throw("passed amount="+amount.toString()+" is greater than available="+stakedByUser.toString()+". lpAssetId="+lpAssetIdStr+". stakedByUserKEY="+stakedByUserKEY) else
   [IntegerEntry(stakedByUserKEY, stakedByUser - amount),
@@ -535,13 +536,23 @@ func unstakeINTERNAL(
 @Callable(i)
 func claimWx(lpAssetIdStr: String) = {
   let userAddressStr = i.caller.toString()
-  let result = this.invoke("claimWxINTERNAL", [lpAssetIdStr, userAddressStr], [])
+  let throwIfNothingToClaim = true
+  let result = this.invoke("claimWxINTERNAL", [lpAssetIdStr, userAddressStr, throwIfNothingToClaim], [])
 
   ([], result)
 }
 
 @Callable(i)
-func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String) = {
+func claimWxDoNotThrow(lpAssetIdStr: String) = {
+  let userAddressStr = i.caller.toString()
+  let throwIfNothingToClaim = false
+  let result = this.invoke("claimWxINTERNAL", [lpAssetIdStr, userAddressStr, throwIfNothingToClaim], [])
+
+  ([], result)
+}
+
+@Callable(i)
+func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String, throwIfNothingToClaim: Boolean) = {
   strict checkCaller = i.mustThis()
   let userAddress = userAddressStr.addressFromString().valueOrErrorMessage("claimWxINTERNAL: invalid user address")
 
@@ -559,7 +570,9 @@ func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String) = {
   let (wxToClaimUserNew, integralSTATE, debug) = refreshINTEGRALS(lpAssetIdStr, userAddressStr, poolAddressStr, 0)
 
   let availableToClaim = max([wxToClaimUserNew - claimedByUser, zeroBigInt])
-  if (availableToClaim <= zeroBigInt) then throw("nothing to claim") else
+  if (availableToClaim <= zeroBigInt) then {
+    if (throwIfNothingToClaim) then "nothing to claim".throw() else ([], 0)
+  } else
 
   # boost integral resfreshed here
   let wxAmountBoostTotal = max([boostingContract.invoke("claimWxBoost", [lpAssetIdStr, userAddressStr], []).asAnyList()[0].asInt(), 0])
@@ -669,7 +682,8 @@ func usersListTraversal(lpAssetId: String) = {
       let poolAddress = factoryContract.getStringByAddressOrFail(lpAssetId.keyFactoryLpAssetToPoolContractAddress())
       let wxToClaimUserNew = refreshINTEGRALS(lpAssetId, userAddress, poolAddress, 0)._1
       let availableToClaim = wxToClaimUserNew - claimedByUser
-      strict r = if (availableToClaim > zeroBigInt) then this.invoke("claimWxINTERNAL", [lpAssetId, userAddress], []) else unit
+      let throwIfNothingToClaim = true
+      strict r = if (availableToClaim > zeroBigInt) then this.invoke("claimWxINTERNAL", [lpAssetId, userAddress, throwIfNothingToClaim], []) else unit
       let nextUserOrUnit = listName.keyListNext(userAddress).getString()
       match nextUserOrUnit {
         case _: Unit => ([
