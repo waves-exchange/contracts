@@ -267,7 +267,7 @@ func create(
 
     (commonState ++ [
       StringEntry(baseAssetId.keyShareAssetId(), shareAssetIdStr),
-      StringEntry(shareAssetId.keyShareAssetId(), baseAssetIdStr)
+      StringEntry(shareAssetId.keyBaseAssetId(), baseAssetIdStr)
     ], shareAssetIdStr)
   }
 }
@@ -332,6 +332,7 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
 
   ([
     IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), 0),
+    DeleteEntry(baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress)),
     ScriptTransfer(userAddress, shareAssetAmount, shareAssetId),
     IntegerEntry(
       baseAssetId.keyHistoryEntry("claimShareAsset", period, userAddress, i.transactionId),
@@ -358,7 +359,7 @@ func get() = {
   strict claimBaseAssetInvocation = if (userShareAssetAmountToConvertPeriodOption == unit) then unit else {
     let userShareAssetAmountToConvertPeriod = userShareAssetAmountToConvertPeriodOption.value()
     if (userShareAssetAmountToConvertPeriod == period) then unit else {
-      this.invoke("claimBaseAsset", [userAddress], [])
+      this.invoke("claimBaseAsset", [baseAssetId.assetIdToString(), userAddress.toString()], [])
     }
   }
   let shareAssetAmountToConvert = baseAssetId.keyShareAssetAmountToConvert().getInteger().valueOrElse(0)
@@ -399,6 +400,7 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
 
   ([
     IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), 0),
+    DeleteEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress)),
     ScriptTransfer(userAddress, baseAssetAmount, baseAssetId),
     IntegerEntry(
       baseAssetId.keyHistoryEntry("claimBaseAsset", period, userAddress, i.transactionId),
