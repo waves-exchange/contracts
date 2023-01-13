@@ -517,7 +517,11 @@ func finalize(baseAssetIdStr: String) = {
     strict shareAssetBurn = if (shareAssetInfo.issuer == this) then {
       this.invoke("burn", [shareAssetId, shareAssetAmountToConvert], [])
     } else if (shareAssetInfo.issuer == lpStakingContract) then {
-      lpStakingContract.invoke("burn", [shareAssetId, shareAssetAmountToConvert], [])
+      lpStakingContract.invoke(
+        "burn",
+        [shareAssetId, shareAssetAmountToConvert],
+        [AttachedPayment(shareAssetId, shareAssetAmountToConvert)]
+      )
     } else "invalid share asset issuer".throwErr()
     let priceGet = fraction(baseAssetAmount.toBigInt(), scale18BigInt, shareAssetAmountToConvert.toBigInt(), FLOOR)
     let priceGetUpdateActions = [
