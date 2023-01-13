@@ -409,7 +409,6 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
   ], unit)
 }
 
-# TODO: handle staking auto claims
 @Callable(i)
 func finalize(baseAssetIdStr: String) = {
   strict checks = [
