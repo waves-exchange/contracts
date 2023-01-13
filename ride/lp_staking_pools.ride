@@ -410,7 +410,6 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
 }
 
 # TODO: handle staking auto claims
-# TODO: throw an error if there's nothing to finalize?
 @Callable(i)
 func finalize(baseAssetIdStr: String) = {
   strict checks = [
