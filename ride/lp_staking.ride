@@ -66,6 +66,10 @@ func mustManager(i: Invocation) = {
   }
 }
 
+let lpStakingPoolsContract = ["%s", "lpStakingPoolsContract"].makeString(SEP)
+  .getString().valueOrErrorMessage("lp_staking_pools contract address is undefined".wrapErr())
+  .addressFromString().valueOrErrorMessage("invalid lp_staking_pools contract address".wrapErr())
+
 func dataAssetCfg(shareAssetStr: String, internalBaseAssetStr: String, decimalsMultBothAssets: Int,
                   decimalsMultPrice: Int, getDelayInBlocks: Int) = {
   makeString(["%s%d%d%d%d",
@@ -401,10 +405,6 @@ func topUpBalance(baseAssetStr: String) = {
 
 @Callable(i)
 func emit(assetId: ByteVector, amount: Int) = {
-  let lpStakingPoolsContract = ["%s", "lpStakingPoolsContract"].makeString(SEP)
-    .getString().valueOrErrorMessage("lp_staking_pools contract address is undefined".wrapErr())
-    .addressFromString().valueOrErrorMessage("invalid lp_staking_pools contract address".wrapErr())
-
   strict checks = [
     i.caller == lpStakingPoolsContract || "permission denied".throwErr(),
     amount > 0 || "invalid amount to emit".throwErr(),
@@ -416,6 +416,19 @@ func emit(assetId: ByteVector, amount: Int) = {
   ([
     Reissue(assetId, amount, isReissuable),
     ScriptTransfer(lpStakingPoolsContract, amount, assetId)
+  ], amount)
+}
+
+@Callable(i)
+func burn(assetId: ByteVector, amount: Int) = {
+  strict checks = [
+    i.caller == lpStakingPoolsContract || "permission denied".throwErr(),
+    amount > 0 || "invalid amount to burn".throwErr(),
+    assetId.toBase58String().keyMappingsShare2baseAssetId().getString() != unit || "invalid assetId".throwErr()
+  ]
+
+  ([
+    Burn(assetId, amount)
   ], amount)
 }
 

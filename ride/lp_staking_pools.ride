@@ -207,6 +207,26 @@ func confirmManager() = {
 }
 
 @Callable(i)
+func emit(assetId: ByteVector, amount: Int) = {
+  strict checkCaller = i.mustThis()
+
+  let isReissuable = true
+
+  ([
+    Reissue(assetId, amount, isReissuable)
+  ], amount)
+}
+
+@Callable(i)
+func burn(assetId: ByteVector, amount: Int) = {
+  strict checkCaller = i.mustThis()
+
+  ([
+    Burn(assetId, amount)
+  ], amount)
+}
+
+@Callable(i)
 func create(
   baseAssetIdStr: String,
   shareAssetIdStr: String,
@@ -397,6 +417,7 @@ func finalize(baseAssetIdStr: String) = {
   let baseAssetId = baseAssetIdStr.parseAssetId()
   strict shareAssetId = baseAssetId.keyShareAssetId()
     .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
+  let shareAssetInfo = shareAssetId.assetInfo().valueOrErrorMessage("invalid share asset id".wrapErr())
   strict period = baseAssetId.keyPeriod().getInteger().valueOrErrorMessage("invalid period".wrapErr())
   let periodStartHeightOption = baseAssetId.keyPeriodStartHeight(period).getInteger()
   strict checkDelay = if (periodStartHeightOption == unit) then unit else {
@@ -474,7 +495,7 @@ func finalize(baseAssetIdStr: String) = {
   } else unit
 
   # convert shareAssetAmountToConvert to lp tokens using price (lp asset / share asset)
-  let getActions = if (shareAssetAmountToConvert > 0) then {
+  strict getActions = if (shareAssetAmountToConvert > 0) then {
     strict price = calcPrice(lpAssetId, shareAssetId)
     let unstakeAmount = fraction(shareAssetAmountToConvert.toBigInt(), price, scale18BigInt, FLOOR).toInt()
     # unstake and getOneTkn, calculate price for claimBaseAsset (base asset / share asset)
@@ -491,20 +512,22 @@ func finalize(baseAssetIdStr: String) = {
         []
       ).as[Int].valueOrErrorMessage("invalid unstakeAndGetOneTknV2 result".wrapErr())
     }
-    let shareAssetBurnActions = [
-      Burn(shareAssetId, shareAssetAmountToConvert)
-    ]
+    strict shareAssetBurn = if (shareAssetInfo.issuer == this) then {
+      this.invoke("burn", [shareAssetId, shareAssetAmountToConvert], [])
+    } else if (shareAssetInfo.issuer == lpStakingContract) then {
+      lpStakingContract.invoke("burn", [shareAssetId, shareAssetAmountToConvert], [])
+    } else "invalid share asset issuer".throwErr()
     let priceGet = fraction(baseAssetAmount.toBigInt(), scale18BigInt, shareAssetAmountToConvert.toBigInt(), FLOOR)
     let priceGetUpdateActions = [
       BinaryEntry(baseAssetId.keyPricePeriodGet(period), priceGet.toBytes()),
       StringEntry(baseAssetId.keyPriceGetHistory(), priceGet.toString())
     ]
 
-    shareAssetBurnActions ++ priceGetUpdateActions
+    priceGetUpdateActions
   } else []
 
   # putOneTkn and stake baseAssetAmountToConvert
-  let putActions = if (baseAssetAmountToConvert > 0) then {
+  strict putActions = if (baseAssetAmountToConvert > 0) then {
     strict lpAssetAmount = {
       let minOutAmount = 0
       let autoStake = true
@@ -518,17 +541,18 @@ func finalize(baseAssetIdStr: String) = {
     # convert lpAsset amount to share asset amount using price (lp asset / share asset)
     strict price = calcPrice(lpAssetId, shareAssetId)
     let shareAssetAmount = fraction(lpAssetAmount.toBigInt(), scale18BigInt, price, FLOOR).toInt()
-    let isReissuable = true
-    let shareAssetReissueActions = [
-      Reissue(shareAssetId, shareAssetAmount, isReissuable)
-    ]
+    strict shareAssetReissue = if (shareAssetInfo.issuer == this) then {
+      this.invoke("emit", [shareAssetId, shareAssetAmount], [])
+    } else if (shareAssetInfo.issuer == lpStakingContract) then {
+      lpStakingContract.invoke("emit", [shareAssetId, shareAssetAmount], [])
+    } else "invalid share asset issuer".throwErr()
     # save new price for claimShareAsset (base asset / share asset)
     let pricePut = fraction(baseAssetAmountToConvert.toBigInt(), scale18BigInt, shareAssetAmount.toBigInt())
     let pricePutUpdateActions = [
       BinaryEntry(baseAssetId.keyPricePeriodPut(period), pricePut.toBytes()),
       StringEntry(baseAssetId.keyPricePutHistory(), pricePut.toString())
     ]
-    shareAssetReissueActions ++ pricePutUpdateActions
+    pricePutUpdateActions
   } else []
 
   let newPeriod = period + 1
