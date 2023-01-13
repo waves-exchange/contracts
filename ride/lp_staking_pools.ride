@@ -346,7 +346,6 @@ func get() = {
   strict checks = [
     i.shutdownCheck()
   ]
-  # TODO: check staked amount and payment amount
   let pmt = if (i.payments.size() == 1) then i.payments[0] else "exactly 1 payment is expected".throwErr()
   let shareAssetId = pmt.assetId
   strict baseAssetId = shareAssetId.keyBaseAssetId()
@@ -541,7 +540,6 @@ func finalize(baseAssetIdStr: String) = {
         [AttachedPayment(baseAssetId, baseAssetAmountToConvert)]
       ).as[Int].valueOrErrorMessage("invalid putOneTknV2 result".wrapErr())
     }
-    # TODO: what if lpAssetAmount == 0?
     # convert lpAsset amount to share asset amount using price (lp asset / share asset)
     strict price = calcPrice(lpAssetId, shareAssetId)
     let shareAssetAmount = fraction(lpAssetAmount.toBigInt(), scale18BigInt, price, FLOOR).toInt()
@@ -551,6 +549,7 @@ func finalize(baseAssetIdStr: String) = {
       lpStakingContract.invoke("emit", [shareAssetId, shareAssetAmount], [])
     } else "invalid share asset issuer".throwErr()
     # save new price for claimShareAsset (base asset / share asset)
+    # if lpAssetAmount == 0 "division by zero" will be thrown
     let pricePut = fraction(baseAssetAmountToConvert.toBigInt(), scale18BigInt, shareAssetAmount.toBigInt())
     let pricePutUpdateActions = [
       BinaryEntry(baseAssetId.keyPricePeriodPut(period), pricePut.toBytes()),
