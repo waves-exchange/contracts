@@ -471,7 +471,7 @@ func finalize(baseAssetIdStr: String) = {
       let inAssetId = wxAssetId
       let minimumToReceive = 0
       let outAssetIdStr = usdnAssetId.assetIdToString()
-      let targetAddress = ""
+      let targetAddress = this.toString()
       swapContract.invoke(
         "swap",
         [minimumToReceive, outAssetIdStr, targetAddress],
