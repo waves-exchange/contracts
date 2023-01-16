@@ -3,7 +3,7 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 
 @Callable(i)
-func claimWx(lpAssetIdStr: String) = {
+func claimWxDoNotThrow(lpAssetIdStr: String) = {
   (nil, "totalReward".getInteger().valueOrElse(0))
 }
 

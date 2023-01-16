@@ -1,4 +1,4 @@
-import { invokeScript } from '@waves/waves-transactions';
+import { data, invokeScript } from '@waves/waves-transactions';
 import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 
 export const lpStakingPools = {
@@ -139,5 +139,20 @@ export const lpStakingPools = {
       caller,
     );
     return broadcastAndWait(invokeTx);
+  },
+
+  setMinDelay: async ({
+    caller,
+    value,
+  }) => {
+    const dataTx = data({
+      data: [
+        { key: '%s__minDelay', type: 'integer', value },
+      ],
+      additionalFee: 4e5,
+      chainId,
+    }, caller);
+
+    return broadcastAndWait(dataTx);
   },
 };

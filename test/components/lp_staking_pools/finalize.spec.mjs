@@ -1,9 +1,11 @@
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-// import { api } from '../../utils/api.mjs';
 
+import { transfer } from '@waves/waves-transactions';
 import { lpStakingPools } from './contract/lp_staking_pools.mjs';
 import { factoryMock } from './contract/factory_v2.mjs';
+import { broadcastAndWait, chainId, baseSeed } from '../../utils/api.mjs';
+import { lpStableMock } from './contract/lp_stable.mjs';
 
 chai.use(chaiAsPromised);
 
@@ -20,6 +22,27 @@ describe(`${process.pid}: lp_staking_pools: finalize`, () => {
       caller: this.accounts.lpStakingPools.seed,
       baseAssetId: this.usdtAssetId,
       shareAssetName: 'usdt share asset',
+    });
+
+    await broadcastAndWait(transfer({
+      recipient: this.accounts.user.addr,
+      assetId: this.usdtAssetId,
+      amount: 100 * 1e6,
+      chainId,
+    }, baseSeed));
+
+    const baseAssetAmount = 100 * 1e6;
+    await lpStakingPools.put({
+      dApp: this.accounts.lpStakingPools.addr,
+      caller: this.accounts.user.seed,
+      baseAssetId: this.usdtAssetId,
+      baseAssetAmount,
+    });
+
+    const putOneTkn2Result = 1e8;
+    await lpStableMock.setPutOneTknV2Result({
+      caller: this.accounts.lpStable.seed,
+      value: putOneTkn2Result,
     });
   });
   it('should successfully finalize', async function () {

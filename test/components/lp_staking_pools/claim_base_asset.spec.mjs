@@ -81,6 +81,12 @@ describe(`${process.pid}: lp_staking_pools: claimBaseAsset`, () => {
       value: stakedByUser,
     });
 
+    const minDelay = 0;
+    await lpStakingPools.setMinDelay({
+      caller: this.accounts.lpStakingPools.seed,
+      value: minDelay,
+    });
+
     await lpStakingPools.finalize({
       dApp: this.accounts.lpStakingPools.addr,
       caller: this.accounts.pacemaker.seed,
