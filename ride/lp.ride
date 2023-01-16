@@ -89,6 +89,8 @@ func absBigInt(val: BigInt) = if (val < zeroBigInt) then -val else val
 #-------------------------
 # KEYS ON CURRENT CONTRACT
 #-------------------------
+# keySwapContract
+func swapContract() = {"%s__swapContract"}
 # keyFactoryContract
 func fc() = {"%s__factoryContract"}
 # keyManagerPublicKey
@@ -700,6 +702,39 @@ func mustManager(i: Invocation) = {
     case pk: ByteVector => i.callerPublicKey == pk || pd
     case _: Unit => i.caller == this || pd
   }
+}
+
+@Callable(i)
+func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String) = {
+  strict checks = [
+    i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
+    i.caller == addressFromStringValue(getStringOrFail(this, swapContract())) || "Permission denied".throwErr()
+  ]
+  let pmt = i.payments[0].value()
+  let assetIn = pmt.assetId.value().toBase58String()
+
+  let assetOut = if (isReverse == false) then {
+    let assetOut = getStringOrFail(this, pa())
+    (assetOut)
+  } else {
+    let assetOut = getStringOrFail(this, aa())
+    (assetOut)
+  }
+  let poolAssetInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
+  let poolAssetOutBalance = getAccBalance(assetOut)
+  let amountOut = poolAssetOutBalance * cleanAmountIn / (poolAssetInBalance + cleanAmountIn)
+  strict checkMin = [
+    amountOutMin <= amountOut, "Exchange resulted in fewer coins than expected"
+  ]
+  [ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.fromBase58String())]
+}
+
+@Callable(i)
+func setSwapContract(swappAddr: String) = {
+  strict checkCaller = i.mustManager()
+  [
+    StringEntry(swapContract(), swappAddr)
+  ]
 }
 
 @Callable(i)

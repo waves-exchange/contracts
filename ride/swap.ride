@@ -1,0 +1,196 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+#-----------------
+# GLOBAL VARIABLES
+#-----------------
+
+
+let SEP = "__"
+
+let feeScale = 100_000.toBigInt()
+
+func getStringOrFail(key: String)   = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}
+
+let poolDisabled = "Pool disabled".throw()
+let poolNotExist = "Pool is not exist".throw()
+let slippageTooBig = "Slippage is too big".throw()
+
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+
+func fc() = {"%s__factoryContract"}
+let factoryContract = addressFromStringValue(getStringOrFail(fc()))
+
+func feeLiquidityContractAddress() = ["%s", "feeLiquidityContractAddress"].makeString(SEP)
+func feeLiquidity() = ["%d", "feeLiquidity"].makeString(SEP)
+func protocolFee() = ["%d", "protocolFee"].makeString(SEP)
+
+
+func asInt(val: Any) = {
+  match val {
+    case valInt: Int => valInt
+    case _ => throw("fail to cast into Int")
+  }
+}
+
+func dataMappingPoolAssets(internalAmountAssetStr: Int, internalPriceAssetStr: Int) = {
+  makeString(
+    ["%d%d",
+    internalAmountAssetStr.toString(),
+    internalPriceAssetStr.toString()],
+    SEP)
+}
+
+func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
+
+func mustManager(i: Invocation) = {
+  i.isManager() || "permission denied".throw()
+}
+
+@Callable(i)
+func constructor(
+  protocolFeeAmount: Int,
+  feeLiquidityAmount: Int,
+  feeLiquidityAddress: String,
+  fc: String
+  ) = {
+  strict check = i.mustManager()
+  [
+    StringEntry(feeLiquidityContractAddress(), feeLiquidityAddress),
+    IntegerEntry(feeLiquidity(), feeLiquidityAmount),
+    IntegerEntry(protocolFee(), protocolFeeAmount),
+    StringEntry(fc(), fc)
+  ]
+}
+
+
+
+@Callable(i)
+func swap(
+  amountOutMin: Int,
+  assetOut: String,
+  addressTo: String # add if there is not added
+) = {
+  let pmt = i.payments[0].value()
+  let assetIn = pmt.assetId.value()
+  let amountIn = pmt.amount.value()
+  let prFee = getInteger(protocolFee()).value()
+  let feeProtocolAmount = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
+  let feeLiquidityAmount = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
+
+  let amountInToPool = amountIn.toBigInt() - feeProtocolAmount
+  let cleanAmountIn = amountInToPool -  feeLiquidityAmount
+
+  strict checks = [
+    i.payments.size() == 1 || "exactly 1 payment are expected".throw()
+  ]
+
+  # getLpAssetFromPoolAssetsREADONLY
+  let lpNonReverese = invoke(
+    factoryContract,
+    "getLpAssetFromPoolAssetsREADONLY",
+    [assetIn, assetOut],
+    []
+  )
+
+  let lpReverse = invoke(
+    factoryContract,
+    "getLpAssetFromPoolAssetsREADONLY",
+    [assetOut, assetIn],
+    []
+  )
+  let (isReverse, pool) = if (lpNonReverese != unit) then {
+    let isReverse = false
+    let pool = invoke(
+      factoryContract,
+      "getPoolAddressFromLpAssetREADONLY",
+      [lpNonReverese],
+      []
+    )
+    (isReverse, pool)
+  } else if (lpReverse != unit) then {
+    let isReverse = true
+    let pool = invoke(
+      factoryContract,
+      "getPoolAddressFromLpAssetREADONLY",
+      [lpReverse],
+      []
+    )
+    (isReverse, pool)
+  } else {
+    let isReverse = true
+    let pool = ""
+    (isReverse, pool)
+  }
+
+  strict checkExist = [
+    pool != "" || poolNotExist
+  ]
+  
+  let isPoolOneTokenOperationsDisabled = invoke(
+    factoryContract,
+    "isPoolOneTokenOperationsDisabledREADONLY", 
+    [pool], 
+    []
+  ).exactAs[Boolean]
+  strict check = [isPoolOneTokenOperationsDisabled || poolDisabled]
+
+  let poolAdr = addressFromStringValue(pool.valueOrElse(""))
+
+  let res = invoke(
+    poolAdr,
+    "calculateAmountOutForSwapAndSendTokens",
+    [cleanAmountIn, isReverse, amountOutMin, addressTo],
+    [AttachedPayment(assetIn, amountInToPool.toInt())]
+  )
+
+  ([],
+  true)
+}
+
+
+@Callable(i)
+func setManager(pendingManagerPublicKey: String) = {
+  strict checkCaller = i.mustManager()
+  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
+
+  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
+}
+
+@Callable(i)
+func confirmManager() = {
+  let pm = pendingManagerPublicKeyOrUnit()
+  strict hasPM = pm.isDefined() || throw("no pending manager")
+  strict checkPM = i.callerPublicKey == pm.value() || throw("you are not pending manager")
+
+  [
+    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
+    DeleteEntry(keyPendingManagerPublicKey())
+  ]
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}
