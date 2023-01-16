@@ -6,6 +6,7 @@ import { lpStakingPools } from './contract/lp_staking_pools.mjs';
 import { factoryMock } from './contract/factory_v2.mjs';
 import { broadcastAndWait, chainId, baseSeed } from '../../utils/api.mjs';
 import { lpStableMock } from './contract/lp_stable.mjs';
+import { stakingMock } from './contract/staking.mjs';
 
 chai.use(chaiAsPromised);
 
@@ -43,6 +44,12 @@ describe(`${process.pid}: lp_staking_pools: finalize`, () => {
     await lpStableMock.setPutOneTknV2Result({
       caller: this.accounts.lpStable.seed,
       value: putOneTkn2Result,
+    });
+
+    const stakedByUserResult = 1e8;
+    await stakingMock.setStakedByUser({
+      caller: this.accounts.staking.seed,
+      value: stakedByUserResult,
     });
   });
   it('should successfully finalize', async function () {
