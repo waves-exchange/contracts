@@ -61,7 +61,6 @@ func keyImplementationContract(programName: String) = {
   ["%s%s", "implementationContract", programName].makeString(separator)
 }
 func keyAllReferralPrograms(address: String) = ["%s%s", "allReferralPrograms", address].makeString(separator)
-func keyLastIncUnclaimedWithPaymentCallBlock(address: String) = ["%s%s", "lastIncUnclaimedWithPaymentCallBlock", address].makeString(separator)
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
@@ -387,15 +386,6 @@ func incUnclaimed(
 func incUnclaimedWithPayment(programName: String, referrerAddresses: List[String]) = {
   strict checkProgram = programName == "wxSpotFee" || "invalid program".throwErr()
 
-  let callerAddress = i.caller.toString()
-  let lastCall = callerAddress.keyLastIncUnclaimedWithPaymentCallBlock().getInteger().valueOrElse(0)
-  let waitBlocks = lastCall - height + 3
-
-  strict lastCallCheck = lastCall < height - 3 || [
-    "wait",
-    waitBlocks.toString(),
-    "blocks"
-  ].makeString(" ").throwErr()
   func map(accum: List[Int], next: AttachedPayment) = {
     let assetIdCheck = next.assetId.value().toBase58String() == programName.keyRewardAssetId().getString().value()
     strict amountCheck = assetIdCheck || "invalid asset id".throwErr()
@@ -418,8 +408,7 @@ func incUnclaimedWithPayment(programName: String, referrerAddresses: List[String
   let rewardAssetId    = programName.keyRewardAssetId().getString().value().fromBase58String()
 
   [
-    ScriptTransfer(treasuryContract, resAmount, rewardAssetId),
-    IntegerEntry(callerAddress.keyLastIncUnclaimedWithPaymentCallBlock(), height)
+    ScriptTransfer(treasuryContract, resAmount, rewardAssetId)
   ]
 }
 

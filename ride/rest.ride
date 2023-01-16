@@ -372,49 +372,71 @@ func wxEmissionStatsREADONLY() = {
 func poolStatsREADONLY(lpAsset: String) = {
   let poolAddress = factoryDapp.getStringByAddressOrFail(lpAsset.keyFactoryLpAssetToPoolContractAddress()).addressFromStringValue()
   # data from pool config
-  let cfg = poolAddress.invoke("getPoolConfigWrapperREADONLY", [], []).asAnyList()
-  let lpAssetId = cfg[idxPoolLPAssetId].asString().fromBase58String()
-  let amtAssetId = cfg[idxAmtAssetId].asString()
-  let priceAssetId = cfg[idxPriceAssetId].asString()
-  let iAmtAssetId = cfg[idxIAmtAssetId].asString()
-  let iPriceAssetId = cfg[idxIPriceAssetId].asString()
-  let amtAssetDcm = cfg[idxAmtAssetDcm].asString().parseIntValue()
-  let priceAssetDcm = cfg[idxPriceAssetDcm].asString().parseIntValue()
+  let status = factoryDapp.invoke("getPoolStatusREADONLY", [poolAddress.toString()], []).exactAs[Int]
+  let tpl = "%d%d%d%d%d%d%d%d%d%s"
+  if (status == 4) then {
+    (
+      [],
+      makeString([
+        tpl,
+        0.toString(),
+        0.toString(),
+        0.toString(),
+        0.toString(),
+        0.toString(),
+        0.toString(),
+        0.toString(),
+        0.toString(),
+        0.toString(),
+        false.toString()
+      ],
+      SEP)
+    )
+  } else {
+    let cfg = poolAddress.invoke("getPoolConfigWrapperREADONLY", [], []).asAnyList()
+    let lpAssetId = cfg[idxPoolLPAssetId].asString().fromBase58String()
+    let amtAssetId = cfg[idxAmtAssetId].asString()
+    let priceAssetId = cfg[idxPriceAssetId].asString()
+    let iAmtAssetId = cfg[idxIAmtAssetId].asString()
+    let iPriceAssetId = cfg[idxIPriceAssetId].asString()
+    let amtAssetDcm = cfg[idxAmtAssetDcm].asString().parseIntValue()
+    let priceAssetDcm = cfg[idxPriceAssetDcm].asString().parseIntValue()
 
-  let poolLPBalance = lpAssetId.assetInfo().valueOrErrorMessage("Asset " + lpAssetId.toBase58String() + " doesn't exist").quantity
+    let poolLPBalance = lpAssetId.assetInfo().valueOrErrorMessage("Asset " + lpAssetId.toBase58String() + " doesn't exist").quantity
 
-  # get current balances from acc
-  let accAmtAssetBalance = poolAddress.invoke("getAccBalanceWrapperREADONLY", [amtAssetId], []).asInt()
-  let accPriceAssetBalance = poolAddress.invoke("getAccBalanceWrapperREADONLY", [priceAssetId], []).asInt()
+    # get current balances from acc
+    let accAmtAssetBalance = poolAddress.invoke("getAccBalanceWrapperREADONLY", [amtAssetId], []).asInt()
+    let accPriceAssetBalance = poolAddress.invoke("getAccBalanceWrapperREADONLY", [priceAssetId], []).asInt()
 
-  let pricesList = if(poolLPBalance == 0) then [zeroBigInt.toString(), zeroBigInt.toString(), zeroBigInt.toString()] else poolAddress.invoke("calcPricesWrapperREADONLY", [accAmtAssetBalance, accPriceAssetBalance, poolLPBalance], []).asAnyList()
-  let curPrice          = 0 #pricesList[0].fromX18(scale8) # !!! currently not used by clients and for test purpose is 0. we are planning to remove it
-  let lpAmtAssetShare   = poolAddress.invoke("fromX18WrapperREADONLY", [pricesList[1], MULT8], []).asInt()
-  let lpPriceAssetShare = poolAddress.invoke("fromX18WrapperREADONLY", [pricesList[2], MULT8], []).asInt()
+    let pricesList = if(poolLPBalance == 0) then [zeroBigInt.toString(), zeroBigInt.toString(), zeroBigInt.toString()] else poolAddress.invoke("calcPricesWrapperREADONLY", [accAmtAssetBalance, accPriceAssetBalance, poolLPBalance], []).asAnyList()
+    let curPrice          = 0 #pricesList[0].fromX18(scale8) # !!! currently not used by clients and for test purpose is 0. we are planning to remove it
+    let lpAmtAssetShare   = poolAddress.invoke("fromX18WrapperREADONLY", [pricesList[1], MULT8], []).asInt()
+    let lpPriceAssetShare = poolAddress.invoke("fromX18WrapperREADONLY", [pricesList[2], MULT8], []).asInt()
 
-  let poolWeight = factoryDapp.getIntegerValue(poolAddress.toString().keyFactoryPoolWeight())
-  let inFee = poolAddress.getPoolInFee()
-  let outFee = poolAddress.getPoolOutFee()
+    let poolWeight = factoryDapp.getIntegerValue(poolAddress.toString().keyFactoryPoolWeight())
+    let inFee = poolAddress.getPoolInFee()
+    let outFee = poolAddress.getPoolOutFee()
 
-  let poolOneTokenOperationsDisabled = factoryDapp.invoke("isPoolOneTokenOperationsDisabledREADONLY", [poolAddress.toString()], []).exactAs[Boolean]
-  let poolOneTokenOperationsEnabled = !poolOneTokenOperationsDisabled
-  (
-    [],
-    makeString([
-      "%d%d%d%d%d%d%d%d%d%s",
-      accAmtAssetBalance.toString(),
-      accPriceAssetBalance.toString(),
-      poolLPBalance.toString(),
-      curPrice.toString(),
-      lpAmtAssetShare.toString(),
-      lpPriceAssetShare.toString(),
-      poolWeight.toString(),
-      inFee.toString(),
-      outFee.toString(),
-      poolOneTokenOperationsEnabled.toString()
-    ],
-    SEP)
-  )
+    let poolOneTokenOperationsDisabled = factoryDapp.invoke("isPoolOneTokenOperationsDisabledREADONLY", [poolAddress.toString()], []).exactAs[Boolean]
+    let poolOneTokenOperationsEnabled = !poolOneTokenOperationsDisabled
+    (
+      [],
+      makeString([
+        tpl,
+        accAmtAssetBalance.toString(),
+        accPriceAssetBalance.toString(),
+        poolLPBalance.toString(),
+        curPrice.toString(),
+        lpAmtAssetShare.toString(),
+        lpPriceAssetShare.toString(),
+        poolWeight.toString(),
+        inFee.toString(),
+        outFee.toString(),
+        poolOneTokenOperationsEnabled.toString()
+      ],
+      SEP)
+    )
+  }
 }
 
 @Callable(i)

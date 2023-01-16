@@ -1,0 +1,16 @@
+{
+    "type": 16,
+    "fee": 500000,
+    "dApp": "3PJyz4AHXKBgDuFx7uZdYmHCBtTmDnRgCx3",
+    "senderPublicKey": "B1xG5BbgFiiZ5ixpyHL9kP32onSKUNPZTHvE45z21SeN",
+    "call": {
+        "function": "burn",
+        "args": []
+    },
+    "payment": [
+        {
+            "assetId": "Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on",
+            "amount": 14000000000
+        }
+    ]
+}

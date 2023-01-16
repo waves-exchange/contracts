@@ -21,13 +21,14 @@ const testPath = 'common_mock';
 const userPoolsPath = format({ dir: ridePath, base: 'user_pools.ride' });
 const assetsStoreMockPath = format({ dir: testPath, base: 'assets_store.mock.ride' });
 const factoryV2MockPath = format({ dir: testPath, base: 'factory_v2.mock.ride' });
+const emissionMockPath = format({ dir: testPath, base: 'emission.mock.ride' });
 const lpMockPath = format({ dir: testPath, base: 'lp.mock.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
     const spinner = ora('Initializing').start();
     // setup accounts
-    const names = ['pools', 'store', 'factory', 'lp', 'user'];
+    const names = ['pools', 'store', 'factory', 'emission', 'lp', 'user'];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
@@ -42,6 +43,7 @@ export const mochaHooks = {
     await setScriptFromFile(assetsStoreMockPath, this.accounts.store);
     await setScriptFromFile(factoryV2MockPath, this.accounts.factory);
     await setScriptFromFile(lpMockPath, this.accounts.lp);
+    await setScriptFromFile(emissionMockPath, this.accounts.emission);
 
     // issue WX asset
     const wxIssueTx = issue({

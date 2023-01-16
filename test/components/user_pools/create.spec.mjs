@@ -22,7 +22,7 @@ const api = create(apiBase);
  * } MochaSuiteModified
  * */
 
-describe('User Pools - Activate', /** @this {MochaSuiteModified} */() => {
+describe('User Pools - Create', /** @this {MochaSuiteModified} */() => {
   let userTokenId = '';
   before(async function () {
     const constructorInvokeTx = invokeScript({
@@ -83,7 +83,9 @@ describe('User Pools - Activate', /** @this {MochaSuiteModified} */() => {
     }, seed);
     await api.transactions.broadcast(wxTransferTx, {});
     await waitForTx(wxTransferTx.id, { apiBase });
+  });
 
+  it('Create burns WX fee', async function () {
     const createInvokeTx = invokeScript({
       dApp: address(this.accounts.pools, chainId),
       call: {
@@ -100,35 +102,15 @@ describe('User Pools - Activate', /** @this {MochaSuiteModified} */() => {
     }, this.accounts.user);
     await api.transactions.broadcast(createInvokeTx, {});
     await waitForTx(createInvokeTx.id, { apiBase });
-  });
 
-  it('Valid caller', async function () {
-    const invokeTx = invokeScript({
-      dApp: address(this.accounts.pools, chainId),
-      call: {
-        function: 'activate',
-        args: [
-          { type: 'string', value: address(this.accounts.lp, chainId) }, // poolAddress
-          { type: 'string', value: userTokenId }, // amountAssetId
-          { type: 'string', value: 'USER' }, // amountAssetTicker
-          { type: 'string', value: this.usdnAssetId }, // priceAssetId
-          { type: 'string', value: 'USDN' }, // priceAssetTicker
-          { type: 'string', value: '' }, // logo
-        ],
-      },
-      fee: 1e8 + 9e5,
-      chainId,
-    }, this.accounts.pools);
-    await api.transactions.broadcast(invokeTx, {});
-    await waitForTx(invokeTx.id, { apiBase });
-    const { stateChanges } = await api.transactions.fetchInfo(invokeTx.id);
+    const { stateChanges } = await api.transactions.fetchInfo(createInvokeTx.id);
     expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
       .to.deep.include.members([
-        [address(this.accounts.factory, chainId), 'activateNewPool'],
-        [address(this.accounts.lp, chainId), 'put'],
+        [address(this.accounts.emission, chainId), 'burn'],
       ]);
-    expect(stateChanges.transfers[0]).to.include({
-      address: address(this.accounts.user, chainId),
+    expect(stateChanges.invokes[0].payment).to.deep.include({
+      assetId: this.wxAssetId,
+      amount: 1e3,
     });
   });
 });
