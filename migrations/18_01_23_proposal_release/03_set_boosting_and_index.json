@@ -1,13 +1,11 @@
 {
-  "dApp": "3P3p2zt2MhX73SkSQZrUn63UNZVmGJPLoJH",
-  "fee": 900000,
-  "proofs": [],
-  "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
-  "chainId": 87,
-  "timestamp": 0,
-  "type": 16,
   "version": 2,
-  "payment": [],
+  "type": 12,
+  "chainId": 87,
+  "fee": 500000,
+  "proofs": [],
+  "timestamp": 0,
+  "senderPublicKey": "2VkbtS8CodmbZqAounEpDSf4dAfLoCWfEEGHZK7qtbeD",
   "data": [
     {
       "type": "integer",
