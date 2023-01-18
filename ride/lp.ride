@@ -714,27 +714,16 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   let assetIn = pmt.assetId.value().toBase58String()
 
   let assetOut = if (isReverse == false) then {
-    let assetOut = getStringOrFail(this, pa())
-    (assetOut)
+    getStringOrFail(this, pa())
   } else {
-    let assetOut = getStringOrFail(this, aa())
-    (assetOut)
+    getStringOrFail(this, aa())
   }
   let poolAssetInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
   let poolAssetOutBalance = getAccBalance(assetOut)
   let amountOut = poolAssetOutBalance * cleanAmountIn / (poolAssetInBalance + cleanAmountIn)
-  strict checkMin = [
-    amountOutMin <= amountOut, "Exchange resulted in fewer coins than expected"
-  ]
-  [ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.fromBase58String())]
-}
 
-@Callable(i)
-func setSwapContract(swappAddr: String) = {
-  strict checkCaller = i.mustManager()
-  [
-    StringEntry(swapContract(), swappAddr)
-  ]
+  strict checkMin = amountOutMin <= amountOut || "Exchange resulted in fewer coins than expected"
+  [ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.fromBase58String())]
 }
 
 @Callable(i)

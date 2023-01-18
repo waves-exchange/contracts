@@ -11,7 +11,7 @@ let SEP = "__"
 
 let feeScale = 100_000.toBigInt()
 
-func getStringOrFail(key: String)   = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}
+func getStringOrFail(key: String) = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}
 
 let poolDisabled = "Pool disabled".throw()
 let poolNotExist = "Pool is not exist".throw()
@@ -24,7 +24,7 @@ func fc() = {"%s__factoryContract"}
 let factoryContract = addressFromStringValue(getStringOrFail(fc()))
 
 func feeLiquidityContractAddress() = ["%s", "feeLiquidityContractAddress"].makeString(SEP)
-func feeLiquidity() = ["%d", "feeLiquidity"].makeString(SEP)
+func feeLiquidity() = ["%s", "feeLiquidity"].makeString(SEP)
 func protocolFee() = ["%d", "protocolFee"].makeString(SEP)
 
 
@@ -65,24 +65,6 @@ func mustManager(i: Invocation) = {
 }
 
 @Callable(i)
-func constructor(
-  protocolFeeAmount: Int,
-  feeLiquidityAmount: Int,
-  feeLiquidityAddress: String,
-  fc: String
-  ) = {
-  strict check = i.mustManager()
-  [
-    StringEntry(feeLiquidityContractAddress(), feeLiquidityAddress),
-    IntegerEntry(feeLiquidity(), feeLiquidityAmount),
-    IntegerEntry(protocolFee(), protocolFeeAmount),
-    StringEntry(fc(), fc)
-  ]
-}
-
-
-
-@Callable(i)
 func swap(
   amountOutMin: Int,
   assetOut: String,
@@ -102,7 +84,6 @@ func swap(
     i.payments.size() == 1 || "exactly 1 payment are expected".throw()
   ]
 
-  # getLpAssetFromPoolAssetsREADONLY
   let lpNonReverese = invoke(
     factoryContract,
     "getLpAssetFromPoolAssetsREADONLY",
@@ -123,7 +104,7 @@ func swap(
       "getPoolAddressFromLpAssetREADONLY",
       [lpNonReverese],
       []
-    )
+    ).exactAs[Address]
     (isReverse, pool)
   } else if (lpReverse != unit) then {
     let isReverse = true
@@ -135,14 +116,8 @@ func swap(
     )
     (isReverse, pool)
   } else {
-    let isReverse = true
-    let pool = ""
-    (isReverse, pool)
+    poolNotExist
   }
-
-  strict checkExist = [
-    pool != "" || poolNotExist
-  ]
   
   let isPoolOneTokenOperationsDisabled = invoke(
     factoryContract,
@@ -150,7 +125,7 @@ func swap(
     [pool], 
     []
   ).exactAs[Boolean]
-  strict check = [isPoolOneTokenOperationsDisabled || poolDisabled]
+  strict check = isPoolOneTokenOperationsDisabled || poolDisabled
 
   let poolAdr = addressFromStringValue(pool.valueOrElse(""))
 
@@ -159,10 +134,10 @@ func swap(
     "calculateAmountOutForSwapAndSendTokens",
     [cleanAmountIn, isReverse, amountOutMin, addressTo],
     [AttachedPayment(assetIn, amountInToPool.toInt())]
-  )
+  ).exactAs[Boolean]
 
   ([],
-  true)
+  res)
 }
 
 

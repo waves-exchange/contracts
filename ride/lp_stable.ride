@@ -140,8 +140,6 @@ func str(val: Any) = {
   }
 }
 
-func getStringOrFail(key: String) = getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
-# getStringOrFail
 func strf(addr: Address, key: String) = addr.getString(key).valueOrErrorMessage(makeString(["mandatory ", addr.toString(), ".", key, " not defined"], ""))
 # getIntOrFail
 func intf(addr: Address, key: String) = addr.getInteger(key).valueOrErrorMessage(makeString(["mandatory ", addr.toString(), ".", key, " not defined"], ""))
@@ -842,7 +840,7 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
   let n = big2
   let aPrecision = Amult.parseBigIntValue()
   let a = A.parseBigIntValue() * aPrecision
-  let xp = if (isReverse == false) then { # ???
+  let xp = if (isReverse == false) then { 
     [amId.getAccBalance().toBigInt() - poolAmountInBalance, prId.getAccBalance().toBigInt()]
   } else {
     [prId.getAccBalance().toBigInt() - poolAmountInBalance, amId.getAccBalance().toBigInt()]
@@ -878,21 +876,19 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
 func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String) = {
   strict checks = [
     i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
-    i.caller == addressFromStringValue(getStringOrFail(swapContract())) || "Permission denied".throwErr()
+    i.caller == addressFromStringValue(this.strf(swapContract())) || "Permission denied".throwErr()
   ]
   let pmt = i.payments[0].value()
   let assetIn = pmt.assetId.value().toBase58String()
 
-  let (assetOut, index, poolAmountInBalance) = if (isReverse == false) then {
-    let index = 1
-    let assetOut = getStringOrFail(pa())
+  let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
+    let assetOut = this.strf(pa())
     let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
-    (assetOut, index, poolAmountInBalance)
+    (assetOut, poolAmountInBalance)
   } else {
-    let index = 0
-    let assetOut = getStringOrFail(aa())
+    let assetOut = this.strf(aa())
     let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
-    (assetOut, index, poolAmountInBalance) 
+    (assetOut, poolAmountInBalance) 
   }
 
   let poolConfig = gpc()
@@ -908,21 +904,10 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
 
   let totalGetRaw = [0, dy.toInt()].max()
 
-  strict checkMin = [
-    amountOutMin >= totalGetRaw, "Exchange resulted in fewer coins than expected".throw()
-  ]
+  strict checkMin = amountOutMin <= totalGetRaw || "Exchange resulted in fewer coins than expected".throw()
   
   [ScriptTransfer(addressTo.addressFromStringValue(), dy.toInt(), assetOut.fromBase58String())]
 }
-
-@Callable(i)
-func setSwapContract(swappAddr: String) = {
-  strict checkCaller = i.mm()
-  [
-    StringEntry(swapContract(), swappAddr)
-  ]
-}
-
 
 @Callable(i)
 # ido, team, emission, staking, locking (boosting), rest
