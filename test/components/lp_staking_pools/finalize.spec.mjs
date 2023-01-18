@@ -53,6 +53,8 @@ describe(`${process.pid}: lp_staking_pools: finalize`, () => {
     });
   });
   it('should successfully finalize', async function () {
+    // BigInt('0x' + Buffer.from('DeC2s6dkAAA=', 'base64').toString('hex'))
+    // new BigNumber('0x' + Buffer.from('DeC2s6dkAAA=', 'base64').toString('hex'), 16).toNumber()
     const txInfo = await lpStakingPools.finalize({
       dApp: this.accounts.lpStakingPools.addr,
       caller: this.accounts.pacemaker.seed,
