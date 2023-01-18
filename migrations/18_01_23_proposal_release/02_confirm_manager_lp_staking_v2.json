@@ -1,11 +1,12 @@
 {
   "dApp": "",
-  "fee": 500000,
+  "fee": 900000,
   "proofs": [],
   "senderPublicKey": "",
+  "chainId": 87,
   "timestamp": 0,
   "type": 16,
-  "version": 1,
+  "version": 2,
   "payment": [],
   "call": {
     "function": "confirmManager",
