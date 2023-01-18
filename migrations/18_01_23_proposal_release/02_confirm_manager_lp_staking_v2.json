@@ -1,0 +1,14 @@
+{
+  "dApp": "",
+  "fee": 500000,
+  "proofs": [],
+  "senderPublicKey": "",
+  "timestamp": 0,
+  "type": 16,
+  "version": 1,
+  "payment": [],
+  "call": {
+    "function": "confirmManager",
+    "args": []
+  }
+}
