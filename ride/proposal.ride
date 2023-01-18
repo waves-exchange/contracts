@@ -71,16 +71,6 @@ func mustManager(i: Invocation) = {
   i.isManager() || "permission denied".throw()
 }
 
-
-@Callable(i)
-func constructor(gwxContractAddress: String) = {
-  strict check = i.mustManager()
-  [
-    StringEntry(gwxContractAddress(), gwxContractAddress),
-    IntegerEntry(keyCurrentIndex(), 0)
-  ]
-}
-
 @Callable(i)
 func startNewVote(name: String, description: String, expirationHeight: Int, quorumNumber: Int) = {
   strict checks = [
