@@ -78,6 +78,7 @@ let feeDefault = fraction(10, scale8, 10_000)
 # WX COMMON LIBRARY
 #-------------------------
 func t1(origVal: Int, origScaleMult: Int)        = fraction(origVal.toBigInt(), scale18, origScaleMult.toBigInt())
+func t1BigInt(origVal: BigInt, origScaleMult: BigInt)        = fraction(origVal, scale18, origScaleMult)
 func f1(val: BigInt, resultScaleMult: Int)       = fraction(val, resultScaleMult.toBigInt(), scale18).toInt()
 func fromX18Round(
   val: BigInt,
@@ -528,8 +529,7 @@ func getD(xp: List[BigInt]) = {
       fraction(
         ann_s + fraction(dp, big2, big1),
         d,
-        fraction(ann_1, d, big1) + fraction(big3, dp, big1),
-        CEILING
+        fraction(ann_1, d, big1) + fraction(big3, dp, big1)
       )
     }
     func calc(acc: (BigInt, Boolean), i: Int) = {
@@ -548,45 +548,6 @@ func getD(xp: List[BigInt]) = {
     let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     let (d, found) = FOLD<15>(arr, (s, false), calc)
     if (found) then {
-      d
-    } else {
-      { "D calculation error, D = " + d.toString() }.throw()
-    }
-  }
-}
-
-func getDOld(xp: List[BigInt]) = {
-  let n = big2
-  let xp0 = xp[0]
-  let xp1 = xp[1]
-  # TODO: A in state should be multiplied
-  let aPrecision = Amult.parseBigIntValue()
-  let a = A.parseBigIntValue() * aPrecision
-  let s = xp0 + xp1
-  if (s == big0) then {
-    big0
-  } else {
-    let ann = a * n
-    let xp0_xp1_n_n = xp0 * xp1 * n * n
-    let ann_s_aPrecision = ann * s / aPrecision
-    let ann_aPrecision = ann - aPrecision
-    let n1 = n + big1
-    func calc(acc: (BigInt, Int|Unit), cur: Int) = {
-      let (d, found) = acc
-      if (found != unit) then acc else {
-        let dp = d * d * d / xp0_xp1_n_n
-        let dNext = (ann_s_aPrecision + dp * n) * d / (ann_aPrecision * d / aPrecision + n1 * dp)
-        let dDiff = absBigInt(dNext - d.value())
-        if (dDiff <= big1) then {
-          (dNext, cur)
-        } else {
-          (dNext, unit)
-        }
-      }
-    }
-    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-    let (d, found) = FOLD<15>(arr, (s, unit), calc)
-    if (found != unit) then {
       d
     } else {
       { "D calculation error, D = " + d.toString() }.throw()
@@ -627,8 +588,8 @@ func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
 func calcDLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
   let updatedDLp = fraction(
     [
-      amountBalance.toInt().t1(cfgAmountAssetDecimals),
-      priceBalance.toInt().t1(cfgPriceAssetDecimals)
+      amountBalance.t1BigInt(cfgAmountAssetDecimals.toBigInt()),
+      priceBalance.t1BigInt(cfgPriceAssetDecimals.toBigInt())
     ].getD(),
     big1,
     lpEmission
