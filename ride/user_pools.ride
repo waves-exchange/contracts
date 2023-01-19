@@ -31,6 +31,7 @@ func keyStatus(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "status
 
 func keyFactoryContract() = ["%s", "factoryContract"].makeString(SEP)
 func keyAssetsStoreContract() = ["%s", "assetsStoreContract"].makeString(SEP)
+func keyEmissionContract() = ["%s", "emissionContract"].makeString(SEP)
 
 func keySuffix(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "suffix", amountAssetId, priceAssetId].makeString(SEP)
 func keyLastIndex() = ["%s", "lastIndex"].makeString(SEP)
@@ -117,12 +118,13 @@ func validStatus(status: String) = {
 }
 
 @Callable(i)
-func constructor(factoryV2Address: String, assetsStoreAddress: String, priceAssetsMinAmount: List[String], amountAssetMinAmount: Int, feeAssetId: String, feeAmount: Int) = {
+func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionAddress: String, priceAssetsMinAmount: List[String], amountAssetMinAmount: Int, feeAssetId: String, feeAmount: Int) = {
   strict checkCaller = i.mustManager()
 
   [
     StringEntry(keyFactoryContract(), factoryV2Address),
     StringEntry(keyAssetsStoreContract(), assetsStoreAddress),
+    StringEntry(keyEmissionContract(), emissionAddress),
     StringEntry(keyPriceAssetsMinAmount(), priceAssetsMinAmount.makeString(SEP)),
     IntegerEntry(keyAmountAssetMinAmount(), amountAssetMinAmount),
     StringEntry(keyFeeAssetId(), feeAssetId),
@@ -163,6 +165,8 @@ func create() = {
   let lastIndex = keyLastIndex().getInteger().valueOrElse(0)
   let curIndex = lastIndex + 1
 
+  let emissionContract = keyEmissionContract().getStringOrFail().addressFromStringValue()
+
   strict checks = [
     !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
     i.isManager() || amountAssetId.isVerified() || throwAssetNotVerified(),
@@ -171,6 +175,8 @@ func create() = {
     i.isManager() || priceAssetPayment.amount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
     feeAssetPayment.amount == keyFeeAmount().getInteger() || throwInvalidFee()
   ]
+
+  strict burnEmissionInv = emissionContract.invoke("burn", [], [AttachedPayment(feeAssetId.fromBase58String(), feeAssetPayment.amount)])
 
   [
     BooleanEntry(keyCreateCalled(amountAssetId, priceAssetId), true),
