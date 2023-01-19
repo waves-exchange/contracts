@@ -311,6 +311,50 @@ func takeFee(amount: Int, fee: Int) = {
   (amount - feeAmount, feeAmount)
 }
 
+func getD(xp: List[BigInt]) = {
+  let xp0 = xp[0]
+  let xp1 = xp[1]
+  let s = xp0 + xp1
+  if (s == big0) then big0 else {
+    let a = A.parseIntValue()
+    let ann = a * 2
+    let p = fraction(xp0, xp1, big1)
+    let xp0_xp1_n_n = fraction(p, big4, big1)
+    let ann_s = fraction(ann.toBigInt(), s, big1)
+    let ann_1 = (ann - 1).toBigInt()
+    func calcDNext(d: BigInt) = {
+      let dd = fraction(d, d, big1)
+      let ddd = fraction(dd, d, big1)
+      let dp = fraction(ddd, big1, xp0_xp1_n_n)
+      fraction(
+        ann_s + fraction(dp, big2, big1),
+        d,
+        fraction(ann_1, d, big1) + fraction(big3, dp, big1)
+      )
+    }
+    func calc(acc: (BigInt, Boolean), i: Int) = {
+      if (acc._2) then acc else {
+        let d = acc._1
+        let dNext = d.calcDNext()
+        let dDiffRaw = dNext - d.value()
+        let dDiff = if (dDiffRaw < big0) then -dDiffRaw else dDiffRaw
+        if (dDiff <= big1) then {
+          (dNext, true)
+        } else {
+          (dNext, false)
+        }
+      }
+    }
+    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    let (d, found) = FOLD<15>(arr, (s, false), calc)
+    if (found) then {
+      d
+    } else {
+      { "D calculation error, D = " + d.toString() }.throw()
+    }
+  }
+}
+
 # estimateGetOperation
 func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address) = {
   let lpId   = cfgLpAssetId
@@ -419,6 +463,8 @@ func epo(txId58: String,
     let amBalanceX18 = amBalance.t1(amtDcm)
     let prBalanceX18 = prBalance.t1(priceDcm)
 
+    let D0 = [amBalanceX18, prBalanceX18].getD()
+
     # case of the initial or first deposit
     # result is a tuple containing the following:
     # 1. lp amount that user got
@@ -426,10 +472,14 @@ func epo(txId58: String,
     # 3. priceAsset amount that goes to Pool liquidity
     # 4. pool price after PUT operation
     let r = if(lpEm == 0) then {
+      let D1 = [amBalanceX18 + inAmAssetAmtX18, prBalanceX18 + inPrAssetAmtX18].getD()
+
+      strict checkD = D1 > D0 || "D1 should be greater than D0".throw()
         let curPriceX18 = zeroBigInt
         let slippageX18 = zeroBigInt
         # calc initial deposit by geometric mean
-        let lpAmtX18 = pow(inAmAssetAmtX18 * inPrAssetAmtX18, 0, 5.toBigInt(), 1, 0, DOWN)
+        # let lpAmtX18 = pow(inAmAssetAmtX18 * inPrAssetAmtX18, 0, 5.toBigInt(), 1, 0, DOWN)
+        let lpAmtX18 = D1
         (
           lpAmtX18.f1(scale8),
           inAmAssetAmtX18.f1(amtDcm),
@@ -458,7 +508,11 @@ func epo(txId58: String,
             let expAmtAssetAmtX18   = expectedAmts._1
             let expPriceAssetAmtX18 = expectedAmts._2
             # calculate LP amount that user
-            let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18, FLOOR)
+            # let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18, FLOOR)
+            let D1 = [amBalanceX18 + expAmtAssetAmtX18, prBalanceX18 + expPriceAssetAmtX18].getD()
+
+            strict checkD = D1 > D0 || "D1 should be greater than D0".throw()
+            let lpAmtX18 = fraction(lpEmissionX18, D1 - D0, D0)
             (
               lpAmtX18.fromX18Round(scale8, FLOOR),
               expAmtAssetAmtX18.fromX18Round(amtDcm, CEILING),
@@ -509,50 +563,6 @@ func epo(txId58: String,
       inAmId,                   # 12
       inPrId                    # 13
     )
-}
-
-func getD(xp: List[BigInt]) = {
-  let xp0 = xp[0]
-  let xp1 = xp[1]
-  let s = xp0 + xp1
-  if (s == big0) then big0 else {
-    let a = A.parseIntValue()
-    let ann = a * 2
-    let p = fraction(xp0, xp1, big1)
-    let xp0_xp1_n_n = fraction(p, big4, big1)
-    let ann_s = fraction(ann.toBigInt(), s, big1)
-    let ann_1 = (ann - 1).toBigInt()
-    func calcDNext(d: BigInt) = {
-      let dd = fraction(d, d, big1)
-      let ddd = fraction(dd, d, big1)
-      let dp = fraction(ddd, big1, xp0_xp1_n_n)
-      fraction(
-        ann_s + fraction(dp, big2, big1),
-        d,
-        fraction(ann_1, d, big1) + fraction(big3, dp, big1)
-      )
-    }
-    func calc(acc: (BigInt, Boolean), i: Int) = {
-      if (acc._2) then acc else {
-        let d = acc._1
-        let dNext = d.calcDNext()
-        let dDiffRaw = dNext - d.value()
-        let dDiff = if (dDiffRaw < big0) then -dDiffRaw else dDiffRaw
-        if (dDiff <= big1) then {
-          (dNext, true)
-        } else {
-          (dNext, false)
-        }
-      }
-    }
-    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-    let (d, found) = FOLD<15>(arr, (s, false), calc)
-    if (found) then {
-      d
-    } else {
-      { "D calculation error, D = " + d.toString() }.throw()
-    }
-  }
 }
 
 func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
@@ -760,8 +770,8 @@ func calcPutOneTkn(
   let prBalanceNew = prBalanceOld + prAmount
 
   # check D1 > D0
-  let D0 = [amBalanceOld.toBigInt(), prBalanceOld.toBigInt()].getD()
-  let D1 = [amBalanceNew.toBigInt(), prBalanceNew.toBigInt()].getD()
+  let D0 = [amBalanceOld.t1(cfgAmountAssetDecimals), prBalanceOld.t1(cfgPriceAssetDecimals)].getD()
+  let D1 = [amBalanceNew.t1(cfgAmountAssetDecimals), prBalanceNew.t1(cfgPriceAssetDecimals)].getD()
 
   strict checkD = D1 > D0 || throw()
 
