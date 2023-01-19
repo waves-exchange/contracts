@@ -1339,7 +1339,7 @@ func unstakeAndGet(amount: Int) = {
   let lpAssetId = cfgLpAssetId
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
 
-  let currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   # negative amount will not pass
   strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
@@ -1370,7 +1370,7 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
     i.payments.size() == 0 || "no payments are expected".throw()
   ]
 
-  let currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
 
