@@ -78,6 +78,7 @@ let idxFactorySlippageContract     = 7
 # WX COMMON LIBRARY
 #-------------------------
 func toX18(origVal: Int, origScaleMult: Int)          = fraction(origVal.toBigInt(), scale18, origScaleMult.toBigInt())
+func toX18BigInt(origVal: BigInt, origScaleMult: BigInt) = fraction(origVal, scale18, origScaleMult)
 func fromX18(val: BigInt, resultScaleMult: Int)       = fraction(val, resultScaleMult.toBigInt(), scale18).toInt()
 func fromX18Round(val: BigInt, resultScaleMult: Int, round: Ceiling|Floor) = fraction(val, resultScaleMult.toBigInt(), scale18, round).toInt()
 
@@ -447,8 +448,10 @@ func estimatePutOperation(txId58: String, slippageTolerance: Int, inAmAssetAmt: 
 }
 
 func calcKLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
+  let amountBalanceX18 = amountBalance.toX18BigInt(cfgAmountAssetDecimals.toBigInt())
+  let priceBalanceX18 = priceBalance.toX18BigInt(cfgPriceAssetDecimals.toBigInt())
   let updatedKLp = fraction(
-    pow(amountBalance * priceBalance, 0, 5.toBigInt(), 1, 18, DOWN),
+    pow(amountBalanceX18 * priceBalanceX18, 0, 5.toBigInt(), 1, 18, DOWN),
     big1,
     lpEmission
   )
