@@ -138,8 +138,13 @@ let keyFeeCollectorAddress = "%s__feeCollectorAddress"
 #------------------------
 # FAILURES
 #------------------------
-func throwOrderError(orderValid: Boolean, senderValid: Boolean, matcherValid: Boolean) = {
-  throw("order validation failed: orderValid=" + orderValid.toString() + " senderValid=" + senderValid.toString() + " matcherValid=" + matcherValid.toString())
+func throwOrderError(
+  orderValid: Boolean,
+  orderValidInfo: String,
+  senderValid: Boolean,
+  matcherValid: Boolean
+) = {
+  throw("order validation failed: orderValid=" + orderValid.toString() + " (" + orderValidInfo + ")" + " senderValid=" + senderValid.toString() + " matcherValid=" + matcherValid.toString())
 }
 
 #------------------------
@@ -521,7 +526,12 @@ func validateMatcherOrderAllowed(order: Order) = {
   let (unusedActions, kLpNew) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
   let isOrderValid = kLpNew >= kLp
 
-  isOrderValid
+  let info = [
+    kLp.toString(),
+    kLpNew.toString()
+  ].makeString(" ")
+
+  (isOrderValid, info)
 }
 
 func commonGet(i: Invocation) = {
@@ -1502,11 +1512,11 @@ func verify() = {
   match tx {
     case order: Order =>
       let matcherPub    = getMatcherPubOrFail()
-      let orderValid    = validateMatcherOrderAllowed(order)
+      let (orderValid, orderValidInfo) = validateMatcherOrderAllowed(order)
       let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
       let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
 
-      (orderValid && senderValid && matcherValid) || throwOrderError(orderValid, senderValid, matcherValid)
+      (orderValid && senderValid && matcherValid) || throwOrderError(orderValid, orderValidInfo, senderValid, matcherValid)
     case s: SetScriptTransaction =>
       let newHash = s.script.value().blake2b256()
       let allowedHash = factoryContract.getString(keyAllowedLpScriptHash()).value().fromBase64String()

@@ -142,9 +142,13 @@ func keyFeeCollectorAddress() = "%s__feeCollectorAddress"
 #------------------------
 # FAILURES
 #------------------------
-# throwOrderError
-func toe(orV: Boolean, sendrV: Boolean, matchV: Boolean) = {
-  throw("Failed: ordValid=" + orV.toString() + " sndrValid=" + sendrV.toString() + " mtchrValid=" + matchV.toString())
+func throwOrderError(
+  orderValid: Boolean,
+  orderValidInfo: String,
+  senderValid: Boolean,
+  matcherValid: Boolean
+) = {
+  throw("order validation failed: orderValid=" + orderValid.toString() + " (" + orderValidInfo + ")" + " senderValid=" + senderValid.toString() + " matcherValid=" + matcherValid.toString())
 }
 
 #------------------------
@@ -658,7 +662,12 @@ func validateMatcherOrderAllowed(order: Order) = {
   let (unusedActions, dLpNew) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
   let isOrderValid = dLpNew >= dLp
   
-  isOrderValid
+  let info = [
+    dLp.toString(),
+    dLpNew.toString()
+  ].makeString(" ")
+
+  (isOrderValid, info)
 }
 
 # commonGet
@@ -1560,11 +1569,11 @@ func verify() = {
   match tx {
     case order: Order =>
       let matcherPub    = mp()
-      let orderValid    = validateMatcherOrderAllowed(order)
+      let (orderValid, orderValidInfo) = validateMatcherOrderAllowed(order)
       let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
       let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
 
-      (orderValid && senderValid && matcherValid) || toe(orderValid, senderValid, matcherValid)
+      (orderValid && senderValid && matcherValid) || throwOrderError(orderValid, orderValidInfo, senderValid, matcherValid)
     case s: SetScriptTransaction =>
       if sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey) then {
         true
