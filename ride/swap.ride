@@ -64,14 +64,89 @@ func mustManager(i: Invocation) = {
   i.isManager() || "permission denied".throw()
 }
 
+func getAccBalance(assetId: String) = {
+  if(assetId == "WAVES") then wavesBalance(this).available else assetBalance(this, fromBase58String(assetId))
+}
+
+@Callable(i)
+func swapCalulateREADONLY(
+  amountIn: Int,
+  assetIn: String,
+  assetOut: String
+) = {
+#   let assetIn = pmt.assetId.value()
+  let prFee = getInteger(protocolFee()).value()
+  let feeProtocolAmount = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
+  let feeLiquidityAmount = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
+
+  let amountInToPool = amountIn.toBigInt() - feeProtocolAmount
+  let cleanAmountIn = amountInToPool -  feeLiquidityAmount
+
+  let lpNonReverese = invoke(
+    factoryContract,
+    "getLpAssetFromPoolAssetsREADONLY",
+    [assetIn, assetOut],
+    []
+  )
+
+  let lpReverse = invoke(
+    factoryContract,
+    "getLpAssetFromPoolAssetsREADONLY",
+    [assetOut, assetIn],
+    []
+  )
+  let (isReverse, pool) = if (lpNonReverese != unit) then {
+    let isReverse = false
+    let pool = invoke(
+      factoryContract,
+      "getPoolAddressFromLpAssetREADONLY",
+      [lpNonReverese],
+      []
+    ).exactAs[Address]
+    (isReverse, pool)
+  } else if (lpReverse != unit) then {
+    let isReverse = true
+    let pool = invoke(
+      factoryContract,
+      "getPoolAddressFromLpAssetREADONLY",
+      [lpReverse],
+      []
+    )
+    (isReverse, pool)
+  } else {
+    poolNotExist
+  }
+  
+  let isPoolOneTokenOperationsDisabled = invoke(
+    factoryContract,
+    "isPoolOneTokenOperationsDisabledREADONLY", 
+    [pool], 
+    []
+  ).exactAs[Boolean]
+  strict check = isPoolOneTokenOperationsDisabled || poolDisabled
+  let poolAdr = addressFromStringValue(pool.valueOrElse(""))
+
+  let res = invoke(
+    poolAdr,
+    "calculateAmountOutForSwapREADONLY",
+    [cleanAmountIn, isReverse],
+    []
+  ).exactAs[Int]
+
+
+  (nil,
+  res)
+}
+
 @Callable(i)
 func swap(
   amountOutMin: Int,
   assetOut: String,
-  addressTo: String # add if there is not added
+  addressTo: String 
 ) = {
   let pmt = i.payments[0].value()
-  let assetIn = pmt.assetId.value()
+#   let assetIn = pmt.assetId.value()
+  let assetIn = if(pmt.assetId == unit) then "WAVES".toBytes() else pmt.assetId.value()
   let amountIn = pmt.amount.value()
   let prFee = getInteger(protocolFee()).value()
   let feeProtocolAmount = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)

@@ -705,13 +705,32 @@ func mustManager(i: Invocation) = {
 }
 
 @Callable(i)
+func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int,  isReverse: Boolean) = {
+let (assetOut, assetIn) = if (isReverse == false) then {
+    let assetOut = getStringOrFail(this, pa())
+    let assetIn = getStringOrFail(this, aa())
+    (assetOut, assetIn)
+  } else {
+    let assetOut = getStringOrFail(this, aa())
+    let assetIn = getStringOrFail(this, pa())
+    (assetOut, assetIn)
+  }
+  let poolAssetInBalance = getAccBalance(assetIn)
+  let poolAssetOutBalance = getAccBalance(assetOut)
+  let amountOut = poolAssetOutBalance * cleanAmountIn / (poolAssetInBalance + cleanAmountIn)
+
+  (nil, amountOut)
+}
+
+@Callable(i)
 func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String) = {
   strict checks = [
     i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
     i.caller == addressFromStringValue(getStringOrFail(this, swapContract())) || "Permission denied".throwErr()
   ]
   let pmt = i.payments[0].value()
-  let assetIn = pmt.assetId.value().toBase58String()
+  # let assetIn = pmt.assetId.value().toBase58String()
+  let assetIn = if(pmt.assetId == unit) then "WAVES".toBytes().toBase58String() else pmt.assetId.value().toBase58String()
 
   let assetOut = if (isReverse == false) then {
     getStringOrFail(this, pa())
@@ -722,8 +741,9 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   let poolAssetOutBalance = getAccBalance(assetOut)
   let amountOut = poolAssetOutBalance * cleanAmountIn / (poolAssetInBalance + cleanAmountIn)
 
-  strict checkMin = amountOutMin <= amountOut || "Exchange resulted in fewer coins than expected"
-  [ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.fromBase58String())]
+  strict checkMin = amountOutMin <= amountOut || "Exchange resulted in fewer coins than expected".throw()
+  # [ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.fromBase58String())]
+  [ScriptTransfer(addressTo.addressFromStringValue(), amountOut, if (assetIn == "WAVES") then unit else assetOut.fromBase58String())]
 }
 
 @Callable(i)
