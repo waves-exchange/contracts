@@ -663,7 +663,7 @@ func validateMatcherOrderAllowed(order: Order) = {
   let dLp = this.getString(keyDLp).valueOrElse("0").parseBigIntValue()
   let (unusedActions, dLpNew) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
   let isOrderValid = dLpNew >= dLp
-  
+
   let info = [
     "dLp=", dLp.toString(),
     " dLpNew=", dLpNew.toString(),

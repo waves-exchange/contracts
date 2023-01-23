@@ -527,7 +527,7 @@ func validateMatcherOrderAllowed(order: Order) = {
     .valueOrErrorMessage("invalid kLp".fmtErr())
   let (unusedActions, kLpNew) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
   let isOrderValid = kLpNew >= kLp
-  
+
   let info = [
     "kLp=", kLp.toString(),
     " kLpNew=", kLpNew.toString(),
