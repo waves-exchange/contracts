@@ -43,6 +43,8 @@ let zeroBigInt = 0.toBigInt()
 let big0 = 0.toBigInt()
 let big1 = 1.toBigInt()
 let big2 = 2.toBigInt()
+let big3 = 3.toBigInt()
+let big4 = 4.toBigInt()
 let slippage4D = (scale8 - scale8 * 1 / scale8).toBigInt() # 9999999 or error of 0.0000001
 let wavesString = "WAVES"
 
@@ -76,7 +78,16 @@ let feeDefault = fraction(10, scale8, 10_000)
 # WX COMMON LIBRARY
 #-------------------------
 func t1(origVal: Int, origScaleMult: Int)        = fraction(origVal.toBigInt(), scale18, origScaleMult.toBigInt())
+func t1BigInt(origVal: BigInt, origScaleMult: BigInt)        = fraction(origVal, scale18, origScaleMult)
 func f1(val: BigInt, resultScaleMult: Int)       = fraction(val, resultScaleMult.toBigInt(), scale18).toInt()
+func fromX18Round(
+  val: BigInt,
+  resultScaleMult: Int,
+  round: Ceiling|Floor
+) = fraction(val, resultScaleMult.toBigInt(), scale18, round).toInt()
+
+func t2(origVal: BigInt, origScaleMult: Int) = fraction(origVal, scale18, origScaleMult.toBigInt()) 
+func f2(val: BigInt, resultScaleMult: Int) = fraction(val, resultScaleMult.toBigInt(), scale18)
 
 # cast passed amount to specified 'resScale' scale value from 'curScale' scale value
 func ts(amt: Int, resScale: Int, curScale: Int)  = fraction(amt, resScale, curScale)
@@ -102,6 +113,15 @@ func pa() = {"%s__priceAsset"}
 func amp() = {"%s__amp"}
 func ada() = "%s__addonAddr"
 
+let keyFee = "%s__fee"
+let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
+
+let keyDLp = ["%s", "dLp"].makeString(SEP)
+let keyDLpRefreshedHeight = ["%s", "dLpRefreshedHeight"].makeString(SEP)
+let keyDLpRefreshDelay = ["%s", "refreshDLpDelay"].makeString(SEP)
+let dLpRefreshDelayDefault = 1
+let dLpRefreshDelay = this.getInteger(keyDLpRefreshDelay).valueOrElse(dLpRefreshDelayDefault)
+
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
@@ -122,21 +142,18 @@ func keyFeeCollectorAddress() = "%s__feeCollectorAddress"
 #------------------------
 # FAILURES
 #------------------------
-# throwOrderError
-func toe(orV: Boolean, sendrV: Boolean, matchV: Boolean) = {
-  throw("Failed: ordValid=" + orV.toString() + " sndrValid=" + sendrV.toString() + " mtchrValid=" + matchV.toString())
+func throwOrderError(
+  orderValid: Boolean,
+  orderValidInfo: String,
+  senderValid: Boolean,
+  matcherValid: Boolean
+) = {
+  throw("order validation failed: orderValid=" + orderValid.toString() + " (" + orderValidInfo + ")" + " senderValid=" + senderValid.toString() + " matcherValid=" + matcherValid.toString())
 }
 
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------
-
-func str(val: Any) = {
-  match val {
-    case valStr: String => valStr
-    case _ => throw("fail cast to String")
-  }
-}
 
 # getStringOrFail
 func strf(addr: Address, key: String) = addr.getString(key).valueOrErrorMessage(makeString(["mandatory ", addr.toString(), ".", key, " not defined"], ""))
@@ -144,6 +161,7 @@ func strf(addr: Address, key: String) = addr.getString(key).valueOrErrorMessage(
 func intf(addr: Address, key: String) = addr.getInteger(key).valueOrErrorMessage(makeString(["mandatory ", addr.toString(), ".", key, " not defined"], ""))
 
 func throwErr(msg: String) = ["lp_stable.ride:", msg].makeString(" ").throw()
+func fmtErr(msg: String) = ["lp_stable.ride:", msg].makeString(" ")
 
 # factoryContract
 let fca = addressFromStringValue(strf(this, fc()))
@@ -192,7 +210,9 @@ func parsePoolConfig(poolConfig: List[String]) = {
     poolConfig[idxAmAsId].parseAssetId(),
     poolConfig[idxPrAsId].parseAssetId(),
     poolConfig[idxAmtAsDcm].parseIntValue(),
-    poolConfig[idxPriceAsDcm].parseIntValue()
+    poolConfig[idxPriceAsDcm].parseIntValue(),
+    poolConfig[idxIAmtAsId].fromBase58String(),
+    poolConfig[idxIPriceAsId].fromBase58String()
   )
 }
 
@@ -204,7 +224,9 @@ let (
   cfgAmountAssetId,
   cfgPriceAssetId,
   cfgAmountAssetDecimals,
-  cfgPriceAssetDecimals
+  cfgPriceAssetDecimals,
+  cfgInAmountAssedId,
+  cfgInPriceAssetId
 ) = poolConfigParsed
 
 # getFactoryConfig
@@ -235,6 +257,10 @@ func cpbi(prAmtX18: BigInt, amAmtX18: BigInt) = {
   fraction(prAmtX18, scale18, amAmtX18)
 }
 
+func cpbir(prAmtX18: BigInt, amAmtX18: BigInt, round: Ceiling|Floor) = {
+  fraction(prAmtX18, scale18, amAmtX18, round)
+}
+
 # validateAbsDiff
 func vad(A1: BigInt, A2: BigInt, slippage: BigInt) = {
   let diff = fraction(A1 - A2, scale8BigInt, A2)
@@ -261,9 +287,8 @@ func pcp(amAssetDcm: Int, prAssetDcm: Int, amAmt: Int, prAmt: Int) = {
 
 # used only in stats endpoint, so result values are in scale8 as required
 func calcPrices(amAmt: Int, prAmt: Int, lpAmt: Int) = {
-  let cfg = gpc()
-  let amtAsDcm = cfg[idxAmtAsDcm].parseIntValue()
-  let prAsDcm = cfg[idxPriceAsDcm].parseIntValue()
+  let amtAsDcm = cfgAmountAssetDecimals
+  let prAsDcm = cfgPriceAssetDecimals
 
   let priceX18 = pcp(amtAsDcm, prAsDcm, amAmt, prAmt)
 
@@ -290,21 +315,63 @@ func takeFee(amount: Int, fee: Int) = {
   (amount - feeAmount, feeAmount)
 }
 
+func getD(xp: List[BigInt]) = {
+  let xp0 = xp[0]
+  let xp1 = xp[1]
+  let s = xp0 + xp1
+  if (s == big0) then big0 else {
+    let a = A.parseIntValue()
+    let ann = a * 2
+    let p = fraction(xp0, xp1, big1)
+    let xp0_xp1_n_n = fraction(p, big4, big1)
+    let ann_s = fraction(ann.toBigInt(), s, big1)
+    let ann_1 = (ann - 1).toBigInt()
+    func calcDNext(d: BigInt) = {
+      let dd = fraction(d, d, big1)
+      let ddd = fraction(dd, d, big1)
+      let dp = fraction(ddd, big1, xp0_xp1_n_n)
+      fraction(
+        ann_s + fraction(dp, big2, big1),
+        d,
+        fraction(ann_1, d, big1) + fraction(big3, dp, big1)
+      )
+    }
+    func calc(acc: (BigInt, Boolean), i: Int) = {
+      if (acc._2) then acc else {
+        let d = acc._1
+        let dNext = d.calcDNext()
+        let dDiffRaw = dNext - d.value()
+        let dDiff = if (dDiffRaw < big0) then -dDiffRaw else dDiffRaw
+        if (dDiff <= big1) then {
+          (dNext, true)
+        } else {
+          (dNext, false)
+        }
+      }
+    }
+    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    let (d, found) = FOLD<15>(arr, (s, false), calc)
+    if (found) then {
+      d
+    } else {
+      { "D calculation error, D = " + d.toString() }.throw()
+    }
+  }
+}
+
 # estimateGetOperation
 func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address) = {
-  # data from pool config
-  let cfg             = gpc()
-  let lpId       = cfg[idxLPAsId]
-  let amId       = cfg[idxAmAsId]
-  let prId       = cfg[idxPrAsId]
-  let amDcm      = cfg[idxAmtAsDcm].parseIntValue()
-  let prDcm      = cfg[idxPriceAsDcm].parseIntValue()
-  let sts      = cfg[idxPoolSt]
+  let lpId   = cfgLpAssetId
+  let amId   = cfgAmountAssetId.value().toBase58String()
+  let prId   = cfgPriceAssetId.value().toBase58String()
+  let amDcm  = cfgAmountAssetDecimals
+  let prDcm  = cfgPriceAssetDecimals
+  let sts    = cfgPoolStatus.toString()
 
-  let lpEmiss = assetInfo(lpId.fromBase58String()).valueOrErrorMessage("Wrong LP id").quantity
+  let lpEmiss = assetInfo(lpId).valueOrErrorMessage("Wrong LP id").quantity
 
   # validation block
-  if (lpId != pmtAssetId) then throw("Wrong pmt asset") else
+  if (lpId.toBase58String() != pmtAssetId) then throw("Wrong pmt asset") else
 
   let amBalance = getAccBalance(amId)
   let amBalanceX18 = amBalance.t1(amDcm)
@@ -322,8 +389,8 @@ func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address
   let outPrAmtX18 = fraction(prBalanceX18, pmtLpAmtX18, lpEmissX18)
 
   # cast amounts to asset decimals
-  let outAmAmt = outAmAmtX18.f1(amDcm)
-  let outPrAmt = outPrAmtX18.f1(prDcm)
+  let outAmAmt = outAmAmtX18.fromX18Round(amDcm, FLOOR)
+  let outPrAmt = outPrAmtX18.fromX18Round(prDcm, FLOOR)
 
   let state = if (txId58 == "") then [] else
   [
@@ -364,16 +431,14 @@ func epo(txId58: String,
                           validateSlippage: Boolean,
                           pmtAmt: Int,
                           pmtId: String) = {
-    # data from pool config
-    let cfg           = gpc()
-    let lpId     = cfg[idxLPAsId].fromBase58String()
-    let amIdStr  = cfg[idxAmAsId]
-    let prIdStr  = cfg[idxPrAsId]
-    let inAmIdStr   = cfg[idxIAmtAsId]
-    let inPrIdStr = cfg[idxIPriceAsId]
-    let amtDcm   = cfg[idxAmtAsDcm].parseIntValue()
-    let priceDcm = cfg[idxPriceAsDcm].parseIntValue()
-    let sts    = cfg[idxPoolSt]
+    let lpId      = cfgLpAssetId
+    let amIdStr   = cfgAmountAssetId.value().toBase58String()
+    let prIdStr   = cfgPriceAssetId.value().toBase58String()
+    let inAmIdStr = cfgInAmountAssedId
+    let inPrIdStr = cfgInPriceAssetId
+    let amtDcm    = cfgAmountAssetDecimals
+    let priceDcm  = cfgPriceAssetDecimals
+    let sts       = cfgPoolStatus.toString()
 
     let lpEm = assetInfo(lpId).valueOrErrorMessage("Wr lp as").quantity
 
@@ -402,6 +467,8 @@ func epo(txId58: String,
     let amBalanceX18 = amBalance.t1(amtDcm)
     let prBalanceX18 = prBalance.t1(priceDcm)
 
+    let D0 = [amBalanceX18, prBalanceX18].getD()
+
     # case of the initial or first deposit
     # result is a tuple containing the following:
     # 1. lp amount that user got
@@ -409,10 +476,14 @@ func epo(txId58: String,
     # 3. priceAsset amount that goes to Pool liquidity
     # 4. pool price after PUT operation
     let r = if(lpEm == 0) then {
+      let D1 = [amBalanceX18 + inAmAssetAmtX18, prBalanceX18 + inPrAssetAmtX18].getD()
+
+      strict checkD = D1 > D0 || "D1 should be greater than D0".throw()
         let curPriceX18 = zeroBigInt
         let slippageX18 = zeroBigInt
         # calc initial deposit by geometric mean
-        let lpAmtX18 = pow(inAmAssetAmtX18 * inPrAssetAmtX18, 0, 5.toBigInt(), 1, 0, DOWN)
+        # let lpAmtX18 = pow(inAmAssetAmtX18 * inPrAssetAmtX18, 0, 5.toBigInt(), 1, 0, DOWN)
+        let lpAmtX18 = D1
         (
           lpAmtX18.f1(scale8),
           inAmAssetAmtX18.f1(amtDcm),
@@ -429,8 +500,9 @@ func epo(txId58: String,
 
             let lpEmissionX18 = lpEm.t1(scale8)
             # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
-            let prViaAmX18 = fraction(inAmAssetAmtX18, curPriceX18, scale18)
-            let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, curPriceX18)
+
+            let prViaAmX18 = fraction(inAmAssetAmtX18, cpbir(prBalanceX18, amBalanceX18, CEILING), scale18, CEILING)
+            let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, cpbir(prBalanceX18, amBalanceX18, FLOOR), CEILING)
 
             # calculate amount and price assets to perform pool deposit in proportion to current pool price
             let expectedAmts= if (prViaAmX18 > inPrAssetAmtX18)
@@ -440,11 +512,15 @@ func epo(txId58: String,
             let expAmtAssetAmtX18   = expectedAmts._1
             let expPriceAssetAmtX18 = expectedAmts._2
             # calculate LP amount that user
-            let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18)
+            # let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18, FLOOR)
+            let D1 = [amBalanceX18 + expAmtAssetAmtX18, prBalanceX18 + expPriceAssetAmtX18].getD()
+
+            strict checkD = D1 > D0 || "D1 should be greater than D0".throw()
+            let lpAmtX18 = fraction(lpEmissionX18, D1 - D0, D0)
             (
-              lpAmtX18.f1(scale8),
-              expAmtAssetAmtX18.f1(amtDcm),
-              expPriceAssetAmtX18.f1(priceDcm),
+              lpAmtX18.fromX18Round(scale8, FLOOR),
+              expAmtAssetAmtX18.fromX18Round(amtDcm, CEILING),
+              expPriceAssetAmtX18.fromX18Round(priceDcm, CEILING),
               curPriceX18,
               slippageX18
             )
@@ -493,42 +569,105 @@ func epo(txId58: String,
     )
 }
 
-# validateMatcherOrderAllowed
-func moa(order: Order) = {
-  let cfg = gpc()
-  let amtAsId = cfg[idxAmAsId]
-  let prAsId = cfg[idxPrAsId]
-  let sts = cfg[idxPoolSt].parseIntValue()
-  let amtAsDcm = cfg[idxAmtAsDcm].parseIntValue()
-  let prAsDcm = cfg[idxPriceAsDcm].parseIntValue()
+func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
+  let n = big2
+  let x = xp[if (i == 0) then 1 else 0]
+  let aPrecision = Amult.parseBigIntValue()
+  let a = A.parseBigIntValue() * aPrecision
+  let s = x
+  let ann = a * n
+  let c = D * D / (x * n) * D * aPrecision / (ann * n)
+  let b = s + D * aPrecision / ann - D
+  func calc(acc: (BigInt, Int|Unit), cur: Int) = {
+    let (y, found) = acc
+    if (found != unit) then acc else {
+      let yNext = (y * y + c) / (big2 * y + b)
+      let yDiff = absBigInt(yNext - y.value())
+      if (yDiff <= big1) then {
+        (yNext, cur)
+      } else {
+        (yNext, unit)
+      }
+    }
+  }
+  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  let (y, found) = FOLD<15>(arr, (D, unit), calc)
+  if (found != unit) then {
+    y
+  } else {
+    { "Y calculation error, Y = " + y.toString() }.throw()
+  }
+}
 
-  # get current balances from acc
-  let accAmtAsBalance = getAccBalance(amtAsId)
-  let accPrAsBalance = getAccBalance(prAsId)
+func calcDLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
+  let updatedDLp = fraction(
+    [
+      amountBalance.t1BigInt(cfgAmountAssetDecimals.toBigInt()),
+      priceBalance.t1BigInt(cfgPriceAssetDecimals.toBigInt())
+    ].getD(),
+    scale18,
+    lpEmission
+  )
 
-  let curPriceX18 = if(order.orderType == Buy)
-      then pcp(amtAsDcm, prAsDcm, accAmtAsBalance + order.amount, accPrAsBalance)
-      else pcp(amtAsDcm, prAsDcm, accAmtAsBalance - order.amount, accPrAsBalance)
-  let curPrice = curPriceX18.f1(scale8)
+  if (lpEmission == big0) then big0 else updatedDLp
+}
+
+func calcCurrentDLp(amountAssetDelta: BigInt, priceAssetDelta: BigInt, lpAssetEmissionDelta: BigInt) = {
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amountAssetDelta
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - priceAssetDelta
+  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt() - lpAssetEmissionDelta
+
+  let currentDLp = calcDLp(amountAssetBalance, priceAssetBalance, lpAssetEmission)
+
+  currentDLp
+}
+
+func refreshDLpInternal(amountAssetBalanceDelta: Int, priceAssetBalanceDelta: Int, lpAssetEmissionDelta: Int) = {
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance() + amountAssetBalanceDelta
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance() + priceAssetBalanceDelta
+  # TODO: can be moved outside functions
+  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity + lpAssetEmissionDelta
+
+  let updatedDLp = calcDLp(amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpAssetEmission.toBigInt())
+
+  let actions = [
+    IntegerEntry(keyDLpRefreshedHeight, height),
+    StringEntry(keyDLp, updatedDLp.toString())
+  ]
+
+  (actions, updatedDLp)
+}
+
+func validateUpdatedDLp(oldDLp: BigInt, updatedDLp: BigInt) = {
+  updatedDLp >= oldDLp || "updated DLp lower than current DLp".throwErr()
+}
+
+func validateMatcherOrderAllowed(order: Order) = {
+  let amountAssetAmount = order.amount
+  # TODO: check order.priceMode when available
+  let priceAssetAmount = fraction(order.amount, order.price, scale8, FLOOR)
+  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = if (order.orderType == Buy) then {
+    (amountAssetAmount, -priceAssetAmount)
+  } else {
+    (-amountAssetAmount, priceAssetAmount)
+  }
 
   # validate status
-  if (igs() || sts == PoolMatcherDis || sts == PoolShutdown) then throw("Admin blocked") else
+  if (igs() || cfgPoolStatus == PoolMatcherDis || cfgPoolStatus == PoolShutdown) then throw("Admin blocked") else
 
   # validate pairs
-  let orAmtAsset = order.assetPair.amountAsset
-  let orAmtAsStr = if( orAmtAsset == unit) then "WAVES" else toBase58String(orAmtAsset.value())
-  let orPrAsset = order.assetPair.priceAsset
-  let orPrAsStr = if( orPrAsset == unit) then "WAVES" else toBase58String(orPrAsset.value())
-  if(orAmtAsStr != amtAsId ||  orPrAsStr != prAsId) then throw("Wr assets") else
+  if (order.assetPair.amountAsset != cfgAmountAssetId || order.assetPair.priceAsset != cfgPriceAssetId) then throw("Wr assets") else
 
-  let orderPrice = order.price
-  #priceDecimals = 8 + priceAssetDcm - amtAssetDcm
-  let priceDcm = fraction(scale8, prAsDcm, amtAsDcm)
-  let castOrderPrice = orderPrice.ts(scale8, priceDcm)
+  let dLp = this.getStringValue(keyDLp).parseBigIntValue()
+  let (unusedActions, dLpNew) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+  let isOrderValid = dLpNew >= dLp
+  
+  let info = [
+    dLp.toString(),
+    dLpNew.toString()
+  ].makeString(" ")
 
-  let isOrderPriceValid = if(order.orderType == Buy) then castOrderPrice <= curPrice else castOrderPrice >= curPrice
-  #if(!isOrderPriceValid) then throw("Order price leads to K decrease. castedOrderPrice="+castedOrderPrice.toString() + " curPrice="+curPrice.toString()) else
-  true
+  (isOrderValid, info)
 }
 
 # commonGet
@@ -586,75 +725,6 @@ func cp(caller: String,
     r
 }
 
-func getD(xp: List[BigInt]) = {
-  let n = big2
-  let xp0 = xp[0]
-  let xp1 = xp[1]
-  # TODO: A in state should be multiplied
-  let aPrecision = Amult.parseBigIntValue()
-  let a = A.parseBigIntValue() * aPrecision
-  let s = xp0 + xp1
-  if (s == big0) then {
-    big0
-  } else {
-    let ann = a * n
-    let xp0_xp1_n_n = xp0 * xp1 * n * n
-    let ann_s_aPrecision = ann * s / aPrecision
-    let ann_aPrecision = ann - aPrecision
-    let n1 = n + big1
-    func calc(acc: (BigInt, Int|Unit), cur: Int) = {
-      let (d, found) = acc
-      if (found != unit) then acc else {
-        let dp = d * d * d / xp0_xp1_n_n
-        let dNext = (ann_s_aPrecision + dp * n) * d / (ann_aPrecision * d / aPrecision + n1 * dp)
-        let dDiff = absBigInt(dNext - d.value())
-        if (dDiff <= big1) then {
-          (dNext, cur)
-        } else {
-          (dNext, unit)
-        }
-      }
-    }
-    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-    let (d, found) = FOLD<15>(arr, (s, unit), calc)
-    if (found != unit) then {
-      d
-    } else {
-      { "D calculation error, D = " + d.toString() }.throw()
-    }
-  }
-}
-
-func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
-  let n = big2
-  let x = xp[if (i == 0) then 1 else 0]
-  let aPrecision = Amult.parseBigIntValue()
-  let a = A.parseBigIntValue() * aPrecision
-  let s = x
-  let ann = a * n
-  let c = D * D / (x * n) * D * aPrecision / (ann * n)
-  let b = s + D * aPrecision / ann - D
-  func calc(acc: (BigInt, Int|Unit), cur: Int) = {
-    let (y, found) = acc
-    if (found != unit) then acc else {
-      let yNext = (y * y + c) / (big2 * y + b)
-      let yDiff = absBigInt(yNext - y.value())
-      if (yDiff <= big1) then {
-        (yNext, cur)
-      } else {
-        (yNext, unit)
-      }
-    }
-  }
-  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-  let (y, found) = FOLD<15>(arr, (D, unit), calc)
-  if (found != unit) then {
-    y
-  } else {
-    { "Y calculation error, Y = " + y.toString() }.throw()
-  }
-}
-
 func calcPutOneTkn(
   pmtAmtRaw: Int,
   pmtAssetId: String,
@@ -662,14 +732,13 @@ func calcPutOneTkn(
   txId: String,
   withTakeFee: Boolean
 ) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId]
-  let amtDcm = poolConfig[idxAmtAsDcm].parseIntValue()
-  let priceDcm = poolConfig[idxPriceAsDcm].parseIntValue()
+  let amId = cfgAmountAssetId.value().toBase58String()
+  let prId = cfgPriceAssetId.value().toBase58String()
+  let lpId = cfgLpAssetId
+  let amtDcm = cfgAmountAssetDecimals
+  let priceDcm = cfgPriceAssetDecimals
 
-  let lpAssetEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
+  let lpAssetEmission = lpId.assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   strict chechEmission = lpAssetEmission > big0 || "initial deposit requires all coins".throw()
 
   let amBalance = amId.getAccBalance()
@@ -710,12 +779,12 @@ func calcPutOneTkn(
   let prBalanceNew = prBalanceOld + prAmount
 
   # check D1 > D0
-  let D0 = [amBalanceOld.toBigInt(), prBalanceOld.toBigInt()].getD()
-  let D1 = [amBalanceNew.toBigInt(), prBalanceNew.toBigInt()].getD()
+  let D0 = [amBalanceOld.t1(cfgAmountAssetDecimals), prBalanceOld.t1(cfgPriceAssetDecimals)].getD()
+  let D1 = [amBalanceNew.t1(cfgAmountAssetDecimals), prBalanceNew.t1(cfgPriceAssetDecimals)].getD()
 
   strict checkD = D1 > D0 || throw()
 
-  let lpAmount = lpAssetEmission.fraction(D1 - D0, D0)
+  let lpAmount = lpAssetEmission.fraction(D1 - D0, D0, FLOOR)
 
   let curPrice = cpbi(prBalanceNew.t1(priceDcm), amBalanceNew.t1(amtDcm)).f1(scale8)
 
@@ -745,19 +814,20 @@ func getOneTknV2Internal(
   originCaller: Address,
   transactionId: ByteVector
 ) = {
-  let poolConfig = gpc()
-  let lpId = poolConfig[idxLPAsId]
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let amDecimals = poolConfig[idxAmtAsDcm].parseIntValue()
-  let prDecimals = poolConfig[idxPriceAsDcm].parseIntValue()
-  let poolStatus = poolConfig[idxPoolSt]
+  let lpId = cfgLpAssetId.value().toBase58String()
+  let amId = cfgAmountAssetId.value().toBase58String()
+  let prId = cfgPriceAssetId.value().toBase58String()
+  let amDecimals = cfgAmountAssetDecimals
+  let prDecimals = cfgPriceAssetDecimals
+  let poolStatus = cfgPoolStatus
 
   let userAddress = if (caller == restContract) then originCaller else caller
 
   let pmt = payments[0].value()
   let pmtAssetId = pmt.assetId.value()
   let pmtAmt = pmt.amount
+
+  strict currentDLp = calcCurrentDLp(big0, big0, big0)
 
   let txId58 = transactionId.toBase58String()
 
@@ -800,7 +870,17 @@ func getOneTknV2Internal(
     [pmtAmt],
     [AttachedPayment(pmtAssetId, pmtAmt)]
   )
-  (state, totalAmount)
+
+  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
+    let feeAmountForCalc = if (this == feeCollectorAddress) then 0 else feeAmount
+    let outInAmountAsset = if (outAssetId.parseAssetId() == cfgAmountAssetId) then true else false
+    if (outInAmountAsset) then (-(totalGet + feeAmountForCalc), 0) else (0, -(totalGet + feeAmountForCalc))
+  }
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+
+  (state ++ refreshDLpActions, totalAmount)
 }
 
 # managerPublicKeyOrUnit
@@ -883,6 +963,14 @@ func put(slip: Int, autoStake: Boolean) = {
     let slipCntr = addressFromString(factCfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
     if(slip < 0) then throw("Wrong slippage") else
     if (i.payments.size() != 2) then throw("2 pmnts expd") else
+
+    let amAssetPmt = i.payments[0].value().amount.toBigInt()
+    let prAssetPmt = i.payments[1].value().amount.toBigInt()
+
+    strict amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amAssetPmt
+    strict priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - prAssetPmt
+    strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
+    strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
     # estPut
     let e = cp(i.caller.toString(),
                           i.transactionId.toBase58String(),
@@ -916,8 +1004,26 @@ func put(slip: Int, autoStake: Boolean) = {
     let lpTrnsfr =
       if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
       else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
+    
+    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
-    state++lpTrnsfr
+    # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+    strict check = updatedDLp >= currentDLp || [
+      "updated DLp lower than current DLp",
+      amountAssetBalance.toString(),
+      priceAssetBalance.toString(),
+      lpAssetEmission.toString(),
+      currentDLp.toString(),
+      updatedDLp.toString(),
+      amDiff.toString(),
+      prDiff.toString()
+    ].makeString(" ").throwErr()
+
+    strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
+
+    state
+    ++ lpTrnsfr
+    ++ refreshDLpActions
 }
 
 @Callable(i)
@@ -934,18 +1040,23 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId].fromBase58String()
-  let amDecimals = poolConfig[idxAmtAsDcm].parseIntValue()
-  let prDecimals = poolConfig[idxPriceAsDcm].parseIntValue()
+  let amId = cfgAmountAssetId.value().toBase58String()
+  let prId = cfgPriceAssetId.value().toBase58String()
+  let lpId = cfgLpAssetId
+  let amDecimals = cfgAmountAssetDecimals
+  let prDecimals = cfgPriceAssetDecimals
 
   let userAddress = if (i.caller == this) then i.originCaller else i.caller
 
   let pmt = i.payments[0].value()
   let pmtAssetId = pmt.assetId.value().toBase58String()
   let pmtAmt = pmt.amount
+
+  strict currentDLp = if (pmt.assetId == cfgAmountAssetId) then {
+    calcCurrentDLp(pmtAmt.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  } else {
+    calcCurrentDLp(0.toBigInt(), pmtAmt.toBigInt(), 0.toBigInt())
+  }
 
   strict (estimLP, state, feeAmount) = calcPutOneTkn(
     pmtAmt,
@@ -973,7 +1084,24 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
 
   let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, pmtAssetId.fromBase58String())] else []
 
-  (state ++ lpTrnsfr ++ sendFeeToMatcher, emitLpAmt)
+  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
+    if (this == feeCollectorAddress) then (0, 0) else {
+      # full payment asset id validation is in calcPutOneTkn
+      let paymentInAmountAsset = if (pmt.assetId == cfgAmountAssetId) then true else false
+      if (paymentInAmountAsset) then (-feeAmount, 0) else (0, -feeAmount)
+    }
+  }
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+
+  (
+    state
+    ++ lpTrnsfr
+    ++ sendFeeToMatcher
+    ++ refreshDLpActions,
+    emitLpAmt
+  )
 }
 
 # Put without LP emission
@@ -991,7 +1119,19 @@ func putForFree(maxSlpg: Int) = {
                           true,
                           0,
                           "")
-    estPut._9
+
+    let state = estPut._9
+
+    let amAssetPmt = i.payments[0].value().amount.toBigInt()
+    let prAssetPmt = i.payments[1].value().amount.toBigInt()
+
+    strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
+
+    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
+
+    strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+
+    state ++ refreshDLpActions
 }
 
 # Called by: LP
@@ -1007,6 +1147,16 @@ func putForFree(maxSlpg: Int) = {
 #    transfer to user his share of pool tokens base on passed lp token amount
 @Callable(i)
 func get() = {
+  # amountAssetBalance
+  # strict aab = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
+  # # priceAssetBalance
+  # strict pab = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
+  # # lpAssetEmission
+  # strict lae = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
+  # # lpAssetEmissionAfter
+  # strict laea = lae - i.payments[0].value().amount.toBigInt()
+  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+
   let r = cg(i)
   let outAmtAmt    = r._1
   let outPrAmt     = r._2
@@ -1017,7 +1167,12 @@ func get() = {
                     "burn",
                     [pmtAmt],
                     [AttachedPayment(pmtAssetId, pmtAmt)])
-  state
+
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmtAmt, -outPrAmt, 0)
+
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+
+  state ++ refreshDLpActions
 }
 
 @Callable(i)
@@ -1046,15 +1201,36 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
   (state, totalAmount)
 }
 
+
+@Callable(i)
+func refreshDLp() = {
+  let lastRefreshedBlockHeight = keyDLpRefreshedHeight.getInteger().valueOrElse(0)
+  strict checkLastRefreshedBlockHeight = if (height - lastRefreshedBlockHeight >= dLpRefreshDelay) then unit else {
+    [
+      dLpRefreshDelay.toString(),
+      " blocks have not passed since the previous call"
+    ].makeString("").throwErr()
+  }
+
+  let dLp = this.getString(keyDLp)
+    .valueOrElse("0")
+    .parseBigInt()
+    .valueOrErrorMessage("invalid dLp".fmtErr())
+
+  let (dLpUpdateActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
+  let actions = if (dLp != updatedDLp) then dLpUpdateActions else "nothing to refresh".throwErr()
+
+  (actions, updatedDLp.toString())
+}
+
 @Callable(i)
 func getOneTknV2READONLY(
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId]
+  let amId = cfgAmountAssetId.value().toBase58String()
+  let prId = cfgPriceAssetId.value().toBase58String()
+  let lpId = cfgLpAssetId.value().toBase58String()
   let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
   let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   let D0 = xp.getD()
@@ -1079,10 +1255,9 @@ func getOneTknV2WithBonusREADONLY(
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId]
+  let amId = cfgAmountAssetId.value().toBase58String()
+  let prId = cfgPriceAssetId.value().toBase58String()
+  let lpId = cfgLpAssetId.value().toBase58String()
 
   let amBalance = amId.getAccBalance()
   let prBalance = prId.getAccBalance()
@@ -1120,11 +1295,18 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
   if (outAmAmt < noLessThenAmtAsset) then throw("Failed:  " + outAmAmt.toString() + " < " + noLessThenAmtAsset.toString()) else
   if (outPrAmt < noLessThenPriceAsset) then throw("Failed: " + outPrAmt.toString() + " < " + noLessThenPriceAsset.toString()) else
 
+  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+
   strict burnLPAssetOnFactory = invoke(fca,
                                   "burn",
                                   [pmtAmt],
                                   [AttachedPayment(pmtAssetId, pmtAmt)])
-  state
+
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
+
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+
+  state ++ refreshDLpActions
 }
 
 # Unstake LP tokens and exit from pool
@@ -1132,16 +1314,19 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
 func unstakeAndGet(amount: Int) = {
   strict checkPayments = if (i.payments.size() != 0) then throw("No pmnts expd") else true
 
-  let cfg = gpc()
   let factoryCfg = gfc()
 
-  let lpAssetId = cfg[idxLPAsId].fromBase58String()
+  let lpAssetId = cfgLpAssetId
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
+
+  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   # negative amount will not pass
   strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
 
   let r = ego(i.transactionId.toBase58String(), lpAssetId.toBase58String(), amount, i.caller)
+  let outAmAmt = r._1
+  let outPrAmt = r._2
   let sts = r._9.parseIntValue()
   let state = r._10
 
@@ -1149,7 +1334,11 @@ func unstakeAndGet(amount: Int) = {
 
   strict burnA = invoke(fca, "burn", [amount], [AttachedPayment(lpAssetId, amount)])
 
-  state
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
+
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+
+  state ++ refreshDLpActions
 }
 
 @Callable(i)
@@ -1160,6 +1349,8 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
     !isGetDisabled || "get operation is blocked by admin".throw(),
     i.payments.size() == 0 || "no payments are expected".throw()
   ]
+
+  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
 
@@ -1175,7 +1366,11 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
   strict burnLPAssetOnFactory = fca.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
 
-  state
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
+
+  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+
+  state ++ refreshDLpActions
 }
 
 @Callable(i)
@@ -1192,10 +1387,9 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
     i.payments.size() == 0 || "no payments are expected".throwErr()
   ]
 
-  let cfg = gpc()
   let factoryCfg = gfc()
 
-  let lpAssetId = cfg[idxLPAsId].fromBase58String()
+  let lpAssetId = cfgLpAssetId
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
 
   strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), unstakeAmount], [])
@@ -1213,11 +1407,6 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
 
 @Callable(i)
 func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId]
-
   let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", true)
 
   (nil, (lpAmount, feeAmount, bonus))
@@ -1225,11 +1414,6 @@ func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String)
 
 @Callable(i)
 func putOneTknV2WithoutTakeFeeREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let lpId = poolConfig[idxLPAsId]
-
   let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", false)
 
   (nil, (lpAmount, feeAmount, bonus))
@@ -1385,19 +1569,20 @@ func verify() = {
   match tx {
     case order: Order =>
       let matcherPub    = mp()
-      let orderValid    = moa(order)
+      let (orderValid, orderValidInfo) = validateMatcherOrderAllowed(order)
       let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
       let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
 
-      (orderValid && senderValid && matcherValid) || toe(orderValid, senderValid, matcherValid)
+      (orderValid && senderValid && matcherValid) || throwOrderError(orderValid, orderValidInfo, senderValid, matcherValid)
     case s: SetScriptTransaction =>
-      let newHash = s.script.value().blake2b256()
-      let allowedHash = fca.getString(keyAllowedLpStableScriptHash()).value().fromBase64String()
-      let currentHash = this.scriptHash()
-      if (allowedHash == newHash && currentHash != newHash) then {
+      if sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey) then {
         true
       } else {
-        sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+        let newHash = s.script.value().blake2b256()
+        let allowedHash = fca.getString(keyAllowedLpStableScriptHash()).value().fromBase64String()
+        let currentHash = this.scriptHash()
+
+        allowedHash == newHash && currentHash != newHash
       }
     case _ => {
       sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
