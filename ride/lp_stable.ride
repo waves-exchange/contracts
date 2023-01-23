@@ -643,6 +643,8 @@ func validateUpdatedDLp(oldDLp: BigInt, updatedDLp: BigInt) = {
 }
 
 func validateMatcherOrderAllowed(order: Order) = {
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance()
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance()
   let amountAssetAmount = order.amount
   # TODO: check order.priceMode when available
   let priceAssetAmount = fraction(order.amount, order.price, scale8, FLOOR)
@@ -661,11 +663,15 @@ func validateMatcherOrderAllowed(order: Order) = {
   let dLp = this.getString(keyDLp).valueOrElse("0").parseBigIntValue()
   let (unusedActions, dLpNew) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
   let isOrderValid = dLpNew >= dLp
-  
+
   let info = [
-    dLp.toString(),
-    dLpNew.toString()
-  ].makeString(" ")
+    "dLp=", dLp.toString(),
+    " dLpNew=", dLpNew.toString(),
+    " amountAssetBalance=", amountAssetBalance.toString(),
+    " priceAssetBalance=", priceAssetBalance.toString(),
+    " amountAssetBalanceDelta=", amountAssetBalanceDelta.toString(),
+    " priceAssetBalanceDelta=", priceAssetBalanceDelta.toString()
+  ].makeString("")
 
   (isOrderValid, info)
 }

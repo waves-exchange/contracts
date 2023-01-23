@@ -504,6 +504,8 @@ func validateUpdatedKLp(oldKLp: BigInt, updatedKLp: BigInt) = {
 }
 
 func validateMatcherOrderAllowed(order: Order) = {
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance()
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance()
   let amountAssetAmount = order.amount
   # TODO: check order.priceMode when available
   let priceAssetAmount = fraction(order.amount, order.price, scale8, FLOOR)
@@ -527,9 +529,13 @@ func validateMatcherOrderAllowed(order: Order) = {
   let isOrderValid = kLpNew >= kLp
 
   let info = [
-    kLp.toString(),
-    kLpNew.toString()
-  ].makeString(" ")
+    "kLp=", kLp.toString(),
+    " kLpNew=", kLpNew.toString(),
+    " amountAssetBalance=", amountAssetBalance.toString(),
+    " priceAssetBalance=", priceAssetBalance.toString(),
+    " amountAssetBalanceDelta=", amountAssetBalanceDelta.toString(),
+    " priceAssetBalanceDelta=", priceAssetBalanceDelta.toString()
+  ].makeString("")
 
   (isOrderValid, info)
 }
