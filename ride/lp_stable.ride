@@ -119,7 +119,7 @@ let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
 let keyDLp = ["%s", "dLp"].makeString(SEP)
 let keyDLpRefreshedHeight = ["%s", "dLpRefreshedHeight"].makeString(SEP)
 let keyDLpRefreshDelay = ["%s", "refreshDLpDelay"].makeString(SEP)
-let dLpRefreshDelayDefault = 1
+let dLpRefreshDelayDefault = 30
 let dLpRefreshDelay = this.getInteger(keyDLpRefreshDelay).valueOrElse(dLpRefreshDelayDefault)
 
 #------------------------
