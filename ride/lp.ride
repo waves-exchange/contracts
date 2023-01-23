@@ -520,7 +520,7 @@ func validateMatcherOrderAllowed(order: Order) = {
   if (order.assetPair.amountAsset != cfgAmountAssetId ||  order.assetPair.priceAsset != cfgPriceAssetId) then throw("Wrong order assets.") else
 
   let kLp = this.getString(keyKLp)
-    .valueOrErrorMessage("kLp is required".fmtErr())
+    .valueOrElse("0")
     .parseBigInt()
     .valueOrErrorMessage("invalid kLp".fmtErr())
   let (unusedActions, kLpNew) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)

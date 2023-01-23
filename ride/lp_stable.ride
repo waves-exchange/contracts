@@ -658,7 +658,7 @@ func validateMatcherOrderAllowed(order: Order) = {
   # validate pairs
   if (order.assetPair.amountAsset != cfgAmountAssetId || order.assetPair.priceAsset != cfgPriceAssetId) then throw("Wr assets") else
 
-  let dLp = this.getStringValue(keyDLp).parseBigIntValue()
+  let dLp = this.getString(keyDLp).valueOrElse("0").parseBigIntValue()
   let (unusedActions, dLpNew) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
   let isOrderValid = dLpNew >= dLp
   
