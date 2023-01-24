@@ -534,7 +534,8 @@ func validateMatcherOrderAllowed(order: Order) = {
     " amountAssetBalance=", amountAssetBalance.toString(),
     " priceAssetBalance=", priceAssetBalance.toString(),
     " amountAssetBalanceDelta=", amountAssetBalanceDelta.toString(),
-    " priceAssetBalanceDelta=", priceAssetBalanceDelta.toString()
+    " priceAssetBalanceDelta=", priceAssetBalanceDelta.toString(),
+    " height=", height.toString()
   ].makeString("")
 
   (isOrderValid, info)
