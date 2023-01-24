@@ -515,10 +515,10 @@ func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String) = {
   let wxAssetId = emissionContract.invoke("emit", [minRewardPart.toInt()], []).asAnyList()[0].asByteVector()
   strict emitBoost = emissionContract.invoke("emit", [boostRewardPart.toInt()], []).asAnyList()
 
-  let claimedByUserValue = claimedByUser + minRewardPart + boostRewardPart
+  let claimedByUserValue = claimedByUser + availableToClaim
   let claimedByUserMinRewardPlusPart = claimedByUserMinReward + minRewardPart
-  let claimedByUserBoostRewardPlusBoostRewardPart = claimedByUserBoostReward + boostRewardPart
-  let claimedTotalPlusAvailableToClaim = claimedTotal + availableToClaim
+  let claimedByUserBoostRewardPlusBoostRewardPart = claimedByUserMinReward + minRewardPart
+  let claimedTotalPlusAvailableToClaim = claimedByUserMinReward + minRewardPart
 
   [StringEntry(claimedByUserKEY, claimedByUserValue.toString()),
   StringEntry(claimedByUserMinRewardKEY, claimedByUserMinRewardPlusPart.toString()),
