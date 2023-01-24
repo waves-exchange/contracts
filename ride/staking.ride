@@ -503,7 +503,7 @@ func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String) = {
 
   let (wxToClaimUserNew, integralSTATE, debug) = refreshINTEGRALS(lpAssetIdStr, userAddressStr, poolAddressStr, 0)
 
-  let availableToClaim = max([wxToClaimUserNew - claimedByUser, zeroBigInt])
+  let availableToClaim = max([wxToClaimUserNew - claimedByUserMinReward, zeroBigInt])
   if (availableToClaim <= zeroBigInt) then throw("nothing to claim") else
 
   # boost integral resfreshed here
@@ -553,10 +553,12 @@ func claimWxREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
   let stakedByUserKEY = keyStakedByUser(userAddressStr, lpAssetIdStr)
   let stakedTotalKEY = keyStakedTotal(lpAssetIdStr)
   let claimedByUserKEY = keyClaimedByUser(lpAssetIdStr, userAddressStr)
+  let claimedByUserMinRewardKEY = keyClaimedByUserMinReward(lpAssetIdStr, userAddressStr)
 
   let stakedByUser = stakedByUserKEY.readStaked()
   let stakedTotal = stakedTotalKEY.readStaked()
   let claimedByUser = this.getBigIntFromStringOrZero(claimedByUserKEY)
+  let claimedByUserMinReward = this.getBigIntFromStringOrZero(claimedByUserMinRewardKEY)
 
   let poolAddressStr = factoryContract.getStringByAddressOrFail(lpAssetIdStr.keyFactoryLpAssetToPoolContractAddress())
   let poolWeight = factoryContract.getIntegerValue(poolAddressStr.keyFactoryPoolWeight())
@@ -570,7 +572,7 @@ func claimWxREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
   let userWxReward =  fraction(poolWxEmission, stakedByUser, stakedTotal)
 
   let (wxToClaimUserNew, integralSTATE, debug) = refreshINTEGRALS(lpAssetIdStr, userAddressStr, poolAddressStr, 0)
-  let availableToClaim = max([wxToClaimUserNew - claimedByUser, zeroBigInt])
+  let availableToClaim = max([wxToClaimUserNew - claimedByUserMinReward, zeroBigInt])
 
   # boost integral resfreshed here
   let boostInvResult = boostingContract.invoke("claimWxBoostREADONLY", [lpAssetIdStr, userAddressStr], []).asAnyList()
