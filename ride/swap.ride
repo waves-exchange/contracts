@@ -69,7 +69,7 @@ func getAccBalance(assetId: String) = {
 }
 
 @Callable(i)
-func swapCalulateREADONLY(
+func swapCalculateREADONLY(
   amountIn: Int,
   assetIn: String,
   assetOut: String
