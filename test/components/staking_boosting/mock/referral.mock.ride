@@ -1,0 +1,12 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+@Callable(i)
+func updateReferralActivity(
+  programName: String,
+  referralAddress: String,
+  isActive: Boolean
+) = {
+  (nil, unit)
+}

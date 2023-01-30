@@ -7,22 +7,23 @@ import {
 import { table, getBorderCharacters } from 'table';
 import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
-import { broadcastAndWait } from '../../utils/api.mjs';
+import { api, broadcastAndWait } from '../../utils/api.mjs';
 import { staking } from './contract/staking.mjs';
 import { boosting } from './contract/boosting.mjs';
 import { emission } from './contract/emission.mjs';
 import { factory } from './contract/factory_v2.mjs';
+import { gwx } from './contract/gwx.mjs';
 
 const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 const nonceLength = 3;
 
 const ridePath = '../ride';
-// const mockPath = './components/lp_staking_pools/mock';
+const mockPath = './components/staking_boosting/mock';
 const stakingPath = format({ dir: ridePath, base: 'staking.ride' });
 const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
 const gwxPath = format({ dir: ridePath, base: 'gwx_reward.ride' });
 const emissionPath = format({ dir: ridePath, base: 'emission.ride' });
-// const factoryMockPath = format({ dir: mockPath, base: 'factory_v2.ride' });
+const referralMockPath = format({ dir: mockPath, base: 'referral.mock.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -36,7 +37,7 @@ export const mochaHooks = {
       'lp',
       'factory',
       'votingEmission',
-      'referrals',
+      'referral',
     ];
     const userNames = Array.from({ length: 3 }, (_, k) => `user${k}`);
     const names = [...contractNames, ...userNames, 'pacemaker'];
@@ -76,6 +77,7 @@ export const mochaHooks = {
     await setScriptFromFile(boostingPath, this.accounts.boosting.seed);
     await setScriptFromFile(gwxPath, this.accounts.gwx.seed);
     await setScriptFromFile(emissionPath, this.accounts.emission.seed);
+    await setScriptFromFile(referralMockPath, this.accounts.referral.seed);
 
     await staking.init({
       caller: this.accounts.staking.seed,
@@ -83,21 +85,23 @@ export const mochaHooks = {
       votingEmissionAddress: this.accounts.votingEmission.addr,
     });
 
+    this.maxLockDuration = 1440;
     await boosting.init({
       caller: this.accounts.boosting.seed,
       factoryAddress: this.accounts.factory.addr,
-      referralsAddress: this.accounts.referrals.addr,
+      referralsAddress: this.accounts.referral.addr,
       lockAssetId: this.wxAssetId,
-      maxLockDuration: 1440,
+      maxLockDuration: this.maxLockDuration,
       mathContract: this.accounts.gwx.addr,
     });
 
+    const { height } = await api.blocks.fetchHeight();
     await emission.init({
       caller: this.accounts.emission.seed,
       factoryAddress: this.accounts.factory.addr,
       ratePerBlockMax: 19025875190,
       ratePerBlock: 3805175038,
-      emissionStartBlock: 0,
+      emissionStartBlock: height,
       emissionDuration: 1440,
       wxAssetId: this.wxAssetId,
     });
@@ -108,6 +112,11 @@ export const mochaHooks = {
       boostingAddress: this.accounts.boosting.addr,
       emissionAddress: this.accounts.emission.addr,
       gwxAddress: this.accounts.gwx.addr,
+    });
+
+    await gwx.init({
+      caller: this.accounts.gwx.seed,
+      referralAddress: this.accounts.referral.addr,
     });
 
     const accountsInfo = Object.entries(this.accounts)

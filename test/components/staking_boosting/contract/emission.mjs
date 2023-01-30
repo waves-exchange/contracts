@@ -34,6 +34,11 @@ export const emission = {
           value: emissionDuration,
         },
         {
+          key: '%s%s__emission__endBlock',
+          type: 'integer',
+          value: emissionStartBlock + emissionDuration,
+        },
+        {
           key: '%s%s__config__factoryAddress',
           type: 'string',
           value: factoryAddress,
