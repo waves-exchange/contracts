@@ -6,12 +6,12 @@ import {
 } from '@waves/waves-transactions';
 import { table, getBorderCharacters } from 'table';
 import { format } from 'path';
-import { BigNumber } from '@waves/bignumber';
 import { setScriptFromFile } from '../../utils/utils.mjs';
 import { broadcastAndWait } from '../../utils/api.mjs';
 import { staking } from './contract/staking.mjs';
 import { boosting } from './contract/boosting.mjs';
 import { emission } from './contract/emission.mjs';
+import { factory } from './contract/factory_v2.mjs';
 
 const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 const nonceLength = 3;
@@ -55,10 +55,10 @@ export const mochaHooks = {
     const wxIssueTx = issue({
       name: 'WX Token',
       description: '',
-      quantity: new BigNumber(1e18 * 1e8),
+      quantity: 1e10 * 1e8,
       decimals: 8,
       chainId,
-    }, baseSeed);
+    }, this.accounts.emission.seed);
     await broadcastAndWait(wxIssueTx);
     this.wxAssetId = wxIssueTx.id;
 
@@ -100,6 +100,14 @@ export const mochaHooks = {
       emissionStartBlock: 0,
       emissionDuration: 1440,
       wxAssetId: this.wxAssetId,
+    });
+
+    await factory.init({
+      caller: this.accounts.factory.seed,
+      stakingAddress: this.accounts.staking.addr,
+      boostingAddress: this.accounts.boosting.addr,
+      emissionAddress: this.accounts.emission.addr,
+      gwxAddress: this.accounts.gwx.addr,
     });
 
     const accountsInfo = Object.entries(this.accounts)

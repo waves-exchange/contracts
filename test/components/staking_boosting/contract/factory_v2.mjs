@@ -1,16 +1,41 @@
 import { data } from '@waves/waves-transactions';
-import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
+import { broadcastAndWait, chainId, separator } from '../../../utils/api.mjs';
 
-export const factoryMock = {
-  setPoolAndAsset: async ({
+export const factory = {
+  init: async ({
     caller,
-    poolAddress,
-    lpAssetId,
+    stakingAddress = '',
+    boostingAddress = '',
+    idoAddress = '',
+    teamAddress = '',
+    emissionAddress = '',
+    restAddress = '',
+    slippageAddress = '',
+    daoAddress = '',
+    marketingAddress = '',
+    gwxAddress = '',
+    birdsAddress = '',
   }) => {
     const dataTx = data({
       data: [
-        { key: 'poolContractAddress', type: 'string', value: poolAddress },
-        { key: 'lpAssetId', type: 'string', value: lpAssetId },
+        {
+          key: ['%s', 'factoryConfig'].join(separator),
+          type: 'string',
+          value: [
+            '%s%s%s%s%s%s%s%s%s%s%s',
+            stakingAddress,
+            boostingAddress,
+            idoAddress,
+            teamAddress,
+            emissionAddress,
+            restAddress,
+            slippageAddress,
+            daoAddress,
+            marketingAddress,
+            gwxAddress,
+            birdsAddress,
+          ].join(separator),
+        },
       ],
       additionalFee: 4e5,
       chainId,

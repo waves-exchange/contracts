@@ -1,4 +1,4 @@
-import { data } from '@waves/waves-transactions';
+import { data, invokeScript } from '@waves/waves-transactions';
 import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 
 export const staking = {
@@ -35,18 +35,21 @@ export const staking = {
       },
       caller,
     );
+
     return broadcastAndWait(invokeTx);
   },
 
   claimWx: async ({
-    dApp, caller,
+    dApp, caller, lpAssetId,
   }) => {
     const invokeTx = invokeScript(
       {
         dApp,
         call: {
           function: 'claimWx',
-          args: [],
+          args: [
+            { type: 'string', value: lpAssetId },
+          ],
         },
         payment: [],
         additionalFee: 4e5,

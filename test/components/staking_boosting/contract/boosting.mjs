@@ -1,4 +1,4 @@
-import { data } from '@waves/waves-transactions';
+import { data, invokeScript } from '@waves/waves-transactions';
 import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 
 export const boosting = {
