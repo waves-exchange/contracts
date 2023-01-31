@@ -98,7 +98,12 @@ func swapCalculateREADONLY(
     []
   )
 
-  testError
+  let ee = if (0 == 0) then {
+    testError
+  } else {
+    testError
+  }
+
 
   let (isReverse, pool) = if (lpNonReverese != unit) then {
     let isReverse = false
