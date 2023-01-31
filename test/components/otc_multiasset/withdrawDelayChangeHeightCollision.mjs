@@ -17,7 +17,7 @@ const addedDelay = 2;
 const api = create(apiBase);
 
 describe('otc_multiasset: withdrawDelayChangeHeightCollision.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should be same height error', async function () {
+  it('should reject with same height error', async function () {
     const amountAssetA = this.minAmountDeposit + 1;
     const amountAssetB = this.minAmountWithdraw;
 
