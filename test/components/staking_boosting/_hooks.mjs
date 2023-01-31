@@ -96,13 +96,17 @@ export const mochaHooks = {
     });
 
     const { height } = await api.blocks.fetchHeight();
+    this.releaseRate = 3805175038;
+    this.releaseRateMax = 19025875190;
+    this.emissionStartBlock = height;
+    this.emissionDuration = 1440;
     await emission.init({
       caller: this.accounts.emission.seed,
       factoryAddress: this.accounts.factory.addr,
-      ratePerBlockMax: 19025875190,
-      ratePerBlock: 3805175038,
-      emissionStartBlock: height,
-      emissionDuration: 1440,
+      ratePerBlockMax: this.releaseRateMax,
+      ratePerBlock: this.releaseRate,
+      emissionStartBlock: this.emissionStartBlock,
+      emissionDuration: this.emissionDuration,
       wxAssetId: this.wxAssetId,
     });
 
