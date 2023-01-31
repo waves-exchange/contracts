@@ -312,7 +312,7 @@ func intOrDefaultOrFallback(key: String, keyDefault: String, valueFallback: Int)
 @Callable(i)
 func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
   ([],
-    this.getString(keyMappingPoolAssetsToLpasset(asset1, asset2))
+    this.getString(keyMappingPoolAssetsToLpasset(asset1, asset2)) 
   )
 }
 
@@ -711,7 +711,7 @@ func onVerificationLoss(assetId: String) = {
     unit
     
   }
-  strict actions = FOLD<3>(priceAssets, unit, cb)
+  strict actions = FOLD<4>(priceAssets, unit, cb)
 
   (nil, unit)
 }
