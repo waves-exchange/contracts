@@ -124,8 +124,7 @@ func swapCalculateREADONLY(
     )
     (isReverse, pool)
   } else {
-    testError
-    # poolNotExist
+    poolNotExist
   }
   
   let isPoolOneTokenOperationsDisabled = invoke(

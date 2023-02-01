@@ -176,6 +176,8 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
 
 let permissionDeniedError = "Permission denied".throw()
 
+let testError = "Test error here".throw()
+
 func mustThis(i: Invocation) = {
   i.caller == this || permissionDeniedError
 }
@@ -311,6 +313,9 @@ func intOrDefaultOrFallback(key: String, keyDefault: String, valueFallback: Int)
 
 @Callable(i)
 func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
+  let ee = this.getString(keyMappingPoolAssetsToLpasset(asset1, asset2)) 
+  strict ee != unit || "test error".throw()
+  #####
   ([],
     this.getString(keyMappingPoolAssetsToLpasset(asset1, asset2)) 
   )
