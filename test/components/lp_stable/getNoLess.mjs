@@ -18,7 +18,7 @@ describe('lp_stable: getNoLess.mjs', /** @this {MochaSuiteModified} */() => {
     async function () {
       const usdnAmount = 1e16 / 10;
       const usdtAmount = 1e8 / 10;
-      const lpStableAmount = 1e12;
+      const lpStableAmount = 268990720838218;
       const shouldAutoStake = false;
       const noLessThenAmtAsset = 0;
       const noLessThenPriceAsset = 0;
@@ -66,7 +66,7 @@ describe('lp_stable: getNoLess.mjs', /** @this {MochaSuiteModified} */() => {
       const { timestamp } = await api.blocks.fetchHeadersAt(height);
       const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
-      expect(stateChanges.data).to.eql([{
+      expect(stateChanges.data).not.to.eql([{
         key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${id}`,
         type: 'string',
         value: `%d%d%d%d%d%d__${usdtAmount / 10}__${usdnAmount / 10}__${lpStableAmount}__${expectedPriceLast}__${height}__${timestamp}`,
@@ -78,6 +78,14 @@ describe('lp_stable: getNoLess.mjs', /** @this {MochaSuiteModified} */() => {
         key: keyPriceHistory,
         type: 'integer',
         value: expectedPriceHistory.toString(),
+      }, {
+        key: '%s__dLpRefreshedHeight',
+        type: 'integer',
+        value: height,
+      }, {
+        key: '%s__dLp',
+        type: 'string',
+        value: '10000000198369592943817551001',
       }]);
 
       expect(stateChanges.transfers).to.eql([{

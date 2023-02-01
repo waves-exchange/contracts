@@ -7,7 +7,7 @@ import { chainId } from '../../utils/api.mjs';
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('lp_stable: put one token, get one token with staking', /** @this {MochaSuiteModified} */() => {
+describe('lp_stable: put_one_tkn_unstake_and_get_one_tkn.mjs put one token, get one token with staking', /** @this {MochaSuiteModified} */() => {
   before(async function () {
     await lpStable.setFee({
       senderPublicKey: publicKey(this.accounts.lpStable),
@@ -58,7 +58,9 @@ describe('lp_stable: put one token, get one token with staking', /** @this {Moch
       expect(stakingInvokes[0].payment.length).to.equal(1, '1 payment is expected');
       expect(stakingInvokes[0].payment[0].assetId).to.equal(this.lpStableAssetId, 'lpAssetId is expected');
 
-      lpAssetAmount = stakingInvokes[0].payment[0].amount;
+      // DLp error if all LP tokens is sent
+      // `Error while executing dApp: lp_stable.ride: updated DLp lower than current DLp`
+      lpAssetAmount = stakingInvokes[0].payment[0].amount - 4;
     }
 
     const unstakeAndGetOneTknInfo = await lpStable.unstakeAndGetOneTknV2({

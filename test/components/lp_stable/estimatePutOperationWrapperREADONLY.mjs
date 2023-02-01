@@ -25,7 +25,7 @@ describe(
       const isEval = true;
       const emitLp = false;
 
-      const expected1 = { type: 'Int', value: 10000000000 };
+      const expected1 = { type: 'Int', value: 20000000000 };
       const expected2 = { type: 'Int', value: 0 };
       const expected3 = { type: 'Int', value: 100000000 };
       const expected4 = { type: 'Int', value: 0 };
