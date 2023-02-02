@@ -3,9 +3,11 @@ export const calcGwxAmountStart = ({
   lockDuration,
   maxLockDuration,
 }) => {
-  const gwxAmountStart = amount * (lockDuration / maxLockDuration);
+  const scale = 100000000n;
+  const durationFraction = (BigInt(lockDuration) * scale) / BigInt(maxLockDuration);
+  const gwxAmountStart = (BigInt(amount) * durationFraction) / scale;
 
-  return Math.floor(gwxAmountStart);
+  return gwxAmountStart;
 };
 
 export const calcGwxParams = ({
@@ -14,10 +16,11 @@ export const calcGwxParams = ({
   maxLockDuration,
   lockStartHeight,
 }) => {
-  const lockEnd = lockStartHeight + lockDuration;
+  const scale = 1000n;
+  const lockEnd = BigInt(lockStartHeight) + BigInt(lockDuration);
   const gwxAmountStart = calcGwxAmountStart({ amount, lockDuration, maxLockDuration });
-  const k = -gwxAmountStart / lockDuration;
-  const b = gwxAmountStart * (lockEnd / lockDuration);
+  const k = -(gwxAmountStart * scale) / BigInt(lockDuration);
+  const b = ((gwxAmountStart * scale) / BigInt(lockDuration)) * lockEnd;
 
   return { k, b };
 };
@@ -29,13 +32,14 @@ export const calcGwxAmountAtHeight = ({
   lockStartHeight,
   height,
 }) => {
+  const scale = 1000n;
   const { k, b } = calcGwxParams({
     amount,
     lockDuration,
     maxLockDuration,
     lockStartHeight,
   });
-  const y = k * height + b;
+  const y = (k * BigInt(height) + b) / scale;
 
-  return Math.floor(y);
+  return y;
 };

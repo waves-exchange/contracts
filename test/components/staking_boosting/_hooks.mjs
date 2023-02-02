@@ -7,7 +7,7 @@ import {
 import { table, getBorderCharacters } from 'table';
 import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
-import { api, broadcastAndWait } from '../../utils/api.mjs';
+import { api, broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
 import { staking } from './contract/staking.mjs';
 import { boosting } from './contract/boosting.mjs';
 import { emission } from './contract/emission.mjs';
@@ -109,6 +109,7 @@ export const mochaHooks = {
       emissionDuration: this.emissionDuration,
       wxAssetId: this.wxAssetId,
     });
+    await waitForHeight(height + 1);
 
     await factory.init({
       caller: this.accounts.factory.seed,

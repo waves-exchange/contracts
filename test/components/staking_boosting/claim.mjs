@@ -1,7 +1,7 @@
 import { data, transfer } from '@waves/waves-transactions';
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
+import { api, broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
 import { boosting } from './contract/boosting.mjs';
 import { staking } from './contract/staking.mjs';
 import { calcGwxAmountAtHeight, calcGwxAmountStart } from './math/gwx.mjs';
@@ -41,13 +41,6 @@ describe(`${process.pid}: claim wx`, () => {
       additionalFee: 4e5,
     }, this.accounts.factory.seed));
 
-    const { height } = await staking.stake({
-      dApp: this.accounts.staking.addr,
-      caller: this.accounts.user0.seed,
-      payments: [{ assetId: this.lpAssetId, amount: lpAssetAmount }],
-    });
-    await waitForHeight(height + 1);
-
     await broadcastAndWait(transfer({
       recipient: this.accounts.user0.addr,
       amount: wxAmount,
@@ -61,41 +54,36 @@ describe(`${process.pid}: claim wx`, () => {
       duration: this.maxLockDuration,
       payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
     }));
+    await waitForHeight(lockStartHeight + 1);
   });
   it('should successfully claim', async function () {
-    let txInfo = await staking.claimWx({
+    const { height } = await staking.stake({
+      dApp: this.accounts.staking.addr,
+      caller: this.accounts.user0.seed,
+      payments: [{ assetId: this.lpAssetId, amount: lpAssetAmount }],
+    });
+    await waitForHeight(height + 1);
+
+    // total cached gwx = sum of gwx start quantities
+    // there's only one user
+    const totalCachedGwx = calcGwxAmountStart({
+      amount: wxAmount,
+      lockDuration: this.maxLockDuration,
+      maxLockDuration: this.maxLockDuration,
+    });
+    const totalCachedGwxEval = (await api.utils.fetchEvaluate(
+      this.accounts.boosting.addr,
+      'getTotalCachedGwxREADONLY()',
+    )).result.value._2.value;
+
+    expect(BigInt(totalCachedGwxEval)).to.equal(totalCachedGwx);
+
+    const txInfo = await staking.claimWx({
       dApp: this.accounts.staking.addr,
       caller: this.accounts.user0.seed,
       lpAssetId: this.lpAssetId,
     });
     const claim1Height = txInfo.height;
-
-    let dh = claim1Height - this.emissionStartBlock - 1;
-    let calculatedRewards = calcReward({
-      releaseRate: this.releaseRate,
-      dh,
-      totalStaked: lpAssetAmount,
-      stakedByUser: lpAssetAmount,
-      poolWeight: 1,
-    });
-
-    let [
-      { amount: reward },
-      { amount: boostedReward },
-    ] = txInfo.stateChanges.invokes[0].stateChanges.transfers;
-
-    expect(reward).to.equal(calculatedRewards.reward);
-    // there's not boost in the first claim
-    expect(boostedReward).to.equal(0);
-
-    await waitForHeight(txInfo.height + 1);
-    txInfo = await staking.claimWx({
-      dApp: this.accounts.staking.addr,
-      caller: this.accounts.user0.seed,
-      lpAssetId: this.lpAssetId,
-    });
-
-    dh = txInfo.height - claim1Height;
 
     const userGwx = calcGwxAmountAtHeight({
       amount: wxAmount,
@@ -105,30 +93,32 @@ describe(`${process.pid}: claim wx`, () => {
       height: txInfo.height,
     });
 
-    // total cached gwx = sum of gwx start quantities
-    // there's only one user
-    const totalCachedGwx = calcGwxAmountStart({
-      amount: wxAmount,
-      lockDuration: this.maxLockDuration,
-      maxLockDuration: this.maxLockDuration,
-    });
+    const userGwxEval = (await api.utils.fetchEvaluate(
+      this.accounts.boosting.addr,
+      `getUserGwxAmountAtHeightREADONLY("${this.accounts.user0.addr}", ${txInfo.height})`,
+    )).result.value._2.value;
 
-    calculatedRewards = calcReward({
+    expect(BigInt(userGwxEval)).to.equal(userGwx);
+
+    const dh = claim1Height - height;
+    const dhBoost = claim1Height - this.emissionStartBlock;
+    const calculatedRewards = calcReward({
       releaseRate: this.releaseRate,
       dh,
+      dhBoost,
       totalStaked: lpAssetAmount,
       stakedByUser: lpAssetAmount,
-      poolWeight: 1,
+      poolWeight: 1e8,
       userGwx,
       totalGwx: totalCachedGwx,
     });
 
-    [
+    const [
       { amount: reward },
       { amount: boostedReward },
     ] = txInfo.stateChanges.invokes[0].stateChanges.transfers;
 
-    expect(reward).to.equal(calculatedRewards.reward);
-    expect(boostedReward).to.equal(calculatedRewards.boostedReward);
+    expect(BigInt(reward)).to.equal(calculatedRewards.reward);
+    expect(BigInt(boostedReward), 'invalid boosting').to.equal(calculatedRewards.boostedReward);
   });
 });
