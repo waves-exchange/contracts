@@ -54,7 +54,7 @@ describe(`${process.pid}: claim wx`, () => {
       duration: this.maxLockDuration,
       payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
     }));
-    await waitForHeight(lockStartHeight + 1);
+    // await waitForHeight(lockStartHeight + 1);
   });
   it('should successfully claim', async function () {
     const { height } = await staking.stake({
@@ -78,14 +78,14 @@ describe(`${process.pid}: claim wx`, () => {
 
     expect(BigInt(totalCachedGwxEval)).to.equal(totalCachedGwx);
 
-    const txInfo = await staking.claimWx({
+    let txInfo = await staking.claimWx({
       dApp: this.accounts.staking.addr,
       caller: this.accounts.user0.seed,
       lpAssetId: this.lpAssetId,
     });
     const claim1Height = txInfo.height;
 
-    const userGwx = calcGwxAmountAtHeight({
+    let userGwx = calcGwxAmountAtHeight({
       amount: wxAmount,
       lockDuration: this.maxLockDuration,
       maxLockDuration: this.maxLockDuration,
@@ -100,9 +100,9 @@ describe(`${process.pid}: claim wx`, () => {
 
     expect(BigInt(userGwxEval)).to.equal(userGwx);
 
-    const dh = claim1Height - height;
-    const dhBoost = claim1Height - this.emissionStartBlock;
-    const calculatedRewards = calcReward({
+    let dh = claim1Height - height;
+    let dhBoost = claim1Height - lockStartHeight;
+    let calculatedRewards = calcReward({
       releaseRate: this.releaseRate,
       dh,
       dhBoost,
@@ -111,14 +111,56 @@ describe(`${process.pid}: claim wx`, () => {
       poolWeight: 1e8,
       userGwx,
       totalGwx: totalCachedGwx,
+      height: claim1Height,
+      emissionStart: this.emissionStartBlock,
     });
 
-    const [
+    let [
       { amount: reward },
       { amount: boostedReward },
     ] = txInfo.stateChanges.invokes[0].stateChanges.transfers;
 
     expect(BigInt(reward)).to.equal(calculatedRewards.reward);
     expect(BigInt(boostedReward), 'invalid boosting').to.equal(calculatedRewards.boostedReward);
+
+    // boost = 0 if called in next block?
+    await waitForHeight(txInfo.height + 2);
+    txInfo = await staking.claimWx({
+      dApp: this.accounts.staking.addr,
+      caller: this.accounts.user0.seed,
+      lpAssetId: this.lpAssetId,
+    });
+
+    dh = txInfo.height - claim1Height;
+
+    userGwx = calcGwxAmountAtHeight({
+      amount: wxAmount,
+      lockDuration: this.maxLockDuration,
+      maxLockDuration: this.maxLockDuration,
+      lockStartHeight,
+      height: txInfo.height,
+    });
+
+    dhBoost = txInfo.height - claim1Height;
+    calculatedRewards = calcReward({
+      releaseRate: this.releaseRate,
+      dh,
+      dhBoost,
+      totalStaked: lpAssetAmount,
+      stakedByUser: lpAssetAmount,
+      poolWeight: 1e8,
+      userGwx,
+      totalGwx: totalCachedGwx,
+      height: txInfo.height,
+      emissionStart: this.emissionStartBlock,
+    });
+
+    [
+      { amount: reward },
+      { amount: boostedReward },
+    ] = txInfo.stateChanges.invokes[0].stateChanges.transfers;
+
+    expect(BigInt(reward)).to.equal(calculatedRewards.reward);
+    expect(BigInt(boostedReward)).to.equal(calculatedRewards.boostedReward);
   });
 });
