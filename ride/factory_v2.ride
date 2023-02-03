@@ -320,6 +320,7 @@ func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
   # strict check = assetNum2.isDefined() || "test error assetNum2".throw()
   let ee = this.getString(keyMappingPoolAssetsToLpasset(assetNum1.toString(), assetNum2.toString())).value()
   strict checks = ee.isDefined() || "test error string".throw()
+  let res = addressFromStringValue(ee)
   # if (ee.isDefined()) then {
   #   "test error 1".throw()
   # } else {
@@ -327,7 +328,7 @@ func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
   # }
   #####
   ([],
-    ee
+    res
   )
 }
 
