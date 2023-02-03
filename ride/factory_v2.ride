@@ -318,7 +318,7 @@ func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
   let assetNum2 = this.getInteger(keyMappingsBaseAsset2internalId(asset2)).value()
   strict check2 = assetNum1.isDefined() || "test error assetNum2".throw()
   # strict check = assetNum2.isDefined() || "test error assetNum2".throw()
-  let ee = this.getString(keyMappingPoolAssetsToLpasset(assetNum1.toString(), assetNum2.toString()))
+  let ee = this.getString(keyMappingPoolAssetsToLpasset(assetNum1.toString(), assetNum2.toString())).value()
   strict checks = ee.isDefined() || "test error string".throw()
   # if (ee.isDefined()) then {
   #   "test error 1".throw()
@@ -327,7 +327,7 @@ func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
   # }
   #####
   ([],
-    this.getString(keyMappingPoolAssetsToLpasset(asset1, asset2)) 
+    ee
   )
 }
 
