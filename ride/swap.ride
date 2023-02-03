@@ -27,6 +27,7 @@ func feeLiquidityContractAddress() = ["%s", "feeLiquidityContractAddress"].makeS
 func feeLiquidity() = ["%s", "feeLiquidity"].makeString(SEP)
 func protocolFee() = ["%d", "protocolFee"].makeString(SEP)
 # func protocolFee() = ["%s", "protocolFee"].makeString(SEP)
+# !!!!!
 
 
 func asInt(val: Any) = {
@@ -126,8 +127,8 @@ func swapCalculateREADONLY(
   let poolStatus = invoke(
     factoryContract,
     "getPoolStatusREADONLY", 
-    # [pool], 
-    ["3MqGtuaL3yJbKHqUxnSihJmYroyPf6QDp1x"],
+    [pool], 
+    # ["3MqGtuaL3yJbKHqUxnSihJmYroyPf6QDp1x"],
     []
   ).exactAs[Int]
   strict check = poolStatus == 1 || poolDisabled
