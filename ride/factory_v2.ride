@@ -329,7 +329,7 @@ func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
 @Callable(i)
 func getPoolAddressFromLpAssetREADONLY(lp: String) = {
   ([],
-    this.getString(keyMappingPoolLPAssetToPoolContractAddress(lp))
+    this.getString(keyMappingPoolLPAssetToPoolContractAddress(lp)).value()
   )
 }
 
