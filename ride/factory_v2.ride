@@ -313,7 +313,9 @@ func intOrDefaultOrFallback(key: String, keyDefault: String, valueFallback: Int)
 
 @Callable(i)
 func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
-  let ee = this.getString(keyMappingPoolAssetsToLpasset(asset1, asset2)) 
+  let assetNum1 = this.getString(keyMappingsBaseAsset2internalId(asset1))
+  let assetNum2 = this.getString(keyMappingsBaseAsset2internalId(asset2))
+  let ee = this.getString(keyMappingPoolAssetsToLpasset(assetNum1, assetNum2).value())
   strict check = ee.isDefined() || "test error string".throw()
   # if (ee.isDefined()) then {
   #   "test error 1".throw()
