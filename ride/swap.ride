@@ -25,7 +25,8 @@ let factoryContract = addressFromStringValue(getStringOrFail(fc()))
 
 func feeLiquidityContractAddress() = ["%s", "feeLiquidityContractAddress"].makeString(SEP)
 func feeLiquidity() = ["%s", "feeLiquidity"].makeString(SEP)
-func protocolFee() = ["%s", "protocolFee"].makeString(SEP)
+func protocolFee() = ["%d", "protocolFee"].makeString(SEP)
+# func protocolFee() = ["%s", "protocolFee"].makeString(SEP)
 
 
 func asInt(val: Any) = {
