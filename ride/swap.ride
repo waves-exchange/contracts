@@ -17,7 +17,7 @@ let poolDisabled = "Pool disabled".throw()
 let poolNotExist = "Pool is not exist".throw()
 let slippageTooBig = "Slippage is too big".throw()
 
-let testError = "Test error here".throw()
+# let testError = "Test error here".throw()
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
@@ -97,12 +97,6 @@ func swapCalculateREADONLY(
     [assetOut, assetIn],
     []
   )
-
-  # let ee = if (0 == 0) then {
-  #   testError
-  # } else {
-  #   testError
-  # }
 
 
   let (isReverse, pool) = if (lpNonReverese != unit) then {
