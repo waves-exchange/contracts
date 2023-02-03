@@ -128,6 +128,8 @@ func swapCalculateREADONLY(
   strict check = isPoolOneTokenOperationsDisabled || poolDisabled
   let poolAdr = addressFromStringValue(pool.valueOrElse(""))
 
+  strict check2 = false || poolDisabled
+
   let res = invoke(
     poolAdr,
     "calculateAmountOutForSwapREADONLY",
