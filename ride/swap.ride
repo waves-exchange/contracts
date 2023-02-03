@@ -126,7 +126,7 @@ func swapCalculateREADONLY(
     factoryContract,
     "isPoolOneTokenOperationsDisabledREADONLY", 
     # [pool], 
-    ["3MqGtuaL3yJbKHqUxnSihJmYroyPf6QDp1x_"],
+    ["3MqGtuaL3yJbKHqUxnSihJmYroyPf6QDp1x"],
     []
   ).exactAs[Boolean]
   strict check = isPoolOneTokenOperationsDisabled || poolDisabled
