@@ -102,8 +102,8 @@ func swapCalculateREADONLY(
     let pool = invoke(
       factoryContract,
       "getPoolAddressFromLpAssetREADONLY",
-      # [lpNonReverese],
-      ["HgUa4iE8JgMcva3nZXR5eeddEqSa87VaXy8rVf9KagEw"]
+      [lpNonReverese],
+      # ["HgUa4iE8JgMcva3nZXR5eeddEqSa87VaXy8rVf9KagEw"]
       []
     ).exactAs[String]
     (isReverse, pool)
@@ -112,8 +112,8 @@ func swapCalculateREADONLY(
     let pool = invoke(
       factoryContract,
       "getPoolAddressFromLpAssetREADONLY",
-      # [lpReverse],
-      ["HgUa4iE8JgMcva3nZXR5eeddEqSa87VaXy8rVf9KagEw"]
+      [lpReverse],
+      # ["HgUa4iE8JgMcva3nZXR5eeddEqSa87VaXy8rVf9KagEw"]
       []
     ).exactAs[String]
     (isReverse, pool)
