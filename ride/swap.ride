@@ -134,7 +134,7 @@ func swapCalculateREADONLY(
   strict check = poolStatus == 1 || poolDisabled
   let poolAdr = addressFromStringValue(pool.valueOrElse(""))
 
-  strict check777 = false || "here here here".throw()
+  # strict check777 = false || "here here here".throw()
   let res = invoke(
     poolAdr,
     "calculateAmountOutForSwapREADONLY",
@@ -216,7 +216,7 @@ func swap(
   let res = invoke(
     poolAdr,
     "calculateAmountOutForSwapAndSendTokens",
-    [cleanAmountIn, isReverse, amountOutMin, addressTo],
+    [cleanAmountIn.toInt(), isReverse, amountOutMin, addressTo],
     [AttachedPayment(assetIn, amountInToPool.toInt())]
   ).exactAs[Boolean]
 
