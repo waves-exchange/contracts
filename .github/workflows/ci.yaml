@@ -54,7 +54,7 @@ jobs:
       - name: Deploy changed contracts
         run: |
           cd deployer
-          go run main.go
+          go run cmd/github-actions-ci/main.go
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
@@ -88,7 +88,7 @@ jobs:
       - name: Compare contracts and print diff. Deploy changed lp.ride
         run: |
           cd deployer
-          go run main.go
+          go run cmd/github-actions-ci/main.go
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()

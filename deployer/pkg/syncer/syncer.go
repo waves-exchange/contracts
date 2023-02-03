@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,13 +12,13 @@ import (
 	"github.com/waves-exchange/contracts/deployer/pkg/branch"
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
 	"github.com/waves-exchange/contracts/deployer/pkg/contract"
+	"github.com/waves-exchange/contracts/deployer/pkg/tools"
 	"github.com/wavesplatform/gowaves/pkg/client"
 	"github.com/wavesplatform/gowaves/pkg/crypto"
 	"github.com/wavesplatform/gowaves/pkg/proto"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/sync/errgroup"
 	"io"
-	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -89,7 +88,7 @@ func NewSyncer(
 		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
 	}
 
-	feePrv, feePub, err := getPrivateAndPublicKey([]byte(feeSeed))
+	feePrv, feePub, err := tools.GetPrivateAndPublicKey([]byte(feeSeed))
 	if err != nil {
 		return nil, fmt.Errorf("crypto.GenerateKeyPair: %w", err)
 	}
@@ -255,7 +254,7 @@ func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee ui
 				s.feePub,
 				proto.NewOptionalAssetWaves(),
 				proto.NewOptionalAssetWaves(),
-				timestamp(),
+				tools.Timestamp(),
 				amountToSend,
 				100000,
 				proto.NewRecipientFromAddress(to),
@@ -340,7 +339,7 @@ func (s *Syncer) doHash(
 			return false, fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er)
 		}
 
-		dataTx := proto.NewUnsignedDataWithProofs(2, pub, 500000, timestamp())
+		dataTx := proto.NewUnsignedDataWithProofs(2, pub, 500000, tools.Timestamp())
 		er = dataTx.AppendEntry(dataTxValue)
 		if er != nil {
 			return false, fmt.Errorf("dataTx.AppendEntry: %w", er)
@@ -389,7 +388,7 @@ func (s *Syncer) doHash(
 		hashEmpty = actualHash == ""
 
 		const fee = 500000
-		dataTx := proto.NewUnsignedDataWithProofs(2, pub, fee, timestamp())
+		dataTx := proto.NewUnsignedDataWithProofs(2, pub, fee, tools.Timestamp())
 		er = dataTx.AppendEntry(dataTxValue)
 		if er != nil {
 			return false, fmt.Errorf("dataTx.AppendEntry: %w", er)
@@ -622,7 +621,7 @@ func (s *Syncer) doFile(
 					pub,
 					scriptBytes,
 					setScriptFee,
-					timestamp(),
+					tools.Timestamp(),
 				),
 				prvSigner,
 				true,
@@ -683,7 +682,7 @@ func (s *Syncer) doFile(
 				pub,
 				scriptBytes,
 				setScriptFee,
-				timestamp(),
+				tools.Timestamp(),
 			)
 			doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
 			doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
@@ -908,7 +907,7 @@ func (s *Syncer) compile(ctx context.Context, body []byte, compact bool) (string
 	if err != nil {
 		return "", nil, 0, fmt.Errorf("base64.StdEncoding.DecodeString: %w", err)
 	}
-	setScriptFee := calcSetScriptFee(scriptBytes)
+	setScriptFee := tools.CalcSetScriptFee(scriptBytes)
 
 	res := func() (string, []byte, uint64, error) {
 		return base64Script, scriptBytes, setScriptFee, nil
@@ -1023,22 +1022,6 @@ func (s *Syncer) client() *client.Client {
 	return s.rawClient
 }
 
-func calcSetScriptFee(script []byte) uint64 {
-	const min = 1300000
-	base := uint64(100000)
-	additional := uint64(400000)
-	kb := math.Ceil(float64(len(script)) / float64(1000))
-	res := uint64(kb)*base + additional
-	if res < min {
-		return min
-	}
-	return res
-}
-
-func timestamp() uint64 {
-	return uint64(time.Now().UnixMilli())
-}
-
 func findFactory(conts []contract.Contract) (contract.Contract, error) {
 	const (
 		factoryRide = "factory_v2.ride"
@@ -1051,17 +1034,4 @@ func findFactory(conts []contract.Contract) (contract.Contract, error) {
 		}
 	}
 	return contract.Contract{}, errors.New("factory not found")
-}
-
-func getPrivateAndPublicKey(seed []byte) (privateKey crypto.SecretKey, publicKey crypto.PublicKey, err error) {
-	n := 0
-	s := seed
-	iv := make([]byte, 4)
-	binary.BigEndian.PutUint32(iv, uint32(n))
-	s = append(iv, s...)
-	accSeed, err := crypto.SecureHash(s)
-	if err != nil {
-		return crypto.SecretKey{}, crypto.PublicKey{}, err
-	}
-	return crypto.GenerateKeyPair(accSeed[:])
 }
