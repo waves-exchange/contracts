@@ -122,14 +122,14 @@ func swapCalculateREADONLY(
   }
 
   
-  let isPoolOneTokenOperationsDisabled = invoke(
+  let poolStatus = invoke(
     factoryContract,
-    "isPoolOneTokenOperationsDisabledREADONLY", 
+    "getPoolStatusREADONLY", 
     # [pool], 
     ["3MqGtuaL3yJbKHqUxnSihJmYroyPf6QDp1x"],
     []
-  ).exactAs[Boolean]
-  strict check = isPoolOneTokenOperationsDisabled || poolDisabled
+  ).exactAs[Int]
+  strict check = poolStatus == 1 || poolDisabled
   let poolAdr = addressFromStringValue(pool.valueOrElse(""))
 
 
