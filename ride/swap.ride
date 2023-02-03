@@ -104,7 +104,7 @@ func swapCalculateREADONLY(
       "getPoolAddressFromLpAssetREADONLY",
       [lpNonReverese],
       []
-    )
+    ).exactAs[String]
     (isReverse, pool)
   } else if (lpReverse != unit) then {
     let isReverse = true
@@ -113,13 +113,12 @@ func swapCalculateREADONLY(
       "getPoolAddressFromLpAssetREADONLY",
       [lpReverse],
       []
-    )
+    ).exactAs[String]
     (isReverse, pool)
   } else {
     poolNotExist
   }
 
-  strict check2 = false || poolDisabled
   
   let isPoolOneTokenOperationsDisabled = invoke(
     factoryContract,
