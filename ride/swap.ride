@@ -125,7 +125,8 @@ func swapCalculateREADONLY(
   let isPoolOneTokenOperationsDisabled = invoke(
     factoryContract,
     "isPoolOneTokenOperationsDisabledREADONLY", 
-    [pool], 
+    # [pool], 
+    ["3MqGtuaL3yJbKHqUxnSihJmYroyPf6QDp1x_"],
     []
   ).exactAs[Boolean]
   strict check = isPoolOneTokenOperationsDisabled || poolDisabled
