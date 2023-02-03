@@ -314,7 +314,12 @@ func intOrDefaultOrFallback(key: String, keyDefault: String, valueFallback: Int)
 @Callable(i)
 func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
   let ee = this.getString(keyMappingPoolAssetsToLpasset(asset1, asset2)) 
-  strict ee != unit || "test error".throw()
+  strict check = ee.isDefined() || "test error string".throw()
+  # if (ee.isDefined()) then {
+  #   "test error 1".throw()
+  # } else {
+  #    "test error 2".throw()
+  # }
   #####
   ([],
     this.getString(keyMappingPoolAssetsToLpasset(asset1, asset2)) 
