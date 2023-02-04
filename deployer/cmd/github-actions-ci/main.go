@@ -29,7 +29,7 @@ func main() {
 		panic(fmt.Errorf("mongo.NewConn: %w", err))
 	}
 
-	branchModel, err := branch.NewModel(db.Collection(cfg.MongoCollectionBranches))
+	branchModel := branch.NewModel(db.Collection(cfg.MongoCollectionBranches))
 	if err != nil {
 		panic(fmt.Errorf("branch.NewModel: %w", err))
 	}
