@@ -7,6 +7,7 @@ import (
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Branch struct {
@@ -19,10 +20,30 @@ type Model struct {
 	coll *mongo.Collection
 }
 
-func NewModel(coll *mongo.Collection) Model {
-	return Model{
+func NewModel(coll *mongo.Collection) (Model, error) {
+	m := Model{
 		coll: coll,
 	}
+	err := m.createIndex()
+	if err != nil {
+		return Model{}, fmt.Errorf("m.createIndex: %w", err)
+	}
+
+	return m, nil
+}
+
+func (m Model) createIndex() error {
+	_, err := m.coll.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys: bson.M{
+			"stage": 1,
+		},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		return fmt.Errorf("m.coll.Indexes().CreateOne: %w", err)
+	}
+
+	return nil
 }
 
 func (m Model) GetTestnetBranches(ctx context.Context) ([]Branch, error) {
