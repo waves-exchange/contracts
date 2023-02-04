@@ -7,56 +7,62 @@ import (
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Branch struct {
 	Branch  string         `bson:"branch,omitempty"`
 	Network config.Network `bson:"network,omitempty"`
+	Stage   uint32         `bson:"stage,omitempty"`
 }
 
 type Model struct {
 	coll *mongo.Collection
 }
 
-func NewModel(coll *mongo.Collection) (Model, error) {
-	m := Model{
+func NewModel(coll *mongo.Collection) Model {
+	return Model{
 		coll: coll,
 	}
-	err := m.createIndex()
-	if err != nil {
-		return Model{}, fmt.Errorf("m.createIndex: %w", err)
-	}
-
-	return m, nil
 }
 
-func (m Model) createIndex() error {
-	_, err := m.coll.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.M{
-			"network": 1,
-		},
-		Options: options.Index().SetUnique(true),
+func (m Model) GetTestnetBranches(ctx context.Context) ([]Branch, error) {
+	cur, err := m.coll.Find(ctx, bson.M{
+		"network": config.Testnet,
 	})
 	if err != nil {
-		return fmt.Errorf("m.coll.Indexes().CreateOne: %w", err)
+		return nil, fmt.Errorf("m.coll.Find: %w", err)
 	}
 
-	return nil
+	var docs []Branch
+	err = cur.All(ctx, &docs)
+	if err != nil {
+		return nil, fmt.Errorf("cur.All: %w", err)
+	}
+
+	return docs, err
 }
 
-func (m Model) GetTestnetBranch(ctx context.Context) (string, error) {
-	var doc Branch
+func (m Model) StageExists(ctx context.Context, stage uint32) (bool, error) {
 	err := m.coll.FindOne(ctx, bson.M{
-		"network": config.Testnet,
-	}).Decode(&doc)
+		"stage": stage,
+	}).Err()
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return "", nil
+			return false, nil
 		}
-
-		return "", fmt.Errorf("m.coll.FindOne: %w", err)
+		return false, fmt.Errorf("m.coll.FindOne: %w", err)
 	}
+	return true, nil
+}
 
-	return doc.Branch, err
+func (m Model) Create(ctx context.Context, branch string, network config.Network, stage uint32) error {
+	_, err := m.coll.InsertOne(ctx, Branch{
+		Branch:  branch,
+		Network: network,
+		Stage:   stage,
+	})
+	if err != nil {
+		return fmt.Errorf("m.coll.InsertOne: %w", err)
+	}
+	return nil
 }

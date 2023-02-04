@@ -127,28 +127,40 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	ctx, cancel := context.WithTimeout(c, 8*time.Hour)
 	defer cancel()
 
-	branchTestnet, err := s.branchModel.GetTestnetBranch(ctx)
+	branchesTestnetRaw, err := s.branchModel.GetTestnetBranches(ctx)
 	if err != nil {
 		return fmt.Errorf("s.branchModel.GetTestnetBranch: %w", err)
 	}
 
+	var branchesTestnet []string
+	for _, brn := range branchesTestnetRaw {
+		branchesTestnet = append(branchesTestnet, brn.Branch)
+	}
+
 	if s.network == config.Testnet {
-		if branchTestnet != s.branch {
+		found := false
+		for _, brn := range branchesTestnet {
+			if brn == s.branch {
+				found = true
+				s.logger.Info().Msgf(
+					"syncer start: branches for '%s' network is '%s' and current branch is '%s'",
+					config.Testnet,
+					strings.Join(branchesTestnet, ","),
+					s.branch,
+				)
+				break
+			}
+		}
+		if !found {
 			s.logger.Info().Msgf(
-				"nothing to do: branch for '%s' network is '%s', but current branch is '%s'",
+				"nothing to do: branches for '%s' network is '%s', but current branch is '%s'",
 				config.Testnet,
-				branchTestnet,
+				strings.Join(branchesTestnet, ","),
 				s.branch,
 			)
 			return nil
 		}
 
-		s.logger.Info().Msgf(
-			"syncer start: branch for '%s' network is '%s' and current branch is '%s'",
-			config.Testnet,
-			branchTestnet,
-			s.branch,
-		)
 	} else if s.network == config.Mainnet {
 		s.logger.Info().Msgf(
 			"syncer start: branch for '%s' network is '%s' and current branch is '%s'",
@@ -168,6 +180,11 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	contracts, err := s.contractModel.GetAll(ctx)
 	if err != nil {
 		return fmt.Errorf("s.contractModel.GetAll: %w", err)
+	}
+
+	stageToBranch := map[uint32]string{}
+	for _, brn := range branchesTestnetRaw {
+		stageToBranch[brn.Stage] = brn.Branch
 	}
 
 	const (
@@ -221,6 +238,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 			mainnetLpStableHashEmpty,
 			mainnetLpStableAddonHashEmpty,
 			true,
+			stageToBranch,
 		)
 		if er != nil {
 			return fmt.Errorf("s.doFile: %w", er)
@@ -519,6 +537,7 @@ func (s *Syncer) doFile(
 	contracts []contract.Contract,
 	mainnetLpHashEmpty, mainnetLpStableHashEmpty, mainnetLpStableAddonHashEmpty bool,
 	logSkip bool,
+	stageToBranch map[uint32]string,
 ) (
 	bool,
 	error,
@@ -534,6 +553,10 @@ func (s *Syncer) doFile(
 		addressStr = "address"
 		fileStr    = "file"
 		tag        = "tag"
+		stage      = "stage"
+		brn        = "branch"
+		gitb       = "git branch"
+		mongob     = "mongo branch"
 	)
 
 	f, err := os.Open(path.Join(s.contractsFolder, fileName))
@@ -556,10 +579,24 @@ func (s *Syncer) doFile(
 
 		switch s.network {
 		case config.Testnet:
+			stageBranch, ok := stageToBranch[cont.Stage]
+			if !ok {
+				return false, errors.New("no value at stageToBranch map=" + strconv.Itoa(int(cont.Stage)))
+			}
+
 			l := s.logger.Info().
 				Str(fileStr, fileName).
 				Str(tag, cont.Tag).
-				Str(action, skip)
+				Str(action, skip).
+				Uint32(stage, cont.Stage).
+				Str(gitb, s.branch).
+				Str(mongob, stageBranch)
+
+			if s.branch != stageBranch {
+				l.Msg("no match git and mongo branch: do nothing")
+				continue
+			}
+
 			if cont.BasePrv == "" {
 				l.Msg("no private key in config")
 				continue
@@ -599,7 +636,10 @@ func (s *Syncer) doFile(
 			log := s.logger.Info().
 				Str(fileStr, fileName).
 				Str(addressStr, addr.String()).
-				Str(tag, cont.Tag)
+				Str(tag, cont.Tag).
+				Uint32(stage, cont.Stage).
+				Str(gitb, s.branch).
+				Str(mongob, stageBranch)
 
 			if base64Script == fromBlockchainScript {
 				if logSkip {

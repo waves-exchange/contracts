@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
 type Contract struct {
 	File      string `bson:"file,omitempty"`
+	Stage     uint32 `bson:"stage,omitempty"`
 	Compact   bool   `bson:"compact,omitempty"`
 	Tag       string `bson:"tag,omitempty"`
 	BasePub   string `bson:"base_pub,omitempty"`
@@ -46,7 +48,13 @@ func (m Model) GetAll(c context.Context) ([]Contract, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
-	cur, err := m.coll.Find(ctx, bson.M{})
+	cur, err := m.coll.Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{
+		Key:   "stage",
+		Value: 1,
+	}, {
+		Key:   "file",
+		Value: 1,
+	}}))
 	if err != nil {
 		return nil, fmt.Errorf("m.coll.Find: %w", err)
 	}
@@ -98,4 +106,29 @@ func (m Model) IsCompact(c context.Context, fileName string) (bool, error) {
 	}
 
 	return compact, nil
+}
+
+func (m Model) Create(
+	c context.Context,
+	file string,
+	stage uint32,
+	compact bool,
+	tag, basePub, basePrv, signerPrv string,
+) error {
+	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	defer cancel()
+
+	_, err := m.coll.InsertOne(ctx, Contract{
+		File:      file,
+		Stage:     stage,
+		Compact:   compact,
+		Tag:       tag,
+		BasePub:   basePub,
+		BasePrv:   basePrv,
+		SignerPrv: signerPrv,
+	})
+	if err != nil {
+		return fmt.Errorf("m.coll.InsertOne: %w", err)
+	}
+	return nil
 }
