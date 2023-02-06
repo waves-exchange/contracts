@@ -81,7 +81,7 @@ var createStageCmd = &cobra.Command{
 				}
 
 				if exists {
-					return errors.New("stage with same stage already exists")
+					return errors.New("stage with same index already exists")
 				}
 				return nil
 			},
@@ -158,7 +158,7 @@ var createStageCmd = &cobra.Command{
 				},
 				nil,
 			)
-			e = factoryV2.DeployAndSave(ctx)
+			e = factoryV2.DeployAndSave(sc)
 			if e != nil {
 				return nil, fmt.Errorf("factoryV2.DeployAndSave: %w", e)
 			}
