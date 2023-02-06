@@ -863,8 +863,8 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
         }
       }
     }
-    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
-    let (y, found) = FOLD<30>(arr, (D, unit), calc)
+    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    let (y, found) = FOLD<15>(arr, (D, unit), calc)
     if (found != unit) then {
       y
     } else {
@@ -891,7 +891,7 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean) =
   let prId = poolConfig[idxPrAsId]
   let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
   let D = xp.getD()
-  let y = getY(isReverse, D, poolAmountInBalance)
+  let y = getY(isReverse, D, cleanAmountIn.toBigInt())
 
   # let x = poolAmountInBalance.toBigInt() + cleanAmountIn.toBigInt()
 
@@ -1165,6 +1165,7 @@ func getOneTknV2READONLY(
   let prId = poolConfig[idxPrAsId]
   let lpId = poolConfig[idxLPAsId]
   let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
+  # let xp = [prId.getAccBalance().toBigInt(), amId.getAccBalance().toBigInt()]
   let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   let D0 = xp.getD()
   let D1 = D0 - fraction(lpAssetAmount.toBigInt(), D0, lpEmission)
