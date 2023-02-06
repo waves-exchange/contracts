@@ -55,4 +55,22 @@ export const emission = {
 
     return broadcastAndWait(dataTx);
   },
+  setBoostCoeff: async ({
+    caller,
+    boostCoeff,
+  }) => {
+    const dataTx = data({
+      data: [
+        {
+          key: '%s__boostCoeff',
+          type: 'integer',
+          value: boostCoeff,
+        },
+      ],
+      additionalFee: 4e5,
+      chainId,
+    }, caller);
+
+    return broadcastAndWait(dataTx);
+  },
 };

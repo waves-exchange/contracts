@@ -54,7 +54,7 @@ describe(`${process.pid}: claim wx`, () => {
       duration: this.maxLockDuration,
       payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
     }));
-    // await waitForHeight(lockStartHeight + 1);
+    await waitForHeight(lockStartHeight + 1);
   });
   it('should successfully claim', async function () {
     const { height } = await staking.stake({
