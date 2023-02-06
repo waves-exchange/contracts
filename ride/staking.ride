@@ -3,6 +3,7 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 
 let SCALE8  = 8
+let MULT3 = 1000
 let MULT8   = 100000000
 let SCALE18 = 18
 let MULT18  = 1000_000_000_000_000_000.toBigInt() # 10^18
@@ -145,6 +146,8 @@ let factoryCfg        = factoryContract.readFactoryCfgOrFail()
 let emissionContract  = factoryCfg.getEmissionAddressOrFail()
 let boostingContract  = factoryCfg.getBoostingAddressOrFail()
 
+let boostCoeff = emissionContract.invoke("getBoostCoeffREADONLY", [], []).exactAs[Int]
+
 func keyNextUser(lpAssetId: String) = ["%s%s", lpAssetId, "nextUser"].makeString(SEP)
 
 # Doubly linked list ->
@@ -246,11 +249,8 @@ func refreshPoolINTEGRALS(lpAssetIdStr: String, poolAddressStr: String, lpDeltaA
   let poolWeight          = factoryContract.getIntegerValue(poolAddressStr.keyFactoryPoolWeight())
   let emissionStartBlock  = emissionContract.getIntOrFail(keyEmissionStartBlock())
 
-  # TODO MOVE TO emission contract
-  let MULT3 = 1000
   let wxEmissionPerBlockX3 = emissionContract.getIntOrFail(keyEmissionRatePerBlockCurrent()) * MULT3
-  # TODO 3 is hardcoded
-  let poolWxEmissionPerBlockX3 = fraction(wxEmissionPerBlockX3, poolWeight, POOLWEIGHTMULT * 3) # TODO POOLWEIGHTMULT*3
+  let poolWxEmissionPerBlockX3 = fraction(wxEmissionPerBlockX3, poolWeight, POOLWEIGHTMULT * boostCoeff)
 
   # POOL INTEGRAL values
   let wxPerLpIntegralKEY                  = keyWxPerLpIntegral(lpAssetIdStr)
@@ -301,7 +301,6 @@ func refreshINTEGRALS(lpAssetIdStr: String, userAddressStr: String, poolAddressS
 
   let (wxPerLpIntegralNew, poolIntegralSTATE, poolDEBUG) = refreshPoolINTEGRALS(lpAssetIdStr, poolAddressStr, lpDeltaAmount)
 
-  let MULT3 = 1000
   let stakedByUserKEY = keyStakedByUser(userAddressStr, lpAssetIdStr)
   let stakedByUser = stakedByUserKEY.readStaked()
 

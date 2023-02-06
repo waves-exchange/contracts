@@ -54,6 +54,10 @@ func keyEmissionStartBlock() = "%s%s__emission__startBlock"
 func keyEmissionDurationInBlocks() = "%s%s__emission__duration"
 func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 
+func keyBoostCoeff() = "%s__boostCoeff"
+let boostCoeffDefault = 3
+let boostCoeff = this.getInteger(keyBoostCoeff()).valueOrElse(boostCoeffDefault)
+
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
 
@@ -162,6 +166,11 @@ func confirmManager() = {
     StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
     DeleteEntry(keyPendingManagerPublicKey())
   ]
+}
+
+@Callable(i)
+func getBoostCoeffREADONLY() = {
+  ([], boostCoeff)
 }
 
 @Verifier(tx)
