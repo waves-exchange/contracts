@@ -319,7 +319,11 @@ func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
   # strict check = assetNum2.isDefined() || "test error assetNum2".throw()
   let ee = this.getString(keyMappingPoolAssetsToLpasset(assetNum1.toString(), assetNum2.toString()))
   # strict checks = ee.isDefined() || "test error string".throw()
-  let res = ee.value().drop(4) # delete %s__ , 4 is number of letters
+  let res = if (ee == unit) then {
+    unit
+  } else {
+     ee.value().drop(4) # delete %s__ , 4 is number of letters
+  }
 
   ([],
     res
