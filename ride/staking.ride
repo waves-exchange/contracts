@@ -509,7 +509,7 @@ func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String) = {
   let wxAmountBoostTotal = max([boostingContract.invoke("claimWxBoost", [lpAssetIdStr, userAddressStr], []).asAnyList()[0].asInt(), 0])
 
   let minRewardPart = availableToClaim
-  let boostRewardPart = min([minRewardPart * 2.toBigInt(), wxAmountBoostTotal.toBigInt()])
+  let boostRewardPart = min([minRewardPart * (boostCoeff - 1).toBigInt(), wxAmountBoostTotal.toBigInt()])
 
   let wxAssetId = emissionContract.invoke("emit", [minRewardPart.toInt()], []).asAnyList()[0].asByteVector()
   strict emitBoost = emissionContract.invoke("emit", [boostRewardPart.toInt()], []).asAnyList()
@@ -579,7 +579,7 @@ func claimWxREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
   let boostDebug = boostInvResult[1].asString()
 
   let minRewardPart = availableToClaim
-  let boostRewardPart = min([minRewardPart * 2.toBigInt(), wxAmountBoostTotal.toBigInt()])
+  let boostRewardPart = min([minRewardPart * (boostCoeff - 1).toBigInt(), wxAmountBoostTotal.toBigInt()])
   let totalReward = minRewardPart + boostRewardPart
 
   ([], makeString(["%s%s%d%d%d%d%s", lpAssetIdStr, userAddressStr, totalReward.toString(), claimedByUser.toString(), minRewardPart.toString(), boostRewardPart.toString(), "soon"], SEP))
