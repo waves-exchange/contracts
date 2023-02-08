@@ -890,14 +890,21 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean) =
   let amId = poolConfig[idxAmAsId]
   let prId = poolConfig[idxPrAsId]
   let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
+  
   let D = xp.getD()
   let y = getY(isReverse, D, cleanAmountIn.toBigInt())
-
-  # let x = poolAmountInBalance.toBigInt() + cleanAmountIn.toBigInt()
 
   let dy = getAccBalance(assetOut).toBigInt() - y - toBigInt(1) # -1 just in case there were some rounding errors
 
   let totalGetRaw = [0, dy.toInt()].max()
+
+  let newXp = if (isReverse == false) then {
+    [amId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt(), prId.getAccBalance().toBigInt() - dy]
+  } else { 
+    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt()]
+  }
+  let newD = newXp.getD()
+  strict checkD = newD >= D || "new D is fewer error".throw()
   
   (nil, totalGetRaw)
 }
@@ -925,7 +932,12 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   let poolConfig = gpc()
   let amId = poolConfig[idxAmAsId]
   let prId = poolConfig[idxPrAsId]
-  let xp = [amId.getAccBalance().toBigInt()  - i.payments[0].value().amount.toBigInt(), prId.getAccBalance().toBigInt()]
+  # let xp = [amId.getAccBalance().toBigInt()  - i.payments[0].value().amount.toBigInt(), prId.getAccBalance().toBigInt()]
+  let xp = if (isReverse == false) then {
+    [amId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt(), prId.getAccBalance().toBigInt()]
+  } else { 
+    [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt()]
+  }
   let D = xp.getD()
   let y = getY(isReverse, D, poolAmountInBalance.toBigInt())
 
@@ -936,6 +948,14 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   let totalGetRaw = [0, dy.toInt()].max()
 
   strict checkMin = amountOutMin <= totalGetRaw || "Exchange result is fewer coins than expected".throw()
+
+  let newXp = if (isReverse == false) then {
+    [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt() - dy]
+  } else { 
+    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt()]
+  }
+  let newD = newXp.getD()
+  strict checkD = newD >= D || "new D is fewer error".throw()
   
   # [ScriptTransfer(addressTo.addressFromStringValue(), dy.toInt(), assetOut.fromBase58String())]
   [ScriptTransfer(addressTo.addressFromStringValue(), totalGetRaw, if (assetIn == "WAVES") then unit else assetOut.fromBase58String())]

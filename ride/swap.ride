@@ -23,11 +23,10 @@ func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 func fc() = {"%s__factoryContract"}
 let factoryContract = addressFromStringValue(getStringOrFail(fc()))
 
-func feeLiquidityContractAddress() = ["%s", "feeLiquidityContractAddress"].makeString(SEP)
-func feeLiquidity() = ["%s", "feeLiquidity"].makeString(SEP)
-func protocolFee() = ["%d", "protocolFee"].makeString(SEP)
-# func protocolFee() = ["%s", "protocolFee"].makeString(SEP)
-# !!!!!
+func feeProtocolContractAddress() = ["%s", "feeProtocolContractAddress"].makeString(SEP)
+let feeContract = addressFromStringValue(getStringOrFail(feeProtocolContractAddress()))
+
+func protocolFee() = ["%s", "protocolFee"].makeString(SEP)
 
 
 func asInt(val: Any) = {
@@ -76,14 +75,14 @@ func swapCalculateREADONLY(
   assetIn: String,
   assetOut: String
 ) = {
-#   let assetIn = pmt.assetId.value()
   let prFee = getInteger(protocolFee()).value()
   let feeProtocolAmount = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
-  let feeLiquidityAmount = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
-
-  let amountInToPool = amountIn.toBigInt() - feeProtocolAmount
-  let cleanAmountIn = amountInToPool -  feeLiquidityAmount
-
+ 
+  let cleanAmountIn = if (feeProtocolAmount.toInt() == 0) then {
+    toBigInt(1)
+  } else {
+    amountIn.toBigInt() - feeProtocolAmount
+  }
   let lpNonReverese = invoke(
     factoryContract,
     "getLpAssetFromPoolAssetsREADONLY",
@@ -98,14 +97,12 @@ func swapCalculateREADONLY(
     []
   )
 
-
   let (isReverse, pool) = if (lpNonReverese != unit) then {
     let isReverse = false
     let pool = invoke(
       factoryContract,
       "getPoolAddressFromLpAssetREADONLY",
       [lpNonReverese],
-      # ["HgUa4iE8JgMcva3nZXR5eeddEqSa87VaXy8rVf9KagEw"]
       []
     ).exactAs[String]
     (isReverse, pool)
@@ -115,7 +112,6 @@ func swapCalculateREADONLY(
       factoryContract,
       "getPoolAddressFromLpAssetREADONLY",
       [lpReverse],
-      # ["HgUa4iE8JgMcva3nZXR5eeddEqSa87VaXy8rVf9KagEw"]
       []
     ).exactAs[String]
     (isReverse, pool)
@@ -123,18 +119,15 @@ func swapCalculateREADONLY(
     poolNotExist
   }
 
-  
   let poolStatus = invoke(
     factoryContract,
     "getPoolStatusREADONLY", 
     [pool], 
-    # ["3MqGtuaL3yJbKHqUxnSihJmYroyPf6QDp1x"],
     []
   ).exactAs[Int]
   strict check = poolStatus == 1 || poolDisabled
   let poolAdr = addressFromStringValue(pool.valueOrElse(""))
 
-  # strict check777 = false || "here here here".throw()
   let res = invoke(
     poolAdr,
     "calculateAmountOutForSwapREADONLY",
@@ -154,15 +147,12 @@ func swap(
   addressTo: String 
 ) = {
   let pmt = i.payments[0].value()
-#   let assetIn = pmt.assetId.value()
   let assetIn = if(pmt.assetId == unit) then "WAVES".toBytes() else pmt.assetId.value()
   let amountIn = pmt.amount.value()
   let prFee = getInteger(protocolFee()).value()
   let feeProtocolAmount = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
-  let feeLiquidityAmount = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
 
-  let amountInToPool = amountIn.toBigInt() - feeProtocolAmount
-  let cleanAmountIn = amountInToPool -  feeLiquidityAmount
+  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount
 
   strict checks = [
     i.payments.size() == 1 || "exactly 1 payment are expected".throw()
@@ -217,11 +207,12 @@ func swap(
     poolAdr,
     "calculateAmountOutForSwapAndSendTokens",
     [cleanAmountIn.toInt(), isReverse, amountOutMin, addressTo],
-    [AttachedPayment(assetIn, amountInToPool.toInt())]
+    [AttachedPayment(assetIn, cleanAmountIn.toInt())]
   ).exactAs[Boolean]
 
-  ([],
+  ([ScriptTransfer(feeContract, feeProtocolAmount.toInt(), assetIn)],
   res)
+  
 }
 
 

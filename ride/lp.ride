@@ -78,7 +78,9 @@ let idxFactorySlippageContract     = 7
 # WX COMMON LIBRARY
 #-------------------------
 func toX18(origVal: Int, origScaleMult: Int)          = fraction(origVal.toBigInt(), scale18, origScaleMult.toBigInt())
+func toX18BigInt(origVal: BigInt, origScaleMult: BigInt) = fraction(origVal, scale18, origScaleMult)
 func fromX18(val: BigInt, resultScaleMult: Int)       = fraction(val, resultScaleMult.toBigInt(), scale18).toInt()
+func fromX18Round(val: BigInt, resultScaleMult: Int, round: Ceiling|Floor) = fraction(val, resultScaleMult.toBigInt(), scale18, round).toInt()
 
 # cast passed amount to specified 'resScale' scale value from 'curScale' scale value
 func toScale(amt: Int, resScale: Int, curScale: Int)  = fraction(amt, resScale, curScale)
@@ -719,6 +721,10 @@ let (assetOut, assetIn) = if (isReverse == false) then {
   let poolAssetOutBalance = getAccBalance(assetOut)
   let amountOut = poolAssetOutBalance * cleanAmountIn / (poolAssetInBalance + cleanAmountIn)
 
+  let oldK = poolAssetInBalance * poolAssetOutBalance
+  let newK = (getAccBalance(assetIn) + cleanAmountIn) * (getAccBalance(assetOut) - amountOut)
+  strict checkK = newK >= oldK || "new K is fewer error".throw()
+
   (nil, amountOut)
 }
 
@@ -741,8 +747,12 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   let poolAssetOutBalance = getAccBalance(assetOut)
   let amountOut = poolAssetOutBalance * cleanAmountIn / (poolAssetInBalance + cleanAmountIn)
 
+  let oldK = poolAssetInBalance * poolAssetOutBalance
+  let newK = getAccBalance(assetIn) * (getAccBalance(assetOut) - amountOut)
+
+  strict checkK = newK >= oldK || "new K is fewer error".throw()
+
   strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
-  # [ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.fromBase58String())]
   [ScriptTransfer(addressTo.addressFromStringValue(), amountOut, if (assetIn == "WAVES") then unit else assetOut.fromBase58String())]
 }
 
