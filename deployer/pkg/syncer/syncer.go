@@ -724,7 +724,11 @@ func (s *Syncer) doFile(
 
 			iTx += 1
 			file, er := os.Create(
-				path.Join("..", "txs-to-sign",
+				path.Join(
+					"..",
+					".github",
+					"artifacts",
+					"txs",
 					fmt.Sprintf("%d_%s.json", iTx, strings.ReplaceAll(cont.Tag, " ", "_")),
 				))
 			if er != nil {

@@ -88,8 +88,8 @@ jobs:
       - name: Save txs to sign in artifact folder
         uses: actions/upload-artifact@v3
         with:
-          name: txs-to-sign
-          path: txs-to-sign
+          name: txs
+          path: .github/artifacts/txs
       - name: Compare contracts and print diff. Deploy changed lp.ride
         run: |
           cd deployer
