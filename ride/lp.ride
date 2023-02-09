@@ -719,7 +719,7 @@ let (assetOut, assetIn) = if (isReverse == false) then {
   }
   let poolAssetInBalance = getAccBalance(assetIn)
   let poolAssetOutBalance = getAccBalance(assetOut)
-  let amountOut = poolAssetOutBalance * cleanAmountIn / (poolAssetInBalance + cleanAmountIn)
+  let amountOut = fraction(poolAssetOutBalance, cleanAmountIn, poolAssetInBalance + cleanAmountIn)
 
   let oldK = poolAssetInBalance.toBigInt() * poolAssetOutBalance.toBigInt()
   let newK = (getAccBalance(assetIn).toBigInt() + cleanAmountIn.toBigInt()) * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
