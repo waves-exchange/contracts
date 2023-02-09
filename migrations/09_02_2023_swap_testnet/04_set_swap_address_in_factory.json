@@ -1,0 +1,18 @@
+{
+    "dApp": "3MsMP2pb2p8MDd6Rxb7XEXqqwEhE8ATfyai",
+    "version": 2,
+    "type": 12,
+    "chainId": 87,
+    "fee": 500000,
+    "proofs": [],
+    "timestamp": 0,
+    "senderPublicKey": "2VkbtS8CodmbZqAounEpDSf4dAfLoCWfEEGHZK7qtbeD",
+    "data": [
+      {
+        "type": "string",
+        "value": "3N6LHjfGb6Fgcy7YsVcNxGyPTj49XbQAijq",
+        "key": "%s__swapContract"
+      }
+    ]
+  }
+    
