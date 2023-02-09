@@ -550,6 +550,7 @@ func (s *Syncer) doFile(
 		return false, fmt.Errorf("io.ReadAll: %w", err)
 	}
 
+	iTx := 0
 	for _, cont := range contracts {
 		if fileName != cont.File {
 			continue
@@ -685,42 +686,56 @@ func (s *Syncer) doFile(
 				setScriptFee,
 				timestamp(),
 			)
-			doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
-			doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
-			doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
-			if doLpRide || doLpStableRide || doLpStableAddonRide {
-				er := s.sendTx(
-					ctx,
-					unsignedSetScriptTx,
-					crypto.SecretKey{},
-					true,
-					true,
-					fileName,
-				)
-				if er != nil {
-					return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
-				}
-
-				isChanged = true
-				log().Str(action, deployed).Msg(changed)
-			} else {
-				setScriptTx, er := json.Marshal(unsignedSetScriptTx)
-				if er != nil {
-					return false, fmt.Errorf("s.sendTx: %w", er)
-				}
-
-				er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
-				if er != nil {
-					return false, fmt.Errorf("s.ensureHasFee: %w", er)
-				}
-
-				isChanged = true
-				log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
-				er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
-				if er != nil {
-					return false, fmt.Errorf("s.printDiff: %w", er)
-				}
+			//doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
+			//doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
+			//doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
+			//if doLpRide || doLpStableRide || doLpStableAddonRide {
+			//	er := s.sendTx(
+			//		ctx,
+			//		unsignedSetScriptTx,
+			//		crypto.SecretKey{},
+			//		true,
+			//		true,
+			//		fileName,
+			//	)
+			//	if er != nil {
+			//		return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
+			//	}
+			//
+			//	isChanged = true
+			//	log().Str(action, deployed).Msg(changed)
+			//} else {
+			setScriptTx, er := json.Marshal(unsignedSetScriptTx)
+			if er != nil {
+				return false, fmt.Errorf("s.sendTx: %w", er)
 			}
+
+			er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
+			if er != nil {
+				return false, fmt.Errorf("s.ensureHasFee: %w", er)
+			}
+
+			isChanged = true
+			log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
+			er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
+			if er != nil {
+				return false, fmt.Errorf("s.printDiff: %w", er)
+			}
+
+			iTx += 1
+			file, er := os.Create(
+				path.Join("..", "txs-to-sign",
+					fmt.Sprintf("%d_%s.json", iTx, strings.ReplaceAll(cont.Tag, " ", "_")),
+				))
+			if er != nil {
+				return false, fmt.Errorf("os.Create: %w", er)
+			}
+
+			_, er = file.Write(setScriptTx)
+			if er != nil {
+				return false, fmt.Errorf("file.Write: %w", er)
+			}
+			//}
 
 			continue
 		}

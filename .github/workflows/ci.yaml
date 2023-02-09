@@ -85,6 +85,11 @@ jobs:
           keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
+      - name: Save txs to sign in artifact folder
+        uses: actions/upload-artifact@v3
+        with:
+          name: txs-to-sign
+          path: txs-to-sign
       - name: Compare contracts and print diff. Deploy changed lp.ride
         run: |
           cd deployer
