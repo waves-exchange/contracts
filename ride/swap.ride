@@ -83,7 +83,7 @@ func swapCalculateREADONLY(
   } else {
     amountIn.toBigInt() - feeProtocolAmount
   }
-  let lpNonReverese = invoke(
+  let lpNonReverse = invoke(
     factoryContract,
     "getLpAssetFromPoolAssetsREADONLY",
     [assetIn, assetOut],
@@ -97,12 +97,12 @@ func swapCalculateREADONLY(
     []
   )
 
-  let (isReverse, pool) = if (lpNonReverese != unit) then {
+  let (isReverse, pool) = if (lpNonReverse != unit) then {
     let isReverse = false
     let pool = invoke(
       factoryContract,
       "getPoolAddressFromLpAssetREADONLY",
-      [lpNonReverese],
+      [lpNonReverse],
       []
     ).exactAs[String]
     (isReverse, pool)
@@ -158,7 +158,7 @@ func swap(
     i.payments.size() == 1 || "exactly 1 payment are expected".throw()
   ]
 
-  let lpNonReverese = invoke(
+  let lpNonReverse = invoke(
     factoryContract,
     "getLpAssetFromPoolAssetsREADONLY",
     [assetIn.toBase58String(), assetOut],
@@ -171,12 +171,12 @@ func swap(
     [assetOut, assetIn.toBase58String()],
     []
   ).as[String]
-  let (isReverse, pool) = if (lpNonReverese != unit) then {
+  let (isReverse, pool) = if (lpNonReverse != unit) then {
     let isReverse = false
     let pool = invoke(
       factoryContract,
       "getPoolAddressFromLpAssetREADONLY",
-      [lpNonReverese.value()],
+      [lpNonReverse.value()],
       []
     ).exactAs[String]
     (isReverse, pool)
