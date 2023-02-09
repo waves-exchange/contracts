@@ -4,6 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/waves-exchange/contracts/deployer/pkg/branch"
@@ -16,12 +22,17 @@ import (
 	"github.com/wavesplatform/gowaves/pkg/crypto"
 	"github.com/wavesplatform/gowaves/pkg/proto"
 	m "go.mongodb.org/mongo-driver/mongo"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
+
+type Account struct {
+	privateKey crypto.SecretKey
+	publicKey  crypto.PublicKey
+	address    proto.Address
+	recipient  proto.Recipient
+}
+
+const wxAssetId = "EMAMLxDnv3xiz8RXg8Btj33jcEw3wLczL3JKYYmuubpc"
+const xtnAssetId = "25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT"
 
 // createStageCmd represents the createStage command
 var createStageCmd = &cobra.Command{
@@ -130,21 +141,57 @@ var createStageCmd = &cobra.Command{
 				return nil, fmt.Errorf("branchModel.Create: %w", e)
 			}
 
-			managerPrv, managerPub, err := makeKeyPair(seed, stage, 0)
+			managerAcc, err := genAccData(seed, stage, 0)
 			if err != nil {
 				printAndExit(err)
 			}
 
-			factoryV2Prv, _, err := makeKeyPair(seed, stage, 1)
+			factoryV2Acc, err := genAccData(seed, stage, 1)
 			if err != nil {
 				printAndExit(err)
 			}
+
+			emissionAcc, err := genAccData(seed, stage, 2)
+			if err != nil {
+				printAndExit(err)
+			}
+
+			assetStoreAcc, err := genAccData(seed, stage, 3)
+			if err != nil {
+				printAndExit(err)
+			}
+
+			userPoolsAcc, err := genAccData(seed, stage, 4)
+			if err != nil {
+				printAndExit(err)
+			}
+
+			votingVerifiedAcc, err := genAccData(seed, stage, 5)
+			if err != nil {
+				printAndExit(err)
+			}
+
+			votingEmissionCandidateAcc, err := genAccData(seed, stage, 5)
+			if err != nil {
+				printAndExit(err)
+			}
+
+			boostingAcc, err := genAccData(seed, stage, 6)
+			if err != nil {
+				printAndExit(err)
+			}
+
+			votingEmissionAcc, err := genAccData(seed, stage, 7)
+			if err != nil {
+				printAndExit(err)
+			}
+
 			factoryV2 := cli_contract.New(
 				proto.TestNetScheme,
 				cl,
 				contractModel,
-				factoryV2Prv,
-				managerPrv,
+				factoryV2Acc.privateKey,
+				managerAcc.privateKey,
 				gazPrv,
 				"factory_v2",
 				"factory_v2.ride",
@@ -153,7 +200,7 @@ var createStageCmd = &cobra.Command{
 				[]proto.DataEntry{
 					&proto.StringDataEntry{
 						Key:   "%s__managerPublicKey",
-						Value: managerPub.String(),
+						Value: managerAcc.publicKey.String(),
 					},
 				},
 				nil,
@@ -161,6 +208,251 @@ var createStageCmd = &cobra.Command{
 			e = factoryV2.DeployAndSave(sc)
 			if e != nil {
 				return nil, fmt.Errorf("factoryV2.DeployAndSave: %w", e)
+			}
+
+			emission := cli_contract.New(
+				proto.TestNetScheme,
+				cl,
+				contractModel,
+				emissionAcc.privateKey,
+				managerAcc.privateKey,
+				gazPrv,
+				"emission",
+				"emission.ride",
+				stage,
+				false,
+				[]proto.DataEntry{
+					&proto.StringDataEntry{
+						Key:   "%s__managerPublicKey",
+						Value: managerAcc.address.String(),
+					},
+					&proto.StringDataEntry{
+						Key:   "%s%s__config__factoryAddress",
+						Value: factoryV2Acc.address.String(),
+					},
+					&proto.StringDataEntry{
+						Key:   "%s%s__config__votingVerifiedContract",
+						Value: votingVerifiedAcc.address.String(),
+					},
+					&proto.StringDataEntry{
+						Key:   "%s%s__config__votingEmissionCandidateContract",
+						Value: votingEmissionCandidateAcc.address.String(),
+					},
+					&proto.StringDataEntry{
+						Key:   "%s%s__config__userPoolsContract",
+						Value: userPoolsAcc.address.String(),
+					},
+				},
+				[]*proto.InvokeScriptWithProofs{
+					&proto.InvokeScriptWithProofs{
+						ScriptRecipient: emissionAcc.recipient,
+						FunctionCall: proto.FunctionCall{
+							Name: "constructor",
+							Arguments: proto.Arguments{
+								proto.NewStringArgument(factoryV2Acc.address.String()),
+								proto.NewIntegerArgument(19025875190),
+								proto.NewIntegerArgument(3805175038),
+								proto.NewIntegerArgument(1806750),
+								proto.NewIntegerArgument(5256000),
+								proto.NewIntegerArgument(1637580329884),
+								proto.NewStringArgument(wxAssetId),
+							},
+						},
+					},
+				},
+			)
+			err = emission.DeployAndSave(sc)
+			if err != nil {
+				return nil, fmt.Errorf("emission.DeployAndSave: %w", err)
+			}
+
+			assetsStore := cli_contract.New(
+				proto.TestNetScheme,
+				cl,
+				contractModel,
+				assetStoreAcc.privateKey,
+				managerAcc.privateKey,
+				gazPrv,
+				"assets_store",
+				"assets_store.ride",
+				stage,
+				false,
+				[]proto.DataEntry{
+					&proto.StringDataEntry{
+						Key:   "%s__managerPublicKey",
+						Value: managerAcc.address.String(),
+					},
+				},
+				[]*proto.InvokeScriptWithProofs{
+					&proto.InvokeScriptWithProofs{
+						ScriptRecipient: assetStoreAcc.recipient,
+						FunctionCall: proto.FunctionCall{
+							Name: "constructor",
+							Arguments: proto.Arguments{
+								proto.NewStringArgument(userPoolsAcc.address.String()),
+								proto.ListArgument{},
+							},
+						},
+					},
+				},
+			)
+			err = assetsStore.DeployAndSave(sc)
+			if err != nil {
+				return nil, fmt.Errorf("assetsStore.DeployAndSave: %w", err)
+			}
+
+			userPools := cli_contract.New(
+				proto.TestNetScheme,
+				cl,
+				contractModel,
+				userPoolsAcc.privateKey,
+				managerAcc.privateKey,
+				gazPrv,
+				"user_pools",
+				"user_pools.ride",
+				stage,
+				false,
+				[]proto.DataEntry{
+					&proto.StringDataEntry{
+						Key:   "%s__managerPublicKey",
+						Value: managerAcc.address.String(),
+					},
+					&proto.StringDataEntry{
+						Key:   "%s__factoryContract",
+						Value: factoryV2Acc.address.String(),
+					},
+					&proto.StringDataEntry{
+						Key:   "%s__assetsStoreContract",
+						Value: assetStoreAcc.address.String(),
+					},
+					&proto.StringDataEntry{
+						Key:   "%s__emissionContract",
+						Value: emissionAcc.address.String(),
+					},
+					&proto.StringDataEntry{
+						Key:   "%s__priceAssetIds",
+						Value: "WAVES",
+					},
+				},
+				[]*proto.InvokeScriptWithProofs{
+					&proto.InvokeScriptWithProofs{
+						ScriptRecipient: userPoolsAcc.recipient,
+						FunctionCall: proto.FunctionCall{
+							Name: "constructor",
+							Arguments: proto.Arguments{
+								proto.NewStringArgument(factoryV2Acc.address.String()),
+								proto.NewStringArgument(assetStoreAcc.address.String()),
+								proto.NewStringArgument(emissionAcc.address.String()),
+								proto.ListArgument{Items: proto.Arguments{
+									proto.NewStringArgument("7000000"),
+								}},
+								proto.NewIntegerArgument(100000),
+								proto.NewStringArgument(wxAssetId),
+								proto.NewIntegerArgument(1000),
+							},
+						},
+					},
+				},
+			)
+			err = userPools.DeployAndSave(sc)
+			if err != nil {
+				return nil, fmt.Errorf("userPools.DeployAndSave: %w", err)
+			}
+
+			votingVerified := cli_contract.New(
+				proto.TestNetScheme,
+				cl,
+				contractModel,
+				votingVerifiedAcc.privateKey,
+				managerAcc.privateKey,
+				gazPrv,
+				"voting_verified",
+				"voting_verified.ride",
+				stage,
+				false,
+				[]proto.DataEntry{
+					&proto.StringDataEntry{
+						Key:   "s__managerPublicKey",
+						Value: managerAcc.address.String(),
+					},
+				},
+				[]*proto.InvokeScriptWithProofs{
+					&proto.InvokeScriptWithProofs{
+						ScriptRecipient: votingVerifiedAcc.recipient,
+						FunctionCall: proto.FunctionCall{
+							Name: "constructor",
+							Arguments: proto.Arguments{
+								proto.NewStringArgument(boostingAcc.address.String()),
+								proto.NewStringArgument(emissionAcc.address.String()),
+								proto.NewStringArgument(assetStoreAcc.address.String()),
+								proto.NewIntegerArgument(10000000),
+								proto.NewStringArgument(wxAssetId),
+								proto.NewIntegerArgument(10000000),
+								proto.NewIntegerArgument(10),
+								proto.NewIntegerArgument(3),
+								proto.NewIntegerArgument(3000),
+								proto.NewIntegerArgument(10),
+							},
+						},
+					},
+				},
+			)
+			err = votingVerified.DeployAndSave(sc)
+			if err != nil {
+				return nil, fmt.Errorf("votingVerified.DeployAndSave: %w", err)
+			}
+
+			votingEmissionCandidate := cli_contract.New(
+				proto.TestNetScheme,
+				cl,
+				contractModel,
+				votingEmissionCandidateAcc.privateKey,
+				managerAcc.privateKey,
+				gazPrv,
+				"voting_emission_candidate",
+				"voting_emission_candidate.ride",
+				stage,
+				false,
+				[]proto.DataEntry{
+					&proto.StringDataEntry{
+						Key:   "%s__managerPublicKey",
+						Value: managerAcc.address.String(),
+					},
+				},
+				[]*proto.InvokeScriptWithProofs{
+					&proto.InvokeScriptWithProofs{
+						ScriptRecipient: votingEmissionCandidateAcc.recipient,
+						FunctionCall: proto.FunctionCall{
+							Name: "constructor",
+							Arguments: proto.Arguments{
+								proto.NewStringArgument(assetStoreAcc.address.String()),
+								proto.NewStringArgument(boostingAcc.address.String()),
+								proto.NewStringArgument(emissionAcc.address.String()),
+								proto.NewStringArgument(factoryV2Acc.address.String()),
+								proto.NewStringArgument(userPoolsAcc.address.String()),
+								proto.NewStringArgument(votingEmissionAcc.address.String()),
+								proto.NewIntegerArgument(100000000),
+								proto.NewStringArgument(wxAssetId),
+								proto.NewIntegerArgument(10),
+								proto.NewStringArgument(xtnAssetId),
+								proto.NewIntegerArgument(10),
+							},
+						},
+					},
+					&proto.InvokeScriptWithProofs{
+						ScriptRecipient: votingEmissionCandidateAcc.recipient,
+						FunctionCall: proto.FunctionCall{
+							Name: "constructorV2",
+							Arguments: proto.Arguments{
+								proto.NewIntegerArgument(100000000),
+							},
+						},
+					},
+				},
+			)
+			err = votingEmissionCandidate.DeployAndSave(sc)
+			if err != nil {
+				return nil, fmt.Errorf("votingEmissionCandidate.DeployAndSave: %w", err)
 			}
 
 			return nil, nil
@@ -190,4 +482,17 @@ func makeKeyPair(seed string, stage, index uint32) (crypto.SecretKey, crypto.Pub
 		return crypto.SecretKey{}, crypto.PublicKey{}, fmt.Errorf("tools.GetPrivateAndPublicKey: %w", err)
 	}
 	return prv, pub, nil
+}
+
+func genAccData(seed string, stage, index uint32) (Account, error) {
+	prv, pub, err := makeKeyPair(seed, stage, index)
+	if err != nil {
+		return Account{}, err
+	}
+	adr, err := proto.NewAddressFromPublicKey(proto.TestNetScheme, pub)
+	if err != nil {
+		return Account{}, err
+	}
+	rec := proto.NewRecipientFromAddress(adr)
+	return Account{privateKey: prv, publicKey: pub, address: adr, recipient: rec}, nil
 }
