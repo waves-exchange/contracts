@@ -76,13 +76,15 @@ func swapCalculateREADONLY(
   assetOut: String
 ) = {
   let prFee = getInteger(protocolFee()).value()
-  let feeProtocolAmount = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
- 
-  let cleanAmountIn = if (feeProtocolAmount.toInt() == 0) then {
+  let feeProtocolAmountCalc = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
+
+  let feeProtocolAmount = if (feeProtocolAmountCalc.toInt() == 0) then {
     toBigInt(1)
   } else {
-    amountIn.toBigInt() - feeProtocolAmount
+    feeProtocolAmountCalc
   }
+  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount
+
   let lpNonReverse = invoke(
     factoryContract,
     "getLpAssetFromPoolAssetsREADONLY",
@@ -150,8 +152,13 @@ func swap(
   let assetIn = if(pmt.assetId == unit) then "WAVES".toBytes() else pmt.assetId.value()
   let amountIn = pmt.amount.value()
   let prFee = getInteger(protocolFee()).value()
-  let feeProtocolAmount = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
+  let feeProtocolAmountCalc = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
 
+  let feeProtocolAmount = if (feeProtocolAmountCalc.toInt() == 0) then {
+    toBigInt(1)
+  } else {
+    feeProtocolAmountCalc
+  }
   let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount
 
   strict checks = [
