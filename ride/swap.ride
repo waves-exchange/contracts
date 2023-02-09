@@ -201,7 +201,7 @@ func swap(
   ).exactAs[Boolean]
   strict check = isPoolOneTokenOperationsDisabled || poolDisabled
 
-  let poolAdr = addressFromStringValue(pool.valueOrElse(""))
+  let poolAdr = addressFromStringValue(pool)
 
   let res = invoke(
     poolAdr,
