@@ -841,10 +841,16 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
   let aPrecision = Amult.parseBigIntValue()
   let a = A.parseBigIntValue() * aPrecision
   let xp = if (isReverse == false) then { 
-    [amId.getAccBalance().toBigInt() - poolAmountInBalance, prId.getAccBalance().toBigInt()]
+    [amId.getAccBalance().toBigInt() + poolAmountInBalance, prId.getAccBalance().toBigInt()]
   } else {
-    [prId.getAccBalance().toBigInt() - poolAmountInBalance, amId.getAccBalance().toBigInt()]
+    [prId.getAccBalance().toBigInt() + poolAmountInBalance, amId.getAccBalance().toBigInt()]
   }
+  # for real swap new balance
+  # let xp = if (isReverse == false) then { 
+  #   [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
+  # } else {
+  #   [prId.getAccBalance().toBigInt(), amId.getAccBalance().toBigInt()]
+  # }
   let x = xp[0]
   let s = x
   let ann = a * n
@@ -876,12 +882,10 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean) = {
    let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
     let assetOut = this.strf(pa())
-    # let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
     let poolAmountInBalance = getAccBalance(this.strf(aa())).toBigInt() + cleanAmountIn.toBigInt()
     (assetOut, poolAmountInBalance)
   } else {
     let assetOut = this.strf(aa())
-    # let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
     let poolAmountInBalance = getAccBalance(this.strf(pa())).toBigInt() + cleanAmountIn.toBigInt()
     (assetOut, poolAmountInBalance) 
   }
