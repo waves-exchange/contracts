@@ -170,7 +170,7 @@ func swap(
     "getLpAssetFromPoolAssetsREADONLY",
     [assetOut, assetIn.toBase58String()],
     []
-  ).exactAs[String|Unit]
+  ).as[String]
   let (isReverse, pool) = if (lpNonReverese != unit) then {
     let isReverse = false
     let pool = invoke(
