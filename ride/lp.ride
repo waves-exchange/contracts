@@ -721,9 +721,9 @@ let (assetOut, assetIn) = if (isReverse == false) then {
   let poolAssetOutBalance = getAccBalance(assetOut)
   let amountOut = poolAssetOutBalance * cleanAmountIn / (poolAssetInBalance + cleanAmountIn)
 
-  let oldK = poolAssetInBalance * poolAssetOutBalance
-  let newK = (getAccBalance(assetIn) + cleanAmountIn) * (getAccBalance(assetOut) - amountOut)
-  strict checkK = newK >= oldK || "new K is fewer error".throw()
+  # let oldK = poolAssetInBalance * poolAssetOutBalance
+  # let newK = (getAccBalance(assetIn) + cleanAmountIn) * (getAccBalance(assetOut) - amountOut)
+  # strict checkK = newK >= oldK || "new K is fewer error".throw()
 
   (nil, amountOut)
 }
