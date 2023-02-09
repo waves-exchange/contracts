@@ -163,20 +163,20 @@ func swap(
     "getLpAssetFromPoolAssetsREADONLY",
     [assetIn.toBase58String(), assetOut],
     []
-  )
+  ).exactAs[String|Unit]
 
   let lpReverse = invoke(
     factoryContract,
     "getLpAssetFromPoolAssetsREADONLY",
     [assetOut, assetIn.toBase58String()],
     []
-  )
+  ).exactAs[String|Unit]
   let (isReverse, pool) = if (lpNonReverese != unit) then {
     let isReverse = false
     let pool = invoke(
       factoryContract,
       "getPoolAddressFromLpAssetREADONLY",
-      [lpNonReverese],
+      [lpNonReverese.value()],
       []
     ).exactAs[String]
     (isReverse, pool)
@@ -203,15 +203,15 @@ func swap(
 
   let poolAdr = addressFromStringValue(pool)
 
-  let res = invoke(
+  let totalGetRaw = invoke(
     poolAdr,
     "calculateAmountOutForSwapAndSendTokens",
     [cleanAmountIn.toInt(), isReverse, amountOutMin, addressTo],
     [AttachedPayment(assetIn, cleanAmountIn.toInt())]
-  ).exactAs[Boolean]
+  ).exactAs[Int]
 
   ([ScriptTransfer(feeContract, feeProtocolAmount.toInt(), assetIn)],
-  res)
+  totalGetRaw)
   
 }
 

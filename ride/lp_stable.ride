@@ -1048,7 +1048,12 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   strict checkD = newD >= D || "new D is fewer error".throw()
   
   # [ScriptTransfer(addressTo.addressFromStringValue(), dy.toInt(), assetOut.fromBase58String())]
-  [ScriptTransfer(addressTo.addressFromStringValue(), totalGetRaw, if (assetIn == "WAVES") then unit else assetOut.fromBase58String())]
+  (
+    [
+      ScriptTransfer(addressTo.addressFromStringValue(), totalGetRaw, assetOut.parseAssetId())
+    ],
+    totalGetRaw
+  )
 }
 
 @Callable(i)
