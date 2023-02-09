@@ -4,7 +4,7 @@
   "feeAssetId": null,
   "fee": 500000,
   "senderPublicKey": "Cy9gAyuMTTRsridXAqBDcQhf79uAupt5JhtohtQVNaxz",
-  "description": "WX Waves/XTN pool liquidity provider token",
+  "description": "WX WAVES/XTN pool liquidity provider token",
   "assetId": "7KZbJrVopwJhkdwbe1eFDBbex4dkY63MxjTNjqXtrzj1",
   "name": "WAVESXTNLP"
 }
