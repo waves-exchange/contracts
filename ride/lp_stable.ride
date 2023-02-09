@@ -997,7 +997,7 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean) =
 @Callable(i)
 func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String) = {
   let swapContact = invoke(
-    addressFromStringValue(fc()),
+    fca,
     "getSwapContractREADONLY", 
     [], 
     []
