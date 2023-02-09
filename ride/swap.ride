@@ -163,7 +163,7 @@ func swap(
     "getLpAssetFromPoolAssetsREADONLY",
     [assetIn.toBase58String(), assetOut],
     []
-  ).exactAs[String|Unit]
+  ).as[String]
 
   let lpReverse = invoke(
     factoryContract,
