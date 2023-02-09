@@ -821,9 +821,15 @@ let (assetOut, assetIn) = if (isReverse == false) then {
 
 @Callable(i)
 func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String) = {
+  let swapContact = invoke(
+    factoryContract,
+    "getSwapContractREADONLY", 
+    [], 
+    []
+  ).exactAs[String]
   strict checks = [
     i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
-    i.caller == addressFromStringValue(getStringOrFail(this, swapContract())) || "Permission denied".throwErr()
+    i.caller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
   ]
   let pmt = i.payments[0].value()
   # let assetIn = pmt.assetId.value().toBase58String()

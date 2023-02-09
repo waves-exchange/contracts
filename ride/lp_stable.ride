@@ -125,8 +125,6 @@ let dLpRefreshDelay = this.getInteger(keyDLpRefreshDelay).valueOrElse(dLpRefresh
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
-# keySwapContract
-func swapContract() = {"%s__swapContract"}
 # from factory
 # keyFactoryConfig
 func fcfg() = {"%s__factoryConfig"}
@@ -933,7 +931,7 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
   } else {
     [prId.getAccBalance().toBigInt() + poolAmountInBalance, amId.getAccBalance().toBigInt()]
   }
-  
+
   let x = xp[0]
   let s = x
   let ann = a * n
@@ -998,12 +996,17 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean) =
 
 @Callable(i)
 func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String) = {
+  let swapContact = invoke(
+    addressFromStringValue(fc()),
+    "getSwapContractREADONLY", 
+    [], 
+    []
+  ).exactAs[String]
   strict checks = [
     i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
-    i.caller == addressFromStringValue(this.strf(swapContract())) || "Permission denied".throwErr()
+    i.caller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
   ]
   let pmt = i.payments[0].value()
-  # let assetIn = pmt.assetId.value().toBase58String()
   let assetIn = if(pmt.assetId == unit) then "WAVES".toBytes().toBase58String() else pmt.assetId.value().toBase58String()
 
   let (assetOut, poolAmountInBalance) = if (isReverse == false) then {

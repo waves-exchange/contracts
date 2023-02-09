@@ -199,7 +199,7 @@ func swap(
     [pool], 
     []
   ).exactAs[Int]
-  strict check = poolStatus == 1 || poolDisabled
+  strict check = poolStatus == 1 || poolDisabled # ACTIVE, pool without restrictions
 
   let poolAdr = addressFromStringValue(pool)
 

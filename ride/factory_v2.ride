@@ -55,6 +55,9 @@ func keyAllowedLpScriptHash() = "%s__allowedLpScriptHash"
 func keyAllowedLpStableScriptHash() = "%s__allowedLpStableScriptHash"
 func keyAllowedLpStableAddonScriptHash() = "%s__allowedLpStableAddonScriptHash"
 
+# keySwapContract
+func swapContract() 
+      = {"%s__swapContract"}
 func keyFactoryConfig()
       = "%s__factoryConfig"
 func keyLpTokensList()
@@ -310,6 +313,14 @@ func mustAdmin(i: Invocation) = {
 func intOrDefaultOrFallback(key: String, keyDefault: String, valueFallback: Int) = {
   this.getInteger(key).valueOrElse(this.getInteger(keyDefault).valueOrElse(valueFallback))
 }
+
+@Callable(i)
+func getSwapContractREADONLY() = {
+  ([],
+    getStringOrFail(swapContract())
+  )
+} 
+
 
 @Callable(i)
 func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
