@@ -904,7 +904,7 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean) =
     [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt()]
   }
   let newD = newXp.getD()
-  strict checkD = newD >= D || "new D is fewer error".throw()
+  strict checkD = newD >= D || makeString(["new D is fewer error", D.toString(), newD.toString()], "__").throw()
   
   (nil, totalGetRaw)
 }
