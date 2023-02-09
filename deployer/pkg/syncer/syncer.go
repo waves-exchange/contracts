@@ -26,6 +26,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -37,7 +38,8 @@ type Syncer struct {
 	logger                            zerolog.Logger
 	network                           config.Network
 	networkByte                       proto.Scheme
-	client                            *client.Client
+	rawClient                         *client.Client
+	clientMutex                       *sync.Mutex
 	contractsFolder                   string
 	contractModel                     contract.Model
 	branch                            string
@@ -106,7 +108,8 @@ func NewSyncer(
 		logger:                            logger,
 		network:                           network,
 		networkByte:                       networkByte,
-		client:                            cl,
+		rawClient:                         cl,
+		clientMutex:                       &sync.Mutex{},
 		contractsFolder:                   path.Join("..", "ride"),
 		contractModel:                     contractModel,
 		branch:                            branch,
@@ -236,10 +239,10 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	return nil
 }
 
-func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee uint64) error {
-	bal, _, err := s.client.Addresses.Balance(ctx, to)
+func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee uint64, fileName string) error {
+	bal, _, err := s.client().Addresses.Balance(ctx, to)
 	if err != nil {
-		return fmt.Errorf("s.client.Addresses.Balance: %w", err)
+		return fmt.Errorf("s.client().Addresses.Balance: %w", err)
 	}
 
 	const twoWaves = 2 * 100000000
@@ -261,6 +264,7 @@ func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee ui
 			s.feePrv,
 			false,
 			false,
+			fileName,
 		)
 		if e != nil {
 			return fmt.Errorf("s.sendTx: %w", e)
@@ -353,9 +357,9 @@ func (s *Syncer) doHash(
 		}
 
 		if actualHash != newHashStr {
-			e := s.sendTx(ctx, dataTx, prvSigner, false, true)
+			e := s.sendTx(ctx, dataTx, prvSigner, false, true, fileName)
 			if e != nil {
-				return false, fmt.Errorf("sendTx: %w", e)
+				return false, fmt.Errorf("sendTx %s: %w", fileName, e)
 			}
 
 			s.logger.Info().
@@ -421,7 +425,7 @@ func (s *Syncer) doHash(
 				return false, fmt.Errorf("s.printDiff: %w", e)
 			}
 
-			e = s.ensureHasFee(ctx, addr, fee)
+			e = s.ensureHasFee(ctx, addr, fee, fileName)
 			if e != nil {
 				return false, fmt.Errorf("s.ensureHasFee: %w", e)
 			}
@@ -458,7 +462,7 @@ func (s *Syncer) doHash(
 }
 
 func (s *Syncer) waitNBlocks(ctx context.Context, blocks uint64) error {
-	currentHeight, _, err := s.client.Blocks.Height(ctx)
+	currentHeight, _, err := s.client().Blocks.Height(ctx)
 	if err != nil {
 		return fmt.Errorf("client.Blocks.Height: %w", err)
 	}
@@ -472,7 +476,7 @@ func (s *Syncer) waitNBlocks(ctx context.Context, blocks uint64) error {
 		default:
 			time.Sleep(5 * time.Second)
 
-			height, _, e := s.client.Blocks.Height(ctx)
+			height, _, e := s.client().Blocks.Height(ctx)
 			if e != nil {
 				return fmt.Errorf("client.Blocks.Height: %w", e)
 			}
@@ -489,13 +493,13 @@ func (s *Syncer) waitNBlocks(ctx context.Context, blocks uint64) error {
 }
 
 func (s *Syncer) getStringValue(ctx context.Context, address proto.WavesAddress, key string) (string, error) {
-	data, _, err := s.client.Addresses.AddressesDataKey(ctx, address, key)
+	data, _, err := s.client().Addresses.AddressesDataKey(ctx, address, key)
 	if err != nil {
 		if strings.Contains(err.Error(), "no data for this key") {
 			return "", nil
 		}
 
-		return "", fmt.Errorf("s.client.Addresses.AddressesDataKey: %w", err)
+		return "", fmt.Errorf("s.client().Addresses.AddressesDataKey: %w", err)
 	}
 
 	const invalidType = "data is not StringDataEntry: address: %s key: %s"
@@ -605,7 +609,7 @@ func (s *Syncer) doFile(
 				continue
 			}
 
-			er2 = s.ensureHasFee(ctx, addr, setScriptFee)
+			er2 = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
 			if er2 != nil {
 				return false, fmt.Errorf("s.ensureHasFee: %w", er2)
 			}
@@ -623,6 +627,7 @@ func (s *Syncer) doFile(
 				prvSigner,
 				true,
 				true,
+				fileName,
 			)
 			if er2 != nil {
 				return false, fmt.Errorf(
@@ -690,9 +695,10 @@ func (s *Syncer) doFile(
 					crypto.SecretKey{},
 					true,
 					true,
+					fileName,
 				)
 				if er != nil {
-					return false, fmt.Errorf("s.client.Transactions.Broadcast: %w", er)
+					return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
 				}
 
 				isChanged = true
@@ -703,7 +709,7 @@ func (s *Syncer) doFile(
 					return false, fmt.Errorf("s.sendTx: %w", er)
 				}
 
-				er = s.ensureHasFee(ctx, addr, setScriptFee)
+				er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
 				if er != nil {
 					return false, fmt.Errorf("s.ensureHasFee: %w", er)
 				}
@@ -789,7 +795,7 @@ func (s *Syncer) waitMined(ctx context.Context, txHash crypto.Digest) error {
 	try := 0
 	for {
 		try += 1
-		_, _, err := s.client.Transactions.Info(ctx, txHash)
+		_, _, err := s.client().Transactions.Info(ctx, txHash)
 		if err == nil {
 			return nil
 		}
@@ -806,6 +812,7 @@ func (s *Syncer) sendTx(
 	prv crypto.SecretKey,
 	async bool,
 	ensureFee bool,
+	fileName string,
 ) error {
 	_, err := tx.Validate(s.networkByte)
 	if err != nil {
@@ -839,15 +846,15 @@ func (s *Syncer) sendTx(
 				return fmt.Errorf("sender.ToWavesAddress: %w", e)
 			}
 
-			e = s.ensureHasFee(ctx, senderAddr, tx.GetFee())
+			e = s.ensureHasFee(ctx, senderAddr, tx.GetFee(), fileName)
 			if e != nil {
 				return fmt.Errorf("s.ensureHasFee: %w", e)
 			}
 		}
 
-		_, e := s.client.Transactions.Broadcast(ctx, tx)
+		_, e := s.client().Transactions.Broadcast(ctx, tx)
 		if e != nil {
-			return fmt.Errorf("s.client.Transactions.Broadcast: %w", e)
+			return fmt.Errorf("s.client().Transactions.Broadcast %s: %w", fileName, e)
 		}
 
 		e = s.waitMined(ctx, txHash)
@@ -877,9 +884,9 @@ func (s *Syncer) compileRaw(ctx context.Context, body []byte, compact bool) (str
 		return resp, nil
 
 	} else {
-		sc, _, err := s.client.Utils.ScriptCompile(ctx, string(body))
+		sc, _, err := s.client().Utils.ScriptCompile(ctx, string(body))
 		if err != nil {
-			return "", fmt.Errorf("s.client.Utils.ScriptCompile: %w", err)
+			return "", fmt.Errorf("s.client().Utils.ScriptCompile: %w", err)
 		}
 		return sc.Script, nil
 	}
@@ -917,7 +924,7 @@ func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, err
 
 	req, err := http.NewRequestWithContext(
 		ctx, http.MethodGet,
-		s.client.GetOptions().BaseUrl+"/addresses/scriptInfo/"+addr.String(),
+		s.client().GetOptions().BaseUrl+"/addresses/scriptInfo/"+addr.String(),
 		nil,
 	)
 	if err != nil {
@@ -952,7 +959,7 @@ func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, err
 }
 
 func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, error) {
-	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.client.GetOptions().BaseUrl)
+	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.client().GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
 	if err != nil {
@@ -970,17 +977,17 @@ func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, er
 	}
 
 	var compileResult CompileResult
-	_, err = s.client.Do(c, req, &compileResult)
+	_, err = s.client().Do(c, req, &compileResult)
 
 	if err != nil {
-		return "", fmt.Errorf("s.client.Do: %w", err)
+		return "", fmt.Errorf("s.client().Do: %w", err)
 	}
 
 	return compileResult.Script, nil
 }
 
 func (s *Syncer) apiDecompileScript(c context.Context, body io.Reader) (string, error) {
-	u := fmt.Sprintf("%s/utils/script/decompile", s.client.GetOptions().BaseUrl)
+	u := fmt.Sprintf("%s/utils/script/decompile", s.client().GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
 	if err != nil {
@@ -994,13 +1001,26 @@ func (s *Syncer) apiDecompileScript(c context.Context, body io.Reader) (string, 
 	}
 
 	var decompileResult DecompileResult
-	_, err = s.client.Do(c, req, &decompileResult)
+	_, err = s.client().Do(c, req, &decompileResult)
 
 	if err != nil {
-		return "", fmt.Errorf("s.client.Do: %w", err)
+		return "", fmt.Errorf("s.client().Do: %w", err)
 	}
 
 	return decompileResult.Script, nil
+}
+
+func (s *Syncer) client() *client.Client {
+	u := s.rawClient.GetOptions().BaseUrl
+	if strings.Contains(u, "wx.network") ||
+		strings.Contains(u, "waves.exchange") {
+		return s.rawClient
+	}
+
+	s.clientMutex.Lock()
+	defer s.clientMutex.Unlock()
+	time.Sleep(2 * time.Second)
+	return s.rawClient
 }
 
 func calcSetScriptFee(script []byte) uint64 {

@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 5 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -725,7 +725,7 @@ func onVerificationLoss(assetId: String) = {
     unit
     
   }
-  strict actions = FOLD<4>(priceAssets, unit, cb)
+  strict actions = FOLD<1>(priceAssets, unit, cb)
 
   (nil, unit)
 }

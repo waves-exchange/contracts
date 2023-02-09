@@ -1,0 +1,14 @@
+{
+    "type": 12,
+    "version": 2,
+    "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+    "fee": 500000,
+    "proofs": [],
+    "data": [
+        {
+            "key": "%s__priceAssets",
+            "type": "string",
+            "value": "WAVES"
+        }
+    ]
+}
