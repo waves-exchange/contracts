@@ -943,7 +943,7 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
     [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt()]
   }
   let D = xp.getD()
-  let y = getY(isReverse, D, poolAmountInBalance.toBigInt())
+  let y = getY(isReverse, D, toBigInt(0))
 
   # let x = poolAmountInBalance.toBigInt() + cleanAmountIn.toBigInt()
 
