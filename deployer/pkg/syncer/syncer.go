@@ -8,16 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/rs/zerolog"
-	"github.com/waves-exchange/contracts/deployer/pkg/branch"
-	"github.com/waves-exchange/contracts/deployer/pkg/config"
-	"github.com/waves-exchange/contracts/deployer/pkg/contract"
-	"github.com/wavesplatform/gowaves/pkg/client"
-	"github.com/wavesplatform/gowaves/pkg/crypto"
-	"github.com/wavesplatform/gowaves/pkg/proto"
-	"golang.org/x/crypto/blake2b"
-	"golang.org/x/sync/errgroup"
 	"io"
 	"math"
 	"net/http"
@@ -28,6 +18,17 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/rs/zerolog"
+	"github.com/waves-exchange/contracts/deployer/pkg/branch"
+	"github.com/waves-exchange/contracts/deployer/pkg/config"
+	"github.com/waves-exchange/contracts/deployer/pkg/contract"
+	"github.com/wavesplatform/gowaves/pkg/client"
+	"github.com/wavesplatform/gowaves/pkg/crypto"
+	"github.com/wavesplatform/gowaves/pkg/proto"
+	"golang.org/x/crypto/blake2b"
+	"golang.org/x/sync/errgroup"
 )
 
 type compileCacheMap = map[string]func() (
@@ -835,26 +836,26 @@ func (s *Syncer) sendTx(
 	}
 
 	fn := func() error {
+		sender, e := tx.GetSender(s.networkByte)
+		if e != nil {
+			return fmt.Errorf("tx.GetSender: %w", e)
+		}
+
+		senderAddr, e := sender.ToWavesAddress(s.networkByte)
+		if e != nil {
+			return fmt.Errorf("sender.ToWavesAddress: %w", e)
+		}
+
 		if ensureFee {
-			sender, e := tx.GetSender(s.networkByte)
-			if e != nil {
-				return fmt.Errorf("tx.GetSender: %w", e)
-			}
-
-			senderAddr, e := sender.ToWavesAddress(s.networkByte)
-			if e != nil {
-				return fmt.Errorf("sender.ToWavesAddress: %w", e)
-			}
-
 			e = s.ensureHasFee(ctx, senderAddr, tx.GetFee(), fileName)
 			if e != nil {
 				return fmt.Errorf("s.ensureHasFee: %w", e)
 			}
 		}
 
-		_, e := s.client().Transactions.Broadcast(ctx, tx)
+		_, e = s.client().Transactions.Broadcast(ctx, tx)
 		if e != nil {
-			return fmt.Errorf("s.client().Transactions.Broadcast %s: %w", fileName, e)
+			return fmt.Errorf("s.client().Transactions.Broadcast (file: %s, sender: %s): %w", fileName, senderAddr.String(), e)
 		}
 
 		e = s.waitMined(ctx, txHash)
