@@ -618,7 +618,7 @@ func (s *Syncer) doFile(
 			er2 = s.sendTx(
 				ctx,
 				proto.NewUnsignedSetScriptWithProofs(
-					1,
+					2,
 					proto.TestNetScheme,
 					pub,
 					scriptBytes,
@@ -679,7 +679,7 @@ func (s *Syncer) doFile(
 			}
 
 			unsignedSetScriptTx := proto.NewUnsignedSetScriptWithProofs(
-				1,
+				2,
 				proto.MainNetScheme,
 				pub,
 				scriptBytes,
