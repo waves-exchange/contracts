@@ -161,14 +161,14 @@ func swap(
   let lpNonReverese = invoke(
     factoryContract,
     "getLpAssetFromPoolAssetsREADONLY",
-    [assetIn, assetOut],
+    [assetIn.toBase58String(), assetOut],
     []
   )
 
   let lpReverse = invoke(
     factoryContract,
     "getLpAssetFromPoolAssetsREADONLY",
-    [assetOut, assetIn],
+    [assetOut, assetIn.toBase58String()],
     []
   )
   let (isReverse, pool) = if (lpNonReverese != unit) then {

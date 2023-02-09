@@ -933,12 +933,7 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
   } else {
     [prId.getAccBalance().toBigInt() + poolAmountInBalance, amId.getAccBalance().toBigInt()]
   }
-  # for real swap new balance
-  # let xp = if (isReverse == false) then { 
-  #   [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
-  # } else {
-  #   [prId.getAccBalance().toBigInt(), amId.getAccBalance().toBigInt()]
-  # }
+  
   let x = xp[0]
   let s = x
   let ann = a * n
