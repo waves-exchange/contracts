@@ -93,6 +93,7 @@ export const mochaHooks = {
       lockAssetId: this.wxAssetId,
       maxLockDuration: this.maxLockDuration,
       mathContract: this.accounts.gwx.addr,
+      votingEmissionAddress: this.accounts.votingEmission.addr,
     });
 
     const { height } = await api.blocks.fetchHeight();
@@ -108,6 +109,7 @@ export const mochaHooks = {
       emissionStartBlock: this.emissionStartBlock,
       emissionDuration: this.emissionDuration,
       wxAssetId: this.wxAssetId,
+      boostingV2StartHeight: height,
     });
     await waitForHeight(height + 1);
 

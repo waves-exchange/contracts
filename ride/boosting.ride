@@ -84,6 +84,7 @@ func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
 func keyEmissionRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
 func keyEmissionRatePerBlockMaxCurrent() = "%s%s__ratePerBlockMax__current"
 func keyEmissionStartBlock() = "%s%s__emission__startBlock"
+func keyBoostingV2StartHeight() = "%s%s__boostingV2__startBlock"
 func keyEmissionDurationInBlocks() = "%s%s__emission__duration"
 func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 
@@ -202,8 +203,8 @@ func keyStatsLocksCount()                                     = "%s%s__stats__lo
 func keyStatsUsersCount()                                     = "%s%s__stats__activeUsersCount"
 
 # boost integral
-func keyUserBoostEmissionLastINTEGRAL(userNum: String)        = makeString(["%s%d__userBoostEmissionLastInt", userNum], SEP)
-func keyUserLpBoostEmissionLastINTEGRAL(userNum: String, lpAssetId: String) = makeString(["%s%d__userBoostEmissionLastInt", userNum, lpAssetId], SEP)
+func keyUserBoostEmissionLastINTEGRAL(userNum: String)        = makeString(["%s%d__userBoostEmissionLastIntV2", userNum], SEP)
+func keyUserLpBoostEmissionLastINTEGRAL(userNum: String, lpAssetId: String) = makeString(["%s%d__userBoostEmissionLastIntV2", userNum, lpAssetId], SEP)
 func keyUserMaxBoostINTEGRAL(userNum: String)                 = makeString(["%s%d__maxBoostInt", userNum], SEP)
 func keyTotalMaxBoostINTEGRAL()                               = "%s%s__maxBoostInt__total"
 func keyUserBoostAvalaibleToClaimTotal(userNum: String)       = makeString(["%s%d__userBoostAvaliableToClaimTotal", userNum], SEP)
@@ -220,10 +221,12 @@ let emissionContract  = factoryCfg.getEmissionAddressOrFail()
 let stakingContract   = factoryCfg.getStakingAddressOrFail()
 let gwxRewardContract = factoryCfg.getGwxRewardAddressOrFail()
 
-func getTotalCachedGwx(correct: Boolean) = {
-  let keyVotingEmissionContract = ["%s", "votingEmissionContract"].makeString(SEP)
-  let votingEmissionContract = factoryContract.getStringValue(keyVotingEmissionContract).addressFromStringValue()
+let keyVotingEmissionContract = ["%s", "votingEmissionContract"].makeString(SEP)
+let votingEmissionContract = factoryContract.getStringValue(keyVotingEmissionContract).addressFromStringValue()
 
+let boostCoeff = emissionContract.invoke("getBoostCoeffREADONLY", [], []).exactAs[Int]
+
+func getTotalCachedGwx(correct: Boolean) = {
   let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(SEP)
   let currentEpochUi = votingEmissionContract.getIntegerValue(keyCurrentEpochUi)
 
@@ -336,25 +339,21 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   let userRecordArray    = userRecordOrEmpty.split(SEP)
   let userNumStr         = userRecordArray[IdxLockUserNum]
 
-  let gwxRewardEmissionStartHeight = gwxRewardContract.getInteger(keyGwxRewardEmissionStartHeight()).valueOrElse(0)
-
   let EMPTYSTR = "empty" # is used from REST
-  let (poolWeight0, poolWeight1) = if (lpAssetIdStr != EMPTYSTR) then {
+  let poolWeight = if (lpAssetIdStr != EMPTYSTR) then {
     let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
-    let pw1 = factoryContract.getIntegerValue(poolAddressStr.keyFactoryPoolWeight())
-    let pw0 = factoryContract.getInteger(keyFactoryPoolWeightHistory(poolAddressStr, 0)).valueOrElse(pw1)
-    (pw0, pw1)
+    factoryContract.getIntegerValue(poolAddressStr.keyFactoryPoolWeight())
   } else {
-    if (readOnly) then (0, 0) else throw("not readonly mode: unsupported lp asset " + lpAssetIdStr)
+    if (readOnly) then 0 else throw("not readonly mode: unsupported lp asset " + lpAssetIdStr)
   }
 
 # BOOST INTEGRAL RECALC
   let wxEmissionPerBlock  = emissionContract.iof(keyEmissionRatePerBlockCurrent())
-  let emissionStart = emissionContract.iof(keyEmissionStartBlock())
+  let boostingV2StartHeight = emissionContract.iof(keyBoostingV2StartHeight())
   let emissionEnd = emissionContract.iof(keyEmissionEndBlock())
   let h = if (height > emissionEnd) then emissionEnd else height
 
-  let dh = max([h - emissionStart, 0])
+  let dh = max([h - boostingV2StartHeight, 0])
 
   let userLpBoostEmissionLastIntegralKEY = keyUserLpBoostEmissionLastINTEGRAL(userNumStr, lpAssetIdStr)
   let userBoostEmissionLastIntegralKEY = keyUserBoostEmissionLastINTEGRAL(userNumStr)
@@ -362,16 +361,13 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   let userBoostEmissionLastIntegral = this.getInteger(userLpBoostEmissionLastIntegralKEY)
       .valueOrElse(this.ioz(userBoostEmissionLastIntegralKEY))
 
-  let boostEmissionIntegral = wxEmissionPerBlock * dh * 2 / 3
+  let boostEmissionIntegral = wxEmissionPerBlock * dh * (boostCoeff - 1) / boostCoeff
   let userBoostEmissionIntegral = boostEmissionIntegral - userBoostEmissionLastIntegral
-  let udh = fraction(userBoostEmissionIntegral, 3, 2 * wxEmissionPerBlock)
+  let udh = fraction(userBoostEmissionIntegral, boostCoeff, (boostCoeff - 1) * wxEmissionPerBlock)
 
-# find last user height
+  # find last user height
   let uLastH = h - udh
-  let udh0 = max([gwxRewardEmissionStartHeight - uLastH, 0])
-  let udh1 = h - uLastH - udh0
 
-  if (uLastH < 0 || udh1 < 0 || abs((udh0 + udh1) - udh) >= 1) then throw("invalid udh calc: udh=" + udh.toString() + " uLastH=" + uLastH.toString() + " udh0=" + udh0.toString() + " udh1=" + udh1.toString()) else
   if (userBoostEmissionIntegral < 0) then throw("wrong calculations") else
 
   let userMaxBoostIntegralKEY = keyUserMaxBoostINTEGRAL(userNumStr)
@@ -380,22 +376,15 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   let userMaxBoostInt = this.ioz(userMaxBoostIntegralKEY)
   let totalMaxBoostInt = this.ioz(totalMaxBoostIntegralKEY)
 
-  let totalCachedGwxCorrected = getTotalCachedGwx(true)
-  let userCurrGwx = calcCurrentGwxAmount(userAddressStr)
+  let (userVote, totalVotes) = votingEmissionContract.invoke("getVoteInfoREADONLY", [lpAssetIdStr, userAddressStr], []).exactAs[(Int, Int)]
 
   let userBoostAvalaibleToClaimTotalKEY = keyUserBoostAvalaibleToClaimTotal(userNumStr)
   let userBoostAvaliableToClaimTotal = this.ioz(userBoostAvalaibleToClaimTotalKEY) # in case of increase boost
   #let userBoostAvaliableToClaimTotalNew = userBoostAvaliableToClaimTotal + fraction(userBoostEmissionIntegral, userMaxBoostInt, totalMaxBoostInt)
 
-  let userBoostEmissionIntegral0 = if (udh == 0) then 0 else fraction(userBoostEmissionIntegral, udh0, udh)
-  let userBoostEmissionIntegral1 = if (udh == 0) then 0 else fraction(userBoostEmissionIntegral, udh1, udh)
+  let poolUserBoostEmissionIntegral = fraction(userBoostEmissionIntegral, poolWeight, POOLWEIGHTMULT)
 
-  let poolUserBoostEmissionIntegral0 = fraction(userBoostEmissionIntegral0, poolWeight0, POOLWEIGHTMULT)
-  let poolUserBoostEmissionIntegral1 = fraction(userBoostEmissionIntegral1, poolWeight1, POOLWEIGHTMULT)
-
-  let userBoostAvaliableToClaimTotalNew0 = if (totalCachedGwxCorrected == 0) then 0 else fraction(poolUserBoostEmissionIntegral0, userCurrGwx, totalCachedGwxCorrected)
-  let userBoostAvaliableToClaimTotalNew1 = if (totalCachedGwxCorrected == 0) then 0 else fraction(poolUserBoostEmissionIntegral1, userCurrGwx, totalCachedGwxCorrected)
-  let userBoostAvaliableToClaimTotalNew = userBoostAvaliableToClaimTotalNew0 + userBoostAvaliableToClaimTotalNew1
+  let userBoostAvaliableToClaimTotalNew = if (totalVotes == 0) then 0 else fraction(poolUserBoostEmissionIntegral, userVote, totalVotes)
 
   let userBoostClaimedKEY = keyUserBoostClaimed(userNumStr)
   let userBoostClaimed = this.ioz(userBoostClaimedKEY)
@@ -411,15 +400,12 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
     userBoostEmissionIntegral.toString(),
     userBoostClaimed.toString(),
     userBoostAvailable.toString(),
-    poolWeight0.toString(),
-    poolWeight1.toString(),
+    poolWeight.toString(),
     h.toString(),
     udh.toString(),
     uLastH.toString(),
-    udh0.toString(),
-    udh1.toString(),
-    userCurrGwx.toString(),
-    totalCachedGwxCorrected.toString()
+    userVote.toString(),
+    totalVotes.toString()
   ].makeString(":")
 
   (userBoostAvaliableToClaimTotalNew, dataState, debug)

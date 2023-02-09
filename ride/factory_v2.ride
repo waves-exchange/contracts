@@ -733,6 +733,15 @@ func getPoolStatusREADONLY(poolAddress: String) = {
   ([], cfg[idxPoolStatus].parseIntValue())
 }
 
+@Callable(i)
+func getPoolAssetsByLpAssetId(lpAssetIdStr: String) = {
+  let poolAssets = keyMappingLpAssetToPoolAssets(lpAssetIdStr).getStringOrFail().split(SEP)
+  let amountAssetInternal = poolAssets[1]
+  let priceAssetInternal = poolAssets[2]
+  let cfg = keyPoolConfig(amountAssetInternal, priceAssetInternal).getStringOrFail().split(SEP)
+  ([], cfg)
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {

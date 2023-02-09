@@ -10,6 +10,7 @@ export const emission = {
     emissionStartBlock,
     emissionDuration,
     wxAssetId,
+    boostingV2StartHeight,
   }) => {
     const dataTx = data({
       data: [
@@ -47,6 +48,11 @@ export const emission = {
           key: '%s__config',
           type: 'string',
           value: `%s__${wxAssetId}`,
+        },
+        {
+          key: '%s%s__boostingV2__startBlock',
+          type: 'integer',
+          value: boostingV2StartHeight,
         },
       ],
       additionalFee: 4e5,
