@@ -729,7 +729,11 @@ func (s *Syncer) doFile(
 					".github",
 					"artifacts",
 					"txs",
-					fmt.Sprintf("%d_%s.json", iTx, strings.ReplaceAll(cont.Tag, " ", "_")),
+					fmt.Sprintf(
+						"%d_%s.json",
+						iTx,
+						strings.ReplaceAll(strings.ReplaceAll(cont.Tag, " ", "_"), "/", "_"),
+					),
 				))
 			if er != nil {
 				return false, fmt.Errorf("os.Create: %w", er)
