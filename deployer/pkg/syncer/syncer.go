@@ -434,24 +434,24 @@ func (s *Syncer) doHash(
 				Msg("we are about to set script as approved. " +
 					"sign and broadcast data-tx to continue")
 
-			for {
-				value, er3 := s.getStringValue(ctx, addr, key)
-				if er3 != nil {
-					return false, fmt.Errorf("s.getStringValue: %w", er3)
-				}
-				if value == newHashStr {
-					const blocks = 2
-					log().Msgf("data-tx done, wait %d blocks", blocks)
-					er4 := s.waitNBlocks(ctx, blocks)
-					if er4 != nil {
-						return false, fmt.Errorf("s.waitNBlocks: %w", er4)
-					}
-					break
-				}
-
-				time.Sleep(5 * time.Second)
-				log().RawJSON("tx", tx).Msg("sign data-tx. polling factory state...")
-			}
+			//for {
+			//	value, er3 := s.getStringValue(ctx, addr, key)
+			//	if er3 != nil {
+			//		return false, fmt.Errorf("s.getStringValue: %w", er3)
+			//	}
+			//	if value == newHashStr {
+			//		const blocks = 2
+			//		log().Msgf("data-tx done, wait %d blocks", blocks)
+			//		er4 := s.waitNBlocks(ctx, blocks)
+			//		if er4 != nil {
+			//			return false, fmt.Errorf("s.waitNBlocks: %w", er4)
+			//		}
+			//		break
+			//	}
+			//
+			//	time.Sleep(5 * time.Second)
+			//	log().RawJSON("tx", tx).Msg("sign data-tx. polling factory state...")
+			//}
 		} else {
 			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, " +
 				"no need to update allowed script hash")
@@ -550,6 +550,7 @@ func (s *Syncer) doFile(
 		return false, fmt.Errorf("io.ReadAll: %w", err)
 	}
 
+	iTx := 0
 	for _, cont := range contracts {
 		if fileName != cont.File {
 			continue
@@ -617,7 +618,7 @@ func (s *Syncer) doFile(
 			er2 = s.sendTx(
 				ctx,
 				proto.NewUnsignedSetScriptWithProofs(
-					1,
+					2,
 					proto.TestNetScheme,
 					pub,
 					scriptBytes,
@@ -678,49 +679,71 @@ func (s *Syncer) doFile(
 			}
 
 			unsignedSetScriptTx := proto.NewUnsignedSetScriptWithProofs(
-				1,
+				2,
 				proto.MainNetScheme,
 				pub,
 				scriptBytes,
 				setScriptFee,
 				timestamp(),
 			)
-			doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
-			doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
-			doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
-			if doLpRide || doLpStableRide || doLpStableAddonRide {
-				er := s.sendTx(
-					ctx,
-					unsignedSetScriptTx,
-					crypto.SecretKey{},
-					true,
-					true,
-					fileName,
-				)
-				if er != nil {
-					return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
-				}
-
-				isChanged = true
-				log().Str(action, deployed).Msg(changed)
-			} else {
-				setScriptTx, er := json.Marshal(unsignedSetScriptTx)
-				if er != nil {
-					return false, fmt.Errorf("s.sendTx: %w", er)
-				}
-
-				er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
-				if er != nil {
-					return false, fmt.Errorf("s.ensureHasFee: %w", er)
-				}
-
-				isChanged = true
-				log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
-				er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
-				if er != nil {
-					return false, fmt.Errorf("s.printDiff: %w", er)
-				}
+			//doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
+			//doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
+			//doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
+			//if doLpRide || doLpStableRide || doLpStableAddonRide {
+			//	er := s.sendTx(
+			//		ctx,
+			//		unsignedSetScriptTx,
+			//		crypto.SecretKey{},
+			//		true,
+			//		true,
+			//		fileName,
+			//	)
+			//	if er != nil {
+			//		return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
+			//	}
+			//
+			//	isChanged = true
+			//	log().Str(action, deployed).Msg(changed)
+			//} else {
+			setScriptTx, er := json.Marshal(unsignedSetScriptTx)
+			if er != nil {
+				return false, fmt.Errorf("s.sendTx: %w", er)
 			}
+
+			er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
+			if er != nil {
+				return false, fmt.Errorf("s.ensureHasFee: %w", er)
+			}
+
+			isChanged = true
+			log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
+			er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
+			if er != nil {
+				return false, fmt.Errorf("s.printDiff: %w", er)
+			}
+
+			iTx += 1
+			file, er := os.Create(
+				path.Join(
+					"..",
+					".github",
+					"artifacts",
+					"txs",
+					fmt.Sprintf(
+						"%d_%s.json",
+						iTx,
+						strings.ReplaceAll(strings.ReplaceAll(cont.Tag, " ", "_"), "/", "_"),
+					),
+				))
+			if er != nil {
+				return false, fmt.Errorf("os.Create: %w", er)
+			}
+
+			_, er = file.Write(setScriptTx)
+			if er != nil {
+				return false, fmt.Errorf("file.Write: %w", er)
+			}
+			//}
 
 			continue
 		}
@@ -835,26 +858,26 @@ func (s *Syncer) sendTx(
 	}
 
 	fn := func() error {
+		sender, e := tx.GetSender(s.networkByte)
+		if e != nil {
+			return fmt.Errorf("tx.GetSender: %w", e)
+		}
+
+		senderAddr, e := sender.ToWavesAddress(s.networkByte)
+		if e != nil {
+			return fmt.Errorf("sender.ToWavesAddress: %w", e)
+		}
+
 		if ensureFee {
-			sender, e := tx.GetSender(s.networkByte)
-			if e != nil {
-				return fmt.Errorf("tx.GetSender: %w", e)
-			}
-
-			senderAddr, e := sender.ToWavesAddress(s.networkByte)
-			if e != nil {
-				return fmt.Errorf("sender.ToWavesAddress: %w", e)
-			}
-
 			e = s.ensureHasFee(ctx, senderAddr, tx.GetFee(), fileName)
 			if e != nil {
 				return fmt.Errorf("s.ensureHasFee: %w", e)
 			}
 		}
 
-		_, e := s.client().Transactions.Broadcast(ctx, tx)
+		_, e = s.client().Transactions.Broadcast(ctx, tx)
 		if e != nil {
-			return fmt.Errorf("s.client().Transactions.Broadcast %s: %w", fileName, e)
+			return fmt.Errorf("s.client().Transactions.Broadcast (file: %s, sender: %s): %w", fileName, senderAddr.String(), e)
 		}
 
 		e = s.waitMined(ctx, txHash)
