@@ -1,0 +1,10 @@
+{
+  "type": 17,
+  "version": 1,
+  "feeAssetId": null,
+  "fee": 500000,
+  "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+  "description": "WX VIRES/XTN pool liquidity provider token",
+  "assetId": "Tgk2yCxkzurHneBnUJb2xmf3oQKvDbs72fSi8rCNKBX",
+  "name": "VIRESXTNLP"
+}

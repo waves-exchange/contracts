@@ -8,17 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"math"
-	"net/http"
-	"os"
-	"os/exec"
-	"path"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/waves-exchange/contracts/deployer/pkg/branch"
@@ -29,6 +18,16 @@ import (
 	"github.com/wavesplatform/gowaves/pkg/proto"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/sync/errgroup"
+	"io"
+	"math"
+	"net/http"
+	"os"
+	"os/exec"
+	"path"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
 )
 
 type compileCacheMap = map[string]func() (
@@ -435,24 +434,24 @@ func (s *Syncer) doHash(
 				Msg("we are about to set script as approved. " +
 					"sign and broadcast data-tx to continue")
 
-			for {
-				value, er3 := s.getStringValue(ctx, addr, key)
-				if er3 != nil {
-					return false, fmt.Errorf("s.getStringValue: %w", er3)
-				}
-				if value == newHashStr {
-					const blocks = 2
-					log().Msgf("data-tx done, wait %d blocks", blocks)
-					er4 := s.waitNBlocks(ctx, blocks)
-					if er4 != nil {
-						return false, fmt.Errorf("s.waitNBlocks: %w", er4)
-					}
-					break
-				}
-
-				time.Sleep(5 * time.Second)
-				log().RawJSON("tx", tx).Msg("sign data-tx. polling factory state...")
-			}
+			//for {
+			//	value, er3 := s.getStringValue(ctx, addr, key)
+			//	if er3 != nil {
+			//		return false, fmt.Errorf("s.getStringValue: %w", er3)
+			//	}
+			//	if value == newHashStr {
+			//		const blocks = 2
+			//		log().Msgf("data-tx done, wait %d blocks", blocks)
+			//		er4 := s.waitNBlocks(ctx, blocks)
+			//		if er4 != nil {
+			//			return false, fmt.Errorf("s.waitNBlocks: %w", er4)
+			//		}
+			//		break
+			//	}
+			//
+			//	time.Sleep(5 * time.Second)
+			//	log().RawJSON("tx", tx).Msg("sign data-tx. polling factory state...")
+			//}
 		} else {
 			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, " +
 				"no need to update allowed script hash")
@@ -551,6 +550,7 @@ func (s *Syncer) doFile(
 		return false, fmt.Errorf("io.ReadAll: %w", err)
 	}
 
+	iTx := 0
 	for _, cont := range contracts {
 		if fileName != cont.File {
 			continue
@@ -686,42 +686,64 @@ func (s *Syncer) doFile(
 				setScriptFee,
 				timestamp(),
 			)
-			doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
-			doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
-			doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
-			if doLpRide || doLpStableRide || doLpStableAddonRide {
-				er := s.sendTx(
-					ctx,
-					unsignedSetScriptTx,
-					crypto.SecretKey{},
-					true,
-					true,
-					fileName,
-				)
-				if er != nil {
-					return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
-				}
-
-				isChanged = true
-				log().Str(action, deployed).Msg(changed)
-			} else {
-				setScriptTx, er := json.Marshal(unsignedSetScriptTx)
-				if er != nil {
-					return false, fmt.Errorf("s.sendTx: %w", er)
-				}
-
-				er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
-				if er != nil {
-					return false, fmt.Errorf("s.ensureHasFee: %w", er)
-				}
-
-				isChanged = true
-				log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
-				er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
-				if er != nil {
-					return false, fmt.Errorf("s.printDiff: %w", er)
-				}
+			//doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
+			//doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
+			//doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
+			//if doLpRide || doLpStableRide || doLpStableAddonRide {
+			//	er := s.sendTx(
+			//		ctx,
+			//		unsignedSetScriptTx,
+			//		crypto.SecretKey{},
+			//		true,
+			//		true,
+			//		fileName,
+			//	)
+			//	if er != nil {
+			//		return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
+			//	}
+			//
+			//	isChanged = true
+			//	log().Str(action, deployed).Msg(changed)
+			//} else {
+			setScriptTx, er := json.Marshal(unsignedSetScriptTx)
+			if er != nil {
+				return false, fmt.Errorf("s.sendTx: %w", er)
 			}
+
+			er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
+			if er != nil {
+				return false, fmt.Errorf("s.ensureHasFee: %w", er)
+			}
+
+			isChanged = true
+			log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
+			er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
+			if er != nil {
+				return false, fmt.Errorf("s.printDiff: %w", er)
+			}
+
+			iTx += 1
+			file, er := os.Create(
+				path.Join(
+					"..",
+					".github",
+					"artifacts",
+					"txs",
+					fmt.Sprintf(
+						"%s_%s.json",
+						stringIndex(uint(iTx)),
+						strings.ReplaceAll(strings.ReplaceAll(cont.Tag, " ", "_"), "/", "_"),
+					),
+				))
+			if er != nil {
+				return false, fmt.Errorf("os.Create: %w", er)
+			}
+
+			_, er = file.Write(setScriptTx)
+			if er != nil {
+				return false, fmt.Errorf("file.Write: %w", er)
+			}
+			//}
 
 			continue
 		}
@@ -1065,4 +1087,11 @@ func getPrivateAndPublicKey(seed []byte) (privateKey crypto.SecretKey, publicKey
 		return crypto.SecretKey{}, crypto.PublicKey{}, err
 	}
 	return crypto.GenerateKeyPair(accSeed[:])
+}
+
+func stringIndex(i uint) string {
+	if i < 10 {
+		return "0" + strconv.Itoa(int(i))
+	}
+	return strconv.Itoa(int(i))
 }
