@@ -22,6 +22,11 @@
       "type": "integer",
       "value": 1000,
       "key": "%s__protocolFee"
+    },
+    {
+      "type": "integer",
+      "value": 1000,
+      "key": "%s__poolFee"
     }
   ]
 }
