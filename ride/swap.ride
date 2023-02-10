@@ -27,6 +27,8 @@ func feeProtocolContractAddress() = ["%s", "feeProtocolContractAddress"].makeStr
 let feeContract = addressFromStringValue(getStringOrFail(feeProtocolContractAddress()))
 
 func protocolFee() = ["%s", "protocolFee"].makeString(SEP)
+func poolFee() = ["%s", "poolFee"].makeString(SEP)
+
 
 
 func asInt(val: Any) = {
@@ -77,13 +79,20 @@ func swapCalculateREADONLY(
 ) = {
   let prFee = getInteger(protocolFee()).value()
   let feeProtocolAmountCalc = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
+  let plFee = getInteger(poolFee()).value()
+  let feePoolAmountCalc = fraction(amountIn.toBigInt(), plFee.toBigInt(), feeScale)
 
   let feeProtocolAmount = if (feeProtocolAmountCalc.toInt() == 0) then {
     toBigInt(1)
   } else {
     feeProtocolAmountCalc
   }
-  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount
+  let feePoolAmount = if (feePoolAmountCalc.toInt() == 0) then {
+    toBigInt(1)
+  } else {
+    feePoolAmountCalc
+  }
+  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount - feePoolAmountCalc
 
   let lpNonReverse = invoke(
     factoryContract,
@@ -153,13 +162,20 @@ func swap(
   let amountIn = pmt.amount.value()
   let prFee = getInteger(protocolFee()).value()
   let feeProtocolAmountCalc = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
+  let plFee = getInteger(poolFee()).value()
+  let feePoolAmountCalc = fraction(amountIn.toBigInt(), plFee.toBigInt(), feeScale)
 
   let feeProtocolAmount = if (feeProtocolAmountCalc.toInt() == 0) then {
     toBigInt(1)
   } else {
     feeProtocolAmountCalc
   }
-  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount
+  let feePoolAmount = if (feePoolAmountCalc.toInt() == 0) then {
+    toBigInt(1)
+  } else {
+    feePoolAmountCalc
+  }
+  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount - feePoolAmountCalc
 
   strict checks = [
     i.payments.size() == 1 || "exactly 1 payment are expected".throw()
@@ -217,7 +233,8 @@ func swap(
     [AttachedPayment(assetIn, cleanAmountIn.toInt())]
   ).exactAs[Int]
 
-  ([ScriptTransfer(feeContract, feeProtocolAmount.toInt(), assetIn)],
+  ([ScriptTransfer(feeContract, feeProtocolAmount.toInt(), assetIn),
+  ScriptTransfer(poolAdr, feePoolAmount.toInt(), assetIn)],
   totalGetRaw)
   
 }
