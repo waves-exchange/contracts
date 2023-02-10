@@ -15,9 +15,13 @@ const node = 'https://nodes.wx.network';
 
   const txs = "txs"
   const dir = await fs.readdir(txs);
+  let i = 0;
   for (const filename of dir) {
+    i += 1;
+    const progress = `(${i}/${dir.length})`;
+
     if (!filename.endsWith('.json')) {
-      console.log('skip file:', filename);
+      console.log(`${progress} skip file: ${filename}`);
       continue;
     }
 
@@ -29,12 +33,12 @@ const node = 'https://nodes.wx.network';
     tx.sender = wt.libs.crypto.address(tx.senderPublicKey, chainId);
     const txBytes = wt.makeTxBytes(tx);
 
-    console.log('you are about to sign tx:', filename);
+    console.log(`${progress} you are about to sign tx: ${filename}`);
     const proof = await waves.signRequest(userNumber, { dataBuffer: txBytes });
     tx.proofs = tx.proofs || [];
     tx.proofs.push(proof);
 
     await wt.broadcast(tx, node);
-    console.log('tx done:', filename);
+    console.log(`${progress} tx done: ${filename}`);
   }
 })();
