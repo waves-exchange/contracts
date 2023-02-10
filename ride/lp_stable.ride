@@ -983,13 +983,13 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean) =
 
   let totalGetRaw = [0, dy.toInt()].max()
 
-  let newXp = if (isReverse == false) then {
-    [amId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt(), prId.getAccBalance().toBigInt() - dy]
-  } else { 
-    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt()]
-  }
-  let newD = newXp.getD()
-  strict checkD = newD >= D || makeString(["new D is fewer error", D.toString(), newD.toString()], "__").throw()
+  # let newXp = if (isReverse == false) then {
+  #   [amId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt(), prId.getAccBalance().toBigInt() - dy]
+  # } else { 
+  #   [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt()]
+  # }
+  # let newD = newXp.getD()
+  # strict checkD = newD >= D || makeString(["new D is fewer error", D.toString(), newD.toString()], "__").throw()
   
   (nil, totalGetRaw)
 }
