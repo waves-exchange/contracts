@@ -162,7 +162,7 @@ func swap(
   addressTo: String 
 ) = {
   let pmt = i.payments[0].value()
-  let assetIn = if(pmt.assetId == unit) then "WAVES".toBytes() else pmt.assetId.value()
+  let assetIn = if(pmt.assetId == unit) then "WAVES" else pmt.assetId.value().toBase58String()
   let amountIn = pmt.amount.value()
   let prFee = getInteger(protocolFee()).value()
   let feeProtocolAmountCalc = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
@@ -188,14 +188,14 @@ func swap(
   let lpNonReverse = invoke(
     factoryContract,
     "getLpAssetFromPoolAssetsREADONLY",
-    [assetIn.toBase58String(), assetOut],
+    [assetIn, assetOut],
     []
   ).as[String]
 
   let lpReverse = invoke(
     factoryContract,
     "getLpAssetFromPoolAssetsREADONLY",
-    [assetOut, assetIn.toBase58String()],
+    [assetOut, assetIn],
     []
   ).as[String]
   let (isReverse, pool) = if (lpNonReverse != unit) then {
@@ -230,15 +230,17 @@ func swap(
 
   let poolAdr = addressFromStringValue(pool)
 
+  let assetInAttachedPayment = if (assetIn == "WAVES") then unit else assetIn.fromBase58String()
+
   let totalGetRaw = invoke(
     poolAdr,
     "calculateAmountOutForSwapAndSendTokens",
     [cleanAmountIn.toInt(), isReverse, amountOutMin, addressTo],
-    [AttachedPayment(assetIn, cleanAmountIn.toInt())]
+    [AttachedPayment(assetInAttachedPayment, cleanAmountIn.toInt())]
   ).exactAs[Int]
 
-  ([ScriptTransfer(feeCollectorAddress, feeProtocolAmount.toInt(), assetIn),
-  ScriptTransfer(poolAdr, feePoolAmount.toInt(), assetIn)],
+  ([ScriptTransfer(feeCollectorAddress, feeProtocolAmount.toInt(), assetInAttachedPayment),
+  ScriptTransfer(poolAdr, feePoolAmount.toInt(), assetInAttachedPayment)],
   totalGetRaw)
   
 }
