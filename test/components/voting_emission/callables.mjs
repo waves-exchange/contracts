@@ -136,6 +136,27 @@ export const votingEmission = {
     );
     return broadcastAndWait(invokeTx);
   },
+
+  setEpochLength: async ({
+    dApp, caller, value,
+  }) => {
+    const invokeTx = invokeScript(
+      {
+        dApp,
+        call: {
+          function: 'setEpochLength',
+          args: [
+            { type: 'integer', value },
+          ],
+        },
+        payment: [],
+        additionalFee: 4e5,
+        chainId,
+      },
+      caller,
+    );
+    return broadcastAndWait(invokeTx);
+  },
 };
 
 export const boostingMock = {
