@@ -434,24 +434,24 @@ func (s *Syncer) doHash(
 				Msg("we are about to set script as approved. " +
 					"sign and broadcast data-tx to continue")
 
-			for {
-				value, er3 := s.getStringValue(ctx, addr, key)
-				if er3 != nil {
-					return false, fmt.Errorf("s.getStringValue: %w", er3)
-				}
-				if value == newHashStr {
-					const blocks = 2
-					log().Msgf("data-tx done, wait %d blocks", blocks)
-					er4 := s.waitNBlocks(ctx, blocks)
-					if er4 != nil {
-						return false, fmt.Errorf("s.waitNBlocks: %w", er4)
-					}
-					break
-				}
-
-				time.Sleep(5 * time.Second)
-				log().RawJSON("tx", tx).Msg("sign data-tx. polling factory state...")
-			}
+			//for {
+			//	value, er3 := s.getStringValue(ctx, addr, key)
+			//	if er3 != nil {
+			//		return false, fmt.Errorf("s.getStringValue: %w", er3)
+			//	}
+			//	if value == newHashStr {
+			//		const blocks = 2
+			//		log().Msgf("data-tx done, wait %d blocks", blocks)
+			//		er4 := s.waitNBlocks(ctx, blocks)
+			//		if er4 != nil {
+			//			return false, fmt.Errorf("s.waitNBlocks: %w", er4)
+			//		}
+			//		break
+			//	}
+			//
+			//	time.Sleep(5 * time.Second)
+			//	log().RawJSON("tx", tx).Msg("sign data-tx. polling factory state...")
+			//}
 		} else {
 			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, " +
 				"no need to update allowed script hash")
@@ -618,7 +618,7 @@ func (s *Syncer) doFile(
 			er2 = s.sendTx(
 				ctx,
 				proto.NewUnsignedSetScriptWithProofs(
-					1,
+					2,
 					proto.TestNetScheme,
 					pub,
 					scriptBytes,
@@ -679,7 +679,7 @@ func (s *Syncer) doFile(
 			}
 
 			unsignedSetScriptTx := proto.NewUnsignedSetScriptWithProofs(
-				1,
+				2,
 				proto.MainNetScheme,
 				pub,
 				scriptBytes,
@@ -726,7 +726,6 @@ func (s *Syncer) doFile(
 			file, er := os.Create(
 				path.Join(
 					"..",
-					".github",
 					"artifacts",
 					"txs",
 					fmt.Sprintf(
