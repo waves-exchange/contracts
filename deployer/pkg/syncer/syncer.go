@@ -730,8 +730,8 @@ func (s *Syncer) doFile(
 					"artifacts",
 					"txs",
 					fmt.Sprintf(
-						"%d_%s.json",
-						iTx,
+						"%s_%s.json",
+						stringIndex(uint(iTx)),
 						strings.ReplaceAll(strings.ReplaceAll(cont.Tag, " ", "_"), "/", "_"),
 					),
 				))
@@ -1087,4 +1087,11 @@ func getPrivateAndPublicKey(seed []byte) (privateKey crypto.SecretKey, publicKey
 		return crypto.SecretKey{}, crypto.PublicKey{}, err
 	}
 	return crypto.GenerateKeyPair(accSeed[:])
+}
+
+func stringIndex(i uint) string {
+	if i < 10 {
+		return "0" + strconv.Itoa(int(i))
+	}
+	return strconv.Itoa(int(i))
 }
