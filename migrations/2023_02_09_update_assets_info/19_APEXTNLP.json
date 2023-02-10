@@ -1,0 +1,10 @@
+{
+  "type": 17,
+  "version": 1,
+  "feeAssetId": null,
+  "fee": 500000,
+  "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+  "description": "WX APE/XTN pool liquidity provider token",
+  "assetId": "2zEzRSerZ6Rsa5MqYDDPWhrPSRYr1ng4YvJy4hwiXjhn",
+  "name": "APEXTNLP"
+}
