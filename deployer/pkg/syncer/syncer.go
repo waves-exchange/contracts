@@ -726,6 +726,7 @@ func (s *Syncer) doFile(
 			file, er := os.Create(
 				path.Join(
 					"..",
+					".github",
 					"artifacts",
 					"txs",
 					fmt.Sprintf(
