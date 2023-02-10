@@ -89,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: txs
-          path: .github/artifacts/txs
+          path: artifacts/txs
       - name: Compare contracts and print diff. Deploy changed lp.ride
         run: |
           cd deployer
