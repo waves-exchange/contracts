@@ -1,31 +1,26 @@
 {
-  "dApp": "3N6LHjfGb6Fgcy7YsVcNxGyPTj49XbQAijq",
+  "dApp": "3P68zNiufsu1viZpu1aY3cdahRRKcvV5N93",
   "version": 2,
   "type": 12,
   "chainId": 87,
   "fee": 500000,
   "proofs": [],
   "timestamp": 0,
-  "senderPublicKey": "2VkbtS8CodmbZqAounEpDSf4dAfLoCWfEEGHZK7qtbeD",
+  "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
   "data": [
     {
       "type": "string",
-      "value": "3N4nTJ5sSp5X5ChS2bBBmwNMn1eeRzT1FoP",
-      "key": "%s__feeProtocolContractAddress"
-    },
-    {
-      "type": "string",
-      "value": "3MsMP2pb2p8MDd6Rxb7XEXqqwEhE8ATfyai",
+      "value": "3PCuHsTU58WKhCqotbcSwABvdPzqqVAbbTv",
       "key": "%s__factoryContract"
     },
     {
       "type": "integer",
-      "value": 1000,
+      "value": 1000000,
       "key": "%s__protocolFee"
     },
     {
       "type": "integer",
-      "value": 1000,
+      "value": 2000000,
       "key": "%s__poolFee"
     }
   ]

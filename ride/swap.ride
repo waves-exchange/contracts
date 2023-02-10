@@ -9,7 +9,7 @@
 
 let SEP = "__"
 
-let feeScale = 100_000.toBigInt()
+let feeScale = 100_000_000.toBigInt()
 
 func getStringOrFail(key: String) = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}
 
@@ -23,11 +23,15 @@ func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 func fc() = {"%s__factoryContract"}
 let factoryContract = addressFromStringValue(getStringOrFail(fc()))
 
-func feeProtocolContractAddress() = ["%s", "feeProtocolContractAddress"].makeString(SEP)
-let feeContract = addressFromStringValue(getStringOrFail(feeProtocolContractAddress()))
-
 func protocolFee() = ["%s", "protocolFee"].makeString(SEP)
 func poolFee() = ["%s", "poolFee"].makeString(SEP)
+
+func getStringOrFailFromAddress(address: Address, key: String) = address.getString(key).valueOrErrorMessage(makeString(["mandatory ", address.toString(), ".", key, " is not defined"], ""))
+
+let keyFeeCollectorAddress = "%s__feeCollectorAddress"
+let feeCollectorAddress = factoryContract.getStringOrFailFromAddress(keyFeeCollectorAddress).addressFromStringValue()
+
+
 
 
 
@@ -233,7 +237,7 @@ func swap(
     [AttachedPayment(assetIn, cleanAmountIn.toInt())]
   ).exactAs[Int]
 
-  ([ScriptTransfer(feeContract, feeProtocolAmount.toInt(), assetIn),
+  ([ScriptTransfer(feeCollectorAddress, feeProtocolAmount.toInt(), assetIn),
   ScriptTransfer(poolAdr, feePoolAmount.toInt(), assetIn)],
   totalGetRaw)
   
