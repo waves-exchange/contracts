@@ -217,7 +217,8 @@ func swap(
     ).exactAs[String]
     (isReverse, pool)
   } else {
-    poolNotExist
+    # poolNotExist
+    ("pool is not exist: assetIn=" + assetIn + " assetOut=" + assetOut + " lpReverse=" + if (lpReverse == unit) then "unit" else lpReverse.value() + " lpNonReverse=" + if (lpNonReverse == unit) then "unit" else lpNonReverse.value() + "").throw()
   }
   
   let poolStatus = invoke(
