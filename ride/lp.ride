@@ -799,7 +799,7 @@ func mustManager(i: Invocation) = {
 
 @Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int,  isReverse: Boolean) = {
-let (assetOut, assetIn) = if (isReverse == false) then {
+  let (assetOut, assetIn) = if (isReverse == false) then {
     let assetOut = getStringOrFail(this, pa())
     let assetIn = getStringOrFail(this, aa())
     (assetOut, assetIn)
