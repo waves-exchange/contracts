@@ -1,0 +1,16 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let separator = "__"
+
+func keyVote(lpAssetId: String, userAddress: String) = ["vote", lpAssetId, userAddress].makeString(separator)
+func keyVotingResult(lpAssetId: String) = ["votingResult", lpAssetId].makeString(separator)
+
+@Callable(i)
+func getVoteInfoREADONLY(lpAssetId: String, userAddress: String) = {
+  let userVote = this.getInteger(lpAssetId.keyVote(userAddress)).valueOrElse(0)
+  let poolResult = this.getInteger(lpAssetId.keyVotingResult()).valueOrElse(0)
+
+  ([], (userVote, poolResult))
+}

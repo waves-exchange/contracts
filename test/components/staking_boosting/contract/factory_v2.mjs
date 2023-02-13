@@ -15,6 +15,7 @@ export const factory = {
     marketingAddress = '',
     gwxAddress = '',
     birdsAddress = '',
+    votingEmissionAddress = '',
   }) => {
     const dataTx = data({
       data: [
@@ -36,6 +37,7 @@ export const factory = {
             birdsAddress,
           ].join(separator),
         },
+        { key: ['%s', 'votingEmissionContract'].join(separator), type: 'string', value: votingEmissionAddress },
       ],
       additionalFee: 4e5,
       chainId,

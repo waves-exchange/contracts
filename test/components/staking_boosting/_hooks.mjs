@@ -24,6 +24,7 @@ const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
 const gwxPath = format({ dir: ridePath, base: 'gwx_reward.ride' });
 const emissionPath = format({ dir: ridePath, base: 'emission.ride' });
 const referralMockPath = format({ dir: mockPath, base: 'referral.mock.ride' });
+const votingEmissionMockPath = format({ dir: mockPath, base: 'voting_emission.mock.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -78,6 +79,7 @@ export const mochaHooks = {
     await setScriptFromFile(gwxPath, this.accounts.gwx.seed);
     await setScriptFromFile(emissionPath, this.accounts.emission.seed);
     await setScriptFromFile(referralMockPath, this.accounts.referral.seed);
+    await setScriptFromFile(votingEmissionMockPath, this.accounts.votingEmission.seed);
 
     await staking.init({
       caller: this.accounts.staking.seed,
@@ -119,6 +121,7 @@ export const mochaHooks = {
       boostingAddress: this.accounts.boosting.addr,
       emissionAddress: this.accounts.emission.addr,
       gwxAddress: this.accounts.gwx.addr,
+      votingEmissionAddress: this.accounts.votingEmission.addr,
     });
 
     await gwx.init({
