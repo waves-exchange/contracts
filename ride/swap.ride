@@ -75,6 +75,53 @@ func getAccBalance(assetId: String) = {
   if(assetId == "WAVES") then wavesBalance(this).available else assetBalance(this, fromBase58String(assetId))
 }
 
+func getPoolAddressAndCheckPoolStatus(
+  assetIn: String,
+  assetOut: String
+  ) = {
+  let lpNonReverse = invoke(
+    factoryContract,
+    "getLpAssetFromPoolAssetsREADONLY",
+    [assetIn, assetOut],
+    []
+  ).as[String]
+  let lpReverse = invoke(
+    factoryContract,
+    "getLpAssetFromPoolAssetsREADONLY",
+    [assetOut, assetIn],
+    []
+  ).as[String]
+  let (isReverse, pool) = if (lpNonReverse != unit) then {
+    let pool = invoke(
+      factoryContract,
+      "getPoolAddressFromLpAssetREADONLY",
+      [lpNonReverse.value()],
+      []
+    ).exactAs[String]
+    (false, pool)
+  } else if (lpReverse != unit) then {
+    let pool = invoke(
+      factoryContract,
+      "getPoolAddressFromLpAssetREADONLY",
+      [lpReverse.value()],
+      []
+    ).exactAs[String]
+    (true, pool)
+  } else {
+    poolNotExist
+  }
+  
+  let poolStatus = invoke(
+    factoryContract,
+    "getPoolStatusREADONLY", 
+    [pool], 
+    []
+  ).exactAs[Int]
+  strict check = poolStatus == 1 || poolDisabled # ACTIVE, pool without restrictions
+  let poolAdr = addressFromStringValue(pool.valueOrElse(""))
+  (poolAdr, isReverse)
+}
+
 @Callable(i)
 func swapCalculateREADONLY(
   amountIn: Int,
@@ -98,50 +145,7 @@ func swapCalculateREADONLY(
   }
   let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount - feePoolAmount
 
-  let lpNonReverse = invoke(
-    factoryContract,
-    "getLpAssetFromPoolAssetsREADONLY",
-    [assetIn, assetOut],
-    []
-  )
-
-  let lpReverse = invoke(
-    factoryContract,
-    "getLpAssetFromPoolAssetsREADONLY",
-    [assetOut, assetIn],
-    []
-  )
-
-  let (isReverse, pool) = if (lpNonReverse != unit) then {
-    let isReverse = false
-    let pool = invoke(
-      factoryContract,
-      "getPoolAddressFromLpAssetREADONLY",
-      [lpNonReverse],
-      []
-    ).exactAs[String]
-    (isReverse, pool)
-  } else if (lpReverse != unit) then {
-    let isReverse = true
-    let pool = invoke(
-      factoryContract,
-      "getPoolAddressFromLpAssetREADONLY",
-      [lpReverse],
-      []
-    ).exactAs[String]
-    (isReverse, pool)
-  } else {
-    poolNotExist
-  }
-
-  let poolStatus = invoke(
-    factoryContract,
-    "getPoolStatusREADONLY", 
-    [pool], 
-    []
-  ).exactAs[Int]
-  strict check = poolStatus == 1 || poolDisabled
-  let poolAdr = addressFromStringValue(pool.valueOrElse(""))
+  let (poolAdr, isReverse) = getPoolAddressAndCheckPoolStatus(assetIn, assetOut)
 
   let res = invoke(
     poolAdr,
@@ -149,7 +153,6 @@ func swapCalculateREADONLY(
     [cleanAmountIn.toInt(), isReverse],
     []
   ).exactAs[Int]
-
 
   (nil,
   res)
@@ -185,51 +188,7 @@ func swap(
     i.payments.size() == 1 || "exactly 1 payment are expected".throw()
   ]
 
-  let lpNonReverse = invoke(
-    factoryContract,
-    "getLpAssetFromPoolAssetsREADONLY",
-    [assetIn, assetOut],
-    []
-  ).as[String]
-
-  let lpReverse = invoke(
-    factoryContract,
-    "getLpAssetFromPoolAssetsREADONLY",
-    [assetOut, assetIn],
-    []
-  ).as[String]
-  let (isReverse, pool) = if (lpNonReverse != unit) then {
-    let isReverse = false
-    let pool = invoke(
-      factoryContract,
-      "getPoolAddressFromLpAssetREADONLY",
-      [lpNonReverse.value()],
-      []
-    ).exactAs[String]
-    (isReverse, pool)
-  } else if (lpReverse != unit) then {
-    let isReverse = true
-    let pool = invoke(
-      factoryContract,
-      "getPoolAddressFromLpAssetREADONLY",
-      [lpReverse.value()],
-      []
-    ).exactAs[String]
-    (isReverse, pool)
-  } else {
-    # poolNotExist
-    ("pool is not exist: assetIn=" + assetIn + " assetOut=" + assetOut ).throw()
-  }
-  
-  let poolStatus = invoke(
-    factoryContract,
-    "getPoolStatusREADONLY", 
-    [pool], 
-    []
-  ).exactAs[Int]
-  strict check = poolStatus == 1 || poolDisabled # ACTIVE, pool without restrictions
-
-  let poolAdr = addressFromStringValue(pool)
+  let (poolAdr, isReverse) = getPoolAddressAndCheckPoolStatus(assetIn, assetOut)
 
   let assetInAttachedPayment = if (assetIn == "WAVES") then unit else assetIn.fromBase58String()
 
@@ -243,7 +202,6 @@ func swap(
   ([ScriptTransfer(feeCollectorAddress, feeProtocolAmount.toInt(), assetInAttachedPayment),
   ScriptTransfer(poolAdr, feePoolAmount.toInt(), assetInAttachedPayment)],
   totalGetRaw)
-  
 }
 
 
