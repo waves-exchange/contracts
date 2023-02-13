@@ -1007,7 +1007,7 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
     i.caller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
   ]
   let pmt = i.payments[0].value()
-  let assetIn = if(pmt.assetId == unit) then "WAVES".toBytes().toBase58String() else pmt.assetId.value().toBase58String()
+  let assetIn = pmt.assetId.assetIdToString()
 
   let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
     let assetOut = this.strf(pa())
