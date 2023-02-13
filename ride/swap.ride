@@ -96,7 +96,7 @@ func swapCalculateREADONLY(
   } else {
     feePoolAmountCalc
   }
-  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount - feePoolAmountCalc
+  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount - feePoolAmount
 
   let lpNonReverse = invoke(
     factoryContract,
