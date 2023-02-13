@@ -15,12 +15,12 @@
     },
     {
       "type": "integer",
-      "value": 1000000,
+      "value": 100000,
       "key": "%s__protocolFee"
     },
     {
       "type": "integer",
-      "value": 2000000,
+      "value": 200000,
       "key": "%s__poolFee"
     }
   ]
