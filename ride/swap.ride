@@ -179,7 +179,7 @@ func swap(
   } else {
     feePoolAmountCalc
   }
-  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount - feePoolAmountCalc
+  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount - feePoolAmount
 
   strict checks = [
     i.payments.size() == 1 || "exactly 1 payment are expected".throw()
@@ -218,7 +218,7 @@ func swap(
     (isReverse, pool)
   } else {
     # poolNotExist
-    ("pool is not exist: assetIn=" + assetIn + " assetOut=" + assetOut + " lpReverse=" + if (lpReverse == unit) then "unit" else lpReverse.value() + " lpNonReverse=" + if (lpNonReverse == unit) then "unit" else lpNonReverse.value() + "").throw()
+    ("pool is not exist: assetIn=" + assetIn + " assetOut=" + assetOut ).throw()
   }
   
   let poolStatus = invoke(
