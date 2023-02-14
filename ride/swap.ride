@@ -119,6 +119,7 @@ func getPoolAddressAndCheckPoolStatus(
   ).exactAs[Int]
   strict check = poolStatus == 1 || poolDisabled # ACTIVE, pool without restrictions
   let poolAdr = addressFromStringValue(pool.valueOrElse(""))
+
   (poolAdr, isReverse)
 }
 

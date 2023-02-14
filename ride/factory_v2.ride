@@ -326,7 +326,7 @@ func getSwapContractREADONLY() = {
 func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
   # we have 2 pools: WAVES/BTC (status 1) and BTC/WAVES (status 4). This hack to resolve swap path unless we make Pool Deletion
   if (asset1 == "8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS" && asset2 == "WAVES") then {
-    ([], "4jqR1LxjVmDhZDzFG4mN99RVaB6aNKuhKSJxXX9DCFSg")
+    unit
   } else {
     let assetNum1 = this.getInteger(keyMappingsBaseAsset2internalId(asset1)).value()
     let assetNum2 = this.getInteger(keyMappingsBaseAsset2internalId(asset2)).value()
