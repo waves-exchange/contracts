@@ -55,6 +55,9 @@ func keyAllowedLpScriptHash() = "%s__allowedLpScriptHash"
 func keyAllowedLpStableScriptHash() = "%s__allowedLpStableScriptHash"
 func keyAllowedLpStableAddonScriptHash() = "%s__allowedLpStableAddonScriptHash"
 
+# keySwapContract
+func swapContract() 
+      = {"%s__swapContract"}
 func keyFactoryConfig()
       = "%s__factoryConfig"
 func keyLpTokensList()
@@ -175,6 +178,8 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
 }
 
 let permissionDeniedError = "Permission denied".throw()
+
+let testError = "Test error here".throw()
 
 func mustThis(i: Invocation) = {
   i.caller == this || permissionDeniedError
@@ -307,6 +312,37 @@ func mustAdmin(i: Invocation) = {
 
 func intOrDefaultOrFallback(key: String, keyDefault: String, valueFallback: Int) = {
   this.getInteger(key).valueOrElse(this.getInteger(keyDefault).valueOrElse(valueFallback))
+}
+
+@Callable(i)
+func getSwapContractREADONLY() = {
+  ([],
+    getStringOrFail(swapContract())
+  )
+} 
+
+
+@Callable(i)
+func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
+  let assetNum1 = this.getInteger(keyMappingsBaseAsset2internalId(asset1)).value()
+  let assetNum2 = this.getInteger(keyMappingsBaseAsset2internalId(asset2)).value()
+  let ee = this.getString(keyMappingPoolAssetsToLpasset(assetNum1.toString(), assetNum2.toString()))
+  let res = if (ee == unit) then {
+    unit
+  } else {
+     ee.value().drop(4) # delete %s__ , 4 is number of letters
+  }
+
+  ([],
+    res
+  )
+}
+
+@Callable(i)
+func getPoolAddressFromLpAssetREADONLY(lp: String) = {
+  ([],
+    this.getString(keyMappingPoolLPAssetToPoolContractAddress(lp)).valueOrElse("")
+  )
 }
 
 @Callable(i)
