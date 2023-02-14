@@ -91,7 +91,7 @@ func getPoolAddressAndCheckPoolStatus(
     [assetOut, assetIn],
     []
   ).as[String]
-  let (isReverse, pool) = if (lpNonReverse != unit) then {
+  let (isReverseRaw, pool) = if (lpNonReverse != unit) then {
     let pool = invoke(
       factoryContract,
       "getPoolAddressFromLpAssetREADONLY",
@@ -119,6 +119,11 @@ func getPoolAddressAndCheckPoolStatus(
   ).exactAs[Int]
   strict check = poolStatus == 1 || poolDisabled # ACTIVE, pool without restrictions
   let poolAdr = addressFromStringValue(pool.valueOrElse(""))
+  let isReverse = if (assetIn == "8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS" && assetOut == "WAVES") then {
+    true
+  } else {
+    isReverseRaw
+  }
   (poolAdr, isReverse)
 }
 
