@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,10 +24,10 @@ func NewModel(coll *mongo.Collection) (Model, error) {
 	m := Model{
 		coll: coll,
 	}
-	err := m.createIndex()
-	if err != nil {
-		return Model{}, fmt.Errorf("m.createIndex: %w", err)
-	}
+	// err := m.createIndex()
+	// if err != nil {
+	// 	return Model{}, fmt.Errorf("m.createIndex: %w", err)
+	// }
 
 	return m, nil
 }
