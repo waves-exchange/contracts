@@ -1,0 +1,10 @@
+{
+  "type": 17,
+  "version": 1,
+  "feeAssetId": null,
+  "fee": 500000,
+  "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+  "description": "WX LINK/XTN pool liquidity provider token",
+  "assetId": "68R3UbuJcxVL7MumoHMF4Pt5KGD7EfSfnq3XvAAeDJD8",
+  "name": "LINKXTNLP"
+}

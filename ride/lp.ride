@@ -91,6 +91,8 @@ func absBigInt(val: BigInt) = if (val < zeroBigInt) then -val else val
 #-------------------------
 # KEYS ON CURRENT CONTRACT
 #-------------------------
+# keySwapContract
+func swapContract() = {"%s__swapContract"}
 # keyFactoryContract
 func fc() = {"%s__factoryContract"}
 # keyManagerPublicKey
@@ -793,6 +795,66 @@ func mustManager(i: Invocation) = {
     case pk: ByteVector => i.callerPublicKey == pk || pd
     case _: Unit => i.caller == this || pd
   }
+}
+
+@Callable(i)
+func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int,  isReverse: Boolean) = {
+  let (assetOut, assetIn) = if (isReverse == false) then {
+    let assetOut = getStringOrFail(this, pa())
+    let assetIn = getStringOrFail(this, aa())
+    (assetOut, assetIn)
+  } else {
+    let assetOut = getStringOrFail(this, aa())
+    let assetIn = getStringOrFail(this, pa())
+    (assetOut, assetIn)
+  }
+  let poolAssetInBalance = getAccBalance(assetIn)
+  let poolAssetOutBalance = getAccBalance(assetOut)
+  let amountOut = fraction(poolAssetOutBalance, cleanAmountIn, poolAssetInBalance + cleanAmountIn)
+
+  let oldK = poolAssetInBalance.toBigInt() * poolAssetOutBalance.toBigInt()
+  let newK = (getAccBalance(assetIn).toBigInt() + cleanAmountIn.toBigInt()) * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
+  strict checkK = newK >= oldK || "new K is fewer error".throw()
+
+  (nil, amountOut)
+}
+
+@Callable(i)
+func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String) = {
+  let swapContact = invoke(
+    factoryContract,
+    "getSwapContractREADONLY", 
+    [], 
+    []
+  ).exactAs[String]
+  strict checks = [
+    i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
+    i.caller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
+  ]
+  let pmt = i.payments[0].value()
+  let assetIn = pmt.assetId.assetIdToString()
+
+  let assetOut = if (isReverse == false) then {
+    getStringOrFail(this, pa())
+  } else {
+    getStringOrFail(this, aa())
+  }
+  let poolAssetInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
+  let poolAssetOutBalance = getAccBalance(assetOut)
+  let amountOut = fraction(poolAssetOutBalance, cleanAmountIn, poolAssetInBalance + cleanAmountIn)
+
+  let oldK = poolAssetInBalance.toBigInt() * poolAssetOutBalance.toBigInt()
+  let newK = getAccBalance(assetIn).toBigInt() * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
+
+  strict checkK = newK >= oldK || "new K is fewer error".throw()
+
+  strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
+  (
+    [
+      ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.parseAssetId())
+    ],
+    amountOut
+  )
 }
 
 @Callable(i)
@@ -1525,13 +1587,14 @@ func verify() = {
 
       (orderValid && senderValid && matcherValid) || throwOrderError(orderValid, orderValidInfo, senderValid, matcherValid)
     case s: SetScriptTransaction =>
-      let newHash = s.script.value().blake2b256()
-      let allowedHash = factoryContract.getString(keyAllowedLpScriptHash()).value().fromBase64String()
-      let currentHash = this.scriptHash()
-      if (allowedHash == newHash && currentHash != newHash) then {
+      if sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey) then {
         true
       } else {
-        sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+        let newHash = s.script.value().blake2b256()
+        let allowedHash = factoryContract.getString(keyAllowedLpScriptHash()).value().fromBase64String()
+        let currentHash = this.scriptHash()
+
+        allowedHash == newHash && currentHash != newHash
       }
     case _ => {
       sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)

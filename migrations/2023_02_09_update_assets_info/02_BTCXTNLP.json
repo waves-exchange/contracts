@@ -1,0 +1,10 @@
+{
+  "type": 17,
+  "version": 1,
+  "feeAssetId": null,
+  "fee": 500000,
+  "senderPublicKey": "Cy9gAyuMTTRsridXAqBDcQhf79uAupt5JhtohtQVNaxz",
+  "description": "WX BTC/XTN pool liquidity provider token",
+  "assetId": "8WhH5CCJ6NakPvEvAJcizqqD7H6axhupdYHDFumSDwsy",
+  "name": "BTCXTNLP"
+}

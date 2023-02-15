@@ -2,3 +2,5 @@ node_modules
 .idea
 .vscode
 deployer/tmp/**.ride
+txs-to-sign
+ledger-signer/txs

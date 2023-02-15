@@ -7,7 +7,11 @@ let poolWeightMult = 100_000_000
 let maxDepthDefault = 10
 let finalizationStageTotal = 0
 let finalizationStageShares = 1
+
 let keyEpochLength = ["%s", "epochLength"].makeString(separator)
+let keyEpochLengthNew = ["%s%s", "epochLength__new"].makeString(separator)
+func keyEpochLengthByEpoch(epoch: Int) = ["%s%d", "epochLength", epoch.toString()].makeString(separator)
+
 let keyCurrentEpoch = ["%s", "currentEpoch"].makeString(separator)
 let keyMaxDepth = ["%s", "maxDepth"].makeString(separator)
 let keyVotingEmissionCandidateContract = ["%s", "votingEmissionCandidateContract"].makeString(separator)
@@ -387,7 +391,7 @@ func setEpochLength(newEpochLength: Int) = {
 
   (
     [
-      IntegerEntry(keyEpochLength, newEpochLength)
+      IntegerEntry(keyEpochLengthNew, newEpochLength)
     ],
     unit
   )
@@ -441,7 +445,8 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   let startHeight = this.getIntOrFail(epoch.keyStartHeightByEpoch())
   let endHeight = startHeight + epochLength
   let startHeightPrevious = this.getIntOrFail(epochPrevious.keyStartHeightByEpoch())
-  let endHeightPrevious = startHeightPrevious + epochLength
+  let epochLengthPrevious = this.getIntOrFail(epochPrevious.keyEpochLengthByEpoch())
+  let endHeightPrevious = startHeightPrevious + epochLengthPrevious
   strict checkTargetEpoch = epochPrevious >= 0 || "processVoteINTERNAL: invalid previous epoch".throw()
   let pool = poolStr.stringToPool()
   let (amountAssetId, priceAssetId) = pool
@@ -526,13 +531,22 @@ func finalizeHelper() = {
   # если пора начинать финализацию, обновляем высоту, эпоху и этап финализации
   if (height >= endHeight && finalizationStageOrUnit == unit && !force) then {
     let newEpoch = epoch + 1
+    let newEpochLengthOption = this.getInteger(keyEpochLengthNew)
+    let newEpochLengthActions = match newEpochLengthOption {
+      case newEpochLength: Int => [
+        IntegerEntry(keyEpochLength, newEpochLength),
+        DeleteEntry(keyEpochLengthNew)
+      ]
+      case _: Unit => []
+    }
     (
       [
         IntegerEntry(newEpoch.keyStartHeightByEpoch(), height),
         IntegerEntry(keyStartHeight, height),
         IntegerEntry(keyCurrentEpoch, newEpoch),
-        IntegerEntry(keyFinalizationStage, finalizationStageTotal)
-      ],
+        IntegerEntry(keyFinalizationStage, finalizationStageTotal),
+        IntegerEntry(epoch.keyEpochLengthByEpoch(), epochLength)
+      ] ++ newEpochLengthActions,
       true
     )
   } else if (force && finalizationStageOrUnit == unit) then {

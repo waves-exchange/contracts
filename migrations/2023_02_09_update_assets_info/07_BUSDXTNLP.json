@@ -1,0 +1,10 @@
+{
+  "type": 17,
+  "version": 1,
+  "feeAssetId": null,
+  "fee": 500000,
+  "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+  "description": "WX BUSD/XTN pool liquidity provider token",
+  "assetId": "3ZfzodjKXPzAtUrdeFFquq9KjaccW6nMWXr6qbVJmSQa",
+  "name": "BUSDXTNLP"
+}
