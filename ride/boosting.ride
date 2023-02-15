@@ -345,7 +345,7 @@ func getVoteInfoREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
 
   let keyCurrentEpoch = ["%s", "currentEpoch"].makeString(SEP)
   let lastFinalizedEpoch = {
-    let epoch = this.getInteger(keyCurrentEpoch).value() - 1
+    let epoch = votingEmissionContract.getInteger(keyCurrentEpoch).value() - 1
     if (epoch < 0) then "invalid epoch".throwErr() else epoch
   }
 
@@ -356,8 +356,8 @@ func getVoteInfoREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
     ["%s%s%s%d", "votingResult", amountAssetId, priceAssetId, epoch.toString()].makeString(SEP)
   }
   let pool = (amountAssetId, priceAssetId)
-  let userVote = this.getInteger(pool.keyVote(userAddress, lastFinalizedEpoch)).valueOrElse(0)
-  let poolResult = this.getInteger(pool.keyVotingResult(lastFinalizedEpoch)).valueOrElse(0)
+  let userVote = votingEmissionContract.getInteger(pool.keyVote(userAddress, lastFinalizedEpoch)).valueOrElse(0)
+  let poolResult = votingEmissionContract.getInteger(pool.keyVotingResult(lastFinalizedEpoch)).valueOrElse(0)
 
   (userVote, poolResult)
 }
