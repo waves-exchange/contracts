@@ -108,7 +108,7 @@ describe(`${process.pid}: voting_emission: update epoch`, () => {
     const endHeight2 = startHeight2 + epochLengthNew;
     await waitForHeight(startHeight2);
 
-    const userGwxAmount2 = 250;
+    const userGwxAmount2 = 500;
 
     await boostingMock.setUserGwxAmountAtHeight({
       dApp: this.accounts.boosting.addr,
