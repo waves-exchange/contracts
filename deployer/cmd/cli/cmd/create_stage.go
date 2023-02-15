@@ -171,17 +171,17 @@ var createStageCmd = &cobra.Command{
 				printAndExit(err)
 			}
 
-			votingEmissionCandidateAcc, err := genAccData(seed, stage, 5)
+			votingEmissionCandidateAcc, err := genAccData(seed, stage, 6)
 			if err != nil {
 				printAndExit(err)
 			}
 
-			boostingAcc, err := genAccData(seed, stage, 6)
+			boostingAcc, err := genAccData(seed, stage, 7)
 			if err != nil {
 				printAndExit(err)
 			}
 
-			votingEmissionAcc, err := genAccData(seed, stage, 7)
+			votingEmissionAcc, err := genAccData(seed, stage, 8)
 			if err != nil {
 				printAndExit(err)
 			}
@@ -372,7 +372,7 @@ var createStageCmd = &cobra.Command{
 				false,
 				[]proto.DataEntry{
 					&proto.StringDataEntry{
-						Key:   "s__managerPublicKey",
+						Key:   "%s__managerPublicKey",
 						Value: managerAcc.address.String(),
 					},
 				},
@@ -439,15 +439,15 @@ var createStageCmd = &cobra.Command{
 							},
 						},
 					},
-					&proto.InvokeScriptWithProofs{
-						ScriptRecipient: votingEmissionCandidateAcc.recipient,
-						FunctionCall: proto.FunctionCall{
-							Name: "constructorV2",
-							Arguments: proto.Arguments{
-								proto.NewIntegerArgument(100000000),
-							},
-						},
-					},
+					// &proto.InvokeScriptWithProofs{
+					// 	ScriptRecipient: votingEmissionCandidateAcc.recipient,
+					// 	FunctionCall: proto.FunctionCall{
+					// 		Name: "constructorV2",
+					// 		Arguments: proto.Arguments{
+					// 			proto.NewIntegerArgument(100000000),
+					// 		},
+					// 	},
+					// },
 				},
 			)
 			err = votingEmissionCandidate.DeployAndSave(sc)

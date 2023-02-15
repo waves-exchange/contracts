@@ -4,16 +4,17 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
+	"os"
+	"path"
+	"strings"
+
 	"github.com/rs/zerolog"
 	"github.com/waves-exchange/contracts/deployer/pkg/contract"
 	"github.com/waves-exchange/contracts/deployer/pkg/tools"
 	"github.com/wavesplatform/gowaves/pkg/client"
 	"github.com/wavesplatform/gowaves/pkg/crypto"
 	"github.com/wavesplatform/gowaves/pkg/proto"
-	"io"
-	"os"
-	"path"
-	"strings"
 )
 
 type Contract struct {
@@ -145,7 +146,7 @@ func (c Contract) selfTransferFee(ctx context.Context) error {
 			proto.NewOptionalAssetWaves(),
 			proto.NewOptionalAssetWaves(),
 			tools.Timestamp(),
-			500000000,
+			100000000,
 			100000,
 			proto.NewRecipientFromAddress(addr),
 			nil,
