@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"time"
 )
 
 type Contract struct {
@@ -46,7 +47,9 @@ func (m Model) GetAll(c context.Context) ([]Contract, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
-	cur, err := m.coll.Find(ctx, bson.M{})
+	cur, err := m.coll.Find(ctx, bson.M{
+		"stage": 1,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("m.coll.Find: %w", err)
 	}
