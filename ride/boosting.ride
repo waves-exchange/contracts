@@ -13,6 +13,9 @@ let SCALE8  = 8
 let MULT8   = 100000000
 let POOLWEIGHTMULT = MULT8
 
+func wrapErr(msg: String) = ["boosting.ride:", msg].makeString(" ")
+func throwErr(msg: String) = msg.wrapErr().throw()
+
 # getStringOrFail
 func strf(address: Address, key: String)   = address.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
 # getIntOrZero
@@ -331,6 +334,34 @@ func calcCurrentGwxAmount(userAddress: String) = {
   userAddress.calcUserGwxAmountAtHeight(height)
 }
 
+func getVoteInfoREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+  let userAddress = userAddressStr.addressFromStringValue()
+
+  let idxAmountAssetId = 4
+  let idxPriceAssetId = 5
+  let poolCfg = factoryContract.invoke("getPoolConfigByLpAssetId", [lpAssetIdStr], []).exactAs[List[Any]]
+  let amountAssetId = poolCfg[idxAmountAssetId].exactAs[String]
+  let priceAssetId = poolCfg[idxPriceAssetId].exactAs[String]
+
+  let keyCurrentEpoch = ["%s", "currentEpoch"].makeString(SEP)
+  let lastFinalizedEpoch = {
+    let epoch = this.getInteger(keyCurrentEpoch).value() - 1
+    if (epoch < 0) then "invalid epoch".throwErr() else epoch
+  }
+
+  func keyVote(pool: (String, String), address: Address, epoch: Int) = {
+    ["%s%s%s%s%d", "vote", amountAssetId, priceAssetId, address.toString(), epoch.toString()].makeString(SEP)
+  }
+  func keyVotingResult(pool: (String, String), epoch: Int) = {
+    ["%s%s%s%d", "votingResult", amountAssetId, priceAssetId, epoch.toString()].makeString(SEP)
+  }
+  let pool = (amountAssetId, priceAssetId)
+  let userVote = this.getInteger(pool.keyVote(userAddress, lastFinalizedEpoch)).valueOrElse(0)
+  let poolResult = this.getInteger(pool.keyVotingResult(lastFinalizedEpoch)).valueOrElse(0)
+
+  (userVote, poolResult)
+}
+
 func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly: Boolean) = {
   let EMPTY = "EMPTY"
   let userRecordOrEmpty = this.getString(keyLockParamsRecord(userAddressStr)).valueOrElse(EMPTY)
@@ -376,7 +407,7 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   let userMaxBoostInt = this.ioz(userMaxBoostIntegralKEY)
   let totalMaxBoostInt = this.ioz(totalMaxBoostIntegralKEY)
 
-  let (userVote, totalVotes) = votingEmissionContract.invoke("getVoteInfoREADONLY", [lpAssetIdStr, userAddressStr], []).exactAs[(Int, Int)]
+  let (userVote, totalVotes) = getVoteInfoREADONLY(lpAssetIdStr, userAddressStr)
 
   let userBoostAvalaibleToClaimTotalKEY = keyUserBoostAvalaibleToClaimTotal(userNumStr)
   let userBoostAvaliableToClaimTotal = this.ioz(userBoostAvalaibleToClaimTotalKEY) # in case of increase boost
