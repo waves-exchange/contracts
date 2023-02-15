@@ -267,6 +267,7 @@ func calcBoostBulkREADONLY(deltaWxAmount: List[Int], deltaLockPeriodInBlocks: Li
 
 @Callable(i)
 func calcBoostREADONLY(deltaWxAmount: Int, deltaLockPeriodInBlocks: Int, deltaLpAmount: Int, lpAssetIdOpt: String, userAddressOpt: String) = {
+  let boostCoeff = emissionDapp.invoke("getBoostCoeffREADONLY", [], []).exactAs[Int]
   let mathDapp = gwxRewardDapp
   let EMPTYSTR = "empty"
 
@@ -339,9 +340,9 @@ func calcBoostREADONLY(deltaWxAmount: Int, deltaLockPeriodInBlocks: Int, deltaLp
 
   let userBoostPerBlockX3 = min([tmpUserBoostPerBlockX3, userWxPerBlockX3*2])
 
-  let boostCoeff = if (userWxPerBlockX3 == 0) then 1*MULT8 else fraction(userBoostPerBlockX3 + userWxPerBlockX3, MULT8, userWxPerBlockX3)
+  let userBoostCoeff = if (userWxPerBlockX3 == 0) then 1*MULT8 else fraction(userBoostPerBlockX3 + userWxPerBlockX3, MULT8, userWxPerBlockX3)
 
-  ([], makeString(["%d%d%s", gWxAmountStartNew.toString(), boostCoeff.toString(), "d"], SEP))
+  ([], makeString(["%d%d%s", gWxAmountStartNew.toString(), userBoostCoeff.toString(), "d"], SEP))
 }
 
 @Callable(i)
