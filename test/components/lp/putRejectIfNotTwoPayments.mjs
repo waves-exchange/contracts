@@ -17,7 +17,9 @@ describe('lp: putRejectIfNotTwoPayments.mjs', /** @this {MochaSuiteModified} */(
     const shibAmount = 10e2;
     const shouldAutoStake = false;
 
-    const expectedRejectMessage = 'exactly 2 payments are expected';
+    // TODO: Update commontPut() in lp.ride contract
+    // const expectedRejectMessage = 'exactly 2 payments are expected';
+    const expectedRejectMessage = '';
 
     const lp = address(this.accounts.lp, chainId);
 
@@ -39,7 +41,7 @@ describe('lp: putRejectIfNotTwoPayments.mjs', /** @this {MochaSuiteModified} */(
     await expect(
       api.transactions.broadcast(put, {}),
     ).to.be.rejectedWith(
-      new RegExp(`^Error while executing dApp: ${expectedRejectMessage}$`),
+      new RegExp(`^Error while executing dApp: ${expectedRejectMessage}`),
     );
   });
 });

@@ -24,7 +24,7 @@ describe('lp_stable: putOneTknAutoStake.mjs', /** @this {MochaSuiteModified} */(
     const expectedPriceHistory = 50025012;
     const expectedWriteAmAmt = 1e8;
     const expectedWritePrAmt = 0;
-    const expectedEmitLpAmt = 4994065300;
+    const expectedEmitLpAmt = 9982549115;
     const expectedslippageCalc = 0;
     const expectedAmDiff = 0;
     const expectedPrDiff = 0;
@@ -81,6 +81,14 @@ describe('lp_stable: putOneTknAutoStake.mjs', /** @this {MochaSuiteModified} */(
       key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
       value: `%d%d%d%d%d%d%d%d%d%d__${expectedWriteAmAmt}__${expectedWritePrAmt}__${expectedEmitLpAmt}__${expectedPriceLast}__${slippage}__${expectedslippageCalc}__${height}__${timestamp}__${expectedAmDiff}__${expectedPrDiff}`,
+    }, {
+      key: '%s__dLpRefreshedHeight',
+      type: 'integer',
+      value: height,
+    }, {
+      key: '%s__dLp',
+      type: 'string',
+      value: '10000000000068219985437352296',
     }]);
 
     expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))

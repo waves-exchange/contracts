@@ -27,7 +27,7 @@ describe('lp_stable: estimateGetOperationWrapperREADONLY.mjs', /** @this {MochaS
     const expected4 = { type: 'String', value: this.usdnAssetId };
     const expected5 = { type: 'Int', value: 1e8 };
     const expected6 = { type: 'Int', value: 1e8 };
-    const expected7 = { type: 'Int', value: 1e10 };
+    const expected7 = { type: 'Int', value: 2e10 };
     const expected8 = { type: 'String', value: '1000000000000000000' };
     const expected9 = { type: 'String', value: '1' };
     const expected10 = { type: 'Array', value: [] };

@@ -69,7 +69,7 @@ describe('lp: putIfPrViaAmX18MoreThanInPrAssetAmtX18.mjs', /** @this {MochaSuite
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
     expect(
-      await checkStateChanges(stateChanges, 3, 1, 0, 0, 0, 0, 0, 0, 2),
+      await checkStateChanges(stateChanges, 5, 1, 0, 0, 0, 0, 0, 0, 2),
     ).to.eql(true);
 
     expect(stateChanges.data).to.eql([{
@@ -84,6 +84,14 @@ describe('lp: putIfPrViaAmX18MoreThanInPrAssetAmtX18.mjs', /** @this {MochaSuite
       key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
       value: `%d%d%d%d%d%d%d%d%d%d__${shibAmount}__${usdnAmount}__${expectedLpAmount}__${expectedPriceLast}__${slippageTolerance}__${expectedSlippageToleranceReal}__${height}__${timestamp}__${expectedSlippageAmtAssetAmt}__0`,
+    }, {
+      key: '%s__kLpRefreshedHeight',
+      type: 'integer',
+      value: height,
+    }, {
+      key: '%s__kLp',
+      type: 'string',
+      value: '10000000000000000000000000000',
     }]);
 
     expect(stateChanges.transfers).to.eql([{

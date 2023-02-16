@@ -76,20 +76,12 @@ describe('referral: incUnclaimedWithPaymentIfMultiplePayments.mjs', /** @this {M
       }, this.accounts.implementation);
       await api.transactions.broadcast(incUnclaimedWithPaymentTx, {});
       const {
-        height,
         stateChanges,
       } = await ni.waitForTx(incUnclaimedWithPaymentTx.id, { apiBase });
 
       expect(
-        await checkStateChanges(stateChanges, 1, 1, 0, 0, 0, 0, 0, 0, 1),
+        await checkStateChanges(stateChanges, 0, 1, 0, 0, 0, 0, 0, 0, 1),
       ).to.eql(true);
-
-      expect(stateChanges.data).to.eql([
-        {
-          key: `%s%s__lastIncUnclaimedWithPaymentCallBlock__${implementationContract}`,
-          type: 'integer',
-          value: height,
-        }]);
 
       expect(stateChanges.transfers).to.eql([{
         address: treasuryContract,
