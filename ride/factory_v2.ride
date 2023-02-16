@@ -314,6 +314,19 @@ func intOrDefaultOrFallback(key: String, keyDefault: String, valueFallback: Int)
   this.getInteger(key).valueOrElse(this.getInteger(keyDefault).valueOrElse(valueFallback))
 }
 
+func poolExistsInternal(amountAssetId: String, priceAssetId: String) = {
+  let amountAssetInternal = keyMappingsBaseAsset2internalId(amountAssetId).getInteger()
+  let priceAssetInternal = keyMappingsBaseAsset2internalId(priceAssetId).getInteger()
+  if (amountAssetInternal == unit || priceAssetInternal == unit) then {
+    ([], false)
+  } else {
+    let cfg = keyPoolConfig(amountAssetInternal.value(), priceAssetInternal.value()).getString()
+    let cfgReverse = keyPoolConfig(amountAssetInternal, priceAssetInternal).getString()
+    let exists = cfg != unit || cfgReverse != unit
+    ([], exists)
+  }
+}
+
 @Callable(i)
 func getSwapContractREADONLY() = {
   ([],
@@ -478,8 +491,8 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
       let poolAccountScriptHash = scriptHash(addressFromStringValue(poolAddress)).valueOrErrorMessage("No script has been found on pool account " + poolAddress)
       let ethalonPoolAccountScriptHash = getBinaryValue(keyPoolScriptHash())
 
-      let poolConfig = this.getString(keyPoolConfig(internalAmountAssetId.toString(), internalPriceAssetId.toString()))
-      if (poolConfig.isDefined()) then throw("Pool " + amountAssetStr + "/" + priceAssetStr + " has already been activated.") else
+      let poolExists = poolExistsInternal(amountAssetStr, priceAssetStr)
+      if (poolExists) then throw("Pool " + amountAssetStr + "/" + priceAssetStr + " has already been activated.") else
 
         let poolConfigValue = this.getString(keyPoolConfig(internalAmountAssetId.toString(), internalPriceAssetId.toString())).value()
         # todo: uncomment after debugging
@@ -774,6 +787,11 @@ func getPoolStatusREADONLY(poolAddress: String) = {
   let priceAssetInternal = poolAssets[2]
   let cfg = keyPoolConfig(amountAssetInternal, priceAssetInternal).getStringOrFail().split(SEP)
   ([], cfg[idxPoolStatus].parseIntValue())
+}
+
+@Callable(i)
+func poolExistsREADONLY(amountAssetId: String, priceAssetId: String) = {
+  ([], poolExistsInternal(amountAssetId, priceAssetId))
 }
 
 @Verifier(tx)
