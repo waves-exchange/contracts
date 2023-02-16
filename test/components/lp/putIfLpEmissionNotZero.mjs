@@ -66,7 +66,7 @@ describe('lp: putIfLpEmissionNotZero.mjs', /** @this {MochaSuiteModified} */() =
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
     expect(
-      await checkStateChanges(stateChanges, 3, 1, 0, 0, 0, 0, 0, 0, 1),
+      await checkStateChanges(stateChanges, 5, 1, 0, 0, 0, 0, 0, 0, 1),
     ).to.eql(true);
 
     expect(stateChanges.data).to.eql([{
@@ -81,6 +81,14 @@ describe('lp: putIfLpEmissionNotZero.mjs', /** @this {MochaSuiteModified} */() =
       key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
       value: `%d%d%d%d%d%d%d%d%d%d__${shibAmount}__${usdnAmount}__${expectedLpAmount}__${expectedPriceLast}__0__0__${height}__${timestamp}__0__0`,
+    }, {
+      key: '%s__kLpRefreshedHeight',
+      type: 'integer',
+      value: height,
+    }, {
+      key: '%s__kLp',
+      type: 'string',
+      value: '10000000000000000000000000000',
     }]);
 
     expect(stateChanges.transfers).to.eql([{

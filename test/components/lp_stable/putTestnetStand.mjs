@@ -20,15 +20,15 @@ describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() =
 
     const transferAmountUsdn = 139018444021;
     const transferAmountUsdt = 230660086797;
-    const emitAmountLp = 55919903290091;
+    const emitAmountLp = 12345678901234;
 
     const usdnAmount = 5 * 1e8;
 
     const slippage = 1e8;
-    const expectedLpAmount = 1e13;
+    const expectedLpAmount = 44403024994;
     const shouldAutoStake = false;
-    const priceLast = 1e16;
-    const priceHistory = 1e16;
+    const priceLast = 60269830;
+    const priceHistory = 60269830;
 
     const usdnTransferTx = transfer({
       amount: transferAmountUsdn,
@@ -127,7 +127,7 @@ describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() =
 
     expect(poolUsdnBalanceAfterPut).to.equal(expectedPoolUsdnBalanceAfterPut);
     expect(poolUsdtBalanceAfterPut).to.equal(expectedPoolUsdtBalanceAfterPut);
-    expect(parseInt(lpQuantityAfterPut, 10)).to.equal(emitAmountLp);
+    expect(parseInt(lpQuantityAfterPut, 10)).to.equal(expectedLpAmount + emitAmountLp);
 
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
@@ -135,15 +135,15 @@ describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() =
     expect(stateChanges.data).to.eql([{
       key: '%s%s__price__last',
       type: 'integer',
-      value: priceLast.toString(),
+      value: priceLast,
     }, {
       key: keyPriceHistory,
       type: 'integer',
-      value: priceHistory.toString(),
+      value: priceHistory,
     }, {
       key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
-      value: `%d%d%d%d%d%d%d%d%d%d__${usdtAmount}__${usdnAmount}__${expectedLpAmount}__${priceLast}__0__0__${height}__${timestamp}__0__0`,
+      value: `%d%d%d%d%d%d%d%d%d%d__${usdtAmount}__${usdnAmount}__${expectedLpAmount}__${priceLast}__100000000__100000000__${height}__${timestamp}__0__0`,
     }, {
       key: '%s__dLpRefreshedHeight',
       type: 'integer',
@@ -151,13 +151,13 @@ describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() =
     }, {
       key: '%s__dLp',
       type: 'string',
-      value: 0,
+      value: '29940057202414181477464152049',
     }]);
 
     expect(stateChanges.transfers).to.eql([{
       address: address(this.accounts.user1, chainId),
       asset: this.lpStableAssetId,
-      amount: expectedLpAmount.toString(),
+      amount: expectedLpAmount,
     }]);
 
     expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))

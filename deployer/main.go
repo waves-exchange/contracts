@@ -29,18 +29,13 @@ func main() {
 		panic(fmt.Errorf("mongo.NewConn: %w", err))
 	}
 
-	branchModel, err := branch.NewModel(db.Collection(cfg.MongoCollectionBranches))
-	if err != nil {
-		panic(fmt.Errorf("branch.NewModel: %w", err))
-	}
-
 	sc, err := syncer.NewSyncer(
 		logg.ZL,
 		cfg.Network,
 		cfg.Node,
 		cfg.Branch,
 		contract.NewModel(db.Collection(cfg.MongoCollectionContracts)),
-		branchModel,
+		branch.NewModel(db.Collection(cfg.MongoCollectionBranches)),
 		cfg.CompareLpScriptAddress,
 		cfg.CompareLpStableScriptAddress,
 		cfg.CompareLpStableAddonScriptAddress,
