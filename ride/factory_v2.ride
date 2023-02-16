@@ -318,12 +318,14 @@ func poolExistsInternal(amountAssetId: String, priceAssetId: String) = {
   let amountAssetInternal = keyMappingsBaseAsset2internalId(amountAssetId).getInteger()
   let priceAssetInternal = keyMappingsBaseAsset2internalId(priceAssetId).getInteger()
   if (amountAssetInternal == unit || priceAssetInternal == unit) then {
-    ([], false)
+    false
   } else {
-    let cfg = keyPoolConfig(amountAssetInternal.value(), priceAssetInternal.value()).getString()
-    let cfgReverse = keyPoolConfig(amountAssetInternal, priceAssetInternal).getString()
+    let amAs = amountAssetInternal.value().toString()
+    let prAs = priceAssetInternal.value().toString()
+    let cfg = keyPoolConfig(amAs, prAs).getString()
+    let cfgReverse = keyPoolConfig(prAs, amAs).getString()
     let exists = cfg != unit || cfgReverse != unit
-    ([], exists)
+    exists
   }
 }
 
