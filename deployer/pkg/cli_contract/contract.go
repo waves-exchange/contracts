@@ -163,7 +163,7 @@ func (c Contract) setData(ctx context.Context) error {
 	tx := proto.NewUnsignedDataWithProofs(
 		c.networkByte,
 		crypto.GeneratePublicKey(c.basePrv),
-		100000,
+		500000,
 		tools.Timestamp(),
 	)
 	for _, data := range c.data {

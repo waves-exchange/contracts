@@ -5,13 +5,14 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/wavesplatform/gowaves/pkg/client"
-	"github.com/wavesplatform/gowaves/pkg/crypto"
-	"github.com/wavesplatform/gowaves/pkg/proto"
 	"io"
 	"math"
 	"net/http"
 	"time"
+
+	"github.com/wavesplatform/gowaves/pkg/client"
+	"github.com/wavesplatform/gowaves/pkg/crypto"
+	"github.com/wavesplatform/gowaves/pkg/proto"
 )
 
 func GetPrivateAndPublicKey(seed []byte) (privateKey crypto.SecretKey, publicKey crypto.PublicKey, err error) {
@@ -51,7 +52,16 @@ func TrySignBroadcastWait(
 	prv []crypto.SecretKey,
 ) error {
 	var errs string
+	var errsCount int
 	for _, p := range prv {
+		switch t := tx.(type) {
+		case *proto.DataWithProofs:
+			t.Proofs = nil
+		case *proto.InvokeScriptWithProofs:
+			t.Proofs = nil
+		case *proto.SetScriptWithProofs:
+			t.Proofs = nil
+		}
 		err := SignBroadcastWait(
 			ctx,
 			networkByte,
@@ -61,11 +71,15 @@ func TrySignBroadcastWait(
 		)
 		if err != nil {
 			errs += " " + err.Error()
+			errsCount += 1
 			continue
 		}
 	}
-	if len(errs) == len(prv) {
+	if errsCount == len(prv) {
 		return errors.New("TrySignBroadcastWait: all privateKeys are invalid: " + errs)
+	}
+	if errsCount > 0 {
+		fmt.Println(errs)
 	}
 
 	return nil

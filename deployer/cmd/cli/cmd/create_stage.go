@@ -186,6 +186,27 @@ var createStageCmd = &cobra.Command{
 				printAndExit(err)
 			}
 
+			err = tools.SignBroadcastWait(
+				sc,
+				proto.TestNetScheme,
+				cl,
+				proto.NewUnsignedTransferWithProofs(
+					3,
+					crypto.GeneratePublicKey(gazPrv),
+					proto.NewOptionalAssetWaves(),
+					proto.NewOptionalAssetWaves(),
+					tools.Timestamp(),
+					500000000,
+					100000,
+					managerAcc.recipient,
+					nil,
+				),
+				gazPrv,
+			)
+			if err != nil {
+				printAndExit(err)
+			}
+
 			factoryV2 := cli_contract.New(
 				proto.TestNetScheme,
 				cl,
@@ -224,7 +245,7 @@ var createStageCmd = &cobra.Command{
 				[]proto.DataEntry{
 					&proto.StringDataEntry{
 						Key:   "%s__managerPublicKey",
-						Value: managerAcc.address.String(),
+						Value: managerAcc.publicKey.String(),
 					},
 					&proto.StringDataEntry{
 						Key:   "%s%s__config__factoryAddress",
@@ -244,9 +265,12 @@ var createStageCmd = &cobra.Command{
 					},
 				},
 				[]*proto.InvokeScriptWithProofs{
-					&proto.InvokeScriptWithProofs{
-						ScriptRecipient: emissionAcc.recipient,
-						FunctionCall: proto.FunctionCall{
+					proto.NewUnsignedInvokeScriptWithProofs(
+						1,
+						proto.TestNetScheme,
+						managerAcc.publicKey,
+						emissionAcc.recipient,
+						proto.FunctionCall{
 							Name: "constructor",
 							Arguments: proto.Arguments{
 								proto.NewStringArgument(factoryV2Acc.address.String()),
@@ -258,7 +282,11 @@ var createStageCmd = &cobra.Command{
 								proto.NewStringArgument(wxAssetId),
 							},
 						},
-					},
+						nil,
+						proto.NewOptionalAssetWaves(),
+						500000,
+						tools.Timestamp(),
+					),
 				},
 			)
 			err = emission.DeployAndSave(sc)
@@ -280,20 +308,27 @@ var createStageCmd = &cobra.Command{
 				[]proto.DataEntry{
 					&proto.StringDataEntry{
 						Key:   "%s__managerPublicKey",
-						Value: managerAcc.address.String(),
+						Value: managerAcc.publicKey.String(),
 					},
 				},
 				[]*proto.InvokeScriptWithProofs{
-					&proto.InvokeScriptWithProofs{
-						ScriptRecipient: assetStoreAcc.recipient,
-						FunctionCall: proto.FunctionCall{
+					proto.NewUnsignedInvokeScriptWithProofs(
+						1,
+						proto.TestNetScheme,
+						managerAcc.publicKey,
+						assetStoreAcc.recipient,
+						proto.FunctionCall{
 							Name: "constructor",
 							Arguments: proto.Arguments{
 								proto.NewStringArgument(userPoolsAcc.address.String()),
 								proto.ListArgument{},
 							},
 						},
-					},
+						nil,
+						proto.NewOptionalAssetWaves(),
+						500000,
+						tools.Timestamp(),
+					),
 				},
 			)
 			err = assetsStore.DeployAndSave(sc)
@@ -315,7 +350,7 @@ var createStageCmd = &cobra.Command{
 				[]proto.DataEntry{
 					&proto.StringDataEntry{
 						Key:   "%s__managerPublicKey",
-						Value: managerAcc.address.String(),
+						Value: managerAcc.publicKey.String(),
 					},
 					&proto.StringDataEntry{
 						Key:   "%s__factoryContract",
@@ -335,9 +370,12 @@ var createStageCmd = &cobra.Command{
 					},
 				},
 				[]*proto.InvokeScriptWithProofs{
-					&proto.InvokeScriptWithProofs{
-						ScriptRecipient: userPoolsAcc.recipient,
-						FunctionCall: proto.FunctionCall{
+					proto.NewUnsignedInvokeScriptWithProofs(
+						1,
+						proto.TestNetScheme,
+						managerAcc.publicKey,
+						userPoolsAcc.recipient,
+						proto.FunctionCall{
 							Name: "constructor",
 							Arguments: proto.Arguments{
 								proto.NewStringArgument(factoryV2Acc.address.String()),
@@ -351,7 +389,11 @@ var createStageCmd = &cobra.Command{
 								proto.NewIntegerArgument(1000),
 							},
 						},
-					},
+						nil,
+						proto.NewOptionalAssetWaves(),
+						500000,
+						tools.Timestamp(),
+					),
 				},
 			)
 			err = userPools.DeployAndSave(sc)
@@ -373,13 +415,16 @@ var createStageCmd = &cobra.Command{
 				[]proto.DataEntry{
 					&proto.StringDataEntry{
 						Key:   "%s__managerPublicKey",
-						Value: managerAcc.address.String(),
+						Value: managerAcc.publicKey.String(),
 					},
 				},
 				[]*proto.InvokeScriptWithProofs{
-					&proto.InvokeScriptWithProofs{
-						ScriptRecipient: votingVerifiedAcc.recipient,
-						FunctionCall: proto.FunctionCall{
+					proto.NewUnsignedInvokeScriptWithProofs(
+						1,
+						proto.TestNetScheme,
+						managerAcc.publicKey,
+						votingVerifiedAcc.recipient,
+						proto.FunctionCall{
 							Name: "constructor",
 							Arguments: proto.Arguments{
 								proto.NewStringArgument(boostingAcc.address.String()),
@@ -394,7 +439,11 @@ var createStageCmd = &cobra.Command{
 								proto.NewIntegerArgument(10),
 							},
 						},
-					},
+						nil,
+						proto.NewOptionalAssetWaves(),
+						500000,
+						tools.Timestamp(),
+					),
 				},
 			)
 			err = votingVerified.DeployAndSave(sc)
@@ -416,13 +465,16 @@ var createStageCmd = &cobra.Command{
 				[]proto.DataEntry{
 					&proto.StringDataEntry{
 						Key:   "%s__managerPublicKey",
-						Value: managerAcc.address.String(),
+						Value: managerAcc.publicKey.String(),
 					},
 				},
 				[]*proto.InvokeScriptWithProofs{
-					&proto.InvokeScriptWithProofs{
-						ScriptRecipient: votingEmissionCandidateAcc.recipient,
-						FunctionCall: proto.FunctionCall{
+					proto.NewUnsignedInvokeScriptWithProofs(
+						1,
+						proto.TestNetScheme,
+						managerAcc.publicKey,
+						votingEmissionAcc.recipient,
+						proto.FunctionCall{
 							Name: "constructor",
 							Arguments: proto.Arguments{
 								proto.NewStringArgument(assetStoreAcc.address.String()),
@@ -438,16 +490,27 @@ var createStageCmd = &cobra.Command{
 								proto.NewIntegerArgument(10),
 							},
 						},
-					},
-					// &proto.InvokeScriptWithProofs{
-					// 	ScriptRecipient: votingEmissionCandidateAcc.recipient,
-					// 	FunctionCall: proto.FunctionCall{
-					// 		Name: "constructorV2",
-					// 		Arguments: proto.Arguments{
-					// 			proto.NewIntegerArgument(100000000),
-					// 		},
-					// 	},
-					// },
+						nil,
+						proto.NewOptionalAssetWaves(),
+						500000,
+						tools.Timestamp(),
+					),
+					proto.NewUnsignedInvokeScriptWithProofs(
+						1,
+						proto.TestNetScheme,
+						managerAcc.publicKey,
+						votingEmissionAcc.recipient,
+						proto.FunctionCall{
+							Name: "constructorV2",
+							Arguments: proto.Arguments{
+								proto.NewIntegerArgument(100000000),
+							},
+						},
+						nil,
+						proto.NewOptionalAssetWaves(),
+						500000,
+						tools.Timestamp(),
+					),
 				},
 			)
 			err = votingEmissionCandidate.DeployAndSave(sc)
