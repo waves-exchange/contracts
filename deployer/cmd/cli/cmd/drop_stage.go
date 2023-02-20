@@ -9,8 +9,8 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/waves-exchange/contracts/deployer/pkg/branch"
-	"github.com/waves-exchange/contracts/deployer/pkg/contract"
 	"github.com/waves-exchange/contracts/deployer/pkg/mongo"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 var dropStageCmd = &cobra.Command{
@@ -36,11 +36,6 @@ var dropStageCmd = &cobra.Command{
 			printAndExit(err)
 		}
 		branchModel, err := branch.NewModel(db.Collection(branches))
-		if err != nil {
-			printAndExit(err)
-		}
-
-		contractModel := contract.NewModel(db.Collection(contracts))
 		if err != nil {
 			printAndExit(err)
 		}
@@ -72,17 +67,28 @@ var dropStageCmd = &cobra.Command{
 		if err != nil {
 			printAndExit(err)
 		}
-		stage := uint32(stageInt)
-		fmt.Println(stage)
-		fmt.Println(contractModel)
-		fmt.Println(branchModel)
-
 		confirmP := promptui.Prompt{
 			Label:     fmt.Sprintf("Drop stage %d, are you sure?", stageInt),
 			IsConfirm: true,
 		}
-		confirmP.Run()
+		opt, err := confirmP.Run()
+		if err != nil {
+			printAndExit(err)
+		}
+		fmt.Println(opt)
 
+		stageFilter := bson.D{{Key: "stage", Value: stageInt}}
+		delBranch, err := db.Collection(branches).DeleteMany(ctx, stageFilter)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(delBranch)
+
+		delContracts, err := db.Collection(contracts).DeleteMany(ctx, stageFilter)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(delContracts)
 	},
 }
 
