@@ -78,9 +78,9 @@ func TrySignBroadcastWait(
 	if errsCount == len(prv) {
 		return errors.New("TrySignBroadcastWait: all privateKeys are invalid: " + errs)
 	}
-	if errsCount > 0 {
-		fmt.Println(errs)
-	}
+	// if errsCount > 0 {
+	// 	fmt.Printf("TrySignBroadcastWait: %s\n", errs)
+	// }
 
 	return nil
 }

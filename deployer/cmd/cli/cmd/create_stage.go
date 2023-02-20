@@ -156,10 +156,10 @@ var createStageCmd = &cobra.Command{
 				printAndExit(err)
 			}
 
-			assetStoreAcc, err := genAccData(seed, stage, 3)
-			if err != nil {
-				printAndExit(err)
-			}
+			// assetStoreAcc, err := genAccData(seed, stage, 3)
+			// if err != nil {
+			// 	printAndExit(err)
+			// }
 
 			userPoolsAcc, err := genAccData(seed, stage, 4)
 			if err != nil {
@@ -176,15 +176,15 @@ var createStageCmd = &cobra.Command{
 				printAndExit(err)
 			}
 
-			boostingAcc, err := genAccData(seed, stage, 7)
-			if err != nil {
-				printAndExit(err)
-			}
+			// boostingAcc, err := genAccData(seed, stage, 7)
+			// if err != nil {
+			// 	printAndExit(err)
+			// }
 
-			votingEmissionAcc, err := genAccData(seed, stage, 8)
-			if err != nil {
-				printAndExit(err)
-			}
+			// votingEmissionAcc, err := genAccData(seed, stage, 8)
+			// if err != nil {
+			// 	printAndExit(err)
+			// }
 
 			err = tools.SignBroadcastWait(
 				sc,
@@ -294,229 +294,229 @@ var createStageCmd = &cobra.Command{
 				return nil, fmt.Errorf("emission.DeployAndSave: %w", err)
 			}
 
-			assetsStore := cli_contract.New(
-				proto.TestNetScheme,
-				cl,
-				contractModel,
-				assetStoreAcc.privateKey,
-				managerAcc.privateKey,
-				gazPrv,
-				"assets_store",
-				"assets_store.ride",
-				stage,
-				false,
-				[]proto.DataEntry{
-					&proto.StringDataEntry{
-						Key:   "%s__managerPublicKey",
-						Value: managerAcc.publicKey.String(),
-					},
-				},
-				[]*proto.InvokeScriptWithProofs{
-					proto.NewUnsignedInvokeScriptWithProofs(
-						1,
-						proto.TestNetScheme,
-						managerAcc.publicKey,
-						assetStoreAcc.recipient,
-						proto.FunctionCall{
-							Name: "constructor",
-							Arguments: proto.Arguments{
-								proto.NewStringArgument(userPoolsAcc.address.String()),
-								proto.ListArgument{},
-							},
-						},
-						nil,
-						proto.NewOptionalAssetWaves(),
-						500000,
-						tools.Timestamp(),
-					),
-				},
-			)
-			err = assetsStore.DeployAndSave(sc)
-			if err != nil {
-				return nil, fmt.Errorf("assetsStore.DeployAndSave: %w", err)
-			}
+			// assetsStore := cli_contract.New(
+			// 	proto.TestNetScheme,
+			// 	cl,
+			// 	contractModel,
+			// 	assetStoreAcc.privateKey,
+			// 	managerAcc.privateKey,
+			// 	gazPrv,
+			// 	"assets_store",
+			// 	"assets_store.ride",
+			// 	stage,
+			// 	false,
+			// 	[]proto.DataEntry{
+			// 		&proto.StringDataEntry{
+			// 			Key:   "%s__managerPublicKey",
+			// 			Value: managerAcc.publicKey.String(),
+			// 		},
+			// 	},
+			// 	[]*proto.InvokeScriptWithProofs{
+			// 		proto.NewUnsignedInvokeScriptWithProofs(
+			// 			1,
+			// 			proto.TestNetScheme,
+			// 			managerAcc.publicKey,
+			// 			assetStoreAcc.recipient,
+			// 			proto.FunctionCall{
+			// 				Name: "constructor",
+			// 				Arguments: proto.Arguments{
+			// 					proto.NewStringArgument(userPoolsAcc.address.String()),
+			// 					// proto.ListArgument{},
+			// 				},
+			// 			},
+			// 			nil,
+			// 			proto.NewOptionalAssetWaves(),
+			// 			500000,
+			// 			tools.Timestamp(),
+			// 		),
+			// 	},
+			// )
+			// err = assetsStore.DeployAndSave(sc)
+			// if err != nil {
+			// 	return nil, fmt.Errorf("assetsStore.DeployAndSave: %w", err)
+			// }
 
-			userPools := cli_contract.New(
-				proto.TestNetScheme,
-				cl,
-				contractModel,
-				userPoolsAcc.privateKey,
-				managerAcc.privateKey,
-				gazPrv,
-				"user_pools",
-				"user_pools.ride",
-				stage,
-				false,
-				[]proto.DataEntry{
-					&proto.StringDataEntry{
-						Key:   "%s__managerPublicKey",
-						Value: managerAcc.publicKey.String(),
-					},
-					&proto.StringDataEntry{
-						Key:   "%s__factoryContract",
-						Value: factoryV2Acc.address.String(),
-					},
-					&proto.StringDataEntry{
-						Key:   "%s__assetsStoreContract",
-						Value: assetStoreAcc.address.String(),
-					},
-					&proto.StringDataEntry{
-						Key:   "%s__emissionContract",
-						Value: emissionAcc.address.String(),
-					},
-					&proto.StringDataEntry{
-						Key:   "%s__priceAssetIds",
-						Value: "WAVES",
-					},
-				},
-				[]*proto.InvokeScriptWithProofs{
-					proto.NewUnsignedInvokeScriptWithProofs(
-						1,
-						proto.TestNetScheme,
-						managerAcc.publicKey,
-						userPoolsAcc.recipient,
-						proto.FunctionCall{
-							Name: "constructor",
-							Arguments: proto.Arguments{
-								proto.NewStringArgument(factoryV2Acc.address.String()),
-								proto.NewStringArgument(assetStoreAcc.address.String()),
-								proto.NewStringArgument(emissionAcc.address.String()),
-								proto.ListArgument{Items: proto.Arguments{
-									proto.NewStringArgument("7000000"),
-								}},
-								proto.NewIntegerArgument(100000),
-								proto.NewStringArgument(wxAssetId),
-								proto.NewIntegerArgument(1000),
-							},
-						},
-						nil,
-						proto.NewOptionalAssetWaves(),
-						500000,
-						tools.Timestamp(),
-					),
-				},
-			)
-			err = userPools.DeployAndSave(sc)
-			if err != nil {
-				return nil, fmt.Errorf("userPools.DeployAndSave: %w", err)
-			}
+			// userPools := cli_contract.New(
+			// 	proto.TestNetScheme,
+			// 	cl,
+			// 	contractModel,
+			// 	userPoolsAcc.privateKey,
+			// 	managerAcc.privateKey,
+			// 	gazPrv,
+			// 	"user_pools",
+			// 	"user_pools.ride",
+			// 	stage,
+			// 	false,
+			// 	[]proto.DataEntry{
+			// 		&proto.StringDataEntry{
+			// 			Key:   "%s__managerPublicKey",
+			// 			Value: managerAcc.publicKey.String(),
+			// 		},
+			// 		&proto.StringDataEntry{
+			// 			Key:   "%s__factoryContract",
+			// 			Value: factoryV2Acc.address.String(),
+			// 		},
+			// 		&proto.StringDataEntry{
+			// 			Key:   "%s__assetsStoreContract",
+			// 			Value: assetStoreAcc.address.String(),
+			// 		},
+			// 		&proto.StringDataEntry{
+			// 			Key:   "%s__emissionContract",
+			// 			Value: emissionAcc.address.String(),
+			// 		},
+			// 		&proto.StringDataEntry{
+			// 			Key:   "%s__priceAssetIds",
+			// 			Value: "WAVES",
+			// 		},
+			// 	},
+			// 	[]*proto.InvokeScriptWithProofs{
+			// 		proto.NewUnsignedInvokeScriptWithProofs(
+			// 			1,
+			// 			proto.TestNetScheme,
+			// 			managerAcc.publicKey,
+			// 			userPoolsAcc.recipient,
+			// 			proto.FunctionCall{
+			// 				Name: "constructor",
+			// 				Arguments: proto.Arguments{
+			// 					proto.NewStringArgument(factoryV2Acc.address.String()),
+			// 					proto.NewStringArgument(assetStoreAcc.address.String()),
+			// 					proto.NewStringArgument(emissionAcc.address.String()),
+			// 					proto.ListArgument{Items: proto.Arguments{
+			// 						proto.NewStringArgument("7000000"),
+			// 					}},
+			// 					proto.NewIntegerArgument(100000),
+			// 					proto.NewStringArgument(wxAssetId),
+			// 					proto.NewIntegerArgument(1000),
+			// 				},
+			// 			},
+			// 			nil,
+			// 			proto.NewOptionalAssetWaves(),
+			// 			500000,
+			// 			tools.Timestamp(),
+			// 		),
+			// 	},
+			// )
+			// err = userPools.DeployAndSave(sc)
+			// if err != nil {
+			// 	return nil, fmt.Errorf("userPools.DeployAndSave: %w", err)
+			// }
 
-			votingVerified := cli_contract.New(
-				proto.TestNetScheme,
-				cl,
-				contractModel,
-				votingVerifiedAcc.privateKey,
-				managerAcc.privateKey,
-				gazPrv,
-				"voting_verified",
-				"voting_verified.ride",
-				stage,
-				false,
-				[]proto.DataEntry{
-					&proto.StringDataEntry{
-						Key:   "%s__managerPublicKey",
-						Value: managerAcc.publicKey.String(),
-					},
-				},
-				[]*proto.InvokeScriptWithProofs{
-					proto.NewUnsignedInvokeScriptWithProofs(
-						1,
-						proto.TestNetScheme,
-						managerAcc.publicKey,
-						votingVerifiedAcc.recipient,
-						proto.FunctionCall{
-							Name: "constructor",
-							Arguments: proto.Arguments{
-								proto.NewStringArgument(boostingAcc.address.String()),
-								proto.NewStringArgument(emissionAcc.address.String()),
-								proto.NewStringArgument(assetStoreAcc.address.String()),
-								proto.NewIntegerArgument(10000000),
-								proto.NewStringArgument(wxAssetId),
-								proto.NewIntegerArgument(10000000),
-								proto.NewIntegerArgument(10),
-								proto.NewIntegerArgument(3),
-								proto.NewIntegerArgument(3000),
-								proto.NewIntegerArgument(10),
-							},
-						},
-						nil,
-						proto.NewOptionalAssetWaves(),
-						500000,
-						tools.Timestamp(),
-					),
-				},
-			)
-			err = votingVerified.DeployAndSave(sc)
-			if err != nil {
-				return nil, fmt.Errorf("votingVerified.DeployAndSave: %w", err)
-			}
+			// votingVerified := cli_contract.New(
+			// 	proto.TestNetScheme,
+			// 	cl,
+			// 	contractModel,
+			// 	votingVerifiedAcc.privateKey,
+			// 	managerAcc.privateKey,
+			// 	gazPrv,
+			// 	"voting_verified",
+			// 	"voting_verified.ride",
+			// 	stage,
+			// 	false,
+			// 	[]proto.DataEntry{
+			// 		&proto.StringDataEntry{
+			// 			Key:   "%s__managerPublicKey",
+			// 			Value: managerAcc.publicKey.String(),
+			// 		},
+			// 	},
+			// 	[]*proto.InvokeScriptWithProofs{
+			// 		proto.NewUnsignedInvokeScriptWithProofs(
+			// 			1,
+			// 			proto.TestNetScheme,
+			// 			managerAcc.publicKey,
+			// 			votingVerifiedAcc.recipient,
+			// 			proto.FunctionCall{
+			// 				Name: "constructor",
+			// 				Arguments: proto.Arguments{
+			// 					proto.NewStringArgument(boostingAcc.address.String()),
+			// 					proto.NewStringArgument(emissionAcc.address.String()),
+			// 					proto.NewStringArgument(assetStoreAcc.address.String()),
+			// 					proto.NewIntegerArgument(10000000),
+			// 					proto.NewStringArgument(wxAssetId),
+			// 					proto.NewIntegerArgument(10000000),
+			// 					proto.NewIntegerArgument(10),
+			// 					proto.NewIntegerArgument(3),
+			// 					proto.NewIntegerArgument(3000),
+			// 					proto.NewIntegerArgument(10),
+			// 				},
+			// 			},
+			// 			nil,
+			// 			proto.NewOptionalAssetWaves(),
+			// 			500000,
+			// 			tools.Timestamp(),
+			// 		),
+			// 	},
+			// )
+			// err = votingVerified.DeployAndSave(sc)
+			// if err != nil {
+			// 	return nil, fmt.Errorf("votingVerified.DeployAndSave: %w", err)
+			// }
 
-			votingEmissionCandidate := cli_contract.New(
-				proto.TestNetScheme,
-				cl,
-				contractModel,
-				votingEmissionCandidateAcc.privateKey,
-				managerAcc.privateKey,
-				gazPrv,
-				"voting_emission_candidate",
-				"voting_emission_candidate.ride",
-				stage,
-				false,
-				[]proto.DataEntry{
-					&proto.StringDataEntry{
-						Key:   "%s__managerPublicKey",
-						Value: managerAcc.publicKey.String(),
-					},
-				},
-				[]*proto.InvokeScriptWithProofs{
-					proto.NewUnsignedInvokeScriptWithProofs(
-						1,
-						proto.TestNetScheme,
-						managerAcc.publicKey,
-						votingEmissionAcc.recipient,
-						proto.FunctionCall{
-							Name: "constructor",
-							Arguments: proto.Arguments{
-								proto.NewStringArgument(assetStoreAcc.address.String()),
-								proto.NewStringArgument(boostingAcc.address.String()),
-								proto.NewStringArgument(emissionAcc.address.String()),
-								proto.NewStringArgument(factoryV2Acc.address.String()),
-								proto.NewStringArgument(userPoolsAcc.address.String()),
-								proto.NewStringArgument(votingEmissionAcc.address.String()),
-								proto.NewIntegerArgument(100000000),
-								proto.NewStringArgument(wxAssetId),
-								proto.NewIntegerArgument(10),
-								proto.NewStringArgument(xtnAssetId),
-								proto.NewIntegerArgument(10),
-							},
-						},
-						nil,
-						proto.NewOptionalAssetWaves(),
-						500000,
-						tools.Timestamp(),
-					),
-					proto.NewUnsignedInvokeScriptWithProofs(
-						1,
-						proto.TestNetScheme,
-						managerAcc.publicKey,
-						votingEmissionAcc.recipient,
-						proto.FunctionCall{
-							Name: "constructorV2",
-							Arguments: proto.Arguments{
-								proto.NewIntegerArgument(100000000),
-							},
-						},
-						nil,
-						proto.NewOptionalAssetWaves(),
-						500000,
-						tools.Timestamp(),
-					),
-				},
-			)
-			err = votingEmissionCandidate.DeployAndSave(sc)
-			if err != nil {
-				return nil, fmt.Errorf("votingEmissionCandidate.DeployAndSave: %w", err)
-			}
+			// votingEmissionCandidate := cli_contract.New(
+			// 	proto.TestNetScheme,
+			// 	cl,
+			// 	contractModel,
+			// 	votingEmissionCandidateAcc.privateKey,
+			// 	managerAcc.privateKey,
+			// 	gazPrv,
+			// 	"voting_emission_candidate",
+			// 	"voting_emission_candidate.ride",
+			// 	stage,
+			// 	false,
+			// 	[]proto.DataEntry{
+			// 		&proto.StringDataEntry{
+			// 			Key:   "%s__managerPublicKey",
+			// 			Value: managerAcc.publicKey.String(),
+			// 		},
+			// 	},
+			// 	[]*proto.InvokeScriptWithProofs{
+			// 		proto.NewUnsignedInvokeScriptWithProofs(
+			// 			1,
+			// 			proto.TestNetScheme,
+			// 			managerAcc.publicKey,
+			// 			votingEmissionAcc.recipient,
+			// 			proto.FunctionCall{
+			// 				Name: "constructor",
+			// 				Arguments: proto.Arguments{
+			// 					proto.NewStringArgument(assetStoreAcc.address.String()),
+			// 					proto.NewStringArgument(boostingAcc.address.String()),
+			// 					proto.NewStringArgument(emissionAcc.address.String()),
+			// 					proto.NewStringArgument(factoryV2Acc.address.String()),
+			// 					proto.NewStringArgument(userPoolsAcc.address.String()),
+			// 					proto.NewStringArgument(votingEmissionAcc.address.String()),
+			// 					proto.NewIntegerArgument(100000000),
+			// 					proto.NewStringArgument(wxAssetId),
+			// 					proto.NewIntegerArgument(10),
+			// 					proto.NewStringArgument(xtnAssetId),
+			// 					proto.NewIntegerArgument(10),
+			// 				},
+			// 			},
+			// 			nil,
+			// 			proto.NewOptionalAssetWaves(),
+			// 			500000,
+			// 			tools.Timestamp(),
+			// 		),
+			// 		proto.NewUnsignedInvokeScriptWithProofs(
+			// 			1,
+			// 			proto.TestNetScheme,
+			// 			managerAcc.publicKey,
+			// 			votingEmissionAcc.recipient,
+			// 			proto.FunctionCall{
+			// 				Name: "constructorV2",
+			// 				Arguments: proto.Arguments{
+			// 					proto.NewIntegerArgument(100000000),
+			// 				},
+			// 			},
+			// 			nil,
+			// 			proto.NewOptionalAssetWaves(),
+			// 			500000,
+			// 			tools.Timestamp(),
+			// 		),
+			// 	},
+			// )
+			// err = votingEmissionCandidate.DeployAndSave(sc)
+			// if err != nil {
+			// 	return nil, fmt.Errorf("votingEmissionCandidate.DeployAndSave: %w", err)
+			// }
 
 			return nil, nil
 		})
