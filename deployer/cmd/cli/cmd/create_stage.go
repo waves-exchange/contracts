@@ -130,6 +130,96 @@ var createStageCmd = &cobra.Command{
 			printAndExit(err)
 		}
 
+		managerAcc, err := genAccData(seed, stage, 0)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		factoryV2Acc, err := genAccData(seed, stage, 1)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		emissionAcc, err := genAccData(seed, stage, 2)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		// assetStoreAcc, err := genAccData(seed, stage, 3)
+		// if err != nil {
+		// 	printAndExit(err)
+		// }
+
+		userPoolsAcc, err := genAccData(seed, stage, 4)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		votingVerifiedAcc, err := genAccData(seed, stage, 5)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		votingEmissionCandidateAcc, err := genAccData(seed, stage, 6)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		// boostingAcc, err := genAccData(seed, stage, 7)
+		// if err != nil {
+		// 	printAndExit(err)
+		// }
+
+		// votingEmissionAcc, err := genAccData(seed, stage, 8)
+		// if err != nil {
+		// 	printAndExit(err)
+		// }
+
+		err = tools.SignBroadcastWait(
+			ctx,
+			proto.TestNetScheme,
+			cl,
+			proto.NewUnsignedTransferWithProofs(
+				3,
+				crypto.GeneratePublicKey(gazPrv),
+				proto.NewOptionalAssetWaves(),
+				proto.NewOptionalAssetWaves(),
+				tools.Timestamp(),
+				500000000,
+				100000,
+				managerAcc.recipient,
+				nil,
+			),
+			gazPrv,
+		)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		factoryV2 := cli_contract.New(
+			proto.TestNetScheme,
+			cl,
+			contractModel,
+			factoryV2Acc.privateKey,
+			managerAcc.privateKey,
+			gazPrv,
+			"factory_v2",
+			"factory_v2.ride",
+			stage,
+			false,
+			[]proto.DataEntry{
+				&proto.StringDataEntry{
+					Key:   "%s__managerPublicKey",
+					Value: managerAcc.publicKey.String(),
+				},
+			},
+			nil,
+		)
+		err = factoryV2.Deploy(ctx)
+		if err != nil {
+			printAndExit(fmt.Errorf("factoryV2.DeployAndSave: %w", err))
+		}
+
 		// Init contracts and save to mongo
 		sess, err := db.Client().StartSession()
 		if err != nil {
@@ -141,94 +231,9 @@ var createStageCmd = &cobra.Command{
 				return nil, fmt.Errorf("branchModel.Create: %w", e)
 			}
 
-			managerAcc, err := genAccData(seed, stage, 0)
-			if err != nil {
-				printAndExit(err)
-			}
-
-			factoryV2Acc, err := genAccData(seed, stage, 1)
-			if err != nil {
-				printAndExit(err)
-			}
-
-			emissionAcc, err := genAccData(seed, stage, 2)
-			if err != nil {
-				printAndExit(err)
-			}
-
-			// assetStoreAcc, err := genAccData(seed, stage, 3)
-			// if err != nil {
-			// 	printAndExit(err)
-			// }
-
-			userPoolsAcc, err := genAccData(seed, stage, 4)
-			if err != nil {
-				printAndExit(err)
-			}
-
-			votingVerifiedAcc, err := genAccData(seed, stage, 5)
-			if err != nil {
-				printAndExit(err)
-			}
-
-			votingEmissionCandidateAcc, err := genAccData(seed, stage, 6)
-			if err != nil {
-				printAndExit(err)
-			}
-
-			// boostingAcc, err := genAccData(seed, stage, 7)
-			// if err != nil {
-			// 	printAndExit(err)
-			// }
-
-			// votingEmissionAcc, err := genAccData(seed, stage, 8)
-			// if err != nil {
-			// 	printAndExit(err)
-			// }
-
-			err = tools.SignBroadcastWait(
-				sc,
-				proto.TestNetScheme,
-				cl,
-				proto.NewUnsignedTransferWithProofs(
-					3,
-					crypto.GeneratePublicKey(gazPrv),
-					proto.NewOptionalAssetWaves(),
-					proto.NewOptionalAssetWaves(),
-					tools.Timestamp(),
-					500000000,
-					100000,
-					managerAcc.recipient,
-					nil,
-				),
-				gazPrv,
-			)
-			if err != nil {
-				printAndExit(err)
-			}
-
-			factoryV2 := cli_contract.New(
-				proto.TestNetScheme,
-				cl,
-				contractModel,
-				factoryV2Acc.privateKey,
-				managerAcc.privateKey,
-				gazPrv,
-				"factory_v2",
-				"factory_v2.ride",
-				stage,
-				false,
-				[]proto.DataEntry{
-					&proto.StringDataEntry{
-						Key:   "%s__managerPublicKey",
-						Value: managerAcc.publicKey.String(),
-					},
-				},
-				nil,
-			)
-			e = factoryV2.DeployAndSave(sc)
+			e = factoryV2.Save(sc)
 			if e != nil {
-				return nil, fmt.Errorf("factoryV2.DeployAndSave: %w", e)
+				return nil, fmt.Errorf("factoryV2.Save: %w", e)
 			}
 
 			emission := cli_contract.New(
