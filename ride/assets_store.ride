@@ -150,7 +150,7 @@ func updateTickerActions(assetId: String, ticker: String) = {
 
 @Callable(i)
 func setAssetName(assetID: String, assetName: String) = {
-  strict checkCaller = i.mustManager()
+  strict checkCaller = i.mustAdmin()
   [
     StringEntry(keyAssetName(assetID), assetName)
   ]
@@ -158,7 +158,7 @@ func setAssetName(assetID: String, assetName: String) = {
 
 @Callable(i)
 func setAssetDescription(assetID: String, assetDescription: String) = {
-  strict checkCaller = i.mustManager()
+  strict checkCaller = i.mustAdmin()
   [
     StringEntry(keyAssetDescription(assetID), assetDescription)
   ]
