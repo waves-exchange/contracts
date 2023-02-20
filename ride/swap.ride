@@ -151,7 +151,7 @@ func swapCalculateREADONLY(
   let res = invoke(
     poolAdr,
     "calculateAmountOutForSwapREADONLY",
-    [cleanAmountIn.toInt(), isReverse],
+    [cleanAmountIn.toInt(), isReverse, feePoolAmount],
     []
   ).exactAs[Int]
 
@@ -196,7 +196,7 @@ func swap(
   let totalGetRaw = invoke(
     poolAdr,
     "calculateAmountOutForSwapAndSendTokens",
-    [cleanAmountIn.toInt(), isReverse, amountOutMin, addressTo],
+    [cleanAmountIn.toInt(), isReverse, amountOutMin, addressTo, feePoolAmount],
     [AttachedPayment(assetInAttachedPayment, cleanAmountIn.toInt())]
   ).exactAs[Int]
 
