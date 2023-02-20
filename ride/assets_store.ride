@@ -30,8 +30,8 @@ func keyAmountAndPriceAssetsToLpAsset(amountAsset: String, priceAsset: String) =
 func keyLpAssetToAmountAndPriceAssets(lpAsset: String) = ["%s%s", "lpAssetToAmountAndPriceAssets", lpAsset].makeString(SEP)
 func keyAssetLabels(assetId: String) = ["%s%s", "labels", assetId].makeString(SEP)
 func keyLabels() = ["%s", "labels"].makeString(SEP)
-func keyAssetName() = ["%s", "assetName"].makeString(SEP)
-func keyAssetDescription() = ["%s", "assetDescription"].makeString(SEP) 
+func keyAssetName(assetId: String) = ["%s%s", "assetName", assetId].makeString(SEP)
+func keyAssetDescription(assetId: String) = ["%s", "assetDescription", assetId].makeString(SEP) 
 
 func getValueOrFail(address: Address, key: String, type: String|Int) = {
   let error = ["mandatory ", address.toString(), ".", key, " is not defined"].makeString("")
@@ -149,18 +149,18 @@ func updateTickerActions(assetId: String, ticker: String) = {
 }
 
 @Callable(i)
-func setAssetName(assetName: String) = {
+func setAssetName(assetID: String, assetName: String) = {
   strict checkCaller = i.mustManager()
   [
-    StringEntry(keyAssetName(), assetName)
+    StringEntry(keyAssetName(assetID), assetName)
   ]
 }
 
 @Callable(i)
-func setAssetDescription(assetDescription: String) = {
+func setAssetDescription(assetID: String, assetDescription: String) = {
   strict checkCaller = i.mustManager()
   [
-    StringEntry(keyAssetDescription(), assetDescription)
+    StringEntry(keyAssetDescription(assetID), assetDescription)
   ]
 }
 
