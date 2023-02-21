@@ -798,7 +798,7 @@ func mustManager(i: Invocation) = {
 }
 
 @Callable(i)
-func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int,  isReverse: Boolean) = {
+func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int,  isReverse: Boolean, feePoolAmount: Int) = {
   let (assetOut, assetIn) = if (isReverse == false) then {
     let assetOut = getStringOrFail(this, pa())
     let assetIn = getStringOrFail(this, aa())
@@ -813,14 +813,14 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int,  isReverse: Boolean) 
   let amountOut = fraction(poolAssetOutBalance, cleanAmountIn, poolAssetInBalance + cleanAmountIn)
 
   let oldK = poolAssetInBalance.toBigInt() * poolAssetOutBalance.toBigInt()
-  let newK = (getAccBalance(assetIn).toBigInt() + cleanAmountIn.toBigInt()) * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
+  let newK = (getAccBalance(assetIn).toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt()) * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
   strict checkK = newK >= oldK || "new K is fewer error".throw()
 
   (nil, amountOut)
 }
 
 @Callable(i)
-func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String) = {
+func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String, feePoolAmount: Int) = {
   let swapContact = invoke(
     factoryContract,
     "getSwapContractREADONLY", 
@@ -844,10 +844,9 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   let amountOut = fraction(poolAssetOutBalance, cleanAmountIn, poolAssetInBalance + cleanAmountIn)
 
   let oldK = poolAssetInBalance.toBigInt() * poolAssetOutBalance.toBigInt()
-  let newK = getAccBalance(assetIn).toBigInt() * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
+  let newK = (getAccBalance(assetIn).toBigInt() + feePoolAmount.toBigInt()) * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
 
   strict checkK = newK >= oldK || "new K is fewer error".throw()
-
   strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
   (
     [
