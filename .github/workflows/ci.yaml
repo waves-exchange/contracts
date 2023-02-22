@@ -44,7 +44,7 @@ jobs:
       contents: write
     container:
       image: golang:1.19
-      options: --user root
+      options: --user 1000
     steps:
       - name: Clean step
         uses: mickem/clean-after-action@v1
@@ -53,8 +53,7 @@ jobs:
           keepGit: true
       - name: Set Git config
         run: |
-          export GIT_CEILING_DIRECTORIES=/__w
-          git config --global --add safe.directory /__w/waves-exchange/contracts
+          git config --global --add safe.directory *
           git config --global user.email "actions@github.com"
           git config --global user.name "Github Actions"
           git version
