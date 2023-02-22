@@ -300,8 +300,8 @@ func (s *Syncer) saveToDocs(
 			"%s | [`%s`](https://wavesexplorer.com/addresses/%[2]s%s) | %s | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%[3]s) \n",
 			cont.Tag,
 			addr.String(),
-			pub.String(),
 			suffix,
+			pub.String(),
 			cont.File,
 			branch,
 		)
