@@ -40,6 +40,8 @@ jobs:
       COMPARELPSTABLEADDONSCRIPTADDRESS: 3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV # USDT/USDN pool addon
       FEESEED: ${{ secrets.TESTNETFEESEED }}
     runs-on: self-hosted
+    permissions:
+      contents: write
     container:
       image: golang:1.19
       options: --user root
@@ -51,19 +53,14 @@ jobs:
           keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Set Git config
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "Github Actions"
       - name: Deploy changed contracts
         run: |
           cd deployer
           go run main.go
       - name: Update docs
-        run: |
-          git add .
-          git commit -m update docs
-          git push
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Update docs
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
