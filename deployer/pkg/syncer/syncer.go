@@ -297,7 +297,7 @@ func (s *Syncer) saveToDocs(
 			return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
 		}
 		rowsContracts += fmt.Sprintf(
-			"%s | [`%s`](https://wavesexplorer.com/addresses/%[2]s%s) | %s | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%[4]s) \n",
+			"%s | [`%s`](https://wavesexplorer.com/addresses/%[2]s%s) | `%s` | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%[4]s) \n",
 			cont.Tag,
 			addr.String(),
 			suffix,
