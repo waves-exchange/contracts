@@ -67,6 +67,7 @@ jobs:
         run: |
           git add .
           git commit -m update docs
+          git pull
           git push
       - name: Clean repo
         uses: AutoModality/action-clean@v1
