@@ -47,6 +47,7 @@ func keyConfig() = {"%s__config"}
 func keyRatePerBlockMaxCurrent() = "%s%s__ratePerBlockMax__current"
 func keyRatePerBlockMaxStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__ratePerBlockMax__start", timestamp.toString(), block.toString()].makeString(SEP)
 
+# call boosting.onBoostEmissionUpdate rate per block changes
 func keyRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
 func keyRatePerBlockStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__ratePerBlock__start", timestamp.toString(), block.toString()].makeString(SEP)
 
@@ -54,6 +55,7 @@ func keyEmissionStartBlock() = "%s%s__emission__startBlock"
 func keyEmissionDurationInBlocks() = "%s%s__emission__duration"
 func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 
+# call boosting.onBoostEmissionUpdate when max factor changes
 func keyBoostCoeff() = "%s__boostCoeff"
 let boostCoeffDefault = 3
 let boostCoeff = this.getInteger(keyBoostCoeff()).valueOrElse(boostCoeffDefault)

@@ -421,6 +421,9 @@ func stake() = {
   let stakedTotalKEY = keyStakedTotal(lpAssetIdStr)
 
   let stakedByUser = stakedByUserKEY.readStaked()
+  strict refreshStakedVote = if (stakedByUser == 0) then {
+    boostingContract.invoke("onStakedVoteUpdate", [lpAssetIdStr, userAddressStr, true], [])
+  } else unit
   let stakedTotal = stakedTotalKEY.readStaked()
 
   # TODO обработать кейс когда эмиссия еще не началась
@@ -460,6 +463,10 @@ func unstake(lpAssetIdStr: String, amount: Int) = {
   let listActions = if (listName.containsNode(userAddressStr) && amount == stakedByUser) then {
     listName.deleteNodeActions(userAddressStr)
   } else []
+
+  strict refreshStakedVote = if (amount == stakedByUser) then {
+    boostingContract.invoke("onStakedVoteUpdate", [lpAssetIdStr, userAddressStr, false], [])
+  } else unit
 
   let claimedByUserMinReward = this.getBigIntFromStringOrZero(lpAssetIdStr.keyClaimedByUserMinReward(userAddressStr))
   let poolAddress = factoryContract.getStringByAddressOrFail(lpAssetIdStr.keyFactoryLpAssetToPoolContractAddress())

@@ -87,7 +87,8 @@ func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
 func keyEmissionRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
 func keyEmissionRatePerBlockMaxCurrent() = "%s%s__ratePerBlockMax__current"
 func keyEmissionStartBlock() = "%s%s__emission__startBlock"
-func keyBoostingV2StartHeight() = "%s%s__boostingV2__startBlock"
+func keyBoostingV2LastUpdateHeight() = "%s%s__boostingV2__startBlock"
+func keyBoostingV2Integral() = "%s%s__boostingV2__integral"
 func keyEmissionDurationInBlocks() = "%s%s__emission__duration"
 func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 
@@ -334,7 +335,107 @@ func calcCurrentGwxAmount(userAddress: String) = {
   userAddress.calcUserGwxAmountAtHeight(height)
 }
 
-func getVoteInfoREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+func getVotingEmissionEpochInfo() = {
+  let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(SEP)
+  let (currentEpochUi, lastFinalizedEpoch) = {
+    let currentEpochUi = votingEmissionContract.getInteger(keyCurrentEpochUi).value()
+    let lastFinalizedEpoch = currentEpochUi - 1
+    if (lastFinalizedEpoch < 0) then "invalid epoch".throwErr() else (currentEpochUi, lastFinalizedEpoch)
+  }
+
+  func keyStartHeightByEpoch(epoch: Int) = ["%s%d", "startHeight", epoch.toString()].makeString(SEP)
+
+  let currentEpochStartHeight = votingEmissionContract.getInteger(currentEpochUi.keyStartHeightByEpoch()).value()
+
+  (lastFinalizedEpoch, currentEpochStartHeight)
+}
+
+func getPoolAssetsByLpAssetId(lpAssetIdStr: String) = {
+  let idxAmountAssetId = 4
+  let idxPriceAssetId = 5
+  let poolCfg = factoryContract.invoke("getPoolConfigByLpAssetId", [lpAssetIdStr], []).exactAs[List[Any]]
+  let amountAssetId = poolCfg[idxAmountAssetId].exactAs[String]
+  let priceAssetId = poolCfg[idxPriceAssetId].exactAs[String]
+
+  (amountAssetId, priceAssetId)
+}
+
+# votingEmission
+func keyVote(amountAssetId: String, priceAssetId: String, address: Address, epoch: Int) = {
+  ["%s%s%s%s%d", "vote", amountAssetId, priceAssetId, address.toString(), epoch.toString()].makeString(SEP)
+}
+# this
+func keyVotingResultStaked(lpAssetIdStr: String, epoch: Int) = {
+  ["%s%s%d", "votingResultStaked", lpAssetIdStr, epoch.toString()].makeString(SEP)
+}
+func keyVotingResultStakedIntegral(lpAssetIdStr: String, epoch: Int) = {
+  ["%s%s%d", "votingResultStakedIntegral", lpAssetIdStr, epoch.toString()].makeString(SEP)
+}
+func keyVotingResultStakedIntegralLastUpdateHeight(lpAssetIdStr: String, epoch: Int) = {
+  ["%s%s%d", "votingResultStakedIntegralLastUpdateHeight", lpAssetIdStr, epoch.toString()].makeString(SEP)
+}
+func keyVoteStakedIntegral(lpAssetIdStr: String, address: Address, epoch: Int) = {
+  ["%s%s%s%d", "voteStakedIntegral", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
+}
+func keyVoteStakedIntegralLast(lpAssetIdStr: String, address: Address, epoch: Int) = {
+  ["%s%s%s%d", "voteStakedIntegralsLast", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
+}
+func keyVotingResultStakedIntegralLast(lpAssetIdStr: String, address: Address, epoch: Int) = {
+  ["%s%s%s%d", "votingResultStakedIntegralLast", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
+}
+func keyVoteStakedIntegralLastUpdateHeight(lpAssetIdStr: String, address: Address, epoch: Int) = {
+  ["%s%s%s%d", "voteStakedIntegralLastUpdateHeight", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
+}
+
+# staking
+func keyStakedByUser(userAddressStr: String, lpAssetIdStr: String) = ["%s%s%s", "staked", userAddressStr, lpAssetIdStr].makeString(SEP)
+
+func getUserVoteStaked(lpAssetIdStr: String, userAddressStr: String) = {
+  let userAddress = userAddressStr.addressFromStringValue()
+  let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
+  let (amountAssetId, priceAssetId) = lpAssetIdStr.getPoolAssetsByLpAssetId()
+  let stakedByUser = stakingContract.getInteger(keyStakedByUser(userAddressStr, lpAssetIdStr)).valueOrElse(0)
+  let userVote = votingEmissionContract.getInteger(keyVote(amountAssetId, priceAssetId, userAddress, lastFinalizedEpoch)).valueOrElse(0)
+  
+  if (stakedByUser == 0) then 0 else userVote
+}
+
+func getVotingResultStaked(lpAssetIdStr: String) = {
+  let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
+  let votingResultStakedStart = votingEmissionContract.getInteger(lpAssetIdStr.keyVotingResultStaked(lastFinalizedEpoch)).valueOrElse(0)
+  let votingResultStaked = this.getInteger(lpAssetIdStr.keyVotingResultStaked(lastFinalizedEpoch)).valueOrElse(votingResultStakedStart)
+
+  votingResultStaked
+}
+
+func refreshVotingResultStakedIntegral(
+  lpAssetIdStr: String,
+  stakedVoteDelta: Int
+) = {
+  let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
+  let votingResultStaked = lpAssetIdStr.getVotingResultStaked()
+  let votingResultStakedNew = votingResultStaked + stakedVoteDelta
+  let votingResultStakedIntegralPrev = this.getInteger(lpAssetIdStr.keyVotingResultStakedIntegral(lastFinalizedEpoch)).valueOrElse(0)
+  let votingResultStakedIntegralLastUpdateHeight = this.getInteger(lpAssetIdStr.keyVotingResultStakedIntegralLastUpdateHeight(lastFinalizedEpoch)).valueOrElse(currentEpochStartHeight)
+  let votingResultStakedIntegralDh = height - votingResultStakedIntegralLastUpdateHeight
+  let votingResultStakedIntegral = votingResultStakedIntegralDh * votingResultStaked + votingResultStakedIntegralPrev
+
+  (
+    [
+      IntegerEntry(lpAssetIdStr.keyVotingResultStaked(lastFinalizedEpoch), votingResultStakedNew),
+      IntegerEntry(lpAssetIdStr.keyVotingResultStakedIntegralLastUpdateHeight(lastFinalizedEpoch), height),
+      IntegerEntry(lpAssetIdStr.keyVotingResultStakedIntegral(lastFinalizedEpoch), votingResultStakedIntegral)
+    ],
+    votingResultStakedIntegral
+  )
+}
+
+func refreshVoteStakedIntegral(
+  lpAssetIdStr: String,
+  userAddressStr: String,
+  edge: Boolean # true: add, false: remove
+) = {
+  let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
   let userAddress = userAddressStr.addressFromStringValue()
 
   let idxAmountAssetId = 4
@@ -343,32 +444,88 @@ func getVoteInfoREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
   let amountAssetId = poolCfg[idxAmountAssetId].exactAs[String]
   let priceAssetId = poolCfg[idxPriceAssetId].exactAs[String]
 
-  let keyCurrentEpoch = ["%s", "currentEpoch"].makeString(SEP)
-  let lastFinalizedEpoch = {
-    let epoch = votingEmissionContract.getInteger(keyCurrentEpoch).value() - 1
-    if (epoch < 0) then "invalid epoch".throwErr() else epoch
+  let userVote = votingEmissionContract.getInteger(keyVote(amountAssetId, priceAssetId, userAddress, lastFinalizedEpoch)).valueOrElse(0)
+
+  let actions = if (userVote == 0) then [] else {
+    let stakedVoteDelta = if (edge) then userVote else -userVote
+    let (votingResultActions, votingResultStakedIntegral) = lpAssetIdStr.refreshVotingResultStakedIntegral(stakedVoteDelta)
+
+    let userVoteStaked = if (edge) then 0 else userVote 
+    let userVoteStakedIntegralPrev = this.getInteger(lpAssetIdStr.keyVoteStakedIntegral(userAddress, lastFinalizedEpoch)).valueOrElse(0)
+    let userVoteStakedIntegralLastUpdateHeight = this.getInteger(lpAssetIdStr.keyVoteStakedIntegralLastUpdateHeight(userAddress, lastFinalizedEpoch)).valueOrElse(currentEpochStartHeight)
+    let userVoteStakedIntegralDh = height - userVoteStakedIntegralLastUpdateHeight
+    let userVoteStakedIntegral = userVoteStakedIntegralDh * userVoteStaked + userVoteStakedIntegralPrev
+    let voteActions = [
+      IntegerEntry(lpAssetIdStr.keyVoteStakedIntegralLastUpdateHeight(userAddress, lastFinalizedEpoch), height),
+      IntegerEntry(lpAssetIdStr.keyVoteStakedIntegral(userAddress, lastFinalizedEpoch), userVoteStakedIntegral)
+    ]
+
+    votingResultActions ++ voteActions
   }
 
-  func keyVote(pool: (String, String), address: Address, epoch: Int) = {
-    ["%s%s%s%s%d", "vote", amountAssetId, priceAssetId, address.toString(), epoch.toString()].makeString(SEP)
-  }
-  func keyVotingResult(pool: (String, String), epoch: Int) = {
-    ["%s%s%s%d", "votingResult", amountAssetId, priceAssetId, epoch.toString()].makeString(SEP)
-  }
-  let pool = (amountAssetId, priceAssetId)
-  let userVote = votingEmissionContract.getInteger(pool.keyVote(userAddress, lastFinalizedEpoch)).valueOrElse(0)
-  let poolResult = votingEmissionContract.getInteger(pool.keyVotingResult(lastFinalizedEpoch)).valueOrElse(0)
+  actions
+}
 
-  (userVote, poolResult)
+func getStakedVotesIntegralsDiff(lpAssetIdStr: String, userAddressStr: String) = {
+  let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
+  let userAddress = userAddressStr.addressFromStringValue()
+
+  let userVoteStaked = lpAssetIdStr.getUserVoteStaked(userAddressStr)
+  let votingResultStaked = lpAssetIdStr.getVotingResultStaked()
+  let userVoteStakedIntegralPrev = this.getInteger(lpAssetIdStr.keyVoteStakedIntegral(userAddress, lastFinalizedEpoch)).valueOrElse(0)
+  let votingResultStakedIntegralPrev = this.getInteger(lpAssetIdStr.keyVotingResultStakedIntegral(lastFinalizedEpoch)).valueOrElse(0)
+  let userVoteStakedIntegralLastUpdateHeight = this.getInteger(lpAssetIdStr.keyVoteStakedIntegralLastUpdateHeight(userAddress, lastFinalizedEpoch)).valueOrElse(currentEpochStartHeight)
+  let votingResultStakedIntegralLastUpdateHeight = this.getInteger(lpAssetIdStr.keyVotingResultStakedIntegralLastUpdateHeight(lastFinalizedEpoch)).valueOrElse(currentEpochStartHeight)
+  let userVoteStakedIntegralLast = this.getInteger(lpAssetIdStr.keyVoteStakedIntegralLast(userAddress, lastFinalizedEpoch)).valueOrElse(0)
+  let votingResultStakedIntegralLast = this.getInteger(lpAssetIdStr.keyVotingResultStakedIntegralLast(userAddress, lastFinalizedEpoch)).valueOrElse(0)
+  let userVoteStakedIntegralDh = height - userVoteStakedIntegralLastUpdateHeight
+  let votingResultStakedIntegralDh = height - votingResultStakedIntegralLastUpdateHeight
+  let userVoteStakedIntegral = userVoteStakedIntegralDh * userVoteStaked + userVoteStakedIntegralPrev
+  let votingResultStakedIntegral = votingResultStakedIntegralDh * votingResultStaked + votingResultStakedIntegralPrev
+  let userVoteStakedIntegralDiff = userVoteStakedIntegral - userVoteStakedIntegralLast
+  let votingResultStakedIntegralDiff = votingResultStakedIntegral - votingResultStakedIntegralLast
+
+  (
+    [
+      IntegerEntry(lpAssetIdStr.keyVoteStakedIntegralLast(userAddress, lastFinalizedEpoch), userVoteStakedIntegral),
+      IntegerEntry(lpAssetIdStr.keyVotingResultStakedIntegralLast(userAddress, lastFinalizedEpoch), votingResultStakedIntegral)
+    ],
+    userVoteStakedIntegralDiff,
+    votingResultStakedIntegralDiff
+  )
+}
+
+func refreshBoostEmissionIntegral() = {
+  let wxEmissionPerBlock = emissionContract.iof(keyEmissionRatePerBlockCurrent())
+  let boostingV2LastUpdateHeightOption = this.getInteger(keyBoostingV2LastUpdateHeight())
+  let boostingV2IngergalOption = this.getInteger(keyBoostingV2Integral())
+  let emissionEnd = emissionContract.iof(keyEmissionEndBlock())
+  let h = if (height > emissionEnd) then emissionEnd else height
+
+  let dh = match boostingV2LastUpdateHeightOption {
+    case lastUpdateHeight: Int => max([h - lastUpdateHeight, 0])
+    case _: Unit => 0
+  }
+
+  let boostEmissionPerBlock = wxEmissionPerBlock * (boostCoeff - 1) / boostCoeff
+  let boostEmissionIntegralPrev = boostingV2IngergalOption.valueOrElse(0)
+  let boostEmissionIntegral = boostEmissionPerBlock * dh + boostEmissionIntegralPrev
+
+  (
+    [
+      IntegerEntry(keyBoostingV2Integral(), boostEmissionIntegral),
+      IntegerEntry(keyBoostingV2LastUpdateHeight(), height)
+    ],
+    boostEmissionIntegral
+  )
 }
 
 func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly: Boolean) = {
-  let EMPTY = "EMPTY"
-  let userRecordOrEmpty = this.getString(keyLockParamsRecord(userAddressStr)).valueOrElse(EMPTY)
-  if (userRecordOrEmpty == EMPTY) then (0, [], "userRecord::is::empty") else
+  let userRecordOption = this.getString(keyLockParamsRecord(userAddressStr))
+  if (userRecordOption == unit) then (0, [], "userRecord::is::empty") else
 
-  let userRecordArray    = userRecordOrEmpty.split(SEP)
-  let userNumStr         = userRecordArray[IdxLockUserNum]
+  let userRecordArray = userRecordOption.value().split(SEP)
+  let userNumStr = userRecordArray[IdxLockUserNum]
 
   let EMPTYSTR = "empty" # is used from REST
   let poolWeight = if (lpAssetIdStr != EMPTYSTR) then {
@@ -378,65 +535,39 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
     if (readOnly) then 0 else throw("not readonly mode: unsupported lp asset " + lpAssetIdStr)
   }
 
-# BOOST INTEGRAL RECALC
-  let wxEmissionPerBlock  = emissionContract.iof(keyEmissionRatePerBlockCurrent())
-  let boostingV2StartHeight = emissionContract.iof(keyBoostingV2StartHeight())
-  let emissionEnd = emissionContract.iof(keyEmissionEndBlock())
-  let h = if (height > emissionEnd) then emissionEnd else height
-
-  let dh = max([h - boostingV2StartHeight, 0])
-
+  # BOOST INTEGRAL RECALC
+  # updated by claim
   let userLpBoostEmissionLastIntegralKEY = keyUserLpBoostEmissionLastINTEGRAL(userNumStr, lpAssetIdStr)
+  # updated by lock
   let userBoostEmissionLastIntegralKEY = keyUserBoostEmissionLastINTEGRAL(userNumStr)
 
   let userBoostEmissionLastIntegral = this.getInteger(userLpBoostEmissionLastIntegralKEY)
-      .valueOrElse(this.ioz(userBoostEmissionLastIntegralKEY))
+    .valueOrElse(this.ioz(userBoostEmissionLastIntegralKEY))
 
-  let boostEmissionIntegral = wxEmissionPerBlock * dh * (boostCoeff - 1) / boostCoeff
+  let boostEmissionIntegral = refreshBoostEmissionIntegral()._2
   let userBoostEmissionIntegral = boostEmissionIntegral - userBoostEmissionLastIntegral
-  let udh = fraction(userBoostEmissionIntegral, boostCoeff, (boostCoeff - 1) * wxEmissionPerBlock)
-
-  # find last user height
-  let uLastH = h - udh
 
   if (userBoostEmissionIntegral < 0) then throw("wrong calculations") else
 
-  let userMaxBoostIntegralKEY = keyUserMaxBoostINTEGRAL(userNumStr)
-  let totalMaxBoostIntegralKEY = keyTotalMaxBoostINTEGRAL()
-
-  let userMaxBoostInt = this.ioz(userMaxBoostIntegralKEY)
-  let totalMaxBoostInt = this.ioz(totalMaxBoostIntegralKEY)
-
-  let (userVote, totalVotes) = getVoteInfoREADONLY(lpAssetIdStr, userAddressStr)
-
-  let userBoostAvalaibleToClaimTotalKEY = keyUserBoostAvalaibleToClaimTotal(userNumStr)
-  let userBoostAvaliableToClaimTotal = this.ioz(userBoostAvalaibleToClaimTotalKEY) # in case of increase boost
-  #let userBoostAvaliableToClaimTotalNew = userBoostAvaliableToClaimTotal + fraction(userBoostEmissionIntegral, userMaxBoostInt, totalMaxBoostInt)
+  let (stakedVotesIntegralsActions, userVoteIntegralDiff, totalVotesIntegralDiff) = getStakedVotesIntegralsDiff(lpAssetIdStr, userAddressStr)
 
   let poolUserBoostEmissionIntegral = fraction(userBoostEmissionIntegral, poolWeight, POOLWEIGHTMULT)
 
-  let userBoostAvaliableToClaimTotalNew = if (totalVotes == 0) then 0 else fraction(poolUserBoostEmissionIntegral, userVote, totalVotes)
-
-  let userBoostClaimedKEY = keyUserBoostClaimed(userNumStr)
-  let userBoostClaimed = this.ioz(userBoostClaimedKEY)
-  let userBoostAvailable = userBoostAvaliableToClaimTotalNew - userBoostClaimed
+  let userBoostAvaliableToClaimTotalNew = if (totalVotesIntegralDiff == 0) then 0 else {
+    fraction(poolUserBoostEmissionIntegral, userVoteIntegralDiff, totalVotesIntegralDiff)
+  }
 
   # BOOST INTEGRAL
   let dataState = [
-    #IntegerEntry(userBoostAvalaibleToClaimTotalKEY, userBoostAvaliableToClaimTotalNew),
-    IntegerEntry(userLpBoostEmissionLastIntegralKEY, boostEmissionIntegral)]
+    IntegerEntry(userLpBoostEmissionLastIntegralKEY, boostEmissionIntegral)
+  ] ++ stakedVotesIntegralsActions
 
   let debug = [
     userBoostEmissionLastIntegral.toString(),
     userBoostEmissionIntegral.toString(),
-    userBoostClaimed.toString(),
-    userBoostAvailable.toString(),
     poolWeight.toString(),
-    h.toString(),
-    udh.toString(),
-    uLastH.toString(),
-    userVote.toString(),
-    totalVotes.toString()
+    userVoteIntegralDiff.toString(),
+    totalVotesIntegralDiff.toString()
   ].makeString(":")
 
   (userBoostAvaliableToClaimTotalNew, dataState, debug)
@@ -488,21 +619,6 @@ func lockActions(i: Invocation, duration: Int) = {
   let b = gWxParamsResultList[1].ai()
   let period = gWxParamsResultList[2].ai().toString()
 
-  # BOOST INTEGRAL RECALC
-  let wxEmissionPerBlock  = emissionContract.iof(keyEmissionRatePerBlockCurrent())
-  let emissionStart = emissionContract.iof(keyEmissionStartBlock())
-  let emissionEnd = emissionContract.iof(keyEmissionEndBlock())
-  let h = if (height > emissionEnd) then emissionEnd else height
-  let dh = max([h - emissionStart, 0])
-
-  let userBoostEmissionLastIntegralKEY = keyUserBoostEmissionLastINTEGRAL(userNumStr)
-  let boostEmissionIntegral = wxEmissionPerBlock * dh * 2 / 3
-
-  let userMaxBoostIntegralKEY = keyUserMaxBoostINTEGRAL(userNumStr)
-  let totalMaxBoostIntegralKEY = keyTotalMaxBoostINTEGRAL()
-  let userMaxBoostInt = (gWxAmountStart * duration) / 2
-  let totalMaxBoostInt = this.ioz(totalMaxBoostIntegralKEY)
-
   let totalCachedGwxRaw = getTotalCachedGwx(false)
 
   let arr = if (userIsExisting) then [] else [
@@ -513,12 +629,9 @@ func lockActions(i: Invocation, duration: Int) = {
   (arr ++ LockParamsEntry(userAddressStr, userNumStr, pmtAmount, lockStart, duration, k, b, period)
   ++ StatsEntry(pmtAmount, duration, 1, if (userIsExisting) then 0 else 1)
   :+ HistoryEntry("lock", userAddressStr, pmtAmount, lockStart, duration, k, b, i)
-# BOOST INTEGRAL
   ++ [
-    IntegerEntry(userBoostEmissionLastIntegralKEY, boostEmissionIntegral),
-    #IntegerEntry(userMaxBoostIntegralKEY, userMaxBoostInt),
-    #IntegerEntry(totalMaxBoostIntegralKEY, totalMaxBoostInt + userMaxBoostInt),
-    IntegerEntry(keyTotalCachedGwx(), totalCachedGwxRaw + gWxAmountStart)], gWxAmountStart)
+    IntegerEntry(keyTotalCachedGwx(), totalCachedGwxRaw + gWxAmountStart)
+  ], gWxAmountStart)
 }
 
 @Callable(i)
@@ -594,50 +707,18 @@ func increaseLock(deltaDuration: Int) = {
   let b = gWxParamsResultList[1].ai()
   let period = gWxParamsResultList[2].ai().toString()
 
-# BOOST INTEGRAL RECALC
-  let wxEmissionPerBlock  = emissionContract.iof(keyEmissionRatePerBlockCurrent())
-  let emissionStart = emissionContract.iof(keyEmissionStartBlock())
-  let emissionEnd = emissionContract.iof(keyEmissionEndBlock())
-  let h = if (height > emissionEnd) then emissionEnd else height
-  let dh = max([h - emissionStart, 0])
-
-  let userBoostEmissionLastIntegralKEY = keyUserBoostEmissionLastINTEGRAL(userNumStr)
-  let userBoostEmissionLastIntegral = this.ioz(userBoostEmissionLastIntegralKEY)
-  let boostEmissionIntegral = wxEmissionPerBlock * dh * 2 / 3
-  let userBoostEmissionIntegral = boostEmissionIntegral - userBoostEmissionLastIntegral
-  if (userBoostEmissionIntegral < 0) then throw("wrong calculations") else
-
-  let userMaxBoostIntegralKEY = keyUserMaxBoostINTEGRAL(userNumStr)
-  let totalMaxBoostIntegralKEY = keyTotalMaxBoostINTEGRAL()
-  let userMaxBoostInt = this.ioz(userMaxBoostIntegralKEY)
-  let totalMaxBoostInt = this.ioz(totalMaxBoostIntegralKEY)
-
   let currUserGwx = calcCurrentGwxAmount(userAddressStr)
   let gwxDiff = gWxAmountStart - currUserGwx
   if (gwxDiff < 0) then throw("gwxDiff is less then 0: " + gwxDiff.toString()) else
   let totalCachedGwxRaw = getTotalCachedGwx(false)
   let totalCachedGwxCorrected = getTotalCachedGwx(true)
 
-  let userBoostAvalaibleToClaimTotalKEY = keyUserBoostAvalaibleToClaimTotal(userNumStr)
-
-  let userBoostAvaliableToClaimTotal = this.ioz(userBoostAvalaibleToClaimTotalKEY)
-  let userBoostAvaliableToClaimTotalNew = fraction(userBoostEmissionIntegral, currUserGwx, totalCachedGwxCorrected)
-
-  let userMaxBoostIntNew = (gWxAmountStart * lockDurationNew) / 2
-  let remainingUserMaxBoostInt = currUserGwx * remainingDuration / 2
-  let userMaxBoostIntDiff = userMaxBoostIntNew - remainingUserMaxBoostInt
-  #if (userMaxBoostIntDiff < 0) then throw("wrong calculations") else
-
   LockParamsEntry(userAddressStr, userNumStr, userAmountNew, lockStartNew, lockDurationNew, k, b, period)
     ++ StatsEntry(pmtAmount, deltaDuration, 0, 0)
     :+ HistoryEntry("lock", userAddressStr, pmtAmount, lockStart, lockDurationNew, k, b, i)
-# BOOST INTEGRAL
-  ++ [
-    #IntegerEntry(userMaxBoostIntegralKEY, userMaxBoostInt + userMaxBoostIntDiff),
-    #IntegerEntry(totalMaxBoostIntegralKEY, totalMaxBoostInt + userMaxBoostIntDiff),
-    #IntegerEntry(userBoostAvalaibleToClaimTotalKEY, userBoostAvaliableToClaimTotalNew),
-    #IntegerEntry(userBoostEmissionLastIntegralKEY, boostEmissionIntegral),
-    IntegerEntry(keyTotalCachedGwx(), totalCachedGwxRaw + gwxDiff)]
+    ++ [
+      IntegerEntry(keyTotalCachedGwx(), totalCachedGwxRaw + gwxDiff)
+    ]
 }
 
 @Callable(i)
@@ -695,6 +776,31 @@ func getUserGwxAmountAtHeightREADONLY(userAddress: String, targetHeight: Int) = 
 @Callable(i)
 func getTotalCachedGwxREADONLY() = {
   ([], getTotalCachedGwx(true))
+}
+
+# call this function when wxEmissionRate or boostCoeff changes
+@Callable(i)
+func onBoostEmissionUpdate() = {
+  # TODO: check caller
+  refreshBoostEmissionIntegral()
+}
+
+# Staked vote = 0 if staked amount = 0
+# Staked vote = last finalized vote if staked amount ≥ 0
+# So, stakedVote = [stakedAmount ≥ 0] * lastFinalizedVote
+#                  └ this is the Iverson bracket, not the array's one
+# Staked vote updates when staked amount goes from zero to non-zero or vice versa
+# Staked vote integral and voting result integral should be updated when it happens
+#                       ┌­ edge = true (rising)
+# staked amount > 0:    ┌───┐
+# staked amount = 0: ───┘   └───
+#                           └ edge = false (falling)
+@Callable(i)
+func onStakedVoteUpdate(lpAssetIdStr: String, userAddressStr: String, edge: Boolean) = {
+  # TODO: check caller
+  let actions = lpAssetIdStr.refreshVoteStakedIntegral(userAddressStr, edge)
+
+  ([], unit)
 }
 
 @Callable(i)
