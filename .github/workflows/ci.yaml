@@ -66,8 +66,8 @@ jobs:
       - name: Update docs
         run: |
           git add .
-          git commit -m update docs
-          git pull
+          git commit -m 'Update Docs'
+          git pull --rebase
           git push
       - name: Clean repo
         uses: AutoModality/action-clean@v1
