@@ -297,9 +297,10 @@ func (s *Syncer) saveToDocs(
 			return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
 		}
 		rowsContracts += fmt.Sprintf(
-			"%s | [`%s`](https://wavesexplorer.com/addresses/%[2]s%s) | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%[3]s) \n",
+			"%s | [`%s`](https://wavesexplorer.com/addresses/%[2]s%s) | %s | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%[3]s) \n",
 			cont.Tag,
 			addr.String(),
+			pub.String(),
 			suffix,
 			cont.File,
 			branch,
@@ -356,8 +357,8 @@ func (s *Syncer) saveToDocs(
 [**%s**](https://github.com/waves-exchange/contracts/tree/%[2]s) branch deployed to **%s** network at **%s** to **%s**
 
 ## Contracts
-| Name | Address | Code |
-|------|---------|------|
+| Name | Address | Public key | Code |
+|------|---------|------------|------|
 %s
 ## Pool assets
 | Name | AssetID | Description |
