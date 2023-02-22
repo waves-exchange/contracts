@@ -136,6 +136,31 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("s.branchModel.GetTestnetBranch: %w", err)
 	}
 
+	contracts, err := s.contractModel.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("s.contractModel.GetAll: %w", err)
+	}
+
+	factory, err := findFactory(contracts)
+	if err != nil {
+		return fmt.Errorf("findFactory: %w", err)
+	}
+
+	factoryPub, err := crypto.NewPublicKeyFromBase58(factory.BasePub)
+	if err != nil {
+		return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", err)
+	}
+
+	factoryAddr, err := proto.NewAddressFromPublicKey(s.networkByte, factoryPub)
+	if err != nil {
+		return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
+	}
+
+	err = s.saveToDocs(ctx, factoryAddr, contracts, branchTestnet)
+	if err != nil {
+		return fmt.Errorf("s.saveToDocs: %w", err)
+	}
+
 	if s.network == config.Testnet {
 		if branchTestnet != s.branch {
 			s.logger.Info().Msgf(
@@ -169,36 +194,11 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("os.ReadDir: %w", err)
 	}
 
-	contracts, err := s.contractModel.GetAll(ctx)
-	if err != nil {
-		return fmt.Errorf("s.contractModel.GetAll: %w", err)
-	}
-
 	const (
 		keyAllowedLpScriptHash            = "%s__allowedLpScriptHash"
 		keyAllowedLpStableScriptHash      = "%s__allowedLpStableScriptHash"
 		keyAllowedLpStableAddonScriptHash = "%s__allowedLpStableAddonScriptHash"
 	)
-
-	factory, err := findFactory(contracts)
-	if err != nil {
-		return fmt.Errorf("findFactory: %w", err)
-	}
-
-	factoryPub, err := crypto.NewPublicKeyFromBase58(factory.BasePub)
-	if err != nil {
-		return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", err)
-	}
-
-	factoryAddr, err := proto.NewAddressFromPublicKey(s.networkByte, factoryPub)
-	if err != nil {
-		return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
-	}
-
-	err = s.saveToDocs(ctx, factoryAddr, contracts, branchTestnet)
-	if err != nil {
-		return fmt.Errorf("s.saveToDocs: %w", err)
-	}
 
 	mainnetLpHashEmpty, err := s.doHash(
 		ctx,
