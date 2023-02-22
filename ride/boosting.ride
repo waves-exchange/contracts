@@ -364,10 +364,11 @@ func getPoolAssetsByLpAssetId(lpAssetIdStr: String) = {
 func keyVote(amountAssetId: String, priceAssetId: String, address: Address, epoch: Int) = {
   ["%s%s%s%s%d", "vote", amountAssetId, priceAssetId, address.toString(), epoch.toString()].makeString(SEP)
 }
-# this
+# this and votingEmission
 func keyVotingResultStaked(lpAssetIdStr: String, epoch: Int) = {
   ["%s%s%d", "votingResultStaked", lpAssetIdStr, epoch.toString()].makeString(SEP)
 }
+# this
 func keyVotingResultStakedIntegral(lpAssetIdStr: String, epoch: Int) = {
   ["%s%s%d", "votingResultStakedIntegral", lpAssetIdStr, epoch.toString()].makeString(SEP)
 }
@@ -495,6 +496,7 @@ func getStakedVotesIntegralsDiff(lpAssetIdStr: String, userAddressStr: String) =
   )
 }
 
+# Actions should be applied if wxEmissionPerBlock or boostCoeff changes
 func refreshBoostEmissionIntegral() = {
   let wxEmissionPerBlock = emissionContract.iof(keyEmissionRatePerBlockCurrent())
   let boostingV2LastUpdateHeightOption = this.getInteger(keyBoostingV2LastUpdateHeight())
@@ -795,10 +797,10 @@ func onBoostEmissionUpdate() = {
 #                  └ this is the Iverson bracket, not the array's one
 # Staked vote updates when staked amount goes from zero to non-zero or vice versa
 # Staked vote integral and voting result integral should be updated when it happens
-#                       ┌­ edge = true (rising)
+#                       ╭­ edge = true (rising)
 # staked amount > 0:    ┌───┐
 # staked amount = 0: ───┘   └───
-#                           └ edge = false (falling)
+#                           ╰ edge = false (falling)
 @Callable(i)
 func onStakedVoteUpdate(lpAssetIdStr: String, userAddressStr: String, edge: Boolean) = {
   # TODO: check caller
