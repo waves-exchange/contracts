@@ -297,13 +297,15 @@ func (s *Syncer) saveToDocs(
 			return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
 		}
 		rowsContracts += fmt.Sprintf(
-			"%s | [`%s`](https://wavesexplorer.com/addresses/%[2]s%s) | `%s` | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%[4]s) \n",
+			"%s | [`%s`](https://wavesexplorer.com/addresses/%s%s) | `%s` | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%s) \n",
 			cont.Tag,
+			addr.String(),
 			addr.String(),
 			suffix,
 			pub.String(),
 			cont.File,
 			branch,
+			cont.File,
 		)
 
 		if cont.File == "lp.ride" || cont.File == "lp_stable.ride" {
