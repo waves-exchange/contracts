@@ -379,7 +379,13 @@ func (s *Syncer) saveToDocs(
 		sortAndConcat(poolLpAssets, suffix),
 	)
 
-	f, err := os.OpenFile(path.Join("..", "docs", string(s.network)+".md"), os.O_RDWR, 0)
+	filename := path.Join("..", "docs", string(s.network)+".md")
+	err := os.Truncate(filename, 0)
+	if err != nil {
+		return fmt.Errorf("os.Truncate: %w", err)
+	}
+
+	f, err := os.OpenFile(filename, os.O_RDWR, 0)
 	if err != nil {
 		return fmt.Errorf("os.Open: %w", err)
 	}
@@ -1328,8 +1334,9 @@ func sortAndConcat(assets []*client.AssetsDetail, explorerSuffix string) string 
 	var res string
 	for _, asset := range assets {
 		res += fmt.Sprintf(
-			"%s | [`%s`](https://wavesexplorer.com/assets/%[2]s%s) | %s \n",
+			"%s | [`%s`](https://wavesexplorer.com/assets/%s%s) | %s \n",
 			dashIfEmpty(asset.Name),
+			asset.AssetId.String(),
 			asset.AssetId.String(),
 			explorerSuffix,
 			dashIfEmpty(asset.Description),

@@ -1,5 +1,5 @@
 # Testnet environment
-[**WXDEFI-330**](https://github.com/waves-exchange/contracts/tree/WXDEFI-330) branch deployed to **testnet** network at **16:06 22.02.2023** to **https://testnet.wx.network**
+[**WXDEFI-330**](https://github.com/waves-exchange/contracts/tree/WXDEFI-330) branch deployed to **testnet** network at **20:50 22.02.2023** to **https://testnet.wx.network**
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -60,11 +60,6 @@ KekengerUSDTLP | [`CPP3z7oYNNp4URYrmUVsxDXXjg7D7r4bAyAyK2Sh2Qmd`](https://wavese
 Mock ILO ~USDCLP | [`CcmYMD4QYfDMExV1nV4jKXjndcFAFv7Da8pNB8kVKUFa`](https://wavesexplorer.com/assets/CcmYMD4QYfDMExV1nV4jKXjndcFAFv7Da8pNB8kVKUFa?network=testnet) | Mock ILO ~/USDC pool liquidity provider token 
 USDCUSDTWXLP | [`47g1VsrcouxNYMZDdzCvtoJcnAvom8Fo9QQrCoMYx4Ed`](https://wavesexplorer.com/assets/47g1VsrcouxNYMZDdzCvtoJcnAvom8Fo9QQrCoMYx4Ed?network=testnet) | WX USDC/USDT pool liquidity provider token 
 USDTUSDNWXLP | [`Fm4qczu6Pepz8KUhh3Heb6LeTVfpSMX5vvNgw3x764CS`](https://wavesexplorer.com/assets/Fm4qczu6Pepz8KUhh3Heb6LeTVfpSMX5vvNgw3x764CS?network=testnet) | WX Usdt/Usdn pool liquidity provider token 
-WAVESUSDNWXLP | [`FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V`](https://wavesexplorer.com/assets/FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V?network=testnet) | WX Waves/Usdn pool liquidity provider token 
-WBTCWETHWXLP | [`BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT`](https://wavesexplorer.com/assets/BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT?network=testnet) | WX WBTC/WETH pool liquidity provider token 
-WXUSDNWXLP | [`2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib`](https://wavesexplorer.com/assets/2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib?network=testnet) | WX WX/Usdn pool liquidity provider token 
-WXUSDTLP | [`7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8`](https://wavesexplorer.com/assets/7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8?network=testnet) | WX/USDT pool liquidity provider token 
-3x764CS`](https://wavesexplorer.com/assets/Fm4qczu6Pepz8KUhh3Heb6LeTVfpSMX5vvNgw3x764CS?network=testnet) | WX Usdt/Usdn pool liquidity provider token 
 WAVESUSDNWXLP | [`FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V`](https://wavesexplorer.com/assets/FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V?network=testnet) | WX Waves/Usdn pool liquidity provider token 
 WBTCWETHWXLP | [`BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT`](https://wavesexplorer.com/assets/BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT?network=testnet) | WX WBTC/WETH pool liquidity provider token 
 WXUSDNWXLP | [`2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib`](https://wavesexplorer.com/assets/2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib?network=testnet) | WX WX/Usdn pool liquidity provider token 
