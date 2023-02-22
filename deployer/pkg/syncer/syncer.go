@@ -265,6 +265,10 @@ func (s *Syncer) saveToDocs(contracts []contract.Contract, branchTestnet string)
 
 	var rows string
 	for _, cont := range contracts {
+		if s.network == config.Testnet && cont.Stage != 1 {
+			continue
+		}
+
 		pub, err := crypto.NewPublicKeyFromBase58(cont.BasePub)
 		if err != nil {
 			return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", err)

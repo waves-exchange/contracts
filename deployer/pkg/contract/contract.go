@@ -11,6 +11,7 @@ import (
 
 type Contract struct {
 	File      string `bson:"file,omitempty"`
+	Stage     uint32 `bson:"stage,omitempty"`
 	Compact   bool   `bson:"compact,omitempty"`
 	Tag       string `bson:"tag,omitempty"`
 	BasePub   string `bson:"base_pub,omitempty"`
