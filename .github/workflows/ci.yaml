@@ -51,6 +51,10 @@ jobs:
         if: always()
         with:
           keepGit: true
+      - name: Set Git config
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "Github Actions"
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Deploy changed contracts
@@ -58,11 +62,10 @@ jobs:
           cd deployer
           go run main.go
       - name: Update docs
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Update docs
         run: |
-          git config --global --add safe.directory /__w/***/***
+          git add .
+          git commit -m update docs
+          git push
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
