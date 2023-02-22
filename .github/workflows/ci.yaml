@@ -44,7 +44,7 @@ jobs:
       contents: write
     container:
       image: golang:1.19
-      options: --user 1007
+      options: --user 0
     steps:
       - name: Clean step
         uses: mickem/clean-after-action@v1
