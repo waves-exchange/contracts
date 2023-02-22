@@ -51,18 +51,19 @@ jobs:
           keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
+      - name: Set Git config
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "Github Actions"
       - name: Deploy changed contracts
         run: |
           cd deployer
           go run main.go
       - name: Update docs
-        uses: EndBug/add-and-commit@v9
-        with:
-          message: Update docs
-          author_name: GitHub Actions
-          author_email: actions@github.com
-          committer_name: GitHub Actions
-          committer_email: actions@github.com
+        run: |
+          git add .
+          git commit -m update docs
+          git push
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
@@ -96,18 +97,19 @@ jobs:
           keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
+      - name: Set Git config
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "Github Actions"
       - name: Compare contracts and print diff. Deploy changed lp.ride
         run: |
           cd deployer
           go run main.go
       - name: Update docs
-        uses: EndBug/add-and-commit@v9
-        with:
-          message: Update docs
-          author_name: GitHub Actions
-          author_email: actions@github.com
-          committer_name: GitHub Actions
-          committer_email: actions@github.com
+        run: |
+          git add .
+          git commit -m update docs
+          git push
       - name: Save txs to sign in artifact folder
         uses: actions/upload-artifact@v3
         with:
