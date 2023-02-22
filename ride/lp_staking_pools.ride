@@ -394,7 +394,7 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
   let userShareAssetAmountToConvertPeriod = baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
   strict checkPeriod = period > userShareAssetAmountToConvertPeriod || "invalid period".throwErr()
   let price = baseAssetId.keyPricePeriodGet(userShareAssetAmountToConvertPeriod).getBinary().valueOrErrorMessage("failed to get price".wrapErr()).toBigInt()
-  # claim base asset with the last price (base asset / share asset ?)
+  # claim base asset with the last price (base asset / share asset ?) 
   let baseAssetAmount = fraction(userShareAssetAmountToConvert.toBigInt(), price, scale18BigInt).toInt()
 
   ([
