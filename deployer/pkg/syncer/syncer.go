@@ -18,6 +18,8 @@ import (
 	"github.com/wavesplatform/gowaves/pkg/proto"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"io"
 	"math"
 	"net/http"
@@ -235,6 +237,74 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	}
 
 	s.logger.Info().Msg("changes applied")
+
+	err = s.saveToDocs(contracts, branchTestnet)
+	if err != nil {
+		return fmt.Errorf("s.saveToDocs: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Syncer) saveToDocs(contracts []contract.Contract, branchTestnet string) error {
+	var (
+		branch string
+		url    string
+		suffix string
+	)
+	if s.network == config.Testnet {
+		branch = branchTestnet
+		url = "https://testnet.wx.network"
+		suffix = "?network=testnet"
+	} else if s.network == config.Mainnet {
+		branch = "main"
+		url = "https://wx.network"
+	} else {
+		return errors.New("unknown network=" + string(s.network))
+	}
+
+	var rows string
+	for _, cont := range contracts {
+		pub, err := crypto.NewPublicKeyFromBase58(cont.BasePub)
+		if err != nil {
+			return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", err)
+		}
+
+		addr, err := proto.NewAddressFromPublicKey(s.networkByte, pub)
+		if err != nil {
+			return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
+		}
+		rows += fmt.Sprintf(
+			"%s | [`%s`](https://wavesexplorer.com/addresses/%[2]s%s) | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%[3]s)",
+			cases.Title(language.English).String(cont.Tag),
+			addr,
+			suffix,
+			cont.File,
+			branch,
+		)
+	}
+
+	md := fmt.Sprintf(`# %s contracts
+[%s](https://github.com/waves-exchange/contracts/tree/%[2]s) branch deployed to %s on %s
+
+| Name | Address | Code |
+|------|---------|------|
+%s`, cases.Title(language.English).String(string(s.network)),
+		branch,
+		s.network,
+		url,
+		rows,
+	)
+
+	f, err := os.Open(path.Join("docs", string(s.network)+".md"))
+	if err != nil {
+		return fmt.Errorf("os.Open: %w", err)
+	}
+
+	_, err = f.Write([]byte(md))
+	if err != nil {
+		return fmt.Errorf("f.Write: %w", err)
+	}
 
 	return nil
 }
@@ -731,7 +801,7 @@ func (s *Syncer) doFile(
 					"txs",
 					fmt.Sprintf(
 						"%s_%s.json",
-						stringIndex(uint(iTx)),
+						stringIndex(iTx),
 						strings.ReplaceAll(strings.ReplaceAll(cont.Tag, " ", "_"), "/", "_"),
 					),
 				))
@@ -1089,9 +1159,9 @@ func getPrivateAndPublicKey(seed []byte) (privateKey crypto.SecretKey, publicKey
 	return crypto.GenerateKeyPair(accSeed[:])
 }
 
-func stringIndex(i uint) string {
+func stringIndex(i int) string {
 	if i < 10 {
-		return "0" + strconv.Itoa(int(i))
+		return "0" + strconv.Itoa(i)
 	}
-	return strconv.Itoa(int(i))
+	return strconv.Itoa(i)
 }
