@@ -621,6 +621,9 @@ func lockActions(i: Invocation, duration: Int) = {
 
   let totalCachedGwxRaw = getTotalCachedGwx(false)
 
+  let userBoostEmissionLastIntegralKEY = keyUserBoostEmissionLastINTEGRAL(userNumStr)
+  let boostEmissionIntegral = refreshBoostEmissionIntegral()._2
+
   let arr = if (userIsExisting) then [] else [
     IntegerEntry(nextUserNumKEY, userNum + 1),
     StringEntry(keyUser2NumMapping(userAddressStr), userNumStr),
@@ -630,6 +633,7 @@ func lockActions(i: Invocation, duration: Int) = {
   ++ StatsEntry(pmtAmount, duration, 1, if (userIsExisting) then 0 else 1)
   :+ HistoryEntry("lock", userAddressStr, pmtAmount, lockStart, duration, k, b, i)
   ++ [
+    IntegerEntry(userBoostEmissionLastIntegralKEY, boostEmissionIntegral),
     IntegerEntry(keyTotalCachedGwx(), totalCachedGwxRaw + gWxAmountStart)
   ], gWxAmountStart)
 }
