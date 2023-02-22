@@ -1,5 +1,5 @@
 # Waves Exchange contracts
 
 ## Environments
-- [testnet](docs/testnet.md)
-- [mainnet](docs/mainnet.md)
+- [Testnet](docs/testnet.md)
+- [Mainnet](docs/mainnet.md)
