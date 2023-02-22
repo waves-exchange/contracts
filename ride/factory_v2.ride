@@ -792,6 +792,15 @@ func getPoolStatusREADONLY(poolAddress: String) = {
 }
 
 @Callable(i)
+func getPoolConfigREADONLY(poolAddress: String) = {
+  let poolAssets = keyMappingPoolContractAddressToPoolAssets(poolAddress).getStringOrFail().split(SEP)
+  let amountAssetInternal = poolAssets[1]
+  let priceAssetInternal = poolAssets[2]
+  let cfg = keyPoolConfig(amountAssetInternal, priceAssetInternal).getStringOrFail().split(SEP)
+  ([], cfg)
+}
+
+@Callable(i)
 func poolExistsREADONLY(amountAssetId: String, priceAssetId: String) = {
   ([], poolExistsInternal(amountAssetId, priceAssetId))
 }
