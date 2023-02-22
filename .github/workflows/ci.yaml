@@ -61,6 +61,8 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: Update docs
+        run: |
+          git config --global --add safe.directory /__w/***/***
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
