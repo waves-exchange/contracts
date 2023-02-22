@@ -55,9 +55,12 @@ jobs:
         run: |
           cd deployer
           go run main.go
-      - uses: EndBug/add-and-commit@v9
+      - name: Update docs
+        uses: EndBug/add-and-commit@v9
         with:
-          default_author: github_actor
+          message: Update docs
+          committer_name: GitHub Actions
+          committer_email: actions@github.com
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
@@ -95,9 +98,12 @@ jobs:
         run: |
           cd deployer
           go run main.go
-      - uses: EndBug/add-and-commit@v9
+      - name: Update docs
+        uses: EndBug/add-and-commit@v9
         with:
-          default_author: github_actor
+          message: Update docs
+          committer_name: GitHub Actions
+          committer_email: actions@github.com
       - name: Save txs to sign in artifact folder
         uses: actions/upload-artifact@v3
         with:
