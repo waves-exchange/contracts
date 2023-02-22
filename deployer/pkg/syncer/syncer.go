@@ -26,6 +26,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -184,6 +185,21 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("findFactory: %w", err)
 	}
 
+	factoryPub, err := crypto.NewPublicKeyFromBase58(factory.BasePub)
+	if err != nil {
+		return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", err)
+	}
+
+	factoryAddr, err := proto.NewAddressFromPublicKey(s.networkByte, factoryPub)
+	if err != nil {
+		return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
+	}
+
+	err = s.saveToDocs(ctx, factoryAddr, contracts, branchTestnet)
+	if err != nil {
+		return fmt.Errorf("s.saveToDocs: %w", err)
+	}
+
 	mainnetLpHashEmpty, err := s.doHash(
 		ctx,
 		factory,
@@ -238,15 +254,15 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 
 	s.logger.Info().Msg("changes applied")
 
-	err = s.saveToDocs(contracts, branchTestnet)
-	if err != nil {
-		return fmt.Errorf("s.saveToDocs: %w", err)
-	}
-
 	return nil
 }
 
-func (s *Syncer) saveToDocs(contracts []contract.Contract, branchTestnet string) error {
+func (s *Syncer) saveToDocs(
+	ctx context.Context,
+	factoryAddress proto.WavesAddress,
+	contracts []contract.Contract,
+	branchTestnet string,
+) error {
 	var (
 		branch string
 		url    string
@@ -263,7 +279,9 @@ func (s *Syncer) saveToDocs(contracts []contract.Contract, branchTestnet string)
 		return errors.New("unknown network=" + string(s.network))
 	}
 
-	var rows string
+	var rowsContracts string
+	assetsMap := map[string]struct{}{}
+	var poolLpAssets []*client.AssetsDetail
 	for _, cont := range contracts {
 		if s.network == config.Testnet && cont.Stage != 1 {
 			continue
@@ -278,29 +296,87 @@ func (s *Syncer) saveToDocs(contracts []contract.Contract, branchTestnet string)
 		if err != nil {
 			return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
 		}
-		rows += fmt.Sprintf(
-			"%s | [`%s`](https://wavesexplorer.com/addresses/%[2]s%s) | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%[3]s)",
-			cases.Title(language.English).String(cont.Tag),
-			addr,
+		rowsContracts += fmt.Sprintf(
+			"%s | [`%s`](https://wavesexplorer.com/addresses/%[2]s%s) | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%[3]s) \n",
+			cont.Tag,
+			addr.String(),
 			suffix,
 			cont.File,
 			branch,
 		)
+
+		if cont.File == "lp.ride" || cont.File == "lp_stable.ride" {
+			lp, amountAsset, priceAsset, e := s.getPoolConfig(ctx, factoryAddress, addr)
+			if e != nil {
+				return fmt.Errorf("s.getPoolConfig: %w", e)
+			}
+			assetsMap[amountAsset] = struct{}{}
+			assetsMap[priceAsset] = struct{}{}
+
+			lpAsset, e := proto.NewOptionalAssetFromString(lp)
+			if e != nil {
+				return fmt.Errorf("proto.NewOptionalAssetFromString: %w", e)
+			}
+			if !lpAsset.Present {
+				return errors.New("no assetId=" + lp)
+			}
+
+			lpDetails, _, e := s.client().Assets.Details(ctx, *lpAsset.ToDigest())
+			if e != nil {
+				return fmt.Errorf("s.client().Assets.Details: %w", e)
+			}
+
+			poolLpAssets = append(poolLpAssets, lpDetails)
+		}
 	}
 
-	md := fmt.Sprintf(`# %s contracts
-[%s](https://github.com/waves-exchange/contracts/tree/%[2]s) branch deployed to %s on %s
+	var assets []*client.AssetsDetail
+	for a := range assetsMap {
+		if a == "WAVES" {
+			continue
+		}
 
+		asset, e := proto.NewOptionalAssetFromString(a)
+		if e != nil {
+			return fmt.Errorf("proto.NewOptionalAssetFromString: %w", e)
+		}
+		if !asset.Present {
+			return errors.New("no assetId=" + a)
+		}
+
+		assetsDetails, _, e := s.client().Assets.Details(ctx, *asset.ToDigest())
+		if e != nil {
+			return fmt.Errorf("s.client().Assets.Details: %w", e)
+		}
+
+		assets = append(assets, assetsDetails)
+	}
+
+	md := fmt.Sprintf(`# %s environment
+[**%s**](https://github.com/waves-exchange/contracts/tree/%[2]s) branch deployed to **%s** network at **%s** to **%s**
+
+## Contracts
 | Name | Address | Code |
 |------|---------|------|
+%s
+## Pool assets
+| Name | AssetID | Description |
+|------|---------|-------------|
+%s
+## Pool LP assets
+| Name | AssetID | Description |
+|------|---------|-------------|
 %s`, cases.Title(language.English).String(string(s.network)),
 		branch,
 		s.network,
+		time.Now().Format("15:04 02.01.2006"),
 		url,
-		rows,
+		rowsContracts,
+		sortAndConcat(assets, suffix),
+		sortAndConcat(poolLpAssets, suffix),
 	)
 
-	f, err := os.Open(path.Join("docs", string(s.network)+".md"))
+	f, err := os.OpenFile(path.Join("..", "docs", string(s.network)+".md"), os.O_RDWR, 0)
 	if err != nil {
 		return fmt.Errorf("os.Open: %w", err)
 	}
@@ -311,6 +387,70 @@ func (s *Syncer) saveToDocs(contracts []contract.Contract, branchTestnet string)
 	}
 
 	return nil
+}
+
+func (s *Syncer) getPoolConfig(ctx context.Context, factory, poolAddress proto.WavesAddress) (string, string, string, error) {
+	type eval struct {
+		Expr string `json:"expr"`
+	}
+
+	b, err := json.Marshal(eval{Expr: fmt.Sprintf(`getPoolConfigREADONLY("%s")`, poolAddress)})
+	if err != nil {
+		return "", "", "", fmt.Errorf("json.Marshal: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		fmt.Sprintf("%s/utils/script/evaluate/%s", s.rawClient.GetOptions().BaseUrl, factory),
+		bytes.NewReader(b),
+	)
+	if err != nil {
+		return "", "", "", fmt.Errorf("http.NewRequestWithContext: %w", err)
+	}
+
+	type evalRes struct {
+		Result struct {
+			Type  string `json:"type"`
+			Value struct {
+				Num1 struct {
+					Type  string `json:"type"`
+					Value []any  `json:"value"`
+				} `json:"_1"`
+				Num2 struct {
+					Type  string `json:"type"`
+					Value []struct {
+						Type  string `json:"type"`
+						Value string `json:"value"`
+					} `json:"value"`
+				} `json:"_2"`
+			} `json:"value"`
+		} `json:"result"`
+		Complexity   int `json:"complexity"`
+		StateChanges struct {
+			Data         []any `json:"data"`
+			Transfers    []any `json:"transfers"`
+			Issues       []any `json:"issues"`
+			Reissues     []any `json:"reissues"`
+			Burns        []any `json:"burns"`
+			SponsorFees  []any `json:"sponsorFees"`
+			Leases       []any `json:"leases"`
+			LeaseCancels []any `json:"leaseCancels"`
+			Invokes      []any `json:"invokes"`
+		} `json:"stateChanges"`
+		Expr    string `json:"expr"`
+		Address string `json:"address"`
+	}
+	res := evalRes{}
+	_, err = s.client().Do(ctx, req, &res)
+	if err != nil {
+		return "", "", "", fmt.Errorf("s.client().Do: %w", err)
+	}
+
+	lp := res.Result.Value.Num2.Value[3].Value
+	amountAsset := res.Result.Value.Num2.Value[4].Value
+	priceAsset := res.Result.Value.Num2.Value[5].Value
+	return lp, amountAsset, priceAsset, nil
 }
 
 func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee uint64, fileName string) error {
@@ -1021,7 +1161,7 @@ func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, err
 
 	req, err := http.NewRequestWithContext(
 		ctx, http.MethodGet,
-		s.client().GetOptions().BaseUrl+"/addresses/scriptInfo/"+addr.String(),
+		s.rawClient.GetOptions().BaseUrl+"/addresses/scriptInfo/"+addr.String(),
 		nil,
 	)
 	if err != nil {
@@ -1056,7 +1196,7 @@ func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, err
 }
 
 func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, error) {
-	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.client().GetOptions().BaseUrl)
+	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.rawClient.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
 	if err != nil {
@@ -1084,7 +1224,7 @@ func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, er
 }
 
 func (s *Syncer) apiDecompileScript(c context.Context, body io.Reader) (string, error) {
-	u := fmt.Sprintf("%s/utils/script/decompile", s.client().GetOptions().BaseUrl)
+	u := fmt.Sprintf("%s/utils/script/decompile", s.rawClient.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
 	if err != nil {
@@ -1168,4 +1308,29 @@ func stringIndex(i int) string {
 		return "0" + strconv.Itoa(i)
 	}
 	return strconv.Itoa(i)
+}
+
+func dashIfEmpty(s string) string {
+	if s == "" {
+		return "—"
+	}
+	return s
+}
+
+func sortAndConcat(assets []*client.AssetsDetail, explorerSuffix string) string {
+	sort.SliceStable(assets, func(i, j int) bool {
+		return strings.ToLower(assets[i].Name) < strings.ToLower(assets[j].Name)
+	})
+
+	var res string
+	for _, asset := range assets {
+		res += fmt.Sprintf(
+			"%s | [`%s`](https://wavesexplorer.com/assets/%[2]s%s) | %s \n",
+			dashIfEmpty(asset.Name),
+			asset.AssetId.String(),
+			explorerSuffix,
+			dashIfEmpty(asset.Description),
+		)
+	}
+	return res
 }

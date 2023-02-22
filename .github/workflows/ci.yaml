@@ -59,6 +59,8 @@ jobs:
         uses: EndBug/add-and-commit@v9
         with:
           message: Update docs
+          author_name: GitHub Actions
+          author_email: actions@github.com
           committer_name: GitHub Actions
           committer_email: actions@github.com
       - name: Clean repo
@@ -102,6 +104,8 @@ jobs:
         uses: EndBug/add-and-commit@v9
         with:
           message: Update docs
+          author_name: GitHub Actions
+          author_email: actions@github.com
           committer_name: GitHub Actions
           committer_email: actions@github.com
       - name: Save txs to sign in artifact folder
