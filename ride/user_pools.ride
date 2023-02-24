@@ -173,7 +173,7 @@ func create() = {
 
   strict checks = [
     !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
-    poolExists || throwPoolExists(),
+    !poolExists || throwPoolExists(),
     i.isManager() || amountAssetId.isVerified() || throwAssetNotVerified(),
     keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
     i.isManager() || amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
