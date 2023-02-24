@@ -311,7 +311,8 @@ func (s *Syncer) saveToDocs(
 		if cont.File == "lp.ride" || cont.File == "lp_stable.ride" {
 			lp, amountAsset, priceAsset, e := s.getPoolConfig(ctx, factoryAddress, addr)
 			if e != nil {
-				return fmt.Errorf("s.getPoolConfig: %w", e)
+				s.logger.Error().Err(fmt.Errorf("s.getPoolConfig: %w", e)).Send()
+				continue
 			}
 			assetsMap[amountAsset] = struct{}{}
 			assetsMap[priceAsset] = struct{}{}
@@ -454,6 +455,10 @@ func (s *Syncer) getPoolConfig(ctx context.Context, factory, poolAddress proto.W
 	_, err = s.client().Do(ctx, req, &res)
 	if err != nil {
 		return "", "", "", fmt.Errorf("s.client().Do: %w", err)
+	}
+
+	if len(res.Result.Value.Num2.Value) == 0 {
+		return "", "", "", errors.New("empty pool config, address=" + poolAddress.String())
 	}
 
 	lp := res.Result.Value.Num2.Value[3].Value
