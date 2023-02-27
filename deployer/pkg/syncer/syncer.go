@@ -8,6 +8,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"math"
+	"net/http"
+	"os"
+	"os/exec"
+	"path"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/waves-exchange/contracts/deployer/pkg/branch"
@@ -20,17 +32,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"io"
-	"math"
-	"net/http"
-	"os"
-	"os/exec"
-	"path"
-	"sort"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 type compileCacheMap = map[string]func() (
@@ -841,6 +842,10 @@ func (s *Syncer) doFile(
 			er2 = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
 			if er2 != nil {
 				return false, fmt.Errorf("s.ensureHasFee: %w", er2)
+			}
+
+			if pub.String() == "2rdeGwVMkuRfRdUgrYaekNmjnegHokhyDx1z6TJq525F" {
+				log.Msg(fileName)
 			}
 
 			er2 = s.sendTx(
