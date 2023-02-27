@@ -78,7 +78,9 @@ let idxFactorySlippageContract     = 7
 # WX COMMON LIBRARY
 #-------------------------
 func toX18(origVal: Int, origScaleMult: Int)          = fraction(origVal.toBigInt(), scale18, origScaleMult.toBigInt())
+func toX18BigInt(origVal: BigInt, origScaleMult: BigInt) = fraction(origVal, scale18, origScaleMult)
 func fromX18(val: BigInt, resultScaleMult: Int)       = fraction(val, resultScaleMult.toBigInt(), scale18).toInt()
+func fromX18Round(val: BigInt, resultScaleMult: Int, round: Ceiling|Floor) = fraction(val, resultScaleMult.toBigInt(), scale18, round).toInt()
 
 # cast passed amount to specified 'resScale' scale value from 'curScale' scale value
 func toScale(amt: Int, resScale: Int, curScale: Int)  = fraction(amt, resScale, curScale)
@@ -89,6 +91,8 @@ func absBigInt(val: BigInt) = if (val < zeroBigInt) then -val else val
 #-------------------------
 # KEYS ON CURRENT CONTRACT
 #-------------------------
+# keySwapContract
+func swapContract() = {"%s__swapContract"}
 # keyFactoryContract
 func fc() = {"%s__factoryContract"}
 # keyManagerPublicKey
@@ -108,6 +112,16 @@ func aa() = {"%s__amountAsset"}
 # keyPriceAsset
 func pa() = {"%s__priceAsset"}
 
+let keyFee = "%s__fee"
+let feeDefault = fraction(10, scale8, 10_000)
+let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
+
+let keyKLp = ["%s", "kLp"].makeString(SEP)
+let keyKLpRefreshedHeight = ["%s", "kLpRefreshedHeight"].makeString(SEP)
+let keyKLpRefreshDelay = ["%s", "refreshKLpDelay"].makeString(SEP)
+let kLpRefreshDelayDefault = 30
+let kLpRefreshDelay = this.getInteger(keyKLpRefreshDelay).valueOrElse(kLpRefreshDelayDefault)
+
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
@@ -126,8 +140,13 @@ let keyFeeCollectorAddress = "%s__feeCollectorAddress"
 #------------------------
 # FAILURES
 #------------------------
-func throwOrderError(orderValid: Boolean, senderValid: Boolean, matcherValid: Boolean) = {
-  throw("order validation failed: orderValid=" + orderValid.toString() + " senderValid=" + senderValid.toString() + " matcherValid=" + matcherValid.toString())
+func throwOrderError(
+  orderValid: Boolean,
+  orderValidInfo: String,
+  senderValid: Boolean,
+  matcherValid: Boolean
+) = {
+  throw("order validation failed: orderValid=" + orderValid.toString() + " (" + orderValidInfo + ")" + " senderValid=" + senderValid.toString() + " matcherValid=" + matcherValid.toString())
 }
 
 #------------------------
@@ -137,6 +156,7 @@ func getStringOrFail(address: Address, key: String) = address.getString(key).val
 func getIntOrFail(address: Address, key: String) = address.getInteger(key).valueOrErrorMessage(makeString(["mandatory ", address.toString(), ".", key, " is not defined"], ""))
 
 func throwErr(msg: String) = ["lp.ride:", msg].makeString(" ").throw()
+func fmtErr(msg: String) = ["lp.ride:", msg].makeString(" ")
 
 let factoryContract = addressFromStringValue(getStringOrFail(this, fc()))
 
@@ -218,6 +238,10 @@ func calcPriceBigInt(prAmtX18: BigInt, amAmtX18: BigInt) = {
   fraction(prAmtX18, scale18, amAmtX18)
 }
 
+func calcPriceBigIntRound(prAmtX18: BigInt, amAmtX18: BigInt, round: Ceiling|Floor) = {
+  fraction(prAmtX18, scale18, amAmtX18, round)
+}
+
 # cast assets and calc price
 func privateCalcPrice(amAssetDcm: Int, prAssetDcm: Int, amAmt: Int, prAmt: Int) = {
     let amtAssetAmtX18 = amAmt.toX18(amAssetDcm)
@@ -281,8 +305,8 @@ func estimateGetOperation(txId58: String, pmtAssetId: String, pmtLpAmt: Int, use
   let outAmAmtX18 = fraction(amBalanceX18, pmtLpAmtX18, lpEmissionX18)
   let outPrAmtX18 = fraction(prBalanceX18, pmtLpAmtX18, lpEmissionX18)
   # cast amounts to asset decimals
-  let outAmAmt = outAmAmtX18.fromX18(amAssetDcm)
-  let outPrAmt = outPrAmtX18.fromX18(prAssetDcm)
+  let outAmAmt = outAmAmtX18.fromX18Round(amAssetDcm, FLOOR)
+  let outPrAmt = outPrAmtX18.fromX18Round(prAssetDcm, FLOOR)
 
   let state = if (txId58 == "") then [] else
   [
@@ -371,8 +395,8 @@ func estimatePutOperation(txId58: String, slippageTolerance: Int, inAmAssetAmt: 
 
         let lpEmissionX18 = lpEmission.toX18(scale8)
         # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
-        let prViaAmX18 = fraction(inAmAssetAmtX18, curPriceX18, scale18)
-        let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, curPriceX18)
+        let prViaAmX18 = fraction(inAmAssetAmtX18, calcPriceBigIntRound(prBalanceX18, amBalanceX18, CEILING), scale18, CEILING)
+        let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, calcPriceBigIntRound(prBalanceX18, amBalanceX18, FLOOR), CEILING)
 
         # calculate amount and price assets to perform pool deposit in proportion to current pool price
         let expectedAmts= if (prViaAmX18 > inPrAssetAmtX18)
@@ -382,12 +406,12 @@ func estimatePutOperation(txId58: String, slippageTolerance: Int, inAmAssetAmt: 
         let expAmtAssetAmtX18   = expectedAmts._1
         let expPriceAssetAmtX18 = expectedAmts._2
         # calculate LP amount that user
-        let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18)
+        let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18, FLOOR)
 
         (
-          lpAmtX18.fromX18(scale8),
-          expAmtAssetAmtX18.fromX18(amtAssetDcm),
-          expPriceAssetAmtX18.fromX18(priceAssetDcm),
+          lpAmtX18.fromX18Round(scale8, FLOOR),
+          expAmtAssetAmtX18.fromX18Round(amtAssetDcm, CEILING),
+          expPriceAssetAmtX18.fromX18Round(priceAssetDcm, CEILING),
           curPriceX18,
           slippageX18
         )
@@ -430,41 +454,93 @@ func estimatePutOperation(txId58: String, slippageTolerance: Int, inAmAssetAmt: 
     )
 }
 
+func calcKLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
+  let amountBalanceX18 = amountBalance.toX18BigInt(cfgAmountAssetDecimals.toBigInt())
+  let priceBalanceX18 = priceBalance.toX18BigInt(cfgPriceAssetDecimals.toBigInt())
+  let updatedKLp = fraction(
+    pow(amountBalanceX18 * priceBalanceX18, 0, 5.toBigInt(), 1, 18, DOWN),
+    big1,
+    lpEmission
+  )
+
+  if (lpEmission == big0) then big0 else updatedKLp
+}
+
+func calcCurrentKLp(amountAssetDelta: BigInt, priceAssetDelta: BigInt, lpAssetEmissionDelta: BigInt) = {
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amountAssetDelta
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - priceAssetDelta
+  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt() - lpAssetEmissionDelta
+
+  let currentKLp = calcKLp(amountAssetBalance, priceAssetBalance, lpAssetEmission)
+
+  currentKLp
+}
+
+func refreshKLpInternal(
+  amountAssetBalanceDelta: Int,
+  priceAssetBalanceDelta: Int,
+  lpAssetEmissionDelta: Int
+) = {
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance() + amountAssetBalanceDelta
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance() + priceAssetBalanceDelta
+  # TODO: can be moved outside functions
+  let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity + lpAssetEmissionDelta
+
+  let updatedKLp = calcKLp(amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpAssetEmission.toBigInt())
+
+  let actions = [
+    IntegerEntry(keyKLpRefreshedHeight, height),
+    StringEntry(keyKLp, updatedKLp.toString())
+  ]
+  
+  (actions, updatedKLp)
+}
+
+func validateUpdatedKLp(oldKLp: BigInt, updatedKLp: BigInt) = {
+  updatedKLp >= oldKLp || 
+  [
+    "updated KLp lower than current KLp",
+    oldKLp.toString(),
+    updatedKLp.toString()
+  ].makeString(" ").throwErr()
+}
+
 func validateMatcherOrderAllowed(order: Order) = {
-  let cfg = getPoolConfig()
-  let amtAssetId = cfg[idxAmtAssetId]
-  let priceAssetId = cfg[idxPriceAssetId]
-  let poolStatus = cfg[idxPoolStatus].parseIntValue()
-  let amtAssetDcm = cfg[idxAmtAssetDcm].parseIntValue()
-  let priceAssetDcm = cfg[idxPriceAssetDcm].parseIntValue()
-
-  # get current balances from acc
-  let accAmtAssetBalance = getAccBalance(amtAssetId)
-  let accPriceAssetBalance = getAccBalance(priceAssetId)
-
-  let curPriceX18 = if(order.orderType == Buy)
-      then privateCalcPrice(amtAssetDcm, priceAssetDcm, accAmtAssetBalance + order.amount, accPriceAssetBalance)
-      else privateCalcPrice(amtAssetDcm, priceAssetDcm, accAmtAssetBalance - order.amount, accPriceAssetBalance)
-  let curPrice = curPriceX18.fromX18(scale8)
+  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance()
+  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance()
+  let amountAssetAmount = order.amount
+  # TODO: check order.priceMode when available
+  let priceAssetAmount = fraction(order.amount, order.price, scale8, FLOOR)
+  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = if (order.orderType == Buy) then {
+    (amountAssetAmount, -priceAssetAmount)
+  } else {
+    (-amountAssetAmount, priceAssetAmount)
+  }
 
   # validate status
-  if (isGlobalShutdown() || poolStatus == PoolMatcherDisabled || poolStatus == PoolShutdown) then throw("Exchange operations disabled") else
+  if (isGlobalShutdown() || cfgPoolStatus == PoolMatcherDisabled || cfgPoolStatus == PoolShutdown) then throw("Exchange operations disabled") else
 
   # validate pairs
-  let orderAmtAsset = order.assetPair.amountAsset
-  let orderAmtAssetStr = if( orderAmtAsset == unit) then "WAVES" else toBase58String(orderAmtAsset.value())
-  let orderPriceAsset = order.assetPair.priceAsset
-  let orderPriceAssetStr = if( orderPriceAsset == unit) then "WAVES" else toBase58String(orderPriceAsset.value())
-  if(orderAmtAssetStr != amtAssetId ||  orderPriceAssetStr != priceAssetId) then throw("Wrong order assets.") else
+  if (order.assetPair.amountAsset != cfgAmountAssetId ||  order.assetPair.priceAsset != cfgPriceAssetId) then throw("Wrong order assets.") else
 
-  let orderPrice = order.price
-  #priceDecimals = 8 + priceAssetDcm - amtAssetDcm
-  let priceDcm = fraction(scale8, priceAssetDcm, amtAssetDcm)
-  let castedOrderPrice = orderPrice.toScale(scale8, priceDcm)
+  let kLp = this.getString(keyKLp)
+    .valueOrElse("0")
+    .parseBigInt()
+    .valueOrErrorMessage("invalid kLp".fmtErr())
+  let (unusedActions, kLpNew) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+  let isOrderValid = kLpNew >= kLp
 
-  let isOrderPriceValid = if(order.orderType == Buy) then castedOrderPrice <= curPrice else castedOrderPrice >= curPrice
-  #if(!isOrderPriceValid) then throw("Order price leads to K decrease. castedOrderPrice="+castedOrderPrice.toString() + " curPrice="+curPrice.toString()) else
-  true
+  let info = [
+    "kLp=", kLp.toString(),
+    " kLpNew=", kLpNew.toString(),
+    " amountAssetBalance=", amountAssetBalance.toString(),
+    " priceAssetBalance=", priceAssetBalance.toString(),
+    " amountAssetBalanceDelta=", amountAssetBalanceDelta.toString(),
+    " priceAssetBalanceDelta=", priceAssetBalanceDelta.toString(),
+    " height=", height.toString()
+  ].makeString("")
+
+  (isOrderValid, info)
 }
 
 func commonGet(i: Invocation) = {
@@ -579,6 +655,11 @@ func calcPutOneToken(
   let supplyBigInt = cfgLpAssetId.assetInfo().valueOrErrorMessage("asset " + cfgLpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
   strict chechSupply = supplyBigInt > big0 || "initial deposit requires all coins".throwErr()
   let depositBigInt = paymentAmount.toBigInt()
+  # let issueAmount = [
+  #   0,
+  #   fraction(supplyBigInt, (sqrt(scale18 + (depositBigInt * scale18) / paymentBalanceBigInt, 18, 18, DOWN) - scale18), scale18).fromX18Round(scale8, FLOOR)
+  # ].max()
+
   let issueAmount = [
     0,
     { supplyBigInt * (sqrt(scale18 + (depositBigInt * scale18) / paymentBalanceBigInt, 18, 18, DOWN) - scale18) / scale18 }.toInt()
@@ -606,7 +687,7 @@ func calcPutOneToken(
     fraction(issueAmount - issueAmountBoth, scale8, issueAmountBoth)
   }
   
-  (issueAmount, commonState, feeAmount, loss)
+  (issueAmount, commonState, feeAmount, loss, paymentInAmountAsset)
 }
 
 # amount = balance * (1 - (1 - redeemed / supply)^2)
@@ -618,6 +699,10 @@ func calcGetOneToken(
   txId: ByteVector|Unit
 ) = {
   let isEval = txId == unit
+
+  let cfg = getPoolConfig()
+  let amtAssetDcm   = cfg[idxAmtAssetDcm].parseIntValue()
+  let priceAssetDcm = cfg[idxPriceAssetDcm].parseIntValue()
 
   strict checks = [
     paymentAssetId == cfgLpAssetId || "invalid lp asset".throwErr()
@@ -635,6 +720,12 @@ func calcGetOneToken(
     cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
   }
 
+  let outInAmountAssetDecimals = if (outInAmountAsset) then {
+    amtAssetDcm
+  } else {
+    priceAssetDcm
+  }
+
   let amBalanceOld = cfgAmountAssetId.assetIdToString().getAccBalance()
   let prBalanceOld = cfgPriceAssetId.assetIdToString().getAccBalance()
 
@@ -642,6 +733,10 @@ func calcGetOneToken(
   let outBalanceBigInt = outBalance.toBigInt()
   let supplyBigInt = cfgLpAssetId.assetInfo().valueOrErrorMessage("asset " + cfgLpAssetId.toBase58String() + " doesn't exist").quantity.toBigInt()
   let redeemedBigInt = paymentAmount.toBigInt()
+  # let amountRaw = [
+  #   0,
+  #   fraction(balanceBigInt, scale18 - pow(scale18 - redeemedBigInt * scale18 / supplyBigInt, 18, big2, 0, 18, DOWN), scale18).fromX18Round(outInAmountAssetDecimals, FLOOR)
+  # ].max()
   let amountRaw = [
     0,
     { balanceBigInt * (scale18 - pow(scale18 - redeemedBigInt * scale18 / supplyBigInt, 18, big2, 0, 18, DOWN)) / scale18 }.toInt()
@@ -673,7 +768,7 @@ func calcGetOneToken(
     fraction(totalAmount - amountBothInPaymentAsset, scale8, amountBothInPaymentAsset)
   }
 
-  (totalAmount, commonState, feeAmount, loss)
+  (totalAmount, commonState, feeAmount, loss, outInAmountAsset)
 }
 
 func managerPublicKeyOrUnit() = match mpk().getString() {
@@ -700,6 +795,65 @@ func mustManager(i: Invocation) = {
     case pk: ByteVector => i.callerPublicKey == pk || pd
     case _: Unit => i.caller == this || pd
   }
+}
+
+@Callable(i)
+func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int,  isReverse: Boolean, feePoolAmount: Int) = {
+  let (assetOut, assetIn) = if (isReverse == false) then {
+    let assetOut = getStringOrFail(this, pa())
+    let assetIn = getStringOrFail(this, aa())
+    (assetOut, assetIn)
+  } else {
+    let assetOut = getStringOrFail(this, aa())
+    let assetIn = getStringOrFail(this, pa())
+    (assetOut, assetIn)
+  }
+  let poolAssetInBalance = getAccBalance(assetIn)
+  let poolAssetOutBalance = getAccBalance(assetOut)
+  let amountOut = fraction(poolAssetOutBalance, cleanAmountIn, poolAssetInBalance + cleanAmountIn)
+
+  let oldK = poolAssetInBalance.toBigInt() * poolAssetOutBalance.toBigInt()
+  let newK = (getAccBalance(assetIn).toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt()) * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
+  strict checkK = newK >= oldK || "new K is fewer error".throw()
+
+  (nil, amountOut)
+}
+
+@Callable(i)
+func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String, feePoolAmount: Int) = {
+  let swapContact = invoke(
+    factoryContract,
+    "getSwapContractREADONLY", 
+    [], 
+    []
+  ).exactAs[String]
+  strict checks = [
+    i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
+    i.caller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
+  ]
+  let pmt = i.payments[0].value()
+  let assetIn = pmt.assetId.assetIdToString()
+
+  let assetOut = if (isReverse == false) then {
+    getStringOrFail(this, pa())
+  } else {
+    getStringOrFail(this, aa())
+  }
+  let poolAssetInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
+  let poolAssetOutBalance = getAccBalance(assetOut)
+  let amountOut = fraction(poolAssetOutBalance, cleanAmountIn, poolAssetInBalance + cleanAmountIn)
+
+  let oldK = poolAssetInBalance.toBigInt() * poolAssetOutBalance.toBigInt()
+  let newK = (getAccBalance(assetIn).toBigInt() + feePoolAmount.toBigInt()) * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
+  strict checkK = newK >= oldK || "new K is fewer error".throw()
+  
+  strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
+  (
+    [
+      ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.parseAssetId())
+    ],
+    amountOut
+  )
 }
 
 @Callable(i)
@@ -750,6 +904,14 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
     let amId      = estPut._12
     let prId      = estPut._13
 
+    let amAssetPmt = i.payments[0].value().amount.toBigInt()
+    let prAssetPmt = i.payments[1].value().amount.toBigInt()
+
+    # strict amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amAssetPmt
+    # strict priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - prAssetPmt
+    # strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
+    strict currentKLp = calcCurrentKLp(amAssetPmt, prAssetPmt, 0.toBigInt())
+
     # emit lp on factory
     strict emitInv = factoryContract.invoke("emit", [emitLpAmt], [])
     # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
@@ -765,8 +927,27 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
       if(shouldAutoStake) then strict slpStakeInv = stakingContract.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
       else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
 
+    # strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
+    strict (refreshKLpActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
+
+    # strict error = [
+    #   amountAssetBalance.toString(),
+    #   priceAssetBalance.toString(),
+    #   lpAssetEmission.toString(),
+    #   currentKLp.toString(),
+    #   updatedKLp.toString(),
+    #   emitLpAmt.toString(),
+    #   amDiff.toString(),
+    #   prDiff.toString(),
+    #   lpAssetEmission.toString(),
+    #   lpAssetEmissionAfter.toString()
+    # ].makeString(" ").throwErr()
+
+    strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+
     state
-      ++lpTransfer
+      ++ lpTransfer
+      ++ refreshKLpActions
 }
 
 # Put without LP emission
@@ -774,7 +955,18 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
 func putForFree(maxSlippage: Int) = {
   if(maxSlippage < 0) then throw("Invalid value passed") else
     let estPut = commonPut(i, maxSlippage, false)
-    estPut._9
+    let state     = estPut._9
+
+    let amAssetPmt = i.payments[0].value().amount.toBigInt()
+    let prAssetPmt = i.payments[1].value().amount.toBigInt()
+
+    strict currentKLp = calcCurrentKLp(amAssetPmt, prAssetPmt, 0.toBigInt())
+
+    let (refreshKLpActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
+
+    strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+
+    state ++ refreshKLpActions
 }
 
 @Callable(i)
@@ -795,11 +987,18 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
   let paymentAssetId = payment.assetId
   let paymentAmountRaw = payment.amount
 
+  strict currentKLp = if (paymentAssetId == cfgAmountAssetId) then {
+    calcCurrentKLp(paymentAmountRaw.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  } else if paymentAssetId == cfgPriceAssetId then {
+    calcCurrentKLp(0.toBigInt(), paymentAmountRaw.toBigInt(), 0.toBigInt())
+  } else {
+    "payment asset is not supported".throwErr()
+  }
+
   let userAddress = i.caller
   let txId = i.transactionId
 
-
-  strict (emitAmountEstimated, commonState, feeAmount, bonus) = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
+  strict (emitAmountEstimated, commonState, feeAmount, bonus, paymentInAmountAsset) = calcPutOneToken(paymentAmountRaw, paymentAssetId, userAddress, txId)
   let emitAmount = if (minOutAmount > 0 && emitAmountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else emitAmountEstimated
@@ -815,12 +1014,29 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, paymentAssetId)] else []
 
-  (commonState ++ lpTransfer ++ sendFee, emitAmount)
+  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
+    if (this == feeCollectorAddress) then (0, 0) else {
+      if (paymentInAmountAsset) then (-feeAmount, 0) else (0, -feeAmount)
+    }
+  }
+  let (refreshKLpActions, updatedKLp) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+
+  let kLp = keyKLp.getString().value()
+
+  strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+
+  (
+    commonState
+    ++ lpTransfer
+    ++ sendFee 
+    ++ refreshKLpActions,
+    emitAmount
+  )
 }
 
 @Callable(i)
 func putOneTknREADONLY(paymentAssetId: String, paymentAmountRaw: Int) = {
-  let (emitAmountEstimated, commonState, feeAmount, bonus) = calcPutOneToken(paymentAmountRaw, paymentAssetId.parseAssetId(), unit, unit)
+  let (emitAmountEstimated, commonState, feeAmount, bonus, paymentInAmountAsset) = calcPutOneToken(paymentAmountRaw, paymentAssetId.parseAssetId(), unit, unit)
 
   ([], (emitAmountEstimated, feeAmount, bonus))
 }
@@ -845,10 +1061,12 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
   let paymentAssetId = payment.assetId
   let paymentAmount = payment.amount
 
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+
   let userAddress = i.caller
   let txId = i.transactionId
 
-  strict (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, paymentAmount, paymentAssetId, userAddress, txId)
+  strict (amountEstimated, commonState, feeAmount, bonus, outInAmountAsset) = calcGetOneToken(outAssetId, paymentAmount, paymentAssetId, userAddress, txId)
 
   let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
@@ -860,12 +1078,26 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
 
-  (commonState ++ assetTransfer ++ sendFee, amount)
+  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
+    let feeAmountForCalc = if (this == feeCollectorAddress) then 0 else feeAmount
+    if (outInAmountAsset) then (-(amount + feeAmountForCalc), 0) else (0, -(amount + feeAmountForCalc))
+  }
+  let (refreshKLpActions, updatedKLp) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+
+  strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+
+  (
+    commonState
+    ++ assetTransfer
+    ++ sendFee
+    ++ refreshKLpActions,
+    amount
+  )
 }
 
 @Callable(i)
 func getOneTknREADONLY(outAssetId: String, paymentAmount: Int) = {
-  let (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId.parseAssetId(), paymentAmount, cfgLpAssetId, unit, unit)
+  let (amountEstimated, commonState, feeAmount, bonus, outInAmountAsset) = calcGetOneToken(outAssetId.parseAssetId(), paymentAmount, cfgLpAssetId, unit, unit)
 
   ([], (amountEstimated, feeAmount, bonus))
 }
@@ -888,8 +1120,10 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
   let userAddress = i.caller
   let txId = i.transactionId
 
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+
   strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
-  strict (amountEstimated, commonState, feeAmount, bonus) = calcGetOneToken(outAssetId, unstakeAmount, cfgLpAssetId, userAddress, txId)
+  strict (amountEstimated, commonState, feeAmount, bonus, outInAmountAsset) = calcGetOneToken(outAssetId, unstakeAmount, cfgLpAssetId, userAddress, txId)
 
   let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
@@ -901,7 +1135,21 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
 
-  (commonState ++ assetTransfer ++ sendFee, amount)
+  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
+    let feeAmountForCalc = if (this == feeCollectorAddress) then 0 else feeAmount
+    if (outInAmountAsset) then (-(amount + feeAmountForCalc), 0) else (0, -(amount + feeAmountForCalc))
+  }
+  let (refreshKLpActions, updatedKLp) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+
+  strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+
+  (
+    commonState
+    ++ assetTransfer
+    ++ sendFee
+    ++ refreshKLpActions,
+    amount
+  )
 }
 
 # Called by: LP
@@ -923,11 +1171,19 @@ func get() = {
   let pmtAmt       = res._3
   let pmtAssetId   = res._4
   let state        = res._5
+
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+
   strict burnLPAssetOnFactory = invoke(factoryContract,
                                   "burn",
                                   [pmtAmt],
                                   [AttachedPayment(pmtAssetId, pmtAmt)])
-  state
+  
+  let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmtAmt, -outPrAmt, 0)
+
+  strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+
+  state ++ refreshKLpActions
 }
 
 @Callable(i)
@@ -941,11 +1197,18 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
   if (outAmAmt < noLessThenAmtAsset) then throw("noLessThenAmtAsset failed:  " + outAmAmt.toString() + " < " + noLessThenAmtAsset.toString()) else
   if (outPrAmt < noLessThenPriceAsset) then throw("noLessThenPriceAsset failed: " + outPrAmt.toString() + " < " + noLessThenPriceAsset.toString()) else
 
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+
   strict burnLPAssetOnFactory = invoke(factoryContract,
                                   "burn",
                                   [pmtAmt],
                                   [AttachedPayment(pmtAssetId, pmtAmt)])
-  state
+
+  let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmAmt, -outPrAmt, 0)
+
+  strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+
+  state ++ refreshKLpActions
 }
 
 # Unstake LP tokens and exit from pool
@@ -957,10 +1220,14 @@ func unstakeAndGet(amount: Int) = {
 
   let lpAssetId = cfg[idxPoolLPAssetId].fromBase58String()
 
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+
   # negative amount will not pass
   strict unstakeInv = stakingContract.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
 
   let res = estimateGetOperation(i.transactionId.toBase58String(), lpAssetId.toBase58String(), amount, i.caller)
+  let outAmAmt = res._1
+  let outPrAmt = res._2
   let poolStatus = res._9.parseIntValue()
   let state = res._10
 
@@ -970,7 +1237,11 @@ func unstakeAndGet(amount: Int) = {
 
   strict burnLPAssetOnFactory = invoke(factoryContract, "burn", [amount], [AttachedPayment(lpAssetId, amount)])
 
-  state
+  let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmAmt, -outPrAmt, 0)
+  
+  strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+
+  state ++ refreshKLpActions
 }
 
 @Callable(i)
@@ -981,6 +1252,8 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
     !isGetDisabled || "get operation is blocked by admin".throw(),
     i.payments.size() == 0 || "no payments are expected".throw()
   ]
+
+  strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
 
@@ -996,7 +1269,11 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
   strict burnLPAssetOnFactory = factoryContract.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
 
-  state
+  let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmAmt, -outPrAmt, 0)
+
+  strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+
+  state ++ refreshKLpActions
 }
 
 # purpose:
@@ -1017,6 +1294,27 @@ func activate(amtAssetStr: String, priceAssetStr: String) = {
             ],
         "success")
     }
+}
+
+@Callable(i)
+func refreshKLp() = {
+  let lastRefreshedBlockHeight = keyKLpRefreshedHeight.getInteger().valueOrElse(0)
+  strict checkLastRefreshedBlockHeight = if (height - lastRefreshedBlockHeight >= kLpRefreshDelay) then unit else {
+    [
+      kLpRefreshDelay.toString(),
+      " blocks have not passed since the previous call"
+    ].makeString("").throwErr()
+  }
+
+  let kLp = this.getString(keyKLp)
+    .valueOrElse("0")
+    .parseBigInt()
+    .valueOrErrorMessage("invalid kLp".fmtErr())
+
+  let (kLpUpdateActions, updatedKLp) = refreshKLpInternal(0, 0, 0)
+  let actions = if (kLp != updatedKLp) then kLpUpdateActions else "nothing to refresh".throwErr()
+
+  (actions, updatedKLp.toString())
 }
 
 # API wrappers
@@ -1282,19 +1580,20 @@ func verify() = {
   match tx {
     case order: Order =>
       let matcherPub    = getMatcherPubOrFail()
-      let orderValid    = validateMatcherOrderAllowed(order)
+      let (orderValid, orderValidInfo) = validateMatcherOrderAllowed(order)
       let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
       let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
 
-      (orderValid && senderValid && matcherValid) || throwOrderError(orderValid, senderValid, matcherValid)
+      (orderValid && senderValid && matcherValid) || throwOrderError(orderValid, orderValidInfo, senderValid, matcherValid)
     case s: SetScriptTransaction =>
-      let newHash = s.script.value().blake2b256()
-      let allowedHash = factoryContract.getString(keyAllowedLpScriptHash()).value().fromBase64String()
-      let currentHash = this.scriptHash()
-      if (allowedHash == newHash && currentHash != newHash) then {
+      if sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey) then {
         true
       } else {
-        sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+        let newHash = s.script.value().blake2b256()
+        let allowedHash = factoryContract.getString(keyAllowedLpScriptHash()).value().fromBase64String()
+        let currentHash = this.scriptHash()
+
+        allowedHash == newHash && currentHash != newHash
       }
     case _ => {
       sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
