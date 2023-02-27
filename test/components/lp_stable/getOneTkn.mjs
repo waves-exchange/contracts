@@ -20,11 +20,11 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
     const usdnAmount = 1e8;
     const minOutAmount = 0;
     const delay = 2;
-    const expectedPriceLast = 9662694654;
-    const expectedPriceHistory = 9662694654;
+    const expectedPriceLast = 100174811;
+    const expectedPriceHistory = 100174811;
 
-    const expectedOutAmAmt = 198666227;
-    const expectedFee = 198865;
+    const expectedOutAmAmt = 99974432;
+    const expectedFee = 100074;
     const expectedOutPrAmt = 0;
 
     const lpStable = address(this.accounts.lpStable, chainId);
@@ -102,6 +102,14 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
       key: keyPriceHistory,
       type: 'integer',
       value: expectedPriceHistory,
+    }, {
+      key: '%s__dLpRefreshedHeight',
+      type: 'integer',
+      value: heightAfterGetOneTkn,
+    }, {
+      key: '%s__dLp',
+      type: 'string',
+      value: '10000000127432425026570490178',
     }]);
 
     expect(stateChanges.transfers).to.eql([

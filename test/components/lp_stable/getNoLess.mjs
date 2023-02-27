@@ -18,7 +18,7 @@ describe('lp_stable: getNoLess.mjs', /** @this {MochaSuiteModified} */() => {
     async function () {
       const usdnAmount = 1e16 / 10;
       const usdtAmount = 1e8 / 10;
-      const lpStableAmount = 1e12;
+      const lpStableAmount = 268990720838218;
       const shouldAutoStake = false;
       const noLessThenAmtAsset = 0;
       const noLessThenPriceAsset = 0;
@@ -78,6 +78,14 @@ describe('lp_stable: getNoLess.mjs', /** @this {MochaSuiteModified} */() => {
         key: keyPriceHistory,
         type: 'integer',
         value: expectedPriceHistory.toString(),
+      }, {
+        key: '%s__dLpRefreshedHeight',
+        type: 'integer',
+        value: height,
+      }, {
+        key: '%s__dLp',
+        type: 'string',
+        value: '10000000000000006424805538327',
       }]);
 
       expect(stateChanges.transfers).to.eql([{

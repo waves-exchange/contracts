@@ -40,21 +40,35 @@ jobs:
       COMPARELPSTABLEADDONSCRIPTADDRESS: 3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV # USDT/USDN pool addon
       FEESEED: ${{ secrets.TESTNETFEESEED }}
     runs-on: self-hosted
+    permissions:
+      contents: write
     container:
       image: golang:1.19
-      options: --user root
+      options: --user 0
     steps:
       - name: Clean step
         uses: mickem/clean-after-action@v1
         if: always()
         with:
           keepGit: true
+      - name: Set Git config
+        run: |
+          git config --global --add safe.directory *
+          git config --global user.email "actions@github.com"
+          git config --global user.name "Github Actions"
+          git version
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Deploy changed contracts
         run: |
           cd deployer
           go run main.go
+      - name: Update docs
+        run: |
+          git add .
+          git commit -m 'update docs'
+          git pull --rebase
+          git push
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
@@ -76,22 +90,39 @@ jobs:
     runs-on: self-hosted
     container:
       image: golang:1.19
-      options: --user root
+      options: --user 0
     steps:
+      - name: Clean repo
+        uses: AutoModality/action-clean@v1
+        if: always()
       - name: Clean step
         uses: mickem/clean-after-action@v1
         if: always()
         with:
           keepGit: true
+      - name: Set Git config
+        run: |
+          git config --global --add safe.directory *
+          git config --global user.email "actions@github.com"
+          git config --global user.name "Github Actions"
+          git version
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Compare contracts and print diff. Deploy changed lp.ride
         run: |
           cd deployer
           go run main.go
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
-        if: always()
+      - name: Update docs
+        run: |
+          git add .
+          git commit -m 'update docs'
+          git pull --rebase
+          git push
+      - name: Save txs to sign in artifact folder
+        uses: actions/upload-artifact@v3
+        with:
+          name: txs
+          path: .github/artifacts/txs
 
   lint_go:
     runs-on: self-hosted
@@ -161,3 +192,4 @@ jobs:
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
+

@@ -18,14 +18,18 @@ import (
 	"github.com/wavesplatform/gowaves/pkg/proto"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"io"
 	"math"
 	"net/http"
 	"os"
 	"os/exec"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -37,7 +41,8 @@ type Syncer struct {
 	logger                            zerolog.Logger
 	network                           config.Network
 	networkByte                       proto.Scheme
-	client                            *client.Client
+	rawClient                         *client.Client
+	clientMutex                       *sync.Mutex
 	contractsFolder                   string
 	contractModel                     contract.Model
 	branch                            string
@@ -106,7 +111,8 @@ func NewSyncer(
 		logger:                            logger,
 		network:                           network,
 		networkByte:                       networkByte,
-		client:                            cl,
+		rawClient:                         cl,
+		clientMutex:                       &sync.Mutex{},
 		contractsFolder:                   path.Join("..", "ride"),
 		contractModel:                     contractModel,
 		branch:                            branch,
@@ -128,6 +134,31 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	branchTestnet, err := s.branchModel.GetTestnetBranch(ctx)
 	if err != nil {
 		return fmt.Errorf("s.branchModel.GetTestnetBranch: %w", err)
+	}
+
+	contracts, err := s.contractModel.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("s.contractModel.GetAll: %w", err)
+	}
+
+	factory, err := findFactory(contracts)
+	if err != nil {
+		return fmt.Errorf("findFactory: %w", err)
+	}
+
+	factoryPub, err := crypto.NewPublicKeyFromBase58(factory.BasePub)
+	if err != nil {
+		return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", err)
+	}
+
+	factoryAddr, err := proto.NewAddressFromPublicKey(s.networkByte, factoryPub)
+	if err != nil {
+		return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
+	}
+
+	err = s.saveToDocs(ctx, factoryAddr, contracts, branchTestnet)
+	if err != nil {
+		return fmt.Errorf("s.saveToDocs: %w", err)
 	}
 
 	if s.network == config.Testnet {
@@ -163,21 +194,11 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("os.ReadDir: %w", err)
 	}
 
-	contracts, err := s.contractModel.GetAll(ctx)
-	if err != nil {
-		return fmt.Errorf("s.contractModel.GetAll: %w", err)
-	}
-
 	const (
 		keyAllowedLpScriptHash            = "%s__allowedLpScriptHash"
 		keyAllowedLpStableScriptHash      = "%s__allowedLpStableScriptHash"
 		keyAllowedLpStableAddonScriptHash = "%s__allowedLpStableAddonScriptHash"
 	)
-
-	factory, err := findFactory(contracts)
-	if err != nil {
-		return fmt.Errorf("findFactory: %w", err)
-	}
 
 	mainnetLpHashEmpty, err := s.doHash(
 		ctx,
@@ -236,10 +257,220 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	return nil
 }
 
-func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee uint64) error {
-	bal, _, err := s.client.Addresses.Balance(ctx, to)
+func (s *Syncer) saveToDocs(
+	ctx context.Context,
+	factoryAddress proto.WavesAddress,
+	contracts []contract.Contract,
+	branchTestnet string,
+) error {
+	var (
+		branch string
+		url    string
+		suffix string
+	)
+	if s.network == config.Testnet {
+		branch = branchTestnet
+		url = "https://testnet.wx.network"
+		suffix = "?network=testnet"
+	} else if s.network == config.Mainnet {
+		branch = "main"
+		url = "https://wx.network"
+	} else {
+		return errors.New("unknown network=" + string(s.network))
+	}
+
+	var rowsContracts string
+	assetsMap := map[string]struct{}{}
+	var poolLpAssets []*client.AssetsDetail
+	for _, cont := range contracts {
+		if s.network == config.Testnet && cont.Stage != 1 {
+			continue
+		}
+
+		pub, err := crypto.NewPublicKeyFromBase58(cont.BasePub)
+		if err != nil {
+			return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", err)
+		}
+
+		addr, err := proto.NewAddressFromPublicKey(s.networkByte, pub)
+		if err != nil {
+			return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
+		}
+		rowsContracts += fmt.Sprintf(
+			"%s | [`%s`](https://wavesexplorer.com/addresses/%s%s) | `%s` | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%s) \n",
+			cont.Tag,
+			addr.String(),
+			addr.String(),
+			suffix,
+			pub.String(),
+			cont.File,
+			branch,
+			cont.File,
+		)
+
+		if cont.File == "lp.ride" || cont.File == "lp_stable.ride" {
+			lp, amountAsset, priceAsset, e := s.getPoolConfig(ctx, factoryAddress, addr)
+			if e != nil {
+				s.logger.Error().Err(fmt.Errorf("s.getPoolConfig: %w", e)).Send()
+				continue
+			}
+			assetsMap[amountAsset] = struct{}{}
+			assetsMap[priceAsset] = struct{}{}
+
+			lpAsset, e := proto.NewOptionalAssetFromString(lp)
+			if e != nil {
+				return fmt.Errorf("proto.NewOptionalAssetFromString: %w", e)
+			}
+			if !lpAsset.Present {
+				return errors.New("no assetId=" + lp)
+			}
+
+			lpDetails, _, e := s.client().Assets.Details(ctx, *lpAsset.ToDigest())
+			if e != nil {
+				return fmt.Errorf("s.client().Assets.Details: %w", e)
+			}
+
+			poolLpAssets = append(poolLpAssets, lpDetails)
+		}
+	}
+
+	var assets []*client.AssetsDetail
+	for a := range assetsMap {
+		if a == "WAVES" {
+			continue
+		}
+
+		asset, e := proto.NewOptionalAssetFromString(a)
+		if e != nil {
+			return fmt.Errorf("proto.NewOptionalAssetFromString: %w", e)
+		}
+		if !asset.Present {
+			return errors.New("no assetId=" + a)
+		}
+
+		assetsDetails, _, e := s.client().Assets.Details(ctx, *asset.ToDigest())
+		if e != nil {
+			return fmt.Errorf("s.client().Assets.Details: %w", e)
+		}
+
+		assets = append(assets, assetsDetails)
+	}
+
+	md := fmt.Sprintf(`# %s environment
+[**%s**](https://github.com/waves-exchange/contracts/tree/%[2]s) branch deployed to **%s** network at **%s** to **%s**
+
+## Contracts
+| Name | Address | Public key | Code |
+|------|---------|------------|------|
+%s
+## Pool assets
+| Name | AssetID | Description |
+|------|---------|-------------|
+%s
+## Pool LP assets
+| Name | AssetID | Description |
+|------|---------|-------------|
+%s`, cases.Title(language.English).String(string(s.network)),
+		branch,
+		s.network,
+		time.Now().Format("15:04 02.01.2006"),
+		url,
+		rowsContracts,
+		sortAndConcat(assets, suffix),
+		sortAndConcat(poolLpAssets, suffix),
+	)
+
+	filename := path.Join("..", "docs", string(s.network)+".md")
+	err := os.Truncate(filename, 0)
 	if err != nil {
-		return fmt.Errorf("s.client.Addresses.Balance: %w", err)
+		return fmt.Errorf("os.Truncate: %w", err)
+	}
+
+	f, err := os.OpenFile(filename, os.O_RDWR, 0)
+	if err != nil {
+		return fmt.Errorf("os.Open: %w", err)
+	}
+
+	_, err = f.Write([]byte(md))
+	if err != nil {
+		return fmt.Errorf("f.Write: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Syncer) getPoolConfig(ctx context.Context, factory, poolAddress proto.WavesAddress) (string, string, string, error) {
+	type eval struct {
+		Expr string `json:"expr"`
+	}
+
+	b, err := json.Marshal(eval{Expr: fmt.Sprintf(`getPoolConfigREADONLY("%s")`, poolAddress)})
+	if err != nil {
+		return "", "", "", fmt.Errorf("json.Marshal: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		fmt.Sprintf("%s/utils/script/evaluate/%s", s.rawClient.GetOptions().BaseUrl, factory),
+		bytes.NewReader(b),
+	)
+	if err != nil {
+		return "", "", "", fmt.Errorf("http.NewRequestWithContext: %w", err)
+	}
+
+	type evalRes struct {
+		Result struct {
+			Type  string `json:"type"`
+			Value struct {
+				Num1 struct {
+					Type  string `json:"type"`
+					Value []any  `json:"value"`
+				} `json:"_1"`
+				Num2 struct {
+					Type  string `json:"type"`
+					Value []struct {
+						Type  string `json:"type"`
+						Value string `json:"value"`
+					} `json:"value"`
+				} `json:"_2"`
+			} `json:"value"`
+		} `json:"result"`
+		Complexity   int `json:"complexity"`
+		StateChanges struct {
+			Data         []any `json:"data"`
+			Transfers    []any `json:"transfers"`
+			Issues       []any `json:"issues"`
+			Reissues     []any `json:"reissues"`
+			Burns        []any `json:"burns"`
+			SponsorFees  []any `json:"sponsorFees"`
+			Leases       []any `json:"leases"`
+			LeaseCancels []any `json:"leaseCancels"`
+			Invokes      []any `json:"invokes"`
+		} `json:"stateChanges"`
+		Expr    string `json:"expr"`
+		Address string `json:"address"`
+	}
+	res := evalRes{}
+	_, err = s.client().Do(ctx, req, &res)
+	if err != nil {
+		return "", "", "", fmt.Errorf("s.client().Do: %w", err)
+	}
+
+	if len(res.Result.Value.Num2.Value) == 0 {
+		return "", "", "", errors.New("empty pool config, address=" + poolAddress.String())
+	}
+
+	lp := res.Result.Value.Num2.Value[3].Value
+	amountAsset := res.Result.Value.Num2.Value[4].Value
+	priceAsset := res.Result.Value.Num2.Value[5].Value
+	return lp, amountAsset, priceAsset, nil
+}
+
+func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee uint64, fileName string) error {
+	bal, _, err := s.client().Addresses.Balance(ctx, to)
+	if err != nil {
+		return fmt.Errorf("s.client().Addresses.Balance: %w", err)
 	}
 
 	const twoWaves = 2 * 100000000
@@ -261,6 +492,7 @@ func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee ui
 			s.feePrv,
 			false,
 			false,
+			fileName,
 		)
 		if e != nil {
 			return fmt.Errorf("s.sendTx: %w", e)
@@ -353,9 +585,9 @@ func (s *Syncer) doHash(
 		}
 
 		if actualHash != newHashStr {
-			e := s.sendTx(ctx, dataTx, prvSigner, false, true)
+			e := s.sendTx(ctx, dataTx, prvSigner, false, true, fileName)
 			if e != nil {
-				return false, fmt.Errorf("sendTx: %w", e)
+				return false, fmt.Errorf("sendTx %s: %w", fileName, e)
 			}
 
 			s.logger.Info().
@@ -421,7 +653,7 @@ func (s *Syncer) doHash(
 				return false, fmt.Errorf("s.printDiff: %w", e)
 			}
 
-			e = s.ensureHasFee(ctx, addr, fee)
+			e = s.ensureHasFee(ctx, addr, fee, fileName)
 			if e != nil {
 				return false, fmt.Errorf("s.ensureHasFee: %w", e)
 			}
@@ -430,24 +662,24 @@ func (s *Syncer) doHash(
 				Msg("we are about to set script as approved. " +
 					"sign and broadcast data-tx to continue")
 
-			for {
-				value, er3 := s.getStringValue(ctx, addr, key)
-				if er3 != nil {
-					return false, fmt.Errorf("s.getStringValue: %w", er3)
-				}
-				if value == newHashStr {
-					const blocks = 2
-					log().Msgf("data-tx done, wait %d blocks", blocks)
-					er4 := s.waitNBlocks(ctx, blocks)
-					if er4 != nil {
-						return false, fmt.Errorf("s.waitNBlocks: %w", er4)
-					}
-					break
-				}
-
-				time.Sleep(5 * time.Second)
-				log().RawJSON("tx", tx).Msg("sign data-tx. polling factory state...")
-			}
+			//for {
+			//	value, er3 := s.getStringValue(ctx, addr, key)
+			//	if er3 != nil {
+			//		return false, fmt.Errorf("s.getStringValue: %w", er3)
+			//	}
+			//	if value == newHashStr {
+			//		const blocks = 2
+			//		log().Msgf("data-tx done, wait %d blocks", blocks)
+			//		er4 := s.waitNBlocks(ctx, blocks)
+			//		if er4 != nil {
+			//			return false, fmt.Errorf("s.waitNBlocks: %w", er4)
+			//		}
+			//		break
+			//	}
+			//
+			//	time.Sleep(5 * time.Second)
+			//	log().RawJSON("tx", tx).Msg("sign data-tx. polling factory state...")
+			//}
 		} else {
 			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, " +
 				"no need to update allowed script hash")
@@ -458,7 +690,7 @@ func (s *Syncer) doHash(
 }
 
 func (s *Syncer) waitNBlocks(ctx context.Context, blocks uint64) error {
-	currentHeight, _, err := s.client.Blocks.Height(ctx)
+	currentHeight, _, err := s.client().Blocks.Height(ctx)
 	if err != nil {
 		return fmt.Errorf("client.Blocks.Height: %w", err)
 	}
@@ -472,7 +704,7 @@ func (s *Syncer) waitNBlocks(ctx context.Context, blocks uint64) error {
 		default:
 			time.Sleep(5 * time.Second)
 
-			height, _, e := s.client.Blocks.Height(ctx)
+			height, _, e := s.client().Blocks.Height(ctx)
 			if e != nil {
 				return fmt.Errorf("client.Blocks.Height: %w", e)
 			}
@@ -489,13 +721,13 @@ func (s *Syncer) waitNBlocks(ctx context.Context, blocks uint64) error {
 }
 
 func (s *Syncer) getStringValue(ctx context.Context, address proto.WavesAddress, key string) (string, error) {
-	data, _, err := s.client.Addresses.AddressesDataKey(ctx, address, key)
+	data, _, err := s.client().Addresses.AddressesDataKey(ctx, address, key)
 	if err != nil {
 		if strings.Contains(err.Error(), "no data for this key") {
 			return "", nil
 		}
 
-		return "", fmt.Errorf("s.client.Addresses.AddressesDataKey: %w", err)
+		return "", fmt.Errorf("s.client().Addresses.AddressesDataKey: %w", err)
 	}
 
 	const invalidType = "data is not StringDataEntry: address: %s key: %s"
@@ -546,6 +778,7 @@ func (s *Syncer) doFile(
 		return false, fmt.Errorf("io.ReadAll: %w", err)
 	}
 
+	iTx := 0
 	for _, cont := range contracts {
 		if fileName != cont.File {
 			continue
@@ -605,7 +838,7 @@ func (s *Syncer) doFile(
 				continue
 			}
 
-			er2 = s.ensureHasFee(ctx, addr, setScriptFee)
+			er2 = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
 			if er2 != nil {
 				return false, fmt.Errorf("s.ensureHasFee: %w", er2)
 			}
@@ -613,7 +846,7 @@ func (s *Syncer) doFile(
 			er2 = s.sendTx(
 				ctx,
 				proto.NewUnsignedSetScriptWithProofs(
-					1,
+					2,
 					proto.TestNetScheme,
 					pub,
 					scriptBytes,
@@ -623,6 +856,7 @@ func (s *Syncer) doFile(
 				prvSigner,
 				true,
 				true,
+				fileName,
 			)
 			if er2 != nil {
 				return false, fmt.Errorf(
@@ -673,48 +907,71 @@ func (s *Syncer) doFile(
 			}
 
 			unsignedSetScriptTx := proto.NewUnsignedSetScriptWithProofs(
-				1,
+				2,
 				proto.MainNetScheme,
 				pub,
 				scriptBytes,
 				setScriptFee,
 				timestamp(),
 			)
-			doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
-			doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
-			doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
-			if doLpRide || doLpStableRide || doLpStableAddonRide {
-				er := s.sendTx(
-					ctx,
-					unsignedSetScriptTx,
-					crypto.SecretKey{},
-					true,
-					true,
-				)
-				if er != nil {
-					return false, fmt.Errorf("s.client.Transactions.Broadcast: %w", er)
-				}
-
-				isChanged = true
-				log().Str(action, deployed).Msg(changed)
-			} else {
-				setScriptTx, er := json.Marshal(unsignedSetScriptTx)
-				if er != nil {
-					return false, fmt.Errorf("s.sendTx: %w", er)
-				}
-
-				er = s.ensureHasFee(ctx, addr, setScriptFee)
-				if er != nil {
-					return false, fmt.Errorf("s.ensureHasFee: %w", er)
-				}
-
-				isChanged = true
-				log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
-				er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
-				if er != nil {
-					return false, fmt.Errorf("s.printDiff: %w", er)
-				}
+			//doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
+			//doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
+			//doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
+			//if doLpRide || doLpStableRide || doLpStableAddonRide {
+			//	er := s.sendTx(
+			//		ctx,
+			//		unsignedSetScriptTx,
+			//		crypto.SecretKey{},
+			//		true,
+			//		true,
+			//		fileName,
+			//	)
+			//	if er != nil {
+			//		return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
+			//	}
+			//
+			//	isChanged = true
+			//	log().Str(action, deployed).Msg(changed)
+			//} else {
+			setScriptTx, er := json.Marshal(unsignedSetScriptTx)
+			if er != nil {
+				return false, fmt.Errorf("s.sendTx: %w", er)
 			}
+
+			er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
+			if er != nil {
+				return false, fmt.Errorf("s.ensureHasFee: %w", er)
+			}
+
+			isChanged = true
+			log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
+			er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
+			if er != nil {
+				return false, fmt.Errorf("s.printDiff: %w", er)
+			}
+
+			iTx += 1
+			file, er := os.Create(
+				path.Join(
+					"..",
+					".github",
+					"artifacts",
+					"txs",
+					fmt.Sprintf(
+						"%s_%s.json",
+						stringIndex(iTx),
+						strings.ReplaceAll(strings.ReplaceAll(cont.Tag, " ", "_"), "/", "_"),
+					),
+				))
+			if er != nil {
+				return false, fmt.Errorf("os.Create: %w", er)
+			}
+
+			_, er = file.Write(setScriptTx)
+			if er != nil {
+				return false, fmt.Errorf("file.Write: %w", er)
+			}
+			//}
 
 			continue
 		}
@@ -789,7 +1046,7 @@ func (s *Syncer) waitMined(ctx context.Context, txHash crypto.Digest) error {
 	try := 0
 	for {
 		try += 1
-		_, _, err := s.client.Transactions.Info(ctx, txHash)
+		_, _, err := s.client().Transactions.Info(ctx, txHash)
 		if err == nil {
 			return nil
 		}
@@ -806,6 +1063,7 @@ func (s *Syncer) sendTx(
 	prv crypto.SecretKey,
 	async bool,
 	ensureFee bool,
+	fileName string,
 ) error {
 	_, err := tx.Validate(s.networkByte)
 	if err != nil {
@@ -828,26 +1086,26 @@ func (s *Syncer) sendTx(
 	}
 
 	fn := func() error {
+		sender, e := tx.GetSender(s.networkByte)
+		if e != nil {
+			return fmt.Errorf("tx.GetSender: %w", e)
+		}
+
+		senderAddr, e := sender.ToWavesAddress(s.networkByte)
+		if e != nil {
+			return fmt.Errorf("sender.ToWavesAddress: %w", e)
+		}
+
 		if ensureFee {
-			sender, e := tx.GetSender(s.networkByte)
-			if e != nil {
-				return fmt.Errorf("tx.GetSender: %w", e)
-			}
-
-			senderAddr, e := sender.ToWavesAddress(s.networkByte)
-			if e != nil {
-				return fmt.Errorf("sender.ToWavesAddress: %w", e)
-			}
-
-			e = s.ensureHasFee(ctx, senderAddr, tx.GetFee())
+			e = s.ensureHasFee(ctx, senderAddr, tx.GetFee(), fileName)
 			if e != nil {
 				return fmt.Errorf("s.ensureHasFee: %w", e)
 			}
 		}
 
-		_, e := s.client.Transactions.Broadcast(ctx, tx)
+		_, e = s.client().Transactions.Broadcast(ctx, tx)
 		if e != nil {
-			return fmt.Errorf("s.client.Transactions.Broadcast: %w", e)
+			return fmt.Errorf("s.client().Transactions.Broadcast (file: %s, sender: %s): %w", fileName, senderAddr.String(), e)
 		}
 
 		e = s.waitMined(ctx, txHash)
@@ -877,9 +1135,9 @@ func (s *Syncer) compileRaw(ctx context.Context, body []byte, compact bool) (str
 		return resp, nil
 
 	} else {
-		sc, _, err := s.client.Utils.ScriptCompile(ctx, string(body))
+		sc, _, err := s.client().Utils.ScriptCompile(ctx, string(body))
 		if err != nil {
-			return "", fmt.Errorf("s.client.Utils.ScriptCompile: %w", err)
+			return "", fmt.Errorf("s.client().Utils.ScriptCompile: %w", err)
 		}
 		return sc.Script, nil
 	}
@@ -917,7 +1175,7 @@ func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, err
 
 	req, err := http.NewRequestWithContext(
 		ctx, http.MethodGet,
-		s.client.GetOptions().BaseUrl+"/addresses/scriptInfo/"+addr.String(),
+		s.rawClient.GetOptions().BaseUrl+"/addresses/scriptInfo/"+addr.String(),
 		nil,
 	)
 	if err != nil {
@@ -952,7 +1210,7 @@ func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, err
 }
 
 func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, error) {
-	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.client.GetOptions().BaseUrl)
+	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.rawClient.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
 	if err != nil {
@@ -970,17 +1228,17 @@ func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, er
 	}
 
 	var compileResult CompileResult
-	_, err = s.client.Do(c, req, &compileResult)
+	_, err = s.client().Do(c, req, &compileResult)
 
 	if err != nil {
-		return "", fmt.Errorf("s.client.Do: %w", err)
+		return "", fmt.Errorf("s.client().Do: %w", err)
 	}
 
 	return compileResult.Script, nil
 }
 
 func (s *Syncer) apiDecompileScript(c context.Context, body io.Reader) (string, error) {
-	u := fmt.Sprintf("%s/utils/script/decompile", s.client.GetOptions().BaseUrl)
+	u := fmt.Sprintf("%s/utils/script/decompile", s.rawClient.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
 	if err != nil {
@@ -994,13 +1252,26 @@ func (s *Syncer) apiDecompileScript(c context.Context, body io.Reader) (string, 
 	}
 
 	var decompileResult DecompileResult
-	_, err = s.client.Do(c, req, &decompileResult)
+	_, err = s.client().Do(c, req, &decompileResult)
 
 	if err != nil {
-		return "", fmt.Errorf("s.client.Do: %w", err)
+		return "", fmt.Errorf("s.client().Do: %w", err)
 	}
 
 	return decompileResult.Script, nil
+}
+
+func (s *Syncer) client() *client.Client {
+	u := s.rawClient.GetOptions().BaseUrl
+	if strings.Contains(u, "wx.network") ||
+		strings.Contains(u, "waves.exchange") {
+		return s.rawClient
+	}
+
+	s.clientMutex.Lock()
+	defer s.clientMutex.Unlock()
+	time.Sleep(2 * time.Second)
+	return s.rawClient
 }
 
 func calcSetScriptFee(script []byte) uint64 {
@@ -1044,4 +1315,37 @@ func getPrivateAndPublicKey(seed []byte) (privateKey crypto.SecretKey, publicKey
 		return crypto.SecretKey{}, crypto.PublicKey{}, err
 	}
 	return crypto.GenerateKeyPair(accSeed[:])
+}
+
+func stringIndex(i int) string {
+	if i < 10 {
+		return "0" + strconv.Itoa(i)
+	}
+	return strconv.Itoa(i)
+}
+
+func dashIfEmpty(s string) string {
+	if s == "" {
+		return "—"
+	}
+	return s
+}
+
+func sortAndConcat(assets []*client.AssetsDetail, explorerSuffix string) string {
+	sort.SliceStable(assets, func(i, j int) bool {
+		return strings.ToLower(assets[i].Name) < strings.ToLower(assets[j].Name)
+	})
+
+	var res string
+	for _, asset := range assets {
+		res += fmt.Sprintf(
+			"%s | [`%s`](https://wavesexplorer.com/assets/%s%s) | %s \n",
+			dashIfEmpty(asset.Name),
+			asset.AssetId.String(),
+			asset.AssetId.String(),
+			explorerSuffix,
+			dashIfEmpty(asset.Description),
+		)
+	}
+	return res
 }
