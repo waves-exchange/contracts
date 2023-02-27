@@ -1,5 +1,5 @@
 # Testnet environment
-[**WXDEFI-242-lp-staking-pools**](https://github.com/waves-exchange/contracts/tree/WXDEFI-242-lp-staking-pools) branch deployed to **testnet** network at **12:55 27.02.2023** to **https://testnet.wx.network**
+[**WXDEFI-242-lp-staking-pools**](https://github.com/waves-exchange/contracts/tree/WXDEFI-242-lp-staking-pools) branch deployed to **testnet** network at **14:12 27.02.2023** to **https://testnet.wx.network**
 
 ## Contracts
 | Name | Address | Public key | Code |
