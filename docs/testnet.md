@@ -1,5 +1,5 @@
 # Testnet environment
-[**WXDEFI-242-lp-staking-pools**](https://github.com/waves-exchange/contracts/tree/WXDEFI-242-lp-staking-pools) branch deployed to **testnet** network at **15:42 27.02.2023** to **https://testnet.wx.network**
+[**WXDEFI-242-lp-staking-pools**](https://github.com/waves-exchange/contracts/tree/WXDEFI-242-lp-staking-pools) branch deployed to **testnet** network at **12:55 27.02.2023** to **https://testnet.wx.network**
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -21,7 +21,7 @@ USDT/USDN pool | [`3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT`](https://wavesexplorer.c
 USDC/USDT pool | [`3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA`](https://wavesexplorer.com/addresses/3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA?network=testnet) | `35yd3qw1gxKDxKwGAykHN9fANbXNWwseaUwbWDj24o3x` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-242-lp-staking-pools/ride/lp_stable.ride) 
 USDT/USDN pool addon | [`3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV`](https://wavesexplorer.com/addresses/3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV?network=testnet) | `8KXPjDuC8ffL9qjNuDBLnkvJKbMojhZYcnm2o75UCyun` | [lp_stable_addon.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-242-lp-staking-pools/ride/lp_stable_addon.ride) 
 USDC/USDT pool addon | [`3MxuKn3ZoWnX58Q4ooAraNxabpcdaAtpufk`](https://wavesexplorer.com/addresses/3MxuKn3ZoWnX58Q4ooAraNxabpcdaAtpufk?network=testnet) | `3GJt6j9wqqWrm9ontm1mnLfeW2wgWZYSqzVb9ueSKL1E` | [lp_stable_addon.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-242-lp-staking-pools/ride/lp_stable_addon.ride) 
-lp_staking | [`3MtRSTpfhomtwUnM69Jxs4uRLnVRhbMFfWN`](https://wavesexplorer.com/addresses/3MtRSTpfhomtwUnM69Jxs4uRLnVRhbMFfWN?network=testnet) | `58QcgwggFjzg7AG2pQF5tBsn7KL4FNwJGrEC8P8L4mqD` | [lp_staking.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-242-lp-staking-pools/ride/lp_staking.ride) 
+lp_staking | [`3MuF3bFRbrBSPZxFUEKfz6RR3ctoc6oM6qE`](https://wavesexplorer.com/addresses/3MuF3bFRbrBSPZxFUEKfz6RR3ctoc6oM6qE?network=testnet) | `HepAJ7PzqiLHJ1LToNa9dvNLTvtcisejGpDmHj3aqHCz` | [lp_staking.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-242-lp-staking-pools/ride/lp_staking.ride) 
 lp_staking_pools | [`3Mxh9WBhtYMUEVU1hN1CuPm13KLK1gsMcK8`](https://wavesexplorer.com/addresses/3Mxh9WBhtYMUEVU1hN1CuPm13KLK1gsMcK8?network=testnet) | `8f1rQCPEcUfjitkvwMuxK9bwf2jupzdaHjtKTW5J45Rf` | [lp_staking_pools.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-242-lp-staking-pools/ride/lp_staking_pools.ride) 
 lp_staking_v2 | [`3NCroKxpCWCYijwjiVBg6hc2T7DaajrHuBr`](https://wavesexplorer.com/addresses/3NCroKxpCWCYijwjiVBg6hc2T7DaajrHuBr?network=testnet) | `4j5ighurrUZ2WcdBTRGqBfXs5fz9YDA76D4gtpZ9basj` | [lp_staking_v2.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-242-lp-staking-pools/ride/lp_staking_v2.ride) 
 marketing | [`3Ms38PbYnARMUMorWK8SqRBhKKQq2yhXPB1`](https://wavesexplorer.com/addresses/3Ms38PbYnARMUMorWK8SqRBhKKQq2yhXPB1?network=testnet) | `3EfudNNQNACtTotZKwkRu97fZW5fFjUPwuP1gd3oBHJs` | [marketing.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-242-lp-staking-pools/ride/marketing.ride) 
