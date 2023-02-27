@@ -48,6 +48,9 @@ func keyVotingResult(pool: (String, String), epoch: Int) = {
 
   ["%s%s%s%d", "votingResult", amountAssetId, priceAssetId, epoch.toString()].makeString(separator)
 }
+func keyVotingResultStaked(lpAssetIdStr: String, epoch: Int) = {
+  ["%s%s%d", "votingResultStaked", lpAssetIdStr, epoch.toString()].makeString(separator)
+}
 
 func keyPoolShare(pool: (String, String), epoch: Int) = {
   let (amountAssetId, priceAssetId) = pool
@@ -58,6 +61,9 @@ func keyPoolShare(pool: (String, String), epoch: Int) = {
 func keyTotalVotes(epoch: Int) = {
   ["%s%d", "totalVotes", epoch.toString()].makeString(separator)
 }
+
+# staking
+func keyStakedByUser(lpAssetIdStr: String, userAddressStr: String) = ["%s%s%s", "staked", userAddressStr, lpAssetIdStr].makeString(separator)
 
 func wrapErr(msg: String) = ["voting_emission.ride:", msg].makeString(" ")
 func throwErr(msg: String) = msg.wrapErr().throw()
@@ -460,6 +466,15 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
     .valueOrErrorMessage("processVoteINTERNAL " + poolStr + " " + userAddressStr + ": no previous vote")
   let used = this.getInteger(userAddress.keyUsed(epoch)).valueOrElse(0)
 
+  # staked votes
+  let lpAssetIdStr = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
+  let votingResultStakedPrevious = lpAssetIdStr.keyVotingResultStaked(epochPrevious).getInteger().valueOrElse(0)
+  let stakingContract = this.getStrOrFail(keyStakingContract).addressFromStringValue()
+  let stakedByUser = stakingContract.getInteger(lpAssetIdStr.keyStakedByUser(userAddressStr)).valueOrElse(0)
+  let votingResultStakedActions = if (stakedByUser == 0) then [] else [
+    IntegerEntry(lpAssetIdStr.keyVotingResultStaked(epochPrevious), votingResultStakedPrevious + votePrevious)
+  ]
+
   let newVote = if (gwxAmountAtEndTotalPrevious > 0) then fraction(votePrevious, gwxAmountAtEndTotal, gwxAmountAtEndTotalPrevious) else 0
   let actions = if (newVote > 0 && wxEmission) then {
     [
@@ -473,7 +488,7 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   }
 
   (
-    actions,
+    actions ++ votingResultStakedActions,
     unit
   )
 }
