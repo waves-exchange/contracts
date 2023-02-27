@@ -391,12 +391,18 @@ func keyVoteStakedIntegralLastUpdateHeight(lpAssetIdStr: String, address: Addres
 # staking
 func keyStakedByUser(userAddressStr: String, lpAssetIdStr: String) = ["%s%s%s", "staked", userAddressStr, lpAssetIdStr].makeString(SEP)
 
-func getUserVoteStaked(lpAssetIdStr: String, userAddressStr: String) = {
+func getUserVoteFinalized(lpAssetIdStr: String, userAddressStr: String) = {
   let userAddress = userAddressStr.addressFromStringValue()
   let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
   let (amountAssetId, priceAssetId) = lpAssetIdStr.getPoolAssetsByLpAssetId()
-  let stakedByUser = stakingContract.getInteger(keyStakedByUser(userAddressStr, lpAssetIdStr)).valueOrElse(0)
   let userVote = votingEmissionContract.getInteger(keyVote(amountAssetId, priceAssetId, userAddress, lastFinalizedEpoch)).valueOrElse(0)
+  
+  userVote
+}
+
+func getUserVoteStaked(lpAssetIdStr: String, userAddressStr: String) = {
+  let stakedByUser = stakingContract.getInteger(keyStakedByUser(userAddressStr, lpAssetIdStr)).valueOrElse(0)
+  let userVote = lpAssetIdStr.getUserVoteFinalized(userAddressStr)
   
   if (stakedByUser == 0) then 0 else userVote
 }
@@ -812,6 +818,11 @@ func onStakedVoteUpdate(lpAssetIdStr: String, userAddressStr: String, edge: Bool
 @Callable(i)
 func getVotingResultStakedREADONLY(lpAssetIdStr: String) = {
   ([], lpAssetIdStr.getVotingResultStaked())
+}
+
+@Callable(i)
+func getUserVoteFinalizedREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+  ([], lpAssetIdStr.getUserVoteFinalized(userAddressStr))
 }
 
 @Callable(i)

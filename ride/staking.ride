@@ -543,7 +543,8 @@ func claimWxBulkInternalREADONLY(currentIter: Int, lpAssetIds: List[String], use
   let info = this.invoke("claimWxREADONLY", [lpAssetId, userAddressStr], []).exactAs[String].split(SEP)
   let unclaimed = info[3]
   let claimed = info[4]
-  let res = resAcc :+ ["%d%d", unclaimed, claimed].makeString(SEP)
+  let userVoteFinalized = boostingContract.invoke("getUserVoteFinalizedREADONLY", [lpAssetId, userAddressStr], []).exactAs[Int]
+  let res = resAcc :+ ["%d%d%d", unclaimed, claimed, userVoteFinalized.toString()].makeString(SEP)
   strict inv = this.invoke("claimWxBulkInternalREADONLY", [currentIter+1, lpAssetIds, userAddressStr, res], []).exactAs[List[Any]]
   ([], inv)
 }
