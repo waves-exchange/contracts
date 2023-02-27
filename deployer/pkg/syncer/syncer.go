@@ -844,10 +844,6 @@ func (s *Syncer) doFile(
 				return false, fmt.Errorf("s.ensureHasFee: %w", er2)
 			}
 
-			if pub.String() == "2rdeGwVMkuRfRdUgrYaekNmjnegHokhyDx1z6TJq525F" {
-				log.Msg(fileName)
-			}
-
 			er2 = s.sendTx(
 				ctx,
 				proto.NewUnsignedSetScriptWithProofs(

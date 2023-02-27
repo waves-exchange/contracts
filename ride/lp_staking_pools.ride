@@ -47,7 +47,7 @@ func keyUsdnAssetId() = ["%s", "usdnAssetId"].makeString(separator)
 func keyWxAssetId() = ["%s", "wxAssetId"].makeString(separator)
 
 func keyShutdown() = ["%s", "shutdown"].makeString(separator)
-func keyMinDelay() = ["%s", "minDelay"].makeString(separator)
+func keyMinDelay() = ["%s", "minDelay"].makeString(separator) 
 func keyLockFraction() = ["%s", "lockFraction"].makeString(separator)
 func keyShareAssetId(baseAssetId: ByteVector|Unit) = {
   ["%s%s", baseAssetId.assetIdToString(), "shareAssetId"].makeString(separator)
@@ -234,7 +234,7 @@ func create(
   shareAssetDescription: String,
   shareAssetLogo: String
 ) = {
-  let shareAssetLabel = "LP_STAKING_POOLS"
+  let shareAssetLabel = "STAKING_LP"
   let baseAssetId = baseAssetIdStr.parseAssetId()
 
   strict checks = [
