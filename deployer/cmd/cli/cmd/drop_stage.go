@@ -41,7 +41,7 @@ var dropStageCmd = &cobra.Command{
 		}
 
 		stageP := promptui.Prompt{
-			Label: "Index of the new stage ?",
+			Label: "Index of the stage ?",
 			Validate: func(s string) error {
 				stg, err := strconv.Atoi(s)
 				if err != nil {
