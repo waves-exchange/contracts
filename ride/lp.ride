@@ -845,13 +845,8 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
 
   let oldK = poolAssetInBalance.toBigInt() * poolAssetOutBalance.toBigInt()
   let newK = (getAccBalance(assetIn).toBigInt() + feePoolAmount.toBigInt()) * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
-<<<<<<< HEAD
-  strict checkK = newK >= oldK || "new K is fewer error".throw()
-  
-=======
 
   strict checkK = newK >= oldK || "new K is fewer error".throw()
->>>>>>> main
   strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
   (
     [
