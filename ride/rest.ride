@@ -209,11 +209,18 @@ func currentRewardRateREADONLY(lpAssetId: String) = {
   let maxFactor           = rewardData[1]
   let totalLpStaked       = rewardData[2]
 
-  ([], makeString(["%d%d%d",
-          wxEmissionPerBlock.toString(),
-          maxFactor.toString(),
-          totalLpStaked.toString()],
-    SEP))
+  let votingResultStaked = boostingDapp.invoke("getVotingResultStakedREADONLY", [lpAssetId], []).exactAs[Int]
+
+  (
+    [],
+    [
+      "%d%d%d%d",
+      wxEmissionPerBlock.toString(),
+      maxFactor.toString(),
+      totalLpStaked.toString(),
+      votingResultStaked.toString()
+    ].makeString(SEP)
+  )
 }
 
 @Callable(i)

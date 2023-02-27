@@ -810,6 +810,11 @@ func onStakedVoteUpdate(lpAssetIdStr: String, userAddressStr: String, edge: Bool
 }
 
 @Callable(i)
+func getVotingResultStakedREADONLY(lpAssetIdStr: String) = {
+  ([], lpAssetIdStr.getVotingResultStaked())
+}
+
+@Callable(i)
 func setManager(pendingManagerPublicKey: String) = {
   strict checkCaller = i.mustManager()
   strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
