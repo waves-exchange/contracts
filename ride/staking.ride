@@ -549,6 +549,7 @@ func claimWxBulkInternalREADONLY(currentIter: Int, lpAssetIds: List[String], use
   ([], inv)
 }
 
+# Returns [%d%d%d__<unclaimed>__<claimed>__<userVoteFinalized>]
 @Callable(i)
 func claimWxBulkREADONLY(lpAssetIds: List[String], userAddressStr: String) = {
   let res = this.invoke("claimWxBulkInternalREADONLY", [0, lpAssetIds, userAddressStr, []], [])

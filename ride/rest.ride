@@ -201,6 +201,7 @@ func constructor(factoryAddress: String) = {
   [StringEntry(keyFactoryAddress(), factoryAddress)]
 }
 
+# Returns %d%d%d%d__<wxEmissionPerBlock>__<maxFactor>__<totalLpStaked>__<votingResultStaked>
 @Callable(i)
 func currentRewardRateREADONLY(lpAssetId: String) = {
   let rewardData      = internalCurrentRewardRate(lpAssetId)
