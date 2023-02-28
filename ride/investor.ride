@@ -1,0 +1,56 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+# required keys
+func keyInvestWxXtnDelay() = "%__investWxXtnDelay" # int
+func keyInvestWxXtnAmountXtn() = "%__investWxXtnAmountXtn" # int
+func keyWxXtnPool() = "%__wxXtnPool" # string
+func keyXtnAssetId() = "%__xtnAssetId" # string
+func keyWxXtnLp() = "%__wxXtnLp" # string
+func keyLpToAddress() = "%__lpToAddress" # string
+# required keys end
+
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyInvestWxXtnLastHeight() = "%__investWxXtnLastHeight"
+
+func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func throwErr(msg: String) = ["investor.ride:", msg].makeString(" ").throw()
+
+@Callable(i)
+func investWxXtn() = {
+  let lastCall = keyInvestWxXtnLastHeight().getInteger().valueOrElse(0)
+  let delay = keyInvestWxXtnDelay().getIntegerValue()
+  strict checks = [
+    height>lastCall+delay || "wait to invest".throwErr()
+  ]
+
+  let lpAssetId = keyWxXtnLp().getStringValue().fromBase58String()
+  strict lpBefore = this.assetBalance(lpAssetId)
+  strict inv = keyWxXtnPool().getStringValue().addressFromStringValue().invoke(
+    "putOneTkn",
+    [0, false],
+    [AttachedPayment(keyXtnAssetId().getStringValue().fromBase58String(), keyInvestWxXtnAmountXtn().getIntegerValue())]
+  )
+  strict lpAfter = this.assetBalance(lpAssetId)
+  let lpGot = lpAfter-lpBefore
+  strict notZeroLp = if (lpGot == 0) then "lp to get is zero".throwErr() else unit
+
+  [
+    IntegerEntry(keyInvestWxXtnLastHeight(), height),
+    ScriptTransfer(keyLpToAddress().getStringValue().addressFromStringValue(), lpGot, lpAssetId)
+  ]
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}

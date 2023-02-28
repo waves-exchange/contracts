@@ -1,0 +1,34 @@
+{
+  "type": 12,
+  "version": 2,
+  "senderPublicKey": "5yoY2Atq5TS6YzXkDHGig1DJdaYnWskuGToqK61rQWQd",
+  "fee": 500000,
+  "proofs": [],
+  "data": [
+    {
+      "key": "%__investWxXtnDelay",
+      "type": "integer",
+      "value": 5
+    }, {
+      "key": "%__investWxXtnAmountXtn",
+      "type": "integer",
+      "value": 2000000
+    }, {
+      "key": "%__wxXtnPool",
+      "type": "string",
+      "value": "3N6wAa7PMFZJu4Zrmp3avXmMnRTrRpMM9Lh"
+    }, {
+      "key": "%__xtnAssetId",
+      "type": "string",
+      "value": "25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT"
+    }, {
+      "key": "%__wxXtnLp",
+      "type": "string",
+      "value": "2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib"
+    }, {
+      "key": "%__lpToAddress",
+      "type": "string",
+      "value": "3N4nTJ5sSp5X5ChS2bBBmwNMn1eeRzT1FoP"
+    }
+  ]
+}
