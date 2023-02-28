@@ -148,7 +148,7 @@ func internalCurrentRewardRate(lpAssetId: String) = {
   let wxEmissionPerBlock = emissionDapp.getIntOrFail(keyEmissionRatePerBlockCurrent())
   let wxEmissionPerBlockMax = emissionDapp.getIntOrFail(keyEmissionRatePerBlockMaxCurrent())
 
-  let boostMaxCoeff = 3
+  let boostMaxCoeff = emissionDapp.invoke("getBoostCoeffREADONLY", [], []).exactAs[Int]
   let poolWxEmissionPerBlock = fraction(wxEmissionPerBlock, poolWeight, poolWeightMult) / boostMaxCoeff
   let poolWxEmissionPerBlockMax = fraction(wxEmissionPerBlockMax, poolWeight, poolWeightMult)
 
