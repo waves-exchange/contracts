@@ -793,7 +793,7 @@ func getTotalCachedGwxREADONLY() = {
 # call this function when wxEmissionRate or boostCoeff changes
 @Callable(i)
 func onBoostEmissionUpdate() = {
-  # TODO: check caller
+  strict checkCaller = i.caller == emissionContract || i.mustManager()
   refreshBoostEmissionIntegral()
 }
 
@@ -809,7 +809,7 @@ func onBoostEmissionUpdate() = {
 #                           ╰ edge = false (falling)
 @Callable(i)
 func onStakedVoteUpdate(lpAssetIdStr: String, userAddressStr: String, edge: Boolean) = {
-  # TODO: check caller
+  strict checkCaller = i.caller == stakingContract || i.mustManager()
   let actions = lpAssetIdStr.refreshVoteStakedIntegral(userAddressStr, edge)
 
   ([], unit)
