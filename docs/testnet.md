@@ -1,5 +1,5 @@
 # Testnet environment
-[**WXDEFI-331**](https://github.com/waves-exchange/contracts/tree/WXDEFI-331) branch deployed to **testnet** network at **11:13 28.02.2023** to **https://testnet.wx.network**
+[**WXDEFI-331**](https://github.com/waves-exchange/contracts/tree/WXDEFI-331) branch deployed to **testnet** network at **11:24 28.02.2023** to **https://testnet.wx.network**
 
 ## Contracts
 | Name | Address | Public key | Code |
