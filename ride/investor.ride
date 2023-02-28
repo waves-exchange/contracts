@@ -12,6 +12,7 @@ func keyLpToAddress() = "%__lpToAddress" # string
 # required keys end
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 func keyInvestWxXtnLastHeight() = "%__investWxXtnLastHeight"
 
 func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
@@ -19,7 +20,21 @@ func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
   case _: Unit => unit
 }
 
+func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
 func throwErr(msg: String) = ["investor.ride:", msg].makeString(" ").throw()
+
+func mustManager(i: Invocation) = {
+  let pd = "permission denied".throwErr()
+
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk || pd
+    case _: Unit => i.caller == this || pd
+  }
+}
 
 @Callable(i)
 func investWxXtn() = {
@@ -43,6 +58,26 @@ func investWxXtn() = {
   [
     IntegerEntry(keyInvestWxXtnLastHeight(), height),
     ScriptTransfer(keyLpToAddress().getStringValue().addressFromStringValue(), lpGot, lpAssetId)
+  ]
+}
+
+@Callable(i)
+func setManager(pendingManagerPublicKey: String) = {
+  strict checkCaller = i.mustManager()
+  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
+
+  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
+}
+
+@Callable(i)
+func confirmManager() = {
+  let pm = pendingManagerPublicKeyOrUnit()
+  strict hasPM = pm.isDefined() || throw("No pending manager")
+  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
+
+  [
+    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
+    DeleteEntry(keyPendingManagerPublicKey())
   ]
 }
 
