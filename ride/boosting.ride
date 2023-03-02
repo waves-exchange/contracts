@@ -378,7 +378,7 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   let udh0 = max([gwxRewardEmissionStartHeight - uLastH, 0])
   let udh1 = h - uLastH - udh0
 
-  if (uLastH < 0 || udh1 < 0 || abs((udh0 + udh1) - udh) >= 1) then throw("invalid udh calc: udh=" + udh.toString() + " uLastH=" + uLastH.toString() + " udh0=" + udh0.toString() + " udh1=" + udh1.toString()) else
+  if (uLastH < 0 || udh1 < 0 || abs((udh0 + udh1) - udh) >= 1) then throw("invalid udh calc: udh=" + udh.toString() + " uLastH=" + uLastH.toString() + " udh0=" + udh0.toString() + " udh1=" + udh1.toString() + " lpAssetId=" + lpAssetIdStr + " userAddress=" + userAddressStr) else
   if (userBoostEmissionIntegral < 0) then throw("wrong calculations") else
 
   let userMaxBoostIntegralKEY = keyUserMaxBoostINTEGRAL(userNumStr)
