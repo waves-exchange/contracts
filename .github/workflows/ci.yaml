@@ -65,11 +65,11 @@ jobs:
           git version
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Deploy changed contracts
+      - name: Deploy changed contracts to testnet and update docs
         run: |
           cd deployer
           go run main.go
-      - name: Update docs
+      - name: Commit docs
         run: |
           git checkout -b _docs
           git add docs
