@@ -73,7 +73,7 @@ jobs:
         run: |
           git checkout _docs
           git add docs
-          git commit -m 'update docs from ${{ github.ref_name }}'
+          git commit -m 'update docs from '${{ github.ref_name }}' branch'
           git pull
           git push
       - name: Clean repo
