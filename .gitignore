@@ -1,6 +1,0 @@
-node_modules
-.idea
-.vscode
-deployer/tmp/**.ride
-ledger-signer/txs
-.github/artifacts/txs/**.json
