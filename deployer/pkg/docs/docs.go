@@ -128,7 +128,7 @@ func (d *Docs) update(
 		factory = fct
 		contracts = cnt
 		brn = b
-		url = "https://testnet.wx.network"
+		url = "https://testnet.waves.exchange"
 		suffix = "?network=testnet"
 		networkByte = proto.TestNetScheme
 	} else if network == config.Mainnet {
@@ -145,7 +145,7 @@ func (d *Docs) update(
 		factory = fct
 		contracts = cnt
 		brn = "main"
-		url = "https://wx.network"
+		url = "https://waves.exchange"
 		suffix = ""
 		networkByte = proto.MainNetScheme
 	} else {
