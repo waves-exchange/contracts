@@ -3,3 +3,4 @@ node_modules
 .vscode
 deployer/tmp/**.ride
 ledger-signer/txs
+.github/artifacts/txs/**.json
