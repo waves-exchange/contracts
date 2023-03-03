@@ -71,7 +71,8 @@ jobs:
           go run main.go
       - name: Update docs
         run: |
-          git add .
+          git checkout _docs
+          git add docs
           git commit -m 'update docs'
           git pull
           git push
