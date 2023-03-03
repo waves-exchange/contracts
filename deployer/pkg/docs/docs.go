@@ -245,7 +245,7 @@ func (d *Docs) update(
 	}
 
 	md := fmt.Sprintf(`# %s environment
-[**%s**](https://github.com/waves-exchange/contracts/tree/%[2]s) branch deployed to **%s** network to **%s**. Table updated at **%s**
+[**%s**](https://github.com/waves-exchange/contracts/tree/%[2]s) branch deployed to **%s** network to **%s**. Table updated at **%s** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
