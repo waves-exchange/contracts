@@ -70,12 +70,13 @@ jobs:
           cd deployer
           go run main.go
       - name: Commit docs
-        run: |
-          git checkout -b _docs
-          git add docs
-          git commit -m 'update docs from '${{ github.ref_name }}' branch'
-          git pull
-          git push --set-upstream origin _docs
+        uses: s0/git-publish-subdir-action@develop
+        env:
+          REPO: self
+          BRANCH: _docs
+          FOLDER: docs
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MESSAGE: update docs from '${{ github.ref_name }}' branch
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
