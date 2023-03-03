@@ -74,7 +74,6 @@ jobs:
           git checkout -b _docs
           git add docs
           git commit -m 'update docs from '${{ github.ref_name }}' branch'
-          git pull
           git push
       - name: Clean repo
         uses: AutoModality/action-clean@v1
