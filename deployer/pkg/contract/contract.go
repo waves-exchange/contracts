@@ -103,3 +103,23 @@ func (m Model) IsCompact(c context.Context, fileName string) (bool, error) {
 
 	return compact, nil
 }
+
+func (m Model) GetFactory(c context.Context, stage *int) (Contract, error) {
+	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	defer cancel()
+
+	q := bson.M{
+		"tag": "factory_v2",
+	}
+	if stage != nil {
+		q["stage"] = *stage
+	}
+
+	var doc Contract
+	err := m.coll.FindOne(ctx, q).Decode(&doc)
+	if err != nil {
+		return Contract{}, fmt.Errorf("m.coll.FindOne: %w", err)
+	}
+
+	return doc, nil
+}
