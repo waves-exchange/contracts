@@ -120,24 +120,24 @@ func (d *Docs) update(
 			return fmt.Errorf("d.testnet.contractsModel.GetAll: %w", err)
 		}
 
-		brn, err := d.testnet.branchModel.GetTestnetBranch(ctx)
+		b, err := d.testnet.branchModel.GetTestnetBranch(ctx)
 		if err != nil {
 			return fmt.Errorf("d.testnet.branchModel.GetTestnetBranch: %w", err)
 		}
 
 		factory = fct
 		contracts = cnt
-		brn = brn
+		brn = b
 		url = "https://testnet.wx.network"
 		suffix = "?network=testnet"
 		networkByte = proto.TestNetScheme
 	} else if network == config.Mainnet {
-		fct, err := d.testnet.contractsModel.GetFactory(ctx, nil)
+		fct, err := d.mainnet.contractsModel.GetFactory(ctx, nil)
 		if err != nil {
 			return fmt.Errorf("d.testnet.contractsModel.GetFactory: %w", err)
 		}
 
-		cnt, err := d.testnet.contractsModel.GetAll(ctx)
+		cnt, err := d.mainnet.contractsModel.GetAll(ctx)
 		if err != nil {
 			return fmt.Errorf("d.testnet.contractsModel.GetAll: %w", err)
 		}
@@ -210,7 +210,7 @@ func (d *Docs) update(
 
 			lpDetails, _, e := d.getCfg(network).client.Assets.Details(ctx, *lpAsset.ToDigest())
 			if e != nil {
-				return fmt.Errorf("d.client().Assets.Details: %w", e)
+				return fmt.Errorf("d.getCfg(network).client.Assets.Details: %w", e)
 			}
 
 			poolLpAssets = append(poolLpAssets, lpDetails)
