@@ -30,6 +30,9 @@ var dropStageCmd = &cobra.Command{
 			HideEntered: true,
 		}
 		mongouri, err := mongouriP.Run()
+		if err != nil {
+			printAndExit(err)
+		}
 
 		db, err := mongo.NewConn(ctx, defiConfig, mongouri)
 		if err != nil {

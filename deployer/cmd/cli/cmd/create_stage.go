@@ -49,6 +49,8 @@ var createStageCmd = &cobra.Command{
 			xtnAssetId  = "25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT"
 			usdtAssetId = "5Sh9KghfkZyhjwuodovDhB6PghDUGBHiAPZ4MkrPgKtX"
 
+			factoryV2PriceDecimals = 100000000
+
 			emissionratePerBlockMax = 19025875190
 			emissionratePerBlock    = 3805175038
 			emissionStartBlock      = 1806750
@@ -89,6 +91,9 @@ var createStageCmd = &cobra.Command{
 			HideEntered: true,
 		}
 		mongouri, err := mongouriP.Run()
+		if err != nil {
+			printAndExit(err)
+		}
 
 		db, err := mongo.NewConn(ctx, defiConfig, mongouri)
 		if err != nil {
@@ -272,7 +277,111 @@ var createStageCmd = &cobra.Command{
 			printAndExit(err)
 		}
 
-		//Send Waves to manager for constructor invokes
+		lpPoolStakingStableAcc, err := genAccData(seed, stage, 19)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		slippageAcc, err := genAccData(seed, stage, 20)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		// TODO: Harcoded caller address in constructor
+		idoAcc, err := genAccData(seed, stage, 21)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		teamAcc, err := genAccData(seed, stage, 21)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		matcherAcc, err := genAccData(seed, stage, 22)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		daoAcc, err := genAccData(seed, stage, 23)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		earlybirdsAcc, err := genAccData(seed, stage, 24)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		factory, err := genAccData(seed, stage, 25)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		lpPoolNonStableAcc, err := genAccData(seed, stage, 26)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		// New XTN, USDT, BTC asset issue txs
+		newXtnTx := proto.NewUnsignedIssueWithProofs(
+			2,
+			proto.TestNetScheme,
+			managerAcc.publicKey,
+			fmt.Sprintf("XTN_%d", stageInt),
+			fmt.Sprintf("XTN Token. Stage %d, Timestamp: %d", stageInt, tools.Timestamp()),
+			100000000000000,
+			6,
+			true,
+			nil,
+			tools.Timestamp(),
+			100000000,
+		)
+
+		err = newXtnTx.GenerateID(proto.TestNetScheme)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		newUsdtTx := proto.NewUnsignedIssueWithProofs(
+			2,
+			proto.TestNetScheme,
+			managerAcc.publicKey,
+			fmt.Sprintf("USDT_%d", stageInt),
+			fmt.Sprintf("USDT Token. Stage %d. Timestamp: %d", stageInt, tools.Timestamp()),
+			100000000000000,
+			6,
+			true,
+			nil,
+			tools.Timestamp(),
+			100000000,
+		)
+
+		err = newUsdtTx.GenerateID(proto.TestNetScheme)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		newBtcTx := proto.NewUnsignedIssueWithProofs(
+			2,
+			proto.TestNetScheme,
+			managerAcc.publicKey,
+			fmt.Sprintf("BTC_%d", stageInt),
+			fmt.Sprintf("BTC Token. Stage %d. Timestamp: %d", stageInt, tools.Timestamp()),
+			100000000000000,
+			8,
+			true,
+			nil,
+			tools.Timestamp(),
+			100000000,
+		)
+
+		err = newBtcTx.GenerateID(proto.TestNetScheme)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		// Send Waves to manager for constructor invokes
 		err = tools.SignBroadcastWait(
 			ctx,
 			proto.TestNetScheme,
@@ -283,7 +392,7 @@ var createStageCmd = &cobra.Command{
 				proto.NewOptionalAssetWaves(),
 				proto.NewOptionalAssetWaves(),
 				tools.Timestamp(),
-				100000000,
+				1000000000,
 				100000,
 				managerAcc.recipient,
 				nil,
@@ -294,7 +403,39 @@ var createStageCmd = &cobra.Command{
 			printAndExit(err)
 		}
 
-		//Deploy contracts
+		// Broadcast token issue txs
+		err = tools.SignBroadcastWait(
+			ctx,
+			proto.TestNetScheme,
+			cl,
+			newXtnTx,
+			managerAcc.privateKey,
+		)
+		if err != nil {
+			printAndExit(err)
+		}
+		err = tools.SignBroadcastWait(
+			ctx,
+			proto.TestNetScheme,
+			cl,
+			newUsdtTx,
+			managerAcc.privateKey,
+		)
+		if err != nil {
+			printAndExit(err)
+		}
+		err = tools.SignBroadcastWait(
+			ctx,
+			proto.TestNetScheme,
+			cl,
+			newBtcTx,
+			managerAcc.privateKey,
+		)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		// Deploy contracts
 		factoryV2 := cli_contract.New(
 			proto.TestNetScheme,
 			cl,
@@ -311,13 +452,172 @@ var createStageCmd = &cobra.Command{
 					Key:   "%s__managerPublicKey",
 					Value: managerAcc.publicKey.String(),
 				},
+				&proto.StringDataEntry{
+					Key:   "%s__adminPubKeys",
+					Value: managerAcc.publicKey.String() + "__" + factoryV2Acc.publicKey.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__allowedLpScriptHash",
+					Value: "VOo/GiKEfK3TXqhWxB5yL+0bK9BsAj9576Wx2OqjrTw=",
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__allowedLpStableScriptHash",
+					Value: "OguhYf9kEOukc3nE/D0DNlhhumCfofRtMuEH1fC43f8=",
+				},
+				&proto.DeleteDataEntry{
+					Key: "%s%s%s__" + lpPoolStakingStableAcc.address.String() + "__mappings__poolContract2PoolAssets",
+				},
+				&proto.DeleteDataEntry{
+					Key: "%s%s%s__" + lpPoolNonStableAcc.address.String() + "__mappings__poolContract2PoolAssets",
+				},
 			},
-			nil,
+			[]*proto.InvokeScriptWithProofs{
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					factoryV2Acc.recipient,
+					proto.FunctionCall{
+						Name: "constructor",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(stakingAcc.address.String()),
+							proto.NewStringArgument(boostingAcc.address.String()),
+							proto.NewStringArgument(idoAcc.address.String()),
+							proto.NewStringArgument(teamAcc.address.String()),
+							proto.NewStringArgument(emissionAcc.address.String()),
+							proto.NewStringArgument(restAcc.address.String()),
+							proto.NewStringArgument(slippageAcc.address.String()),
+							proto.NewIntegerArgument(factoryV2PriceDecimals),
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					500000,
+					tools.Timestamp(),
+				),
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					factoryV2Acc.recipient,
+					proto.FunctionCall{
+						Name: "constructorV2",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(matcherAcc.publicKey.String()),
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					500000,
+					tools.Timestamp(),
+				),
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					factoryV2Acc.recipient,
+					proto.FunctionCall{
+						Name: "constructorV3",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(daoAcc.address.String()),
+							proto.NewStringArgument(marketingAcc.address.String()),
+							proto.NewStringArgument(gwxRewardAcc.address.String()),
+							proto.NewStringArgument(earlybirdsAcc.address.String()),
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					500000,
+					tools.Timestamp(),
+				),
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					factoryV2Acc.recipient,
+					proto.FunctionCall{
+						Name: "constructorV4",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(factory.address.String()),
+							proto.ListArgument{Items: proto.Arguments{}},
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					500000,
+					tools.Timestamp(),
+				),
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					factoryV2Acc.recipient,
+					proto.FunctionCall{
+						Name: "constructorV5",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(assetStoreAcc.address.String()),
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					500000,
+					tools.Timestamp(),
+				),
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					factoryV2Acc.recipient,
+					proto.FunctionCall{
+						Name: "constructorV6",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(emissionAcc.address.String()),
+							proto.ListArgument{Items: proto.Arguments{
+								proto.NewStringArgument("WAVES"),
+								proto.NewStringArgument(newUsdtTx.ID.String()),
+							}},
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					500000,
+					tools.Timestamp(),
+				),
+			},
 		)
 
 		err = factoryV2.Deploy(ctx)
 		if err != nil {
 			printAndExit(fmt.Errorf("factoryV2.Deploy: %w", err))
+		}
+
+		slippage := cli_contract.New(
+			proto.TestNetScheme,
+			cl,
+			contractModel,
+			slippageAcc.privateKey,
+			managerAcc.privateKey,
+			gazPrv,
+			"slippage",
+			"slippage.ride",
+			stage,
+			false,
+			[]proto.DataEntry{
+				&proto.StringDataEntry{
+					Key:   "%s__managerPublicKey",
+					Value: managerAcc.publicKey.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__factoryContract",
+					Value: slippageAcc.address.String(),
+				},
+			},
+			nil,
+		)
+
+		err = slippage.Deploy(ctx)
+		if err != nil {
+			printAndExit(err)
 		}
 
 		emission := cli_contract.New(
@@ -416,6 +716,10 @@ var createStageCmd = &cobra.Command{
 					Key:   "%s__managerPublicKey",
 					Value: managerAcc.publicKey.String(),
 				},
+				&proto.StringDataEntry{
+					Key:   "%s__adminPubKeys",
+					Value: managerAcc.publicKey.String() + "__" + factoryV2Acc.publicKey.String(),
+				},
 			},
 			[]*proto.InvokeScriptWithProofs{
 				proto.NewUnsignedInvokeScriptWithProofs(
@@ -435,12 +739,202 @@ var createStageCmd = &cobra.Command{
 					500000,
 					tools.Timestamp(),
 				),
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					assetStoreAcc.recipient,
+					proto.FunctionCall{
+						Name: "constructorV2",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(factoryV2Acc.address.String()),
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					500000,
+					tools.Timestamp(),
+				),
 			},
 		)
 
 		err = assetsStore.Deploy(ctx)
 		if err != nil {
 			printAndExit(fmt.Errorf("assetsStore.Deploy: %w", err))
+		}
+
+		lpPoolStakingStable := cli_contract.New(
+			proto.TestNetScheme,
+			cl,
+			contractModel,
+			lpPoolStakingStableAcc.privateKey,
+			managerAcc.privateKey,
+			gazPrv,
+			"XTN_2/USDT_2 pool",
+			"lp_stable.ride",
+			stage,
+			true,
+			[]proto.DataEntry{
+				&proto.StringDataEntry{
+					Key:   "%s__managerPublicKey",
+					Value: managerAcc.publicKey.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__amp",
+					Value: "1000",
+				},
+			},
+			[]*proto.InvokeScriptWithProofs{
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					lpPoolStakingStableAcc.recipient,
+					proto.FunctionCall{
+						Name: "constructor",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(factoryV2Acc.address.String()),
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					500000,
+					tools.Timestamp(),
+				),
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					factoryV2Acc.recipient,
+					proto.FunctionCall{
+						Name: "activateNewPool",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(lpPoolStakingStableAcc.address.String()),
+							proto.NewStringArgument(newXtnTx.ID.String()),
+							proto.NewStringArgument(newUsdtTx.ID.String()),
+							proto.NewStringArgument(fmt.Sprintf("XTNUSDTLP_%d", stageInt)),
+							proto.NewStringArgument(fmt.Sprintf("XTN/USDT Pool. Stage %d description", stageInt)),
+							proto.NewIntegerArgument(0),
+							proto.NewStringArgument(""),
+							proto.NewStringArgument(""),
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					100500000,
+					tools.Timestamp(),
+				),
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					lpPoolStakingStableAcc.recipient,
+					proto.FunctionCall{
+						Name: "put",
+						Arguments: proto.Arguments{
+							proto.NewIntegerArgument(3),
+							proto.BooleanArgument{Value: false},
+						},
+					},
+					proto.ScriptPayments{
+						proto.ScriptPayment{
+							Amount: 100000000,
+							Asset:  proto.NewOptionalAsset(true, *newXtnTx.ID),
+						},
+						proto.ScriptPayment{
+							Amount: 100000000,
+							Asset:  proto.NewOptionalAsset(true, *newUsdtTx.ID),
+						},
+					},
+					proto.NewOptionalAssetWaves(),
+					500000,
+					tools.Timestamp(),
+				),
+			},
+		)
+
+		err = lpPoolStakingStable.Deploy(ctx)
+		if err != nil {
+			printAndExit(fmt.Errorf("lpPoolStakingStable.Deploy: %w", err))
+		}
+
+		lpPoolNonStable := cli_contract.New(
+			proto.TestNetScheme,
+			cl,
+			contractModel,
+			lpPoolNonStableAcc.privateKey,
+			managerAcc.privateKey,
+			gazPrv,
+			"BTC_2/USDT_2 pool",
+			"lp.ride",
+			stage,
+			true,
+			[]proto.DataEntry{
+				&proto.StringDataEntry{
+					Key:   "%s__managerPublicKey",
+					Value: managerAcc.publicKey.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__factoryContract",
+					Value: factoryV2Acc.address.String(),
+				},
+			},
+			[]*proto.InvokeScriptWithProofs{
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					factoryV2Acc.recipient,
+					proto.FunctionCall{
+						Name: "activateNewPool",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(lpPoolNonStableAcc.address.String()),
+							proto.NewStringArgument(newBtcTx.ID.String()),
+							proto.NewStringArgument(newUsdtTx.ID.String()),
+							proto.NewStringArgument(fmt.Sprintf("BTCUSDTLP_%d", stageInt)),
+							proto.NewStringArgument(fmt.Sprintf("BTC/USDT Pool. Stage %d description", stageInt)),
+							proto.NewIntegerArgument(0),
+							proto.NewStringArgument(""),
+							proto.NewStringArgument(""),
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					100500000,
+					tools.Timestamp(),
+				),
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					lpPoolNonStableAcc.recipient,
+					proto.FunctionCall{
+						Name: "put",
+						Arguments: proto.Arguments{
+							proto.NewIntegerArgument(3),
+							proto.BooleanArgument{Value: false},
+						},
+					},
+					proto.ScriptPayments{
+						proto.ScriptPayment{
+							Amount: 100000000,
+							Asset:  proto.NewOptionalAsset(true, *newBtcTx.ID),
+						},
+						proto.ScriptPayment{
+							Amount: 1000000000,
+							Asset:  proto.NewOptionalAsset(true, *newUsdtTx.ID),
+						},
+					},
+					proto.NewOptionalAssetWaves(),
+					500000,
+					tools.Timestamp(),
+				),
+			},
+		)
+
+		err = lpPoolNonStable.Deploy(ctx)
+		if err != nil {
+			printAndExit(fmt.Errorf("lpPoolNonStable.Deploy: %w", err))
 		}
 
 		userPools := cli_contract.New(
@@ -945,7 +1439,7 @@ var createStageCmd = &cobra.Command{
 					Value: managerAcc.publicKey.String(),
 				},
 			},
-			nil, //hardcoded caller in constructor
+			nil, // Hardcoded caller in constructor
 		)
 
 		err = marketing.Deploy(ctx)
@@ -1122,6 +1616,11 @@ var createStageCmd = &cobra.Command{
 				return nil, fmt.Errorf("factoryV2.Save: %w", e)
 			}
 
+			e = slippage.Save(sc)
+			if e != nil {
+				return nil, fmt.Errorf("slippage.Save: %w", e)
+			}
+
 			e = emission.Save(sc)
 			if e != nil {
 				return nil, fmt.Errorf("emission.Save: %w", e)
@@ -1130,6 +1629,11 @@ var createStageCmd = &cobra.Command{
 			e = assetsStore.Save(sc)
 			if e != nil {
 				return nil, fmt.Errorf("assetsStore.Save: %w", e)
+			}
+
+			e = lpPoolStakingStable.Save(sc)
+			if e != nil {
+				return nil, fmt.Errorf("lpPoolStakingStable.Save: %w", e)
 			}
 
 			e = userPools.Save(sc)

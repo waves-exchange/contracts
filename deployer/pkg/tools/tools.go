@@ -70,7 +70,7 @@ func TrySignBroadcastWait(
 			p,
 		)
 		if err != nil {
-			errs += " " + err.Error()
+			errs += " \n" + err.Error()
 			errsCount += 1
 			continue
 		}
@@ -132,10 +132,10 @@ func waitMined(ctx context.Context, client *client.Client, txHash crypto.Digest)
 		if err == nil {
 			return nil
 		}
-		if try >= 100 {
+		if try >= 120 {
 			return fmt.Errorf("client.Transactions.Info: %w", err)
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
 
