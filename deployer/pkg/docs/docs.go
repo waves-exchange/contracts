@@ -239,6 +239,11 @@ func (d *Docs) update(
 		assets = append(assets, assetsDetails)
 	}
 
+	loc, err := time.LoadLocation("Asia/Dubai")
+	if err != nil {
+		return fmt.Errorf("time.LoadLocation: %w", err)
+	}
+
 	md := fmt.Sprintf(`# %s environment
 [**%s**](https://github.com/waves-exchange/contracts/tree/%[2]s) branch deployed to **%s** network to **%s**. Table updated at **%s**
 
@@ -257,7 +262,7 @@ func (d *Docs) update(
 		brn,
 		network,
 		url,
-		time.Now().Format("15:04 02.01.2006"),
+		time.Now().In(loc).Format("15:04 02.01.2006"),
 		rowsContracts,
 		sortAndConcat(assets, suffix),
 		sortAndConcat(poolLpAssets, suffix),
