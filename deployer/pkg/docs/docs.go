@@ -269,7 +269,7 @@ func (d *Docs) update(
 	)
 
 	filename := path.Join("..", "docs", string(network)+".md")
-	err := os.Truncate(filename, 0)
+	err = os.Truncate(filename, 0)
 	if err != nil {
 		return fmt.Errorf("os.Truncate: %w", err)
 	}
