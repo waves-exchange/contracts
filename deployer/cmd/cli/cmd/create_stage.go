@@ -100,10 +100,7 @@ var createStageCmd = &cobra.Command{
 			printAndExit(err)
 		}
 
-		branchModel, err := branch.NewModel(db.Collection(branches))
-		if err != nil {
-			printAndExit(err)
-		}
+		branchModel := branch.NewModel(db.Collection(branches))
 
 		contractModel := contract.NewModel(db.Collection(contracts))
 		if err != nil {

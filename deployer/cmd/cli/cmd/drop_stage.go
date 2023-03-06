@@ -38,10 +38,7 @@ var dropStageCmd = &cobra.Command{
 		if err != nil {
 			printAndExit(err)
 		}
-		branchModel, err := branch.NewModel(db.Collection(branches))
-		if err != nil {
-			printAndExit(err)
-		}
+		branchModel := branch.NewModel(db.Collection(branches))
 
 		stageP := promptui.Prompt{
 			Label: "Index of the stage ?",

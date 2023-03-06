@@ -8,6 +8,7 @@ import (
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Branch struct {
@@ -27,9 +28,10 @@ func NewModel(coll *mongo.Collection) Model {
 }
 
 func (m Model) GetTestnetBranches(ctx context.Context) ([]Branch, error) {
+	sortOptions := options.Find().SetSort(bson.M{"stage": 1})
 	cur, err := m.coll.Find(ctx, bson.M{
 		"network": config.Testnet,
-	})
+	}, sortOptions)
 	if err != nil {
 		return nil, fmt.Errorf("m.coll.Find: %w", err)
 	}
