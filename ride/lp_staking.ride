@@ -404,35 +404,6 @@ func topUpBalance(baseAssetStr: String) = {
 }
 
 @Callable(i)
-func emit(assetId: ByteVector, amount: Int) = {
-  strict checks = [
-    i.caller == lpStakingPoolsContract || "permission denied".throwErr(),
-    amount > 0 || "invalid amount to emit".throwErr(),
-    assetId.toBase58String().keyMappingsShare2baseAssetId().getString() != unit || "invalid assetId".throwErr()
-  ]
-
-  let isReissuable = true
-
-  ([
-    Reissue(assetId, amount, isReissuable),
-    ScriptTransfer(lpStakingPoolsContract, amount, assetId)
-  ], amount)
-}
-
-@Callable(i)
-func burn(assetId: ByteVector, amount: Int) = {
-  strict checks = [
-    i.caller == lpStakingPoolsContract || "permission denied".throwErr(),
-    amount > 0 || "invalid amount to burn".throwErr(),
-    assetId.toBase58String().keyMappingsShare2baseAssetId().getString() != unit || "invalid assetId".throwErr()
-  ]
-
-  ([
-    Burn(assetId, amount)
-  ], amount)
-}
-
-@Callable(i)
 func currentSysParamsREST(baseAssetStr: String)= {
   let sysStateTuple = privateCurrentSysParamsREST(baseAssetStr)
   # (price, decimalsMultPrice, baseAssetBalance, totalLockedBaseAmount, baseAssetBalanceConsideringLock, shareEmission)
