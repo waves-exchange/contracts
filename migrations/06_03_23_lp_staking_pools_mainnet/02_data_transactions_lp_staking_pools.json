@@ -1,0 +1,52 @@
+{
+    "data": [
+      {
+        "type": "string",
+        "value": "3PCuHsTU58WKhCqotbcSwABvdPzqqVAbbTv",
+        "key": "%s__factoryContract"
+      },
+      {
+        "type": "string",
+        "value": "3PJ6QtoKKLr1b2mK4FhHT6jJ3EpXXH4Z7jps",
+        "key": "%s__assetsStoreContract"
+      },
+      {
+        "type": "string",
+        "value": "3P6SFR9ZZwKHZw5mMDZxpXHEhg1CXjBb51y",
+        "key": "%s__lpStakingContract"
+      },
+      {
+        "type": "string",
+        "value": "3PPNhHYkkEy13gRWDCaruQyhNbX2GrjYSyV",
+        "key": "%s__stakingContract"
+      },
+      {
+        "type": "string",
+        "value": "3PJL8Hn8LACaSBWLQ3UVhctA5cTQLBFwBAP",
+        "key": "%s__boostingContract"
+      },
+      {
+        "type": "string",
+        "value": "3P68zNiufsu1viZpu1aY3cdahRRKcvV5N93",
+        "key": "%s__swapContract"
+      },
+      {
+        "type": "string",
+        "value": "34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ",
+        "key": "%s__usdtAssetId"
+      },
+      {
+        "type": "string",
+        "value": "Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on",
+        "key": "%s__wxAssetId"
+      }
+    ],
+    "version": 2,
+    "type": 12,
+    "chainId": 87,
+    "fee": 500000,
+    "proofs": [],
+    "timestamp": 0,
+    "senderPublicKey": "8f1rQCPEcUfjitkvwMuxK9bwf2jupzdaHjtKTW5J45Rf"
+}
+  

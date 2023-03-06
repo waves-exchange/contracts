@@ -9,7 +9,7 @@
 # * "%s__stakingContract": String
 # * "%s__boostingContract": String
 # * "%s__swapContract": String
-# * "%s__usdnAssetId": String
+# * "%s__usdtAssetId": String
 # * "%s__wxAssetId": String
 
 let separator = "__"
@@ -43,7 +43,7 @@ func keyStakingContract() = ["%s", "stakingContract"].makeString(separator)
 func keyBoostingContract() = ["%s", "boostingContract"].makeString(separator)
 func keySwapContract() = ["%s", "swapContract"].makeString(separator)
 func keyAssetsStoreContract() = ["%s", "assetsStoreContract"].makeString(separator)
-func keyUsdnAssetId() = ["%s", "usdnAssetId"].makeString(separator)
+func keyUsdtAssetId() = ["%s", "usdtAssetId"].makeString(separator)
 func keyWxAssetId() = ["%s", "wxAssetId"].makeString(separator)
 
 func keyShutdown() = ["%s", "shutdown"].makeString(separator)
@@ -142,7 +142,7 @@ let stakingContract = this.getStrOrFail(keyStakingContract()).addressFromStringV
 let boostingContract = this.getStrOrFail(keyBoostingContract()).addressFromStringValue()
 let swapContract = this.getStrOrFail(keySwapContract()).addressFromStringValue()
 let assetsStoreContract = this.getStrOrFail(keyAssetsStoreContract()).addressFromStringValue()
-let usdnAssetId = this.getStrOrFail(keyUsdnAssetId()).parseAssetId()
+let usdtAssetId = this.getStrOrFail(keyUsdtAssetId()).parseAssetId()
 let wxAssetId = this.getStrOrFail(keyWxAssetId()).parseAssetId()
 
 let minDelayDefault = 1440
@@ -155,7 +155,7 @@ let lockFraction = this.getInteger(keyLockFraction()).valueOrElse(lockFractionDe
 
 func getPoolInfo(amountAssetId: ByteVector|Unit) = {
   let amountAssetIdStr = amountAssetId.assetIdToString()
-  let priceAssetIdStr = usdnAssetId.assetIdToString()
+  let priceAssetIdStr = usdtAssetId.assetIdToString()
   let poolInfoOption = factoryContract.invoke(
     "poolInfoREADONLY",
     [amountAssetIdStr, priceAssetIdStr],
@@ -470,7 +470,7 @@ func finalize(baseAssetIdStr: String) = {
     strict convertedAmount = if (convertPart > 0) then {
       let inAssetId = wxAssetId
       let minimumToReceive = 0
-      let outAssetIdStr = usdnAssetId.assetIdToString()
+      let outAssetIdStr = usdtAssetId.assetIdToString()
       let targetAddress = this.toString()
       swapContract.invoke(
         "swap",
@@ -486,7 +486,7 @@ func finalize(baseAssetIdStr: String) = {
       poolAddress.invoke(
         "putOneTknV2",
         [minOutAmount, autoStake],
-        [AttachedPayment(usdnAssetId, convertedAmount)]
+        [AttachedPayment(usdtAssetId, convertedAmount)]
       ).as[Int].valueOrErrorMessage("invalid putOneTknV2 result".wrapErr())
     } else 0
 
