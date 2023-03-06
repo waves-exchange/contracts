@@ -162,9 +162,10 @@ func swapCalculateREADONLY(
 @Callable(i)
 func swap(
   amountOutMin: Int,
-  assetOut: String,
+  assetOutRaw: String,
   addressTo: String 
 ) = {
+  let assetOut = if (assetOutRaw == "") then "WAVES" else assetOutRaw
   let pmt = i.payments[0].value()
   let assetIn = if(pmt.assetId == unit) then "WAVES" else pmt.assetId.value().toBase58String()
   let amountIn = pmt.amount.value()
