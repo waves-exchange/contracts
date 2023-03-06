@@ -11,8 +11,10 @@ import { api, broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
 import { staking } from './contract/staking.mjs';
 import { boosting } from './contract/boosting.mjs';
 import { emission } from './contract/emission.mjs';
-import { factory } from './contract/factory_v2.mjs';
+import { factory } from './contract/factory.mjs';
+import { assetsStore } from './contract/assetsStore.mjs';
 import { gwx } from './contract/gwx.mjs';
+import { votingEmission } from './contract/votingEmission.mjs';
 
 const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 const nonceLength = 3;
@@ -24,7 +26,10 @@ const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
 const gwxPath = format({ dir: ridePath, base: 'gwx_reward.ride' });
 const emissionPath = format({ dir: ridePath, base: 'emission.ride' });
 const referralMockPath = format({ dir: mockPath, base: 'referral.mock.ride' });
-const votingEmissionMockPath = format({ dir: mockPath, base: 'voting_emission.mock.ride' });
+const votingEmissionPath = format({ dir: ridePath, base: 'voting_emission.ride' });
+const factoryPath = format({ dir: ridePath, base: 'factory_v2.ride' });
+const assetsStorePath = format({ dir: ridePath, base: 'assets_store.ride' });
+const lpPath = format({ dir: ridePath, base: 'lp.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -32,6 +37,8 @@ export const mochaHooks = {
     // setup accounts
     const contractNames = [
       'staking',
+      'store',
+      'feeCollector',
       'boosting',
       'emission',
       'gwx',
@@ -64,22 +71,17 @@ export const mochaHooks = {
     await broadcastAndWait(wxIssueTx);
     this.wxAssetId = wxIssueTx.id;
 
-    const lpAssetIssueTx = issue({
-      name: 'WXWAVESLP',
-      description: '',
-      quantity: 1e10 * 1e8,
-      decimals: 8,
-      chainId,
-    }, this.accounts.factory.seed);
-    await broadcastAndWait(lpAssetIssueTx);
-    this.lpAssetId = lpAssetIssueTx.id;
+    this.wavesAssetId = 'WAVES';
 
     await setScriptFromFile(stakingPath, this.accounts.staking.seed);
     await setScriptFromFile(boostingPath, this.accounts.boosting.seed);
     await setScriptFromFile(gwxPath, this.accounts.gwx.seed);
     await setScriptFromFile(emissionPath, this.accounts.emission.seed);
     await setScriptFromFile(referralMockPath, this.accounts.referral.seed);
-    await setScriptFromFile(votingEmissionMockPath, this.accounts.votingEmission.seed);
+    await setScriptFromFile(votingEmissionPath, this.accounts.votingEmission.seed);
+    await setScriptFromFile(factoryPath, this.accounts.factory.seed);
+    await setScriptFromFile(assetsStorePath, this.accounts.store.seed);
+    await setScriptFromFile(lpPath, this.accounts.lp.seed);
 
     await staking.init({
       caller: this.accounts.staking.seed,
@@ -128,6 +130,36 @@ export const mochaHooks = {
       caller: this.accounts.gwx.seed,
       referralAddress: this.accounts.referral.addr,
     });
+
+    await assetsStore.init({
+      caller: this.accounts.store.seed,
+      factorySeed: this.accounts.factory.seed,
+      labels: 'COMMUNITY_VERIFIED__GATEWAY__STABLECOIN__STAKING_LP__3RD_PARTY__ALGO_LP__LAMBO_LP__POOLS_LP__WX__PEPE',
+    });
+
+    const votingEmissionDapp = address(this.accounts.votingEmission, chainId);
+
+    await votingEmission.create({
+      dApp: votingEmissionDapp,
+      caller: this.accounts.votingEmission.seed,
+      amountAssetId: this.wxAssetId,
+      priceAssetId: this.wavesAssetId,
+    });
+
+    await votingEmission.updateEpochUiKey({
+      caller: this.accounts.votingEmission.seed,
+      epochUiKey: height + 10,
+      epochStartHeight: height,
+    });
+
+    ({ lpAssetId: this.lpAssetId } = await factory.createPool({
+      amountAssetId: this.wxAssetId,
+      priceAssetId: this.wavesAssetId,
+      accountsStore: this.accounts.store.seed,
+      accountsFactoryV2: this.accounts.factory.seed,
+      accountsLp: this.accounts.lp.seed,
+      accountsFeeCollector: this.accounts.feeCollector.seed,
+    }));
 
     const accountsInfo = Object.entries(this.accounts)
       .map(([name, { seed, addr }]) => [name, seed, privateKey(seed), addr]);
