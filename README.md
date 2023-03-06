@@ -1,5 +1,5 @@
 # Waves Exchange contracts
 
 ## Environments
-- [Testnet](docs/testnet.md)
-- [Mainnet](docs/mainnet.md)
+- [Testnet](https://github.com/waves-exchange/contracts/blob/_docs/testnet.md)
+- [Mainnet](https://github.com/waves-exchange/contracts/blob/_docs/mainnet.md)

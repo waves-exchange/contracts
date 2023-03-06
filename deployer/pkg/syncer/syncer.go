@@ -14,7 +14,17 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"io"
+	"math"
+	"net/http"
+	"os"
+	"os/exec"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -30,8 +40,6 @@ import (
 	"github.com/wavesplatform/gowaves/pkg/proto"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 type compileCacheMap = map[string]func() (
@@ -42,7 +50,7 @@ type Syncer struct {
 	logger                            zerolog.Logger
 	network                           config.Network
 	networkByte                       proto.Scheme
-	rawClient                         *client.Client
+	rawClient                         *client.Client // TODO: make gowaves client with ratelimit as separate package
 	clientMutex                       *sync.Mutex
 	contractsFolder                   string
 	contractModel                     contract.Model
@@ -109,7 +117,7 @@ func NewSyncer(
 	}
 
 	return &Syncer{
-		logger:                            logger,
+		logger:                            logger.With().Str("pkg", "syncer").Logger(),
 		network:                           network,
 		networkByte:                       networkByte,
 		rawClient:                         cl,
@@ -142,24 +150,9 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("s.contractModel.GetAll: %w", err)
 	}
 
-	factory, err := findFactory(contracts)
+	factory, err := s.contractModel.GetFactory(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("findFactory: %w", err)
-	}
-
-	factoryPub, err := crypto.NewPublicKeyFromBase58(factory.BasePub)
-	if err != nil {
-		return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", err)
-	}
-
-	factoryAddr, err := proto.NewAddressFromPublicKey(s.networkByte, factoryPub)
-	if err != nil {
-		return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
-	}
-
-	err = s.saveToDocs(ctx, factoryAddr, contracts, branchTestnet)
-	if err != nil {
-		return fmt.Errorf("s.saveToDocs: %w", err)
 	}
 
 	if s.network == config.Testnet {
@@ -256,216 +249,6 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	s.logger.Info().Msg("changes applied")
 
 	return nil
-}
-
-func (s *Syncer) saveToDocs(
-	ctx context.Context,
-	factoryAddress proto.WavesAddress,
-	contracts []contract.Contract,
-	branchTestnet string,
-) error {
-	var (
-		branch string
-		url    string
-		suffix string
-	)
-	if s.network == config.Testnet {
-		branch = branchTestnet
-		url = "https://testnet.wx.network"
-		suffix = "?network=testnet"
-	} else if s.network == config.Mainnet {
-		branch = "main"
-		url = "https://wx.network"
-	} else {
-		return errors.New("unknown network=" + string(s.network))
-	}
-
-	var rowsContracts string
-	assetsMap := map[string]struct{}{}
-	var poolLpAssets []*client.AssetsDetail
-	for _, cont := range contracts {
-		if s.network == config.Testnet && cont.Stage != 1 {
-			continue
-		}
-
-		pub, err := crypto.NewPublicKeyFromBase58(cont.BasePub)
-		if err != nil {
-			return fmt.Errorf("crypto.NewPublicKeyFromBase58: %w", err)
-		}
-
-		addr, err := proto.NewAddressFromPublicKey(s.networkByte, pub)
-		if err != nil {
-			return fmt.Errorf("proto.NewAddressFromPublicKey: %w", err)
-		}
-		rowsContracts += fmt.Sprintf(
-			"%s | [`%s`](https://wavesexplorer.com/addresses/%s%s) | `%s` | [%s](https://github.com/waves-exchange/contracts/blob/%s/ride/%s) \n",
-			cont.Tag,
-			addr.String(),
-			addr.String(),
-			suffix,
-			pub.String(),
-			cont.File,
-			branch,
-			cont.File,
-		)
-
-		if cont.File == "lp.ride" || cont.File == "lp_stable.ride" {
-			lp, amountAsset, priceAsset, e := s.getPoolConfig(ctx, factoryAddress, addr)
-			if e != nil {
-				s.logger.Error().Err(fmt.Errorf("s.getPoolConfig: %w", e)).Send()
-				continue
-			}
-			assetsMap[amountAsset] = struct{}{}
-			assetsMap[priceAsset] = struct{}{}
-
-			lpAsset, e := proto.NewOptionalAssetFromString(lp)
-			if e != nil {
-				return fmt.Errorf("proto.NewOptionalAssetFromString: %w", e)
-			}
-			if !lpAsset.Present {
-				return errors.New("no assetId=" + lp)
-			}
-
-			lpDetails, _, e := s.client().Assets.Details(ctx, *lpAsset.ToDigest())
-			if e != nil {
-				return fmt.Errorf("s.client().Assets.Details: %w", e)
-			}
-
-			poolLpAssets = append(poolLpAssets, lpDetails)
-		}
-	}
-
-	var assets []*client.AssetsDetail
-	for a := range assetsMap {
-		if a == "WAVES" {
-			continue
-		}
-
-		asset, e := proto.NewOptionalAssetFromString(a)
-		if e != nil {
-			return fmt.Errorf("proto.NewOptionalAssetFromString: %w", e)
-		}
-		if !asset.Present {
-			return errors.New("no assetId=" + a)
-		}
-
-		assetsDetails, _, e := s.client().Assets.Details(ctx, *asset.ToDigest())
-		if e != nil {
-			return fmt.Errorf("s.client().Assets.Details: %w", e)
-		}
-
-		assets = append(assets, assetsDetails)
-	}
-
-	md := fmt.Sprintf(`# %s environment
-[**%s**](https://github.com/waves-exchange/contracts/tree/%[2]s) branch deployed to **%s** network at **%s** to **%s**
-
-## Contracts
-| Name | Address | Public key | Code |
-|------|---------|------------|------|
-%s
-## Pool assets
-| Name | AssetID | Description |
-|------|---------|-------------|
-%s
-## Pool LP assets
-| Name | AssetID | Description |
-|------|---------|-------------|
-%s`, cases.Title(language.English).String(string(s.network)),
-		branch,
-		s.network,
-		time.Now().Format("15:04 02.01.2006"),
-		url,
-		rowsContracts,
-		sortAndConcat(assets, suffix),
-		sortAndConcat(poolLpAssets, suffix),
-	)
-
-	filename := path.Join("..", "docs", string(s.network)+".md")
-	err := os.Truncate(filename, 0)
-	if err != nil {
-		return fmt.Errorf("os.Truncate: %w", err)
-	}
-
-	f, err := os.OpenFile(filename, os.O_RDWR, 0)
-	if err != nil {
-		return fmt.Errorf("os.Open: %w", err)
-	}
-
-	_, err = f.Write([]byte(md))
-	if err != nil {
-		return fmt.Errorf("f.Write: %w", err)
-	}
-
-	return nil
-}
-
-func (s *Syncer) getPoolConfig(ctx context.Context, factory, poolAddress proto.WavesAddress) (string, string, string, error) {
-	type eval struct {
-		Expr string `json:"expr"`
-	}
-
-	b, err := json.Marshal(eval{Expr: fmt.Sprintf(`getPoolConfigREADONLY("%s")`, poolAddress)})
-	if err != nil {
-		return "", "", "", fmt.Errorf("json.Marshal: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodPost,
-		fmt.Sprintf("%s/utils/script/evaluate/%s", s.rawClient.GetOptions().BaseUrl, factory),
-		bytes.NewReader(b),
-	)
-	if err != nil {
-		return "", "", "", fmt.Errorf("http.NewRequestWithContext: %w", err)
-	}
-
-	type evalRes struct {
-		Result struct {
-			Type  string `json:"type"`
-			Value struct {
-				Num1 struct {
-					Type  string `json:"type"`
-					Value []any  `json:"value"`
-				} `json:"_1"`
-				Num2 struct {
-					Type  string `json:"type"`
-					Value []struct {
-						Type  string `json:"type"`
-						Value string `json:"value"`
-					} `json:"value"`
-				} `json:"_2"`
-			} `json:"value"`
-		} `json:"result"`
-		Complexity   int `json:"complexity"`
-		StateChanges struct {
-			Data         []any `json:"data"`
-			Transfers    []any `json:"transfers"`
-			Issues       []any `json:"issues"`
-			Reissues     []any `json:"reissues"`
-			Burns        []any `json:"burns"`
-			SponsorFees  []any `json:"sponsorFees"`
-			Leases       []any `json:"leases"`
-			LeaseCancels []any `json:"leaseCancels"`
-			Invokes      []any `json:"invokes"`
-		} `json:"stateChanges"`
-		Expr    string `json:"expr"`
-		Address string `json:"address"`
-	}
-	res := evalRes{}
-	_, err = s.client().Do(ctx, req, &res)
-	if err != nil {
-		return "", "", "", fmt.Errorf("s.client().Do: %w", err)
-	}
-
-	if len(res.Result.Value.Num2.Value) == 0 {
-		return "", "", "", errors.New("empty pool config, address=" + poolAddress.String())
-	}
-
-	lp := res.Result.Value.Num2.Value[3].Value
-	amountAsset := res.Result.Value.Num2.Value[4].Value
-	priceAsset := res.Result.Value.Num2.Value[5].Value
-	return lp, amountAsset, priceAsset, nil
 }
 
 func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee uint64, fileName string) error {
@@ -1291,20 +1074,6 @@ func timestamp() uint64 {
 	return uint64(time.Now().UnixMilli())
 }
 
-func findFactory(conts []contract.Contract) (contract.Contract, error) {
-	const (
-		factoryRide = "factory_v2.ride"
-		factoryTag  = "factory_v2"
-	)
-
-	for _, cont := range conts {
-		if cont.File == factoryRide && cont.Tag == factoryTag {
-			return cont, nil
-		}
-	}
-	return contract.Contract{}, errors.New("factory not found")
-}
-
 func getPrivateAndPublicKey(seed []byte) (privateKey crypto.SecretKey, publicKey crypto.PublicKey, err error) {
 	n := 0
 	s := seed
@@ -1323,30 +1092,4 @@ func stringIndex(i int) string {
 		return "0" + strconv.Itoa(i)
 	}
 	return strconv.Itoa(i)
-}
-
-func dashIfEmpty(s string) string {
-	if s == "" {
-		return "—"
-	}
-	return s
-}
-
-func sortAndConcat(assets []*client.AssetsDetail, explorerSuffix string) string {
-	sort.SliceStable(assets, func(i, j int) bool {
-		return strings.ToLower(assets[i].Name) < strings.ToLower(assets[j].Name)
-	})
-
-	var res string
-	for _, asset := range assets {
-		res += fmt.Sprintf(
-			"%s | [`%s`](https://wavesexplorer.com/assets/%s%s) | %s \n",
-			dashIfEmpty(asset.Name),
-			asset.AssetId.String(),
-			asset.AssetId.String(),
-			explorerSuffix,
-			dashIfEmpty(asset.Description),
-		)
-	}
-	return res
 }
