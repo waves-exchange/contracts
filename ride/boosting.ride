@@ -522,7 +522,7 @@ func getStakedVotesIntegralsDiff(lpAssetIdStr: String, userAddressStr: String) =
 # Actions should be applied if wxEmissionPerBlock or boostCoeff changes
 func refreshBoostEmissionIntegral() = {
   let wxEmissionPerBlock = emissionContract.iof(keyEmissionRatePerBlockCurrent())
-  let boostingV2LastUpdateHeightOption = this.getInteger(keyBoostingV2LastUpdateHeight())
+  let boostingV2LastUpdateHeightOption = emissionContract.getInteger(keyBoostingV2LastUpdateHeight())
   let boostingV2IngergalOption = this.getInteger(keyBoostingV2Integral())
   let emissionEnd = emissionContract.iof(keyEmissionEndBlock())
   let h = if (height > emissionEnd) then emissionEnd else height
