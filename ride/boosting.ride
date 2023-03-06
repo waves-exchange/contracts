@@ -393,7 +393,7 @@ func keyVoteStakedLastUpdateHeight(lpAssetIdStr: String, address: Address, epoch
   ["%s%s%s%d", "voteStakedIntegralLastUpdateHeight", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
 }
 func keyVoteStakedIntegralLast(lpAssetIdStr: String, address: Address, epoch: Int) = {
-  ["%s%s%s%d", "voteStakedIntegralsLast", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
+  ["%s%s%s%d", "voteStakedIntegralLast", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
 }
 
 # staking
