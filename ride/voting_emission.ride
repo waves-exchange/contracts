@@ -441,7 +441,6 @@ func setMaxDepth(newMaxDepth: Int) = {
 # учесть голос (totalVotes)? или totalVotes всегда актуален?
 # перенести голос на следующий период (vote, used, votingResult, totalVotes)
 # TODO: Сделать обычной функцией
-# TODO: write votingResultStaked
 @Callable(i)
 func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   strict checkCaller = i.mustThis()
