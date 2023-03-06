@@ -513,12 +513,6 @@ func finalize(baseAssetIdStr: String) = {
     }
     strict shareAssetBurn = if (shareAssetInfo.issuer == this) then {
       this.invoke("burn", [shareAssetId, shareAssetAmountToConvert], [])
-    } else if (shareAssetInfo.issuer == lpStakingContract) then {
-      lpStakingContract.invoke(
-        "burn",
-        [shareAssetId, shareAssetAmountToConvert],
-        [AttachedPayment(shareAssetId, shareAssetAmountToConvert)]
-      )
     } else "invalid share asset issuer".throwErr()
     let priceGet = fraction(baseAssetAmount.toBigInt(), scale18BigInt, shareAssetAmountToConvert.toBigInt(), FLOOR)
     let priceGetUpdateActions = [
@@ -545,8 +539,6 @@ func finalize(baseAssetIdStr: String) = {
     let shareAssetAmount = fraction(lpAssetAmount.toBigInt(), scale18BigInt, price, FLOOR).toInt()
     strict shareAssetReissue = if (shareAssetInfo.issuer == this) then {
       this.invoke("emit", [shareAssetId, shareAssetAmount], [])
-    } else if (shareAssetInfo.issuer == lpStakingContract) then {
-      lpStakingContract.invoke("emit", [shareAssetId, shareAssetAmount], [])
     } else "invalid share asset issuer".throwErr()
     # save new price for claimShareAsset (base asset / share asset)
     # if lpAssetAmount == 0 "division by zero" will be thrown
