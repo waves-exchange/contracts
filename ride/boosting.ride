@@ -829,7 +829,7 @@ func onStakedVoteUpdate(lpAssetIdStr: String, userAddressStr: String, edge: Bool
   strict checkCaller = i.caller == stakingContract || i.mustManager()
   let actions = lpAssetIdStr.refreshVoteStakedIntegral(userAddressStr, edge)
 
-  ([], unit)
+  (actions, unit)
 }
 
 @Callable(i)
