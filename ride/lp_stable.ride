@@ -349,8 +349,8 @@ func getD(xp: List[BigInt]) = {
         }
       }
     }
-    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-    let (d, found) = FOLD<15>(arr, (s, false), calc)
+    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+    let (d, found) = FOLD<18>(arr, (s, false), calc)
     if (found) then {
       d
     } else {
@@ -919,6 +919,139 @@ func mm(i: Invocation) = {
   }
 }
 
+func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let n = big2
+  let aPrecision = Amult.parseBigIntValue()
+  let a = A.parseBigIntValue() * aPrecision
+  let xp = if (isReverse == false) then { 
+    [amId.getAccBalance().toBigInt() + poolAmountInBalance, prId.getAccBalance().toBigInt()]
+  } else {
+    [prId.getAccBalance().toBigInt() + poolAmountInBalance, amId.getAccBalance().toBigInt()]
+  }
+
+  let x = xp[0]
+  let s = x
+  let ann = a * n
+
+  let c = D * D / (x * n) * D * aPrecision / (ann * n)
+  let b = s + D * aPrecision / ann - D
+  func calc(acc: (BigInt, Int|Unit), cur: Int) = {
+      let (y, found) = acc
+      if (found != unit) then acc else {
+        let yNext = (y * y + c) / (big2 * y + b)
+        let yDiff = absBigInt(yNext - y.value())
+        if (yDiff <= big1) then {
+          (yNext, cur)
+        } else {
+          (yNext, unit)
+        }
+      }
+    }
+    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    let (y, found) = FOLD<15>(arr, (D, unit), calc)
+    if (found != unit) then {
+      y
+    } else {
+      { "Y calculation error, Y = " + y.toString() }.throw()
+    }
+}
+
+@Callable(i)
+func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
+   let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
+    let assetOut = this.strf(pa())
+    let poolAmountInBalance = getAccBalance(this.strf(aa())).toBigInt() + cleanAmountIn.toBigInt()
+    (assetOut, poolAmountInBalance)
+  } else {
+    let assetOut = this.strf(aa())
+    let poolAmountInBalance = getAccBalance(this.strf(pa())).toBigInt() + cleanAmountIn.toBigInt()
+    (assetOut, poolAmountInBalance) 
+  }
+
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
+  
+  let D = xp.getD()
+  let y = getY(isReverse, D, cleanAmountIn.toBigInt())
+
+  let dy = getAccBalance(assetOut).toBigInt() - y - toBigInt(1) # -1 just in case there were some rounding errors
+
+  let totalGetRaw = [0, dy.toInt()].max()
+
+  let newXp = if (isReverse == false) then {
+    [amId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt(), prId.getAccBalance().toBigInt() - dy]
+  } else { 
+    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt()]
+  }
+  let newD = newXp.getD()
+  strict checkD = newD >= D || makeString(["new D is fewer error", D.toString(), newD.toString()], "__").throw()
+  
+  (nil, totalGetRaw)
+}
+
+@Callable(i)
+func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String, feePoolAmount: Int) = {
+  let swapContact = invoke(
+    fca,
+    "getSwapContractREADONLY", 
+    [], 
+    []
+  ).exactAs[String]
+  strict checks = [
+    i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
+    i.caller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
+  ]
+  let pmt = i.payments[0].value()
+  let assetIn = pmt.assetId.assetIdToString()
+
+  let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
+    let assetOut = this.strf(pa())
+    let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
+    (assetOut, poolAmountInBalance)
+  } else {
+    let assetOut = this.strf(aa())
+    let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
+    (assetOut, poolAmountInBalance) 
+  }
+
+  let poolConfig = gpc()
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let xp = if (isReverse == false) then {
+    [amId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt(), prId.getAccBalance().toBigInt()]
+  } else { 
+    [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt()]
+  }
+  let D = xp.getD()
+  let y = getY(isReverse, D, toBigInt(0))
+
+  let dy = getAccBalance(assetOut).toBigInt() - y - toBigInt(1) # -1 just in case there were some rounding errors
+
+  let totalGetRaw = [0, dy.toInt()].max()
+
+  strict checkMin = amountOutMin <= totalGetRaw || "Exchange result is fewer coins than expected".throw()
+
+  let newXp = if (isReverse == false) then {
+    [amId.getAccBalance().toBigInt() + feePoolAmount.toBigInt(), prId.getAccBalance().toBigInt() - dy]
+  } else { 
+    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + feePoolAmount.toBigInt()]
+  }
+  let newD = newXp.getD()
+  strict checkD = newD >= D || "new D is fewer error".throw()
+  
+  (
+    [
+      ScriptTransfer(addressTo.addressFromStringValue(), totalGetRaw, assetOut.parseAssetId())
+    ],
+    totalGetRaw
+  )
+}
+
 @Callable(i)
 # ido, team, emission, staking, locking (boosting), rest
 # fc - factoryContract
@@ -1239,6 +1372,7 @@ func getOneTknV2READONLY(
   let prId = cfgPriceAssetId.value().toBase58String()
   let lpId = cfgLpAssetId.value().toBase58String()
   let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
+  # let xp = [prId.getAccBalance().toBigInt(), amId.getAccBalance().toBigInt()]
   let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   let D0 = xp.getD()
   let D1 = D0 - fraction(lpAssetAmount.toBigInt(), D0, lpEmission)

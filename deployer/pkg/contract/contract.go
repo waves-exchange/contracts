@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 type Contract struct {
@@ -48,13 +49,9 @@ func (m Model) GetAll(c context.Context) ([]Contract, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
-	cur, err := m.coll.Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{
-		Key:   "stage",
-		Value: 1,
-	}, {
-		Key:   "file",
-		Value: 1,
-	}}))
+	cur, err := m.coll.Find(ctx, bson.M{}, options.Find().SetSort(bson.M{
+		"file": 1,
+	}))
 	if err != nil {
 		return nil, fmt.Errorf("m.coll.Find: %w", err)
 	}
@@ -106,6 +103,26 @@ func (m Model) IsCompact(c context.Context, fileName string) (bool, error) {
 	}
 
 	return compact, nil
+}
+
+func (m Model) GetFactory(c context.Context, stage *int) (Contract, error) {
+	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	defer cancel()
+
+	q := bson.M{
+		"tag": "factory_v2",
+	}
+	if stage != nil {
+		q["stage"] = *stage
+	}
+
+	var doc Contract
+	err := m.coll.FindOne(ctx, q).Decode(&doc)
+	if err != nil {
+		return Contract{}, fmt.Errorf("m.coll.FindOne: %w", err)
+	}
+
+	return doc, nil
 }
 
 func (m Model) Create(

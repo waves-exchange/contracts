@@ -16,7 +16,7 @@ describe('lp_stable: put.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully put with shouldAutoStake false', async function () {
     const usdnAmount = 1e16 / 10;
     const usdtAmount = 1e8 / 10;
-    const expectedLpAmount = 1e13;
+    const expectedLpAmount = 2689907208382172;
     const shouldAutoStake = false;
     const priceLast = 1e16;
     const priceHistory = 1e16;
@@ -64,7 +64,7 @@ describe('lp_stable: put.mjs', /** @this {MochaSuiteModified} */() => {
     }, {
       key: '%s__dLp',
       type: 'string',
-      value: 0,
+      value: '10000000000000003120271887017',
     }]);
 
     expect(stateChanges.transfers).to.eql([{

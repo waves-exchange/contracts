@@ -12,11 +12,11 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp_stable: put.mjs', /** @this {MochaSuiteModified} */() => {
+describe('lp_stable: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
   it('should successfully put with shouldAutoStake true', async function () {
     const usdnAmount = 1e16 / 10;
     const usdtAmount = 1e8 / 10;
-    const expectedLpAmount = 1e13;
+    const expectedLpAmount = 2689907208382172;
     const shouldAutoStake = true;
     const priceLast = 1e16;
     const priceHistory = 1e16;
@@ -56,6 +56,14 @@ describe('lp_stable: put.mjs', /** @this {MochaSuiteModified} */() => {
       key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
       value: `%d%d%d%d%d%d%d%d%d%d__${usdtAmount}__${usdnAmount}__${expectedLpAmount}__${priceLast}__0__0__${height}__${timestamp}__0__0`,
+    }, {
+      key: '%s__dLpRefreshedHeight',
+      type: 'integer',
+      value: height,
+    }, {
+      key: '%s__dLp',
+      type: 'string',
+      value: '10000000000000003120271887017',
     }]);
 
     expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))

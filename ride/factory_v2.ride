@@ -55,6 +55,9 @@ func keyAllowedLpScriptHash() = "%s__allowedLpScriptHash"
 func keyAllowedLpStableScriptHash() = "%s__allowedLpStableScriptHash"
 func keyAllowedLpStableAddonScriptHash() = "%s__allowedLpStableAddonScriptHash"
 
+# keySwapContract
+func swapContract() 
+      = {"%s__swapContract"}
 func keyFactoryConfig()
       = "%s__factoryConfig"
 func keyLpTokensList()
@@ -175,6 +178,8 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
 }
 
 let permissionDeniedError = "Permission denied".throw()
+
+let testError = "Test error here".throw()
 
 func mustThis(i: Invocation) = {
   i.caller == this || permissionDeniedError
@@ -309,6 +314,59 @@ func intOrDefaultOrFallback(key: String, keyDefault: String, valueFallback: Int)
   this.getInteger(key).valueOrElse(this.getInteger(keyDefault).valueOrElse(valueFallback))
 }
 
+func poolExistsInternal(amountAssetId: String, priceAssetId: String) = {
+  let amountAssetInternal = keyMappingsBaseAsset2internalId(amountAssetId).getInteger()
+  let priceAssetInternal = keyMappingsBaseAsset2internalId(priceAssetId).getInteger()
+  if (amountAssetInternal == unit || priceAssetInternal == unit) then {
+    false
+  } else {
+    let amAs = amountAssetInternal.value().toString()
+    let prAs = priceAssetInternal.value().toString()
+    let cfg = keyPoolConfig(amAs, prAs).getString()
+    let cfgReverse = keyPoolConfig(prAs, amAs).getString()
+    let exists = cfg != unit || cfgReverse != unit
+    exists
+  }
+}
+
+@Callable(i)
+func getSwapContractREADONLY() = {
+  ([],
+    getStringOrFail(swapContract())
+  )
+} 
+
+
+@Callable(i)
+func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
+  # we have 2 pools: WAVES/BTC (status 1) and BTC/WAVES (status 4). This hack to resolve swap path unless we make Pool Deletion
+  if (asset1 == "8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS" && asset2 == "WAVES") then {
+    ([],
+      unit
+    )
+  } else {
+    let assetNum1 = this.getInteger(keyMappingsBaseAsset2internalId(asset1)).value()
+    let assetNum2 = this.getInteger(keyMappingsBaseAsset2internalId(asset2)).value()
+    let ee = this.getString(keyMappingPoolAssetsToLpasset(assetNum1.toString(), assetNum2.toString()))
+    let res = if (ee == unit) then {
+      unit
+    } else {
+       ee.value().drop(4) # delete %s__ , 4 is number of letters
+    }
+
+    ([],
+      res
+    )
+  }
+}
+
+@Callable(i)
+func getPoolAddressFromLpAssetREADONLY(lp: String) = {
+  ([],
+    this.getString(keyMappingPoolLPAssetToPoolContractAddress(lp)).valueOrElse("")
+  )
+}
+
 @Callable(i)
 # ido, team, emission, staking, locking (boosting), rest
 func constructor(stakingContract: String, boostingContract: String, idoContract: String, teamContract: String, emissionContract: String, restContract: String, slpipageContract: String, priceDecimals: Int) = {
@@ -435,8 +493,8 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
       let poolAccountScriptHash = scriptHash(addressFromStringValue(poolAddress)).valueOrErrorMessage("No script has been found on pool account " + poolAddress)
       let ethalonPoolAccountScriptHash = getBinaryValue(keyPoolScriptHash())
 
-      let poolConfig = this.getString(keyPoolConfig(internalAmountAssetId.toString(), internalPriceAssetId.toString()))
-      if (poolConfig.isDefined()) then throw("Pool " + amountAssetStr + "/" + priceAssetStr + " has already been activated.") else
+      let poolExists = poolExistsInternal(amountAssetStr, priceAssetStr)
+      if (poolExists) then throw("Pool " + amountAssetStr + "/" + priceAssetStr + " has already been activated.") else
 
         let poolConfigValue = this.getString(keyPoolConfig(internalAmountAssetId.toString(), internalPriceAssetId.toString())).value()
         # todo: uncomment after debugging
@@ -697,7 +755,7 @@ func onVerificationLoss(assetId: String) = {
     unit
     
   }
-  strict actions = FOLD<1>(priceAssets, unit, cb)
+  strict actions = FOLD<2>(priceAssets, unit, cb)
 
   (nil, unit)
 }
@@ -731,6 +789,20 @@ func getPoolStatusREADONLY(poolAddress: String) = {
   let priceAssetInternal = poolAssets[2]
   let cfg = keyPoolConfig(amountAssetInternal, priceAssetInternal).getStringOrFail().split(SEP)
   ([], cfg[idxPoolStatus].parseIntValue())
+}
+
+@Callable(i)
+func getPoolConfigREADONLY(poolAddress: String) = {
+  let poolAssets = keyMappingPoolContractAddressToPoolAssets(poolAddress).getStringOrFail().split(SEP)
+  let amountAssetInternal = poolAssets[1]
+  let priceAssetInternal = poolAssets[2]
+  let cfg = keyPoolConfig(amountAssetInternal, priceAssetInternal).getStringOrFail().split(SEP)
+  ([], cfg)
+}
+
+@Callable(i)
+func poolExistsREADONLY(amountAssetId: String, priceAssetId: String) = {
+  ([], poolExistsInternal(amountAssetId, priceAssetId))
 }
 
 @Verifier(tx)

@@ -19,12 +19,14 @@ describe('lp: get.mjs', /** @this {MochaSuiteModified} */() => {
     async function () {
       const usdnAmount = 10e6;
       const shibAmount = 10e2;
-      const lpAmount = 1e9;
+      const lpAmount = 1e9 - 1;
       const shouldAutoStake = false;
 
       const expectedPriceLast = 1e8;
       const expectedPriceHistory = 1e8;
       const expectedInvokesCount = 1;
+      const expectedUsdnAmount = usdnAmount - 1;
+      const expectedShibAmount = shibAmount - 1;
 
       const lp = address(this.accounts.lp, chainId);
 
@@ -64,13 +66,13 @@ describe('lp: get.mjs', /** @this {MochaSuiteModified} */() => {
       const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
       expect(
-        await checkStateChanges(stateChanges, 3, 2, 0, 0, 0, 0, 0, 0, 1),
+        await checkStateChanges(stateChanges, 5, 2, 0, 0, 0, 0, 0, 0, 1),
       ).to.eql(true);
 
       expect(stateChanges.data).to.eql([{
         key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${id}`,
         type: 'string',
-        value: `%d%d%d%d%d%d__${shibAmount}__${usdnAmount}__${lpAmount}__${expectedPriceLast}__${height}__${timestamp}`,
+        value: `%d%d%d%d%d%d__${expectedShibAmount}__${expectedUsdnAmount}__${lpAmount}__${expectedPriceLast}__${height}__${timestamp}`,
       }, {
         key: '%s%s__price__last',
         type: 'integer',
@@ -79,16 +81,24 @@ describe('lp: get.mjs', /** @this {MochaSuiteModified} */() => {
         key: keyPriceHistory,
         type: 'integer',
         value: expectedPriceHistory,
+      }, {
+        key: '%s__kLpRefreshedHeight',
+        type: 'integer',
+        value: height,
+      }, {
+        key: '%s__kLp',
+        type: 'string',
+        value: '100000000000000000000000000000000',
       }]);
 
       expect(stateChanges.transfers).to.eql([{
         address: address(this.accounts.user1, chainId),
         asset: this.shibAssetId,
-        amount: shibAmount,
+        amount: expectedShibAmount,
       }, {
         address: address(this.accounts.user1, chainId),
         asset: this.usdnAssetId,
-        amount: usdnAmount,
+        amount: expectedUsdnAmount,
       }]);
 
       const { invokes } = stateChanges;

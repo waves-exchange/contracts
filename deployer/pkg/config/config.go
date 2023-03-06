@@ -7,9 +7,11 @@ import (
 
 type Config struct {
 	Network                           Network `required:"true"`
+	Branch                            string  `required:"true"`
 	Node                              string  `required:"true"`
 	MongoURI                          string  `required:"true"`
 	MongoDatabaseName                 string  `required:"true"`
+	MongoCollectionBranches           string  `required:"true"`
 	MongoCollectionContracts          string  `required:"true"`
 	CompareLpScriptAddress            string  `required:"true"`
 	CompareLpStableScriptAddress      string  `required:"true"`
@@ -17,8 +19,10 @@ type Config struct {
 	FeeSeed                           string  `required:"true"`
 
 	// Testnet only
-	Branch                  string
-	MongoCollectionBranches string
+	TestnetNode     string
+	MainnetNode     string
+	TestnetMongoURI string
+	MainnetMongoURI string
 }
 
 type Network string

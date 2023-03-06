@@ -7,6 +7,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"os/exec"
+	"path"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/waves-exchange/contracts/deployer/pkg/branch"
@@ -18,15 +28,6 @@ import (
 	"github.com/wavesplatform/gowaves/pkg/proto"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/sync/errgroup"
-	"io"
-	"net/http"
-	"os"
-	"os/exec"
-	"path"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 type compileCacheMap = map[string]func() (
@@ -37,7 +38,7 @@ type Syncer struct {
 	logger                            zerolog.Logger
 	network                           config.Network
 	networkByte                       proto.Scheme
-	rawClient                         *client.Client
+	rawClient                         *client.Client // TODO: make gowaves client with ratelimit as separate package
 	clientMutex                       *sync.Mutex
 	contractsFolder                   string
 	contractModel                     contract.Model
@@ -104,7 +105,7 @@ func NewSyncer(
 	}
 
 	return &Syncer{
-		logger:                            logger,
+		logger:                            logger.With().Str("pkg", "syncer").Logger(),
 		network:                           network,
 		networkByte:                       networkByte,
 		rawClient:                         cl,
@@ -130,6 +131,16 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	branchesTestnetRaw, err := s.branchModel.GetTestnetBranches(ctx)
 	if err != nil {
 		return fmt.Errorf("s.branchModel.GetTestnetBranch: %w", err)
+	}
+
+	contracts, err := s.contractModel.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("s.contractModel.GetAll: %w", err)
+	}
+
+	factory, err := s.contractModel.GetFactory(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("findFactory: %w", err)
 	}
 
 	var branchesTestnet []string
@@ -177,11 +188,6 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("os.ReadDir: %w", err)
 	}
 
-	contracts, err := s.contractModel.GetAll(ctx)
-	if err != nil {
-		return fmt.Errorf("s.contractModel.GetAll: %w", err)
-	}
-
 	stageToBranch := map[uint32]string{}
 	for _, brn := range branchesTestnetRaw {
 		stageToBranch[brn.Stage] = brn.Branch
@@ -192,11 +198,6 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		keyAllowedLpStableScriptHash      = "%s__allowedLpStableScriptHash"
 		keyAllowedLpStableAddonScriptHash = "%s__allowedLpStableAddonScriptHash"
 	)
-
-	factory, err := findFactory(contracts)
-	if err != nil {
-		return fmt.Errorf("findFactory: %w", err)
-	}
 
 	mainnetLpHashEmpty, err := s.doHash(
 		ctx,
@@ -451,24 +452,24 @@ func (s *Syncer) doHash(
 				Msg("we are about to set script as approved. " +
 					"sign and broadcast data-tx to continue")
 
-			for {
-				value, er3 := s.getStringValue(ctx, addr, key)
-				if er3 != nil {
-					return false, fmt.Errorf("s.getStringValue: %w", er3)
-				}
-				if value == newHashStr {
-					const blocks = 2
-					log().Msgf("data-tx done, wait %d blocks", blocks)
-					er4 := s.waitNBlocks(ctx, blocks)
-					if er4 != nil {
-						return false, fmt.Errorf("s.waitNBlocks: %w", er4)
-					}
-					break
-				}
-
-				time.Sleep(5 * time.Second)
-				log().RawJSON("tx", tx).Msg("sign data-tx. polling factory state...")
-			}
+			//for {
+			//	value, er3 := s.getStringValue(ctx, addr, key)
+			//	if er3 != nil {
+			//		return false, fmt.Errorf("s.getStringValue: %w", er3)
+			//	}
+			//	if value == newHashStr {
+			//		const blocks = 2
+			//		log().Msgf("data-tx done, wait %d blocks", blocks)
+			//		er4 := s.waitNBlocks(ctx, blocks)
+			//		if er4 != nil {
+			//			return false, fmt.Errorf("s.waitNBlocks: %w", er4)
+			//		}
+			//		break
+			//	}
+			//
+			//	time.Sleep(5 * time.Second)
+			//	log().RawJSON("tx", tx).Msg("sign data-tx. polling factory state...")
+			//}
 		} else {
 			s.logger.Info().Str("file", fileName).Str("key", key).Msg("content is the same, " +
 				"no need to update allowed script hash")
@@ -572,6 +573,7 @@ func (s *Syncer) doFile(
 		return false, fmt.Errorf("io.ReadAll: %w", err)
 	}
 
+	iTx := 0
 	for _, cont := range contracts {
 		if fileName != cont.File {
 			continue
@@ -656,7 +658,7 @@ func (s *Syncer) doFile(
 			er2 = s.sendTx(
 				ctx,
 				proto.NewUnsignedSetScriptWithProofs(
-					1,
+					2,
 					proto.TestNetScheme,
 					pub,
 					scriptBytes,
@@ -717,49 +719,71 @@ func (s *Syncer) doFile(
 			}
 
 			unsignedSetScriptTx := proto.NewUnsignedSetScriptWithProofs(
-				1,
+				2,
 				proto.MainNetScheme,
 				pub,
 				scriptBytes,
 				setScriptFee,
 				tools.Timestamp(),
 			)
-			doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
-			doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
-			doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
-			if doLpRide || doLpStableRide || doLpStableAddonRide {
-				er := s.sendTx(
-					ctx,
-					unsignedSetScriptTx,
-					crypto.SecretKey{},
-					true,
-					true,
-					fileName,
-				)
-				if er != nil {
-					return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
-				}
-
-				isChanged = true
-				log().Str(action, deployed).Msg(changed)
-			} else {
-				setScriptTx, er := json.Marshal(unsignedSetScriptTx)
-				if er != nil {
-					return false, fmt.Errorf("s.sendTx: %w", er)
-				}
-
-				er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
-				if er != nil {
-					return false, fmt.Errorf("s.ensureHasFee: %w", er)
-				}
-
-				isChanged = true
-				log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
-				er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
-				if er != nil {
-					return false, fmt.Errorf("s.printDiff: %w", er)
-				}
+			//doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
+			//doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
+			//doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
+			//if doLpRide || doLpStableRide || doLpStableAddonRide {
+			//	er := s.sendTx(
+			//		ctx,
+			//		unsignedSetScriptTx,
+			//		crypto.SecretKey{},
+			//		true,
+			//		true,
+			//		fileName,
+			//	)
+			//	if er != nil {
+			//		return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
+			//	}
+			//
+			//	isChanged = true
+			//	log().Str(action, deployed).Msg(changed)
+			//} else {
+			setScriptTx, er := json.Marshal(unsignedSetScriptTx)
+			if er != nil {
+				return false, fmt.Errorf("s.sendTx: %w", er)
 			}
+
+			er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
+			if er != nil {
+				return false, fmt.Errorf("s.ensureHasFee: %w", er)
+			}
+
+			isChanged = true
+			log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
+			er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
+			if er != nil {
+				return false, fmt.Errorf("s.printDiff: %w", er)
+			}
+
+			iTx += 1
+			file, er := os.Create(
+				path.Join(
+					"..",
+					".github",
+					"artifacts",
+					"txs",
+					fmt.Sprintf(
+						"%s_%s.json",
+						stringIndex(iTx),
+						strings.ReplaceAll(strings.ReplaceAll(cont.Tag, " ", "_"), "/", "_"),
+					),
+				))
+			if er != nil {
+				return false, fmt.Errorf("os.Create: %w", er)
+			}
+
+			_, er = file.Write(setScriptTx)
+			if er != nil {
+				return false, fmt.Errorf("file.Write: %w", er)
+			}
+			//}
 
 			continue
 		}
@@ -874,26 +898,26 @@ func (s *Syncer) sendTx(
 	}
 
 	fn := func() error {
+		sender, e := tx.GetSender(s.networkByte)
+		if e != nil {
+			return fmt.Errorf("tx.GetSender: %w", e)
+		}
+
+		senderAddr, e := sender.ToWavesAddress(s.networkByte)
+		if e != nil {
+			return fmt.Errorf("sender.ToWavesAddress: %w", e)
+		}
+
 		if ensureFee {
-			sender, e := tx.GetSender(s.networkByte)
-			if e != nil {
-				return fmt.Errorf("tx.GetSender: %w", e)
-			}
-
-			senderAddr, e := sender.ToWavesAddress(s.networkByte)
-			if e != nil {
-				return fmt.Errorf("sender.ToWavesAddress: %w", e)
-			}
-
 			e = s.ensureHasFee(ctx, senderAddr, tx.GetFee(), fileName)
 			if e != nil {
 				return fmt.Errorf("s.ensureHasFee: %w", e)
 			}
 		}
 
-		_, e := s.client().Transactions.Broadcast(ctx, tx)
+		_, e = s.client().Transactions.Broadcast(ctx, tx)
 		if e != nil {
-			return fmt.Errorf("s.client().Transactions.Broadcast %s: %w", fileName, e)
+			return fmt.Errorf("s.client().Transactions.Broadcast (file: %s, sender: %s): %w", fileName, senderAddr.String(), e)
 		}
 
 		e = s.waitMined(ctx, txHash)
@@ -963,7 +987,7 @@ func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, err
 
 	req, err := http.NewRequestWithContext(
 		ctx, http.MethodGet,
-		s.client().GetOptions().BaseUrl+"/addresses/scriptInfo/"+addr.String(),
+		s.rawClient.GetOptions().BaseUrl+"/addresses/scriptInfo/"+addr.String(),
 		nil,
 	)
 	if err != nil {
@@ -998,7 +1022,7 @@ func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, err
 }
 
 func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, error) {
-	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.client().GetOptions().BaseUrl)
+	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.rawClient.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
 	if err != nil {
@@ -1026,7 +1050,7 @@ func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, er
 }
 
 func (s *Syncer) apiDecompileScript(c context.Context, body io.Reader) (string, error) {
-	u := fmt.Sprintf("%s/utils/script/decompile", s.client().GetOptions().BaseUrl)
+	u := fmt.Sprintf("%s/utils/script/decompile", s.rawClient.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
 	if err != nil {
@@ -1062,16 +1086,9 @@ func (s *Syncer) client() *client.Client {
 	return s.rawClient
 }
 
-func findFactory(conts []contract.Contract) (contract.Contract, error) {
-	const (
-		factoryRide = "factory_v2.ride"
-		factoryTag  = "factory_v2"
-	)
-
-	for _, cont := range conts {
-		if cont.File == factoryRide && cont.Tag == factoryTag {
-			return cont, nil
-		}
+func stringIndex(i int) string {
+	if i < 10 {
+		return "0" + strconv.Itoa(i)
 	}
-	return contract.Contract{}, errors.New("factory not found")
+	return strconv.Itoa(i)
 }

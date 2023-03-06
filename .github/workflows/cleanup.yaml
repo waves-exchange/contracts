@@ -23,7 +23,7 @@ jobs:
           git fetch --unshallow
           git checkout dev
           git pull
-          git merge --no-ff main -m "Auto-merge main -> dev"
+          git merge --no-ff main -m "auto-merge main -> dev"
           git push
       - name: Clean repo
         uses: AutoModality/action-clean@v1

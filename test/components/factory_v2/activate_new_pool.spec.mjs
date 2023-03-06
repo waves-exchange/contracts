@@ -1,6 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+import { address, publicKey } from '@waves/ts-lib-crypto';
 import {
   invokeScript, issue, nodeInteraction,
 } from '@waves/waves-transactions';
@@ -50,7 +50,7 @@ describe('Factory V2 - activateNewPool', /** @this {MochaSuiteModified} */() => 
       call: {
         function: 'constructorV2',
         args: [
-          { type: 'string', value: '' }, // mathcherPub58Str
+          { type: 'string', value: publicKey(this.accounts.matcher) }, // mathcherPub58Str
         ],
       },
       fee: 9e5,

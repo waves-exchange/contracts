@@ -1,0 +1,13 @@
+{
+  "name": "ledger-signer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "dependencies": {
+    "@ledgerhq/hw-transport-node-hid": "^6.24.1",
+    "@waves/ledger": "^4.0.0",
+    "@waves/waves-transactions": "^4.2.5-beta.3"
+  }
+}

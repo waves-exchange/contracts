@@ -120,7 +120,7 @@ export const mochaHooks = {
       call: {
         function: 'constructorV2',
         args: [
-          { type: 'string', value: '' },
+          { type: 'string', value: publicKey(this.accounts.manager) },
         ],
       },
       chainId,
