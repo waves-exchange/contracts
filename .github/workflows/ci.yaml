@@ -26,7 +26,7 @@ jobs:
         uses: AutoModality/action-clean@v1
         if: always()
 
-  deploy_testnet_and_update_docs:
+  deploy_testnet:
     env:
       BRANCH: ${{ github.ref_name }}
       NETWORK: testnet
@@ -94,6 +94,12 @@ jobs:
       COMPARELPSTABLESCRIPTADDRESS: 3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz # USDT/USDN pool
       COMPARELPSTABLEADDONSCRIPTADDRESS: 3P36szQtxxpSaefdqaFjbM9Ush8ieCjVZVw # USDT/USDN pool addon
       FEESEED: ${{ secrets.MAINNETFEESEED }}
+
+      # For Docs
+      TESTNETNODE: ${{ secrets.TESTNETNODE }}
+      MAINNETNODE: ${{ secrets.MAINNETNODE }}
+      TESTNETMONGOURI: ${{ secrets.TESTNETMONGOURI }}
+      MAINNETMONGOURI: ${{ secrets.MAINNETMONGOURI }}
     if: github.ref_name == 'main'
     runs-on: self-hosted
     container:
