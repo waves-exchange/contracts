@@ -1,8 +1,14 @@
-{-# STDLIB_VERSION 4 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+# Required state entries:
+# * "%s__lpStakingPoolsContract": String
+
 let SEP = "__"
+
+func wrapErr(msg: String) = ["lp_staking.ride:", msg].makeString(" ")
+func throwErr(msg: String) = msg.wrapErr().throw()
 
 func getStringOrFail(key: String) = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}
 func getBooleanOrFail(key: String) = {this.getBoolean(key).valueOrErrorMessage("No data for this.key=" + key)}
@@ -25,6 +31,7 @@ func keyMappingsBaseAsset2internalId(baseAssetStr: String) = {"%s%s%s__mappings_
 func keyMappingsShare2baseAssetId(shareAssetStr: String) = {"%s%s%s__mappings__share2baseAssetId__" + shareAssetStr}
 func keyMappingsBaseAsset2shareId(baseAssetStr: String) = {"%s%s%s__mappings__baseAsset2shareId__" + baseAssetStr}
 func keyShutdownPutOperation(internalBaseAssetStr: String) = {"%s%s%d__shutdown__put__" + internalBaseAssetStr}
+func keyShutdown(internalBaseAssetStr: String) = {"%s%d__shutdown__" + internalBaseAssetStr}
 func keyShutdownManager(internalBaseAssetStr: String) = {"%s%s%d__shutdown__manager__" + internalBaseAssetStr}
 
 let IdxCfgShareAssetId                        = 1
@@ -32,6 +39,36 @@ let IdxCfgInternalBaseAsset                   = 2
 let IdxCfgDecimalsMultBothAssets              = 3
 let IdxCfgDecimalsMultPrice                   = 4
 let IdxCfgGetDelayBlocks                      = 5
+
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+
+func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+let permissionDeniedError = "Permission denied".throw()
+
+func mustThis(i: Invocation) = {
+  i.caller == this || permissionDeniedError
+}
+
+func mustManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk || permissionDeniedError
+    case _: Unit => i.mustThis()
+  }
+}
+
+let lpStakingPoolsContract = ["%s", "lpStakingPoolsContract"].makeString(SEP)
+  .getString().valueOrErrorMessage("lp_staking_pools contract address is undefined".wrapErr())
+  .addressFromString().valueOrErrorMessage("invalid lp_staking_pools contract address".wrapErr())
 
 func dataAssetCfg(shareAssetStr: String, internalBaseAssetStr: String, decimalsMultBothAssets: Int,
                   decimalsMultPrice: Int, getDelayInBlocks: Int) = {
@@ -190,7 +227,7 @@ func adminRegisterAsset(baseAssetStr: String, shareAssetName: String, shareAsset
   let decimals = assetInfo(baseAssetId).value().decimals
   # TODO validate that BaseToken has not been specified before
   # validate admin public key - in our case contract PK
-  if (i.caller != this) then throw("permissions denied") else
+  strict checkCaller = i.mustManager()
   if (addressFromStringValue(shutdownManagerAddress).toString() != shutdownManagerAddress) then throw("invalid shutdownManagerAddress") else
   if (getDelayinBlocks < 0) then throw("invalid getDelayinBlocks=" + getDelayinBlocks.toString()) else
   let shareAssetIssueAction = Issue(shareAssetName, shareAssetDescr, 1, decimals, true)
@@ -249,7 +286,8 @@ func put() = {
   let internalBaseAssetStr = cfgArray[IdxCfgInternalBaseAsset]
 
   let isPutBlocked = getBooleanOrFail(keyShutdownPutOperation(internalBaseAssetStr))
-  if (isPutBlocked) then throw("put operation is blocked") else
+  let shutdown = internalBaseAssetStr.keyShutdown().getBoolean().valueOrElse(false)
+  if (isPutBlocked || shutdown) then throw("put operation is blocked") else
 
   let price = calcPrice(internalBaseAssetStr, baseAssetId, shareAssetId, decimalsMultBothAssets, decimalsMultPrice)._1
   let shareAssetAmount = fraction(pmt.amount, decimalsMultPrice, price)
@@ -283,6 +321,9 @@ func submitGetRequest() = {
   let getDelayBlocks = cfgArray[IdxCfgGetDelayBlocks].parseIntValue()
   let internalBaseAssetStr = cfgArray[IdxCfgInternalBaseAsset]
 
+  let shutdown = internalBaseAssetStr.keyShutdown().getBoolean().valueOrElse(false)
+  if (shutdown) then throw("operation is blocked") else
+
   let price = calcPrice(internalBaseAssetStr, baseAssetId, shareAssetId, decimalsMultBothAssets, decimalsMultPrice)._1
   let baseAssetAmount = fraction(shareAssetAmount, price, decimalsMultPrice)
 
@@ -309,6 +350,9 @@ func executeGetRequest(baseAssetStr: String, userAddressStr: String, getTxIdStr:
   let shareAssetId = assetCfgArray[IdxCfgShareAssetId].fromBase58String()
   let baseAssetId = baseAssetStr.fromBase58String()
   let internalBaseAssetStr = assetCfgArray[IdxCfgInternalBaseAsset]
+
+  let shutdown = internalBaseAssetStr.keyShutdown().getBoolean().valueOrElse(false)
+  if (shutdown) then throw("operation is blocked") else
 
   let operationKey = keyOperation("G", internalBaseAssetStr, userAddressStr, getTxIdStr)
   let operationArray = getStringOrFail(operationKey)
@@ -345,6 +389,9 @@ func topUpBalance(baseAssetStr: String) = {
   let topUpLastHeightKEY = keyTopUpLastHeight(internalBaseAssetStr, i.caller.toString())
   let topUpLastHeight = this.getInteger(topUpLastHeightKEY).valueOrElse(0)
 
+  let shutdown = internalBaseAssetStr.keyShutdown().getBoolean().valueOrElse(false)
+  if (shutdown) then throw("operation is blocked") else
+
   if (baseAssetStr != pmtAssetStr) then throw("attached payment's asset id is NOT matched passed baseAssetStr") else
   if (i.payments.size() > 1) then throw("only one payment can be attached") else
   if (height - topUpLastHeight < 100) then throw("1 topUp per 100 blocks from the same address is allowed") else
@@ -380,7 +427,34 @@ func currentSysParamsREST(baseAssetStr: String)= {
   throw(restData)
 }
 
-@Verifier(tx)
-func verify () = {
-  sigVerify(tx.bodyBytes, tx.proofs[0], fromBase58String("2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq"))
+@Callable(i)
+func setManager(pendingManagerPublicKey: String) = {
+  strict checkCaller = i.mustManager()
+  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
+
+  [
+    StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)
+  ]
 }
+
+@Callable(i)
+func confirmManager() = {
+  let pm = pendingManagerPublicKeyOrUnit()
+  strict hasPM = pm.isDefined() || "no pending manager".throwErr()
+  strict checkPM = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
+
+  [
+    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
+    DeleteEntry(keyPendingManagerPublicKey())
+  ]
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}
+

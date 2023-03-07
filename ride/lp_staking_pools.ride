@@ -1,0 +1,577 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+# Required state entries:
+# * "%s__factoryContract": String
+# * "%s__assetsStoreContract": String
+# * "%s__lpStakingContract": String
+# * "%s__stakingContract": String
+# * "%s__boostingContract": String
+# * "%s__swapContract": String
+# * "%s__usdtAssetId": String
+# * "%s__wxAssetId": String
+
+let separator = "__"
+let shareAssetDecimals = 8
+let wavesString = "WAVES"
+let scale18 = 1_000_000_000_000_000_000
+let scale18BigInt = scale18.toBigInt()
+
+func wrapErr(msg: String) = ["lp_staking_pools.ride:", msg].makeString(" ")
+func throwErr(msg: String) = msg.wrapErr().throw()
+
+func errKeyIsNotDefined(address: Address, key: String) = ["mandatory ", address.toString(), ".", key, " is not defined"].makeString("").wrapErr()
+func getStrOrFail(address: Address, key: String) = address.getString(key).valueOrErrorMessage(address.errKeyIsNotDefined(key))
+func getIntOrFail(address: Address, key: String) = address.getInteger(key).valueOrErrorMessage(address.errKeyIsNotDefined(key))
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
+func ensurePositive(v: Int) = {
+  if (v >= 0) then v else "value should be positive".throwErr()
+}
+
+func keyFactoryContract() = ["%s", "factoryContract"].makeString(separator)
+func keyLpStakingContract() = ["%s", "lpStakingContract"].makeString(separator)
+func keyStakingContract() = ["%s", "stakingContract"].makeString(separator)
+func keyBoostingContract() = ["%s", "boostingContract"].makeString(separator)
+func keySwapContract() = ["%s", "swapContract"].makeString(separator)
+func keyAssetsStoreContract() = ["%s", "assetsStoreContract"].makeString(separator)
+func keyUsdtAssetId() = ["%s", "usdtAssetId"].makeString(separator)
+func keyWxAssetId() = ["%s", "wxAssetId"].makeString(separator)
+
+func keyShutdown() = ["%s", "shutdown"].makeString(separator)
+func keyMinDelay() = ["%s", "minDelay"].makeString(separator) 
+func keyLockFraction() = ["%s", "lockFraction"].makeString(separator)
+func keyShareAssetId(baseAssetId: ByteVector|Unit) = {
+  ["%s%s", baseAssetId.assetIdToString(), "shareAssetId"].makeString(separator)
+}
+func keyBaseAssetId(shareAssetId: ByteVector|Unit) = {
+  ["%s%s", shareAssetId.assetIdToString(), "baseAssetId"].makeString(separator)
+}
+func keyPeriod(baseAssetId: ByteVector|Unit) = {
+  ["%s%s", baseAssetId.assetIdToString(), "period"].makeString(separator)
+}
+# start height of period
+func keyPeriodStartHeight(baseAssetId: ByteVector|Unit, period: Int) = {
+  ["%s%s%d", baseAssetId.assetIdToString(), "periodStartHeight", period.toString()].makeString(separator)
+}
+func keyBaseAssetAmountToConvert(baseAssetId: ByteVector|Unit) = {
+  ["%s%s", baseAssetId.assetIdToString(), "baseAssetAmountToConvert"].makeString(separator)
+}
+func keyShareAssetAmountToConvert(baseAssetId: ByteVector|Unit) = {
+  ["%s%s", baseAssetId.assetIdToString(), "shareAssetAmountToConvert"].makeString(separator)
+}
+func keyUserBaseAssetAmountToConvert(baseAssetId: ByteVector|Unit, userAddress: Address) = {
+  ["%s%s%s", baseAssetId.assetIdToString(), userAddress.toString(), "baseAssetAmountToConvert"].makeString(separator)
+}
+func keyUserBaseAssetAmountToConvertPeriod(baseAssetId: ByteVector|Unit, userAddress: Address) = {
+  ["%s%s%s%s", baseAssetId.assetIdToString(), userAddress.toString(), "baseAssetAmountToConvert", "period"].makeString(separator)
+}
+func keyUserShareAssetAmountToConvert(baseAssetId: ByteVector|Unit, userAddress: Address) = {
+  ["%s%s%s", baseAssetId.assetIdToString(), userAddress.toString(), "shareAssetAmountToConvert"].makeString(separator)
+}
+func keyUserShareAssetAmountToConvertPeriod(baseAssetId: ByteVector|Unit, userAddress: Address) = {
+  ["%s%s%s%s", baseAssetId.assetIdToString(), userAddress.toString(), "shareAssetAmountToConvert", "period"].makeString(separator)
+}
+# lp asset / share asset price
+func keyPricePeriod(baseAssetId: ByteVector|Unit, period: Int) = {
+  ["%s%s%d", baseAssetId.assetIdToString(), "price", period.toString()].makeString(separator)
+}
+func keyPriceHistory(baseAssetId: ByteVector|Unit) = {
+  ["%s%s%s%d%d", baseAssetId.assetIdToString(), "price", "history", lastBlock.height.toString(), lastBlock.timestamp.toString()].makeString(separator)
+}
+# base asset / share asset price for claimShareAsset
+func keyPricePeriodPut(baseAssetId: ByteVector|Unit, period: Int) = {
+  ["%s%s%d%s", baseAssetId.assetIdToString(), "price", period.toString(), "put"].makeString(separator)
+}
+func keyPricePutHistory(baseAssetId: ByteVector|Unit) = {
+  ["%s%s%s%s%d%d", baseAssetId.assetIdToString(), "price", "history", "put", lastBlock.height.toString(), lastBlock.timestamp.toString()].makeString(separator)
+}
+# base asset / share asset price for claimBaseAsset
+func keyPricePeriodGet(baseAssetId: ByteVector|Unit, period: Int) = {
+  ["%s%s%d%s", baseAssetId.assetIdToString(), "price", period.toString(), "get"].makeString(separator)
+}
+func keyPriceGetHistory(baseAssetId: ByteVector|Unit) = {
+  ["%s%s%s%s%d%d", baseAssetId.assetIdToString(), "price", "history", "get", lastBlock.height.toString(), lastBlock.timestamp.toString()].makeString(separator)
+}
+func keyHistoryEntry(baseAssetId: ByteVector|Unit, operation: String, period: Int, userAddress: Address, txId: ByteVector) = {
+  ["%s%s%s%s", "history", operation, userAddress.toString(), txId.toBase58String(), height.toString()].makeString(separator)
+}
+
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+
+func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+let permissionDeniedError = "Permission denied".throw()
+
+func mustThis(i: Invocation) = {
+  i.caller == this || permissionDeniedError
+}
+
+func mustManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk || permissionDeniedError
+    case _: Unit => i.mustThis()
+  }
+}
+
+let shutdown = keyShutdown().getBoolean().valueOrElse(false)
+func shutdownCheck(i: Invocation) = {
+  !shutdown || i.mustManager() || "operation is disabled".throw()
+}
+
+let factoryContract = this.getStrOrFail(keyFactoryContract()).addressFromStringValue()
+let lpStakingContract = this.getStrOrFail(keyLpStakingContract()).addressFromStringValue()
+let stakingContract = this.getStrOrFail(keyStakingContract()).addressFromStringValue()
+let boostingContract = this.getStrOrFail(keyBoostingContract()).addressFromStringValue()
+let swapContract = this.getStrOrFail(keySwapContract()).addressFromStringValue()
+let assetsStoreContract = this.getStrOrFail(keyAssetsStoreContract()).addressFromStringValue()
+let usdtAssetId = this.getStrOrFail(keyUsdtAssetId()).parseAssetId()
+let wxAssetId = this.getStrOrFail(keyWxAssetId()).parseAssetId()
+
+let minDelayDefault = 1440
+let minDelay = this.getInteger(keyMinDelay()).valueOrElse(minDelayDefault)
+
+let lockFractionMultiplier = 100_000_000
+# ½ * 1e8 → 50%
+let lockFractionDefault = fraction(1, lockFractionMultiplier, 2)
+let lockFraction = this.getInteger(keyLockFraction()).valueOrElse(lockFractionDefault)
+
+func getPoolInfo(amountAssetId: ByteVector|Unit) = {
+  let amountAssetIdStr = amountAssetId.assetIdToString()
+  let priceAssetIdStr = usdtAssetId.assetIdToString()
+  let poolInfoOption = factoryContract.invoke(
+    "poolInfoREADONLY",
+    [amountAssetIdStr, priceAssetIdStr],
+    []
+  ).as[(Address, ByteVector)]
+
+  poolInfoOption
+}
+
+# price = staked lp asset amount / share asset emission
+func calcPrice(lpAssetId: ByteVector, shareAssetId: ByteVector) = {
+  let shareAssetInfo = shareAssetId.assetInfo().valueOrErrorMessage("failed to get share asset info")
+  let shareAssetEmission = shareAssetInfo.quantity
+  let stakedAmount = stakingContract.invoke(
+    "stakedByUserREADONLY",
+    [
+      lpAssetId.assetIdToString(),
+      this.toString()
+    ],
+    []
+  ).as[Int].valueOrErrorMessage("invalid stakedByUserREADONLY result".wrapErr()).ensurePositive()
+  let price = if (shareAssetEmission == 0) then scale18BigInt else {
+    fraction(stakedAmount.toBigInt(), scale18BigInt, shareAssetEmission.toBigInt(), FLOOR)
+  }
+
+  price
+}
+
+@Callable(i)
+func setManager(pendingManagerPublicKey: String) = {
+  strict checkCaller = i.mustManager()
+  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
+
+  [
+    StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)
+  ]
+}
+
+@Callable(i)
+func confirmManager() = {
+  let pm = pendingManagerPublicKeyOrUnit()
+  strict hasPM = pm.isDefined() || "no pending manager".throwErr()
+  strict checkPM = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
+
+  [
+    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
+    DeleteEntry(keyPendingManagerPublicKey())
+  ]
+}
+
+@Callable(i)
+func emit(assetId: ByteVector, amount: Int) = {
+  strict checkCaller = i.mustThis()
+
+  let isReissuable = true
+
+  ([
+    Reissue(assetId, amount, isReissuable)
+  ], amount)
+}
+
+@Callable(i)
+func burn(assetId: ByteVector, amount: Int) = {
+  strict checkCaller = i.mustThis()
+
+  ([
+    Burn(assetId, amount)
+  ], amount)
+}
+
+@Callable(i)
+func create(
+  baseAssetIdStr: String,
+  shareAssetIdStr: String,
+  shareAssetName: String,
+  shareAssetDescription: String,
+  shareAssetLogo: String
+) = {
+  let shareAssetLabel = "STAKING_LP"
+  let baseAssetId = baseAssetIdStr.parseAssetId()
+
+  strict checks = [
+    i.mustManager(),
+    baseAssetId.getPoolInfo().isDefined() || "invalid base asset".throwErr()
+  ]
+  
+  let commonState = [
+    IntegerEntry(baseAssetId.keyPeriod(), 0)
+  ]
+  if (shareAssetIdStr == "") then {
+    let shareAssetIssueAmount = 1
+    let shareAssetIssueAction = Issue(shareAssetName, shareAssetDescription, shareAssetIssueAmount, shareAssetDecimals, true)
+    let calculatedShareAssetId = shareAssetIssueAction.calculateAssetId()
+    let shareAssetBurnAction = Burn(calculatedShareAssetId, shareAssetIssueAmount)
+    let calculatedShareAssetIdStr = calculatedShareAssetId.toBase58String()
+    strict createOrUpdate = assetsStoreContract.invoke("createOrUpdate", [calculatedShareAssetIdStr, shareAssetLogo, false], [])
+    strict addLabel = assetsStoreContract.invoke("addLabel", [calculatedShareAssetIdStr, shareAssetLabel], [])
+
+    (commonState ++ [
+      shareAssetIssueAction,
+      shareAssetBurnAction,
+      StringEntry(baseAssetId.keyShareAssetId(), calculatedShareAssetIdStr),
+      StringEntry(calculatedShareAssetId.keyBaseAssetId(), baseAssetIdStr)
+    ], calculatedShareAssetIdStr)
+  } else {
+    let shareAssetId = shareAssetIdStr.fromBase58String()
+    let shareAssetInfo = shareAssetId.assetInfo().valueOrErrorMessage("invalid share asset id".wrapErr())
+    strict checkIssuer = shareAssetInfo.issuer == lpStakingContract || "invalid share asset id issuer".throwErr()
+
+    (commonState ++ [
+      StringEntry(baseAssetId.keyShareAssetId(), shareAssetIdStr),
+      StringEntry(shareAssetId.keyBaseAssetId(), baseAssetIdStr)
+    ], shareAssetIdStr)
+  }
+}
+
+@Callable(i)
+func put() = {
+  let pmt = if (i.payments.size() == 1) then i.payments[0] else "exactly 1 payment is expected".throwErr()
+  let baseAssetId = pmt.assetId
+  let userAddress = i.caller
+  strict checks = [
+    i.shutdownCheck(),
+    baseAssetId.keyShareAssetId().getString().isDefined() || "invalid asset".throwErr()
+  ]
+  let (poolAddress, lpAssetId) = baseAssetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
+  let period = baseAssetId.keyPeriod().getInteger().value()
+  let userBaseAssetAmountToConvertPeriodOption = baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress).getInteger()
+  # call claimShareAsset if current period > userBaseAssetAmountToConvertPeriod
+  strict claimShareAssetInvocation = if (userBaseAssetAmountToConvertPeriodOption == unit) then unit else {
+    let userBaseAssetAmountToConvertPeriod = userBaseAssetAmountToConvertPeriodOption.value()
+    if (userBaseAssetAmountToConvertPeriod == period) then unit else {
+      this.invoke("claimShareAsset", [baseAssetId.assetIdToString(), userAddress.toString()], [])
+    }
+  }
+  let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
+  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
+
+  ([
+    IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), baseAssetAmountToConvert + pmt.amount),
+    IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), userBaseAssetAmountToConvert + pmt.amount),
+    IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress), period),
+    IntegerEntry(
+      baseAssetId.keyHistoryEntry("put", period, userAddress, i.transactionId),
+      pmt.amount
+    )
+  ], unit)
+}
+
+# finish put
+@Callable(i)
+func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
+  # if userAddressStr != "" then i.mustThis()
+  # if userAddressStr == "" then use i.caller
+  strict checks = [
+    i.shutdownCheck()
+  ]
+  strict userAddress = if (userAddressStr == "") then i.caller else {
+    strict checkCaller = i.mustThis()
+    userAddressStr.addressFromString().valueOrErrorMessage("invalid user address".wrapErr())
+  }
+  let baseAssetId = baseAssetIdStr.parseAssetId()
+  strict shareAssetId = baseAssetId.keyShareAssetId()
+    .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
+  strict period = baseAssetId.keyPeriod().getInteger().valueOrErrorMessage("invalid period".wrapErr())
+  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
+  strict checkAmountToConvert = userBaseAssetAmountToConvert > 0 || "nothing to claim".throwErr()
+  let userBaseAssetAmountToConvertPeriod = baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
+  # current period should be > userBaseAssetAmountToConvertPeriod
+  strict checkPeriod = period > userBaseAssetAmountToConvertPeriod || "invalid period".throwErr()
+  let price = baseAssetId.keyPricePeriodPut(userBaseAssetAmountToConvertPeriod).getBinary().valueOrErrorMessage("failed to get price".wrapErr()).toBigInt()
+  # claim share asset with the last price (base asset / share asset ?)
+  let shareAssetAmount = fraction(userBaseAssetAmountToConvert.toBigInt(), scale18BigInt, price).toInt()
+
+  ([
+    IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), 0),
+    DeleteEntry(baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress)),
+    ScriptTransfer(userAddress, shareAssetAmount, shareAssetId),
+    IntegerEntry(
+      baseAssetId.keyHistoryEntry("claimShareAsset", period, userAddress, i.transactionId),
+      shareAssetAmount
+    )
+  ], unit)
+}
+
+@Callable(i)
+func get() = {
+  strict checks = [
+    i.shutdownCheck()
+  ]
+  let pmt = if (i.payments.size() == 1) then i.payments[0] else "exactly 1 payment is expected".throwErr()
+  let shareAssetId = pmt.assetId
+  strict baseAssetId = shareAssetId.keyBaseAssetId()
+    .getString().valueOrErrorMessage("invalid share asset id".wrapErr()).parseAssetId().value()
+  let userAddress = i.caller
+  let (poolAddress, lpAssetId) = baseAssetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
+  let period = baseAssetId.keyPeriod().getInteger().value()
+  let userShareAssetAmountToConvertPeriodOption = baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress).getInteger()
+  # call claimBaseAsset
+  strict claimBaseAssetInvocation = if (userShareAssetAmountToConvertPeriodOption == unit) then unit else {
+    let userShareAssetAmountToConvertPeriod = userShareAssetAmountToConvertPeriodOption.value()
+    if (userShareAssetAmountToConvertPeriod == period) then unit else {
+      this.invoke("claimBaseAsset", [baseAssetId.assetIdToString(), userAddress.toString()], [])
+    }
+  }
+  let shareAssetAmountToConvert = baseAssetId.keyShareAssetAmountToConvert().getInteger().valueOrElse(0)
+  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
+
+  ([
+    IntegerEntry(baseAssetId.keyShareAssetAmountToConvert(), shareAssetAmountToConvert + pmt.amount),
+    IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), userShareAssetAmountToConvert + pmt.amount),
+    IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress), period),
+    IntegerEntry(
+      baseAssetId.keyHistoryEntry("get", period, userAddress, i.transactionId),
+      pmt.amount
+    )
+  ], unit)
+}
+
+# finish get
+@Callable(i)
+func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
+  strict checks = [
+    i.shutdownCheck()
+  ]
+  strict userAddress = if (userAddressStr == "") then i.caller else {
+    strict checkCaller = i.mustThis()
+    userAddressStr.addressFromString().valueOrErrorMessage("invalid user address".wrapErr())
+  }
+  let baseAssetId = baseAssetIdStr.parseAssetId()
+  strict shareAssetId = baseAssetId.keyShareAssetId()
+    .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
+  strict period = baseAssetId.keyPeriod().getInteger().valueOrErrorMessage("invalid period".wrapErr())
+  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
+  strict checkAmountToConvert = userShareAssetAmountToConvert > 0 || "nothing to claim".throwErr()
+  let userShareAssetAmountToConvertPeriod = baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
+  strict checkPeriod = period > userShareAssetAmountToConvertPeriod || "invalid period".throwErr()
+  let price = baseAssetId.keyPricePeriodGet(userShareAssetAmountToConvertPeriod).getBinary().valueOrErrorMessage("failed to get price".wrapErr()).toBigInt()
+  # claim base asset with the last price (base asset / share asset ?) 
+  let baseAssetAmount = fraction(userShareAssetAmountToConvert.toBigInt(), price, scale18BigInt).toInt()
+
+  ([
+    IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), 0),
+    DeleteEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress)),
+    ScriptTransfer(userAddress, baseAssetAmount, baseAssetId),
+    IntegerEntry(
+      baseAssetId.keyHistoryEntry("claimBaseAsset", period, userAddress, i.transactionId),
+      baseAssetAmount
+    )
+  ], unit)
+}
+
+@Callable(i)
+func finalize(baseAssetIdStr: String) = {
+  strict checks = [
+    i.shutdownCheck()
+  ]
+  let baseAssetId = baseAssetIdStr.parseAssetId()
+  strict shareAssetId = baseAssetId.keyShareAssetId()
+    .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
+  let shareAssetInfo = shareAssetId.assetInfo().valueOrErrorMessage("invalid share asset id".wrapErr())
+  strict period = baseAssetId.keyPeriod().getInteger().valueOrErrorMessage("invalid period".wrapErr())
+  let periodStartHeightOption = baseAssetId.keyPeriodStartHeight(period).getInteger()
+  strict checkDelay = if (periodStartHeightOption == unit) then unit else {
+    let delay = height - periodStartHeightOption.value()
+    let blocksToWait = max([0, minDelay - delay])
+    if (blocksToWait == 0) then unit else {
+      ["finalization will be possible in ", blocksToWait.toString(), " blocks"].makeString("").throwErr()
+    }
+  }
+
+  let (poolAddress, lpAssetId) = baseAssetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
+
+  # call gwx_reward.claimReward? rewards are burned
+  # call staking.claimWx
+  strict stakingReward = stakingContract.invoke(
+    "claimWxDoNotThrow",
+    [lpAssetId.assetIdToString()],
+    []
+  ).as[Int].valueOrErrorMessage("invalid claimWx result".wrapErr())
+
+  # put requests
+  let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
+  # get requests
+  let shareAssetAmountToConvert = baseAssetId.keyShareAssetAmountToConvert().getInteger().valueOrElse(0)
+
+  strict checkFinalizationIsRequired = {
+    let isFinalizationRequired = stakingReward > 0 || baseAssetAmountToConvert > 0 || shareAssetAmountToConvert > 0
+    if (isFinalizationRequired) then true else "nothing to finalize".throwErr()
+  }
+
+  strict useStakingReward = if (stakingReward > 0) then {
+    let lockPart = fraction(stakingReward, lockFraction, lockFractionMultiplier)
+    let convertPart = stakingReward - lockPart
+
+    # 50% lock in boosting
+    let r = boostingContract.invoke("userMaxDurationREADONLY", [this.toString()], [])
+    strict lock = if (lockPart > 0) then {
+      match r {
+        case (function: String, duration: Int) => {
+          # check function?
+          if (lockPart > 0) then {
+            boostingContract.invoke(function, [duration], [AttachedPayment(wxAssetId, lockPart)])
+          } else unit
+        }
+        case _ => "invalid lock params".throwErr()
+      }
+    } else unit
+
+    # 50% convert to base asset (or usdn?)
+    # let (wxUsdnPoolAddress, wxUsdnLpAssetId) = wxAssetId.getPoolInfo().valueOrErrorMessage("can't find wx/usdn pool".wrapErr())
+    strict convertedAmount = if (convertPart > 0) then {
+      let inAssetId = wxAssetId
+      let minimumToReceive = 0
+      let outAssetIdStr = usdtAssetId.assetIdToString()
+      let targetAddress = this.toString()
+      swapContract.invoke(
+        "swap",
+        [minimumToReceive, outAssetIdStr, targetAddress],
+        [AttachedPayment(inAssetId, convertPart)]
+      ).as[Int].valueOrErrorMessage("invalid swap result".wrapErr())
+    } else 0
+
+    # putOneTkn and stake
+    strict lpAssetAmount = if (convertedAmount > 0) then {
+      let minOutAmount = 0
+      let autoStake = true
+      poolAddress.invoke(
+        "putOneTknV2",
+        [minOutAmount, autoStake],
+        [AttachedPayment(usdtAssetId, convertedAmount)]
+      ).as[Int].valueOrErrorMessage("invalid putOneTknV2 result".wrapErr())
+    } else 0
+
+    lpAssetAmount
+  } else unit
+
+  # convert shareAssetAmountToConvert to lp tokens using price (lp asset / share asset)
+  strict getActions = if (shareAssetAmountToConvert > 0) then {
+    strict price = calcPrice(lpAssetId, shareAssetId)
+    let unstakeAmount = fraction(shareAssetAmountToConvert.toBigInt(), price, scale18BigInt, FLOOR).toInt()
+    # unstake and getOneTkn, calculate price for claimBaseAsset (base asset / share asset)
+    strict baseAssetAmount = {
+      let outAssetId = baseAssetId
+      let minOutAmount = 0
+      poolAddress.invoke(
+        "unstakeAndGetOneTknV2",
+        [
+          unstakeAmount,
+          outAssetId.assetIdToString(),
+          minOutAmount
+        ],
+        []
+      ).as[Int].valueOrErrorMessage("invalid unstakeAndGetOneTknV2 result".wrapErr())
+    }
+    strict shareAssetBurn = if (shareAssetInfo.issuer == this) then {
+      this.invoke("burn", [shareAssetId, shareAssetAmountToConvert], [])
+    } else "invalid share asset issuer".throwErr()
+    let priceGet = fraction(baseAssetAmount.toBigInt(), scale18BigInt, shareAssetAmountToConvert.toBigInt(), FLOOR)
+    let priceGetUpdateActions = [
+      BinaryEntry(baseAssetId.keyPricePeriodGet(period), priceGet.toBytes()),
+      StringEntry(baseAssetId.keyPriceGetHistory(), priceGet.toString())
+    ]
+
+    priceGetUpdateActions
+  } else []
+
+  # putOneTkn and stake baseAssetAmountToConvert
+  strict putActions = if (baseAssetAmountToConvert > 0) then {
+    strict lpAssetAmount = {
+      let minOutAmount = 0
+      let autoStake = true
+      poolAddress.invoke(
+        "putOneTknV2",
+        [minOutAmount, autoStake],
+        [AttachedPayment(baseAssetId, baseAssetAmountToConvert)]
+      ).as[Int].valueOrErrorMessage("invalid putOneTknV2 result".wrapErr())
+    }
+    # convert lpAsset amount to share asset amount using price (lp asset / share asset)
+    strict price = calcPrice(lpAssetId, shareAssetId)
+    let shareAssetAmount = fraction(lpAssetAmount.toBigInt(), scale18BigInt, price, FLOOR).toInt()
+    strict shareAssetReissue = if (shareAssetInfo.issuer == this) then {
+      this.invoke("emit", [shareAssetId, shareAssetAmount], [])
+    } else "invalid share asset issuer".throwErr()
+    # save new price for claimShareAsset (base asset / share asset)
+    # if lpAssetAmount == 0 "division by zero" will be thrown
+    let pricePut = fraction(baseAssetAmountToConvert.toBigInt(), scale18BigInt, shareAssetAmount.toBigInt())
+    let pricePutUpdateActions = [
+      BinaryEntry(baseAssetId.keyPricePeriodPut(period), pricePut.toBytes()),
+      StringEntry(baseAssetId.keyPricePutHistory(), pricePut.toString())
+    ]
+    pricePutUpdateActions
+  } else []
+
+  let newPeriod = period + 1
+
+  let lastPrice = calcPrice(lpAssetId, shareAssetId)
+  let actions = [
+    IntegerEntry(baseAssetId.keyPeriod(), newPeriod),
+    IntegerEntry(baseAssetId.keyPeriodStartHeight(newPeriod), height),
+    # reset shareAssetAmountToConvert
+    IntegerEntry(baseAssetId.keyShareAssetAmountToConvert(), 0),
+    # reset baseAssetAmountToConvert
+    IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), 0),
+    BinaryEntry(baseAssetId.keyPricePeriod(period), lastPrice.toBytes()),
+    StringEntry(baseAssetId.keyPriceHistory(), lastPrice.toString())
+  ] ++ putActions ++ getActions
+
+  (actions, lastPrice.toBytes())
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}

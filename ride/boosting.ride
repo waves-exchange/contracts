@@ -7,11 +7,15 @@
 # * "%s__nextUserNum": Int
 # * "%s%s__config__factoryAddress": String
 # * "%s__config": String ("%s%d%d%d__<assetId__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>")
+# * "%s__lpStakingPoolsContract": String
 
 let SEP = "__"
 let SCALE8  = 8
 let MULT8   = 100000000
 let POOLWEIGHTMULT = MULT8
+
+func wrapErr(msg: String) = ["boosting.ride:", msg].makeString(" ")
+func throwErr(msg: String) = msg.wrapErr().throw()
 
 # getStringOrFail
 func strf(address: Address, key: String)   = address.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
@@ -219,6 +223,9 @@ let factoryCfg        = factoryContract.readFactoryCfgOrFail()
 let emissionContract  = factoryCfg.getEmissionAddressOrFail()
 let stakingContract   = factoryCfg.getStakingAddressOrFail()
 let gwxRewardContract = factoryCfg.getGwxRewardAddressOrFail()
+let lpStakingPoolsContract = ["%s", "lpStakingPoolsContract"].makeString(SEP)
+  .getString().valueOrErrorMessage("lp_staking_pools contract address is undefined".wrapErr())
+  .addressFromString().valueOrErrorMessage("invalid lp_staking_pools contract address".wrapErr())
 
 func getTotalCachedGwx(correct: Boolean) = {
   let keyVotingEmissionContract = ["%s", "votingEmissionContract"].makeString(SEP)
@@ -371,7 +378,7 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   let udh0 = max([gwxRewardEmissionStartHeight - uLastH, 0])
   let udh1 = h - uLastH - udh0
 
-  if (uLastH < 0 || udh1 < 0 || abs((udh0 + udh1) - udh) >= 1) then throw("invalid udh calc: udh=" + udh.toString() + " uLastH=" + uLastH.toString() + " udh0=" + udh0.toString() + " udh1=" + udh1.toString()) else
+  if (uLastH < 0 || udh1 < 0 || abs((udh0 + udh1) - udh) >= 1) then throw("invalid udh calc: udh=" + udh.toString() + " uLastH=" + uLastH.toString() + " udh0=" + udh0.toString() + " udh1=" + udh1.toString() + " lpAssetId=" + lpAssetIdStr + " userAddress=" + userAddressStr) else
   if (userBoostEmissionIntegral < 0) then throw("wrong calculations") else
 
   let userMaxBoostIntegralKEY = keyUserMaxBoostINTEGRAL(userNumStr)
@@ -456,7 +463,7 @@ func lockActions(i: Invocation, duration: Int) = {
 
   let userAmountKEY   = keyLockParamUserAmount(userNumStr)
 
-  if (pmtAmount < minLockAmount) then throw("amount is less then minLockAmount=" + minLockAmount.toString()) else
+  if ((pmtAmount < minLockAmount) && i.caller != lpStakingPoolsContract) then throw("amount is less then minLockAmount=" + minLockAmount.toString()) else
   if (duration < minLockDuration) then throw("passed duration is less then minLockDuration=" + minLockDuration.toString()) else
   if (duration > maxLockDuration) then throw("passed duration is greater then maxLockDuration=" + maxLockDuration.toString()) else
   if (userIsExisting && (this.iof(startBlockKEY) + this.iof(durationKEY)) >= lockStart) then throw("there is an active lock - consider to use increaseLock") else
@@ -666,6 +673,26 @@ func gwxUserInfoREADONLY(userAddress: String) = {
     let gwxAmount = calcCurrentGwxAmount(userAddress)
 
     ([], [gwxAmount])
+}
+
+# for lp_staking_pools
+@Callable(i)
+func userMaxDurationREADONLY(userAddressStr: String) = {
+  let cfgArray = readConfigArrayOrFail()
+  let maxLockDuration = cfgArray[IdxCfgMaxLockDuration].parseIntValue()
+
+  let userRecordOption = this.getString(userAddressStr.keyLockParamsRecord())
+  if (userRecordOption == unit) then ([], ("lock", maxLockDuration)) else {
+    let userRecordArray = userRecordOption.value().split(SEP)
+    let lockStart = userRecordArray[IdxLockStart].parseIntValue()
+    let lockDuration = userRecordArray[IdxLockDuration].parseIntValue()
+    let lockEnd = lockStart + lockDuration
+    let remainingDuration = max([lockEnd - height, 0])
+
+    let maxDeltaDuration = maxLockDuration - remainingDuration
+
+    ([], ("increaseLock", maxDeltaDuration))
+  }
 }
 
 @Callable(i)

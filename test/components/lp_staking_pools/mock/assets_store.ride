@@ -1,0 +1,13 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+@Callable(i)
+func createOrUpdate(assetId: String, logo: String, verified: Boolean) = {
+  (nil, unit)
+}
+
+@Callable(i)
+func addLabel(assetId: String, label: String) = {
+  (nil, unit)
+}
