@@ -19,17 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"io"
-	"math"
-	"net/http"
-	"os"
-	"os/exec"
-	"path"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/waves-exchange/contracts/deployer/pkg/branch"
