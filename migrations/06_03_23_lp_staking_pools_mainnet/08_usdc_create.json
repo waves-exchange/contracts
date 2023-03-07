@@ -16,15 +16,15 @@
         },
         {
             "type": "string",
-            "value": "CrjhbC9gRezwvBZ1XwPQqRwx4BWzoyMHGFNUVdn22ep6"
-        },
-        {
-            "type": "string",
             "value": ""
         },
         {
             "type": "string",
-            "value": ""
+            "value": "usdCoin"
+        },
+        {
+            "type": "string",
+            "value": "usdcToken"
         },
         {
             "type": "string",
