@@ -1533,7 +1533,14 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
   let lpAssetId = cfgLpAssetId
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
 
-  strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), unstakeAmount], [])
+  let userAddress = i.caller
+  let lpAssetRecipientAddress = this
+  strict unstakeInv = staking.invoke("unstakeINTERNAL", [
+    lpAssetId,
+    unstakeAmount,
+    userAddress.bytes,
+    lpAssetRecipientAddress.bytes
+  ], [])
   let (state, totalAmount) = getOneTknV2Internal(
     outAssetId,
     minOutAmount,

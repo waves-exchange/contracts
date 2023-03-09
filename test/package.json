@@ -23,6 +23,7 @@
     "test-boosting": "node_modules/.bin/mocha --parallel --require components/boosting/_hooks.mjs components/boosting",
     "test-otc-multiasset": "node_modules/.bin/mocha --parallel --require components/otc_multiasset/_hooks.mjs components/otc_multiasset",
     "test-ido": "node_modules/.bin/mocha --parallel --require components/ido/_hooks.mjs components/ido",
+    "test-lp-staking-pools": "mocha -r dotenv/config --parallel --require components/lp_staking_pools/_hooks.mjs components/lp_staking_pools",
     "ci-test": "node_modules/.bin/concurrently --max-processes 8 --timings npm:test-*",
     "exchange-test": "mocha -r dotenv/config --parallel --require components/exchange/_hooks.mjs components/exchange",
     "test": "API_NODE_URL=http://localhost:6869 npm run ci-test",
