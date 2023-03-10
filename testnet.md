@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-280-boosting-update**](https://github.com/waves-exchange/contracts/tree/wxdefi-280-boosting-update) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **14:11 10.03.2023** (GMT+4)
+[**wxdefi-280-boosting-update**](https://github.com/waves-exchange/contracts/tree/wxdefi-280-boosting-update) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **14:14 10.03.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
