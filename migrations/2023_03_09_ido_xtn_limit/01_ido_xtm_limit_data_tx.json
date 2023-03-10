@@ -1,0 +1,14 @@
+{
+    "type": 12,
+    "version": 2,
+    "senderPublicKey": "8ZLAVkwG8sZ97hmBdGRkQpYTp5En9xgEYX4PeupqxpFw",
+    "fee": 500000,
+    "proofs": [],
+    "data": [
+        {
+            "key": "%s%s__userPeriodAllowance__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p",
+            "type": "integer",
+            "value": 20000000000
+        }
+    ]
+}
