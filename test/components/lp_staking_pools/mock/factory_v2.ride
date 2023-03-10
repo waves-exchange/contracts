@@ -1,0 +1,25 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let wavesString = "WAVES"
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+@Callable(i)
+func poolInfoREADONLY(amountAssetIdStr: String, priceAssetIdStr: String) = {
+  let poolContractAddressOption = this.getString("poolContractAddress")
+  let lpAssetIdOption = this.getString("lpAssetId")
+  let poolExists = poolContractAddressOption.isDefined() && lpAssetIdOption.isDefined()
+
+  let poolInfo = if (poolExists) then {
+    (
+      poolContractAddressOption.value().addressFromStringValue(),
+      lpAssetIdOption.value().parseAssetId()
+    )
+  } else unit
+
+  ([], poolInfo)
+}

@@ -1,0 +1,13 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+@Callable(i)
+func claimWxDoNotThrow(lpAssetIdStr: String) = {
+  (nil, "totalReward".getInteger().valueOrElse(0))
+}
+
+@Callable(i)
+func stakedByUserREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+  (nil, "stakedByUser".getInteger().valueOrElse(0))
+}

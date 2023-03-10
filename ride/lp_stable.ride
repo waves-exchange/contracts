@@ -960,7 +960,7 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
 }
 
 @Callable(i)
-func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean) = {
+func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
    let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
     let assetOut = this.strf(pa())
     let poolAmountInBalance = getAccBalance(this.strf(aa())).toBigInt() + cleanAmountIn.toBigInt()
@@ -984,9 +984,9 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean) =
   let totalGetRaw = [0, dy.toInt()].max()
 
   let newXp = if (isReverse == false) then {
-    [amId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt(), prId.getAccBalance().toBigInt() - dy]
+    [amId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt(), prId.getAccBalance().toBigInt() - dy]
   } else { 
-    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt()]
+    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt()]
   }
   let newD = newXp.getD()
   strict checkD = newD >= D || makeString(["new D is fewer error", D.toString(), newD.toString()], "__").throw()
@@ -995,7 +995,7 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean) =
 }
 
 @Callable(i)
-func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String) = {
+func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String, feePoolAmount: Int) = {
   let swapContact = invoke(
     fca,
     "getSwapContractREADONLY", 
@@ -1022,7 +1022,6 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   let poolConfig = gpc()
   let amId = poolConfig[idxAmAsId]
   let prId = poolConfig[idxPrAsId]
-  # let xp = [amId.getAccBalance().toBigInt()  - i.payments[0].value().amount.toBigInt(), prId.getAccBalance().toBigInt()]
   let xp = if (isReverse == false) then {
     [amId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt(), prId.getAccBalance().toBigInt()]
   } else { 
@@ -1031,8 +1030,6 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   let D = xp.getD()
   let y = getY(isReverse, D, toBigInt(0))
 
-  # let x = poolAmountInBalance.toBigInt() + cleanAmountIn.toBigInt()
-
   let dy = getAccBalance(assetOut).toBigInt() - y - toBigInt(1) # -1 just in case there were some rounding errors
 
   let totalGetRaw = [0, dy.toInt()].max()
@@ -1040,14 +1037,13 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   strict checkMin = amountOutMin <= totalGetRaw || "Exchange result is fewer coins than expected".throw()
 
   let newXp = if (isReverse == false) then {
-    [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt() - dy]
+    [amId.getAccBalance().toBigInt() + feePoolAmount.toBigInt(), prId.getAccBalance().toBigInt() - dy]
   } else { 
-    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt()]
+    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + feePoolAmount.toBigInt()]
   }
   let newD = newXp.getD()
   strict checkD = newD >= D || "new D is fewer error".throw()
   
-  # [ScriptTransfer(addressTo.addressFromStringValue(), dy.toInt(), assetOut.fromBase58String())]
   (
     [
       ScriptTransfer(addressTo.addressFromStringValue(), totalGetRaw, assetOut.parseAssetId())
@@ -1537,7 +1533,14 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
   let lpAssetId = cfgLpAssetId
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
 
-  strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), unstakeAmount], [])
+  let userAddress = i.caller
+  let lpAssetRecipientAddress = this
+  strict unstakeInv = staking.invoke("unstakeINTERNAL", [
+    lpAssetId,
+    unstakeAmount,
+    userAddress.bytes,
+    lpAssetRecipientAddress.bytes
+  ], [])
   let (state, totalAmount) = getOneTknV2Internal(
     outAssetId,
     minOutAmount,

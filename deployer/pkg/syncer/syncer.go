@@ -8,16 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/rs/zerolog"
-	"github.com/waves-exchange/contracts/deployer/pkg/branch"
-	"github.com/waves-exchange/contracts/deployer/pkg/config"
-	"github.com/waves-exchange/contracts/deployer/pkg/contract"
-	"github.com/wavesplatform/gowaves/pkg/client"
-	"github.com/wavesplatform/gowaves/pkg/crypto"
-	"github.com/wavesplatform/gowaves/pkg/proto"
-	"golang.org/x/crypto/blake2b"
-	"golang.org/x/sync/errgroup"
 	"io"
 	"math"
 	"net/http"
@@ -28,6 +18,17 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/rs/zerolog"
+	"github.com/waves-exchange/contracts/deployer/pkg/branch"
+	"github.com/waves-exchange/contracts/deployer/pkg/config"
+	"github.com/waves-exchange/contracts/deployer/pkg/contract"
+	"github.com/wavesplatform/gowaves/pkg/client"
+	"github.com/wavesplatform/gowaves/pkg/crypto"
+	"github.com/wavesplatform/gowaves/pkg/proto"
+	"golang.org/x/crypto/blake2b"
+	"golang.org/x/sync/errgroup"
 )
 
 type compileCacheMap = map[string]func() (
@@ -38,7 +39,7 @@ type Syncer struct {
 	logger                            zerolog.Logger
 	network                           config.Network
 	networkByte                       proto.Scheme
-	rawClient                         *client.Client
+	rawClient                         *client.Client // TODO: make gowaves client with ratelimit as separate package
 	clientMutex                       *sync.Mutex
 	contractsFolder                   string
 	contractModel                     contract.Model
@@ -105,7 +106,7 @@ func NewSyncer(
 	}
 
 	return &Syncer{
-		logger:                            logger,
+		logger:                            logger.With().Str("pkg", "syncer").Logger(),
 		network:                           network,
 		networkByte:                       networkByte,
 		rawClient:                         cl,
@@ -131,6 +132,16 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	branchTestnet, err := s.branchModel.GetTestnetBranch(ctx)
 	if err != nil {
 		return fmt.Errorf("s.branchModel.GetTestnetBranch: %w", err)
+	}
+
+	contracts, err := s.contractModel.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("s.contractModel.GetAll: %w", err)
+	}
+
+	factory, err := s.contractModel.GetFactory(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("findFactory: %w", err)
 	}
 
 	if s.network == config.Testnet {
@@ -166,21 +177,11 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("os.ReadDir: %w", err)
 	}
 
-	contracts, err := s.contractModel.GetAll(ctx)
-	if err != nil {
-		return fmt.Errorf("s.contractModel.GetAll: %w", err)
-	}
-
 	const (
 		keyAllowedLpScriptHash            = "%s__allowedLpScriptHash"
 		keyAllowedLpStableScriptHash      = "%s__allowedLpStableScriptHash"
 		keyAllowedLpStableAddonScriptHash = "%s__allowedLpStableAddonScriptHash"
 	)
-
-	factory, err := findFactory(contracts)
-	if err != nil {
-		return fmt.Errorf("findFactory: %w", err)
-	}
 
 	mainnetLpHashEmpty, err := s.doHash(
 		ctx,
@@ -731,7 +732,7 @@ func (s *Syncer) doFile(
 					"txs",
 					fmt.Sprintf(
 						"%s_%s.json",
-						stringIndex(uint(iTx)),
+						stringIndex(iTx),
 						strings.ReplaceAll(strings.ReplaceAll(cont.Tag, " ", "_"), "/", "_"),
 					),
 				))
@@ -947,7 +948,7 @@ func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, err
 
 	req, err := http.NewRequestWithContext(
 		ctx, http.MethodGet,
-		s.client().GetOptions().BaseUrl+"/addresses/scriptInfo/"+addr.String(),
+		s.rawClient.GetOptions().BaseUrl+"/addresses/scriptInfo/"+addr.String(),
 		nil,
 	)
 	if err != nil {
@@ -982,7 +983,7 @@ func (s *Syncer) getScript(ctx context.Context, addr proto.Address) (string, err
 }
 
 func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, error) {
-	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.client().GetOptions().BaseUrl)
+	u := fmt.Sprintf("%s/utils/script/compileCode?compact=true", s.rawClient.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
 	if err != nil {
@@ -1010,7 +1011,7 @@ func (s *Syncer) apiCompactScript(c context.Context, body io.Reader) (string, er
 }
 
 func (s *Syncer) apiDecompileScript(c context.Context, body io.Reader) (string, error) {
-	u := fmt.Sprintf("%s/utils/script/decompile", s.client().GetOptions().BaseUrl)
+	u := fmt.Sprintf("%s/utils/script/decompile", s.rawClient.GetOptions().BaseUrl)
 
 	req, err := http.NewRequestWithContext(c, http.MethodPost, u, body)
 	if err != nil {
@@ -1062,20 +1063,6 @@ func timestamp() uint64 {
 	return uint64(time.Now().UnixMilli())
 }
 
-func findFactory(conts []contract.Contract) (contract.Contract, error) {
-	const (
-		factoryRide = "factory_v2.ride"
-		factoryTag  = "factory_v2"
-	)
-
-	for _, cont := range conts {
-		if cont.File == factoryRide && cont.Tag == factoryTag {
-			return cont, nil
-		}
-	}
-	return contract.Contract{}, errors.New("factory not found")
-}
-
 func getPrivateAndPublicKey(seed []byte) (privateKey crypto.SecretKey, publicKey crypto.PublicKey, err error) {
 	n := 0
 	s := seed
@@ -1089,9 +1076,9 @@ func getPrivateAndPublicKey(seed []byte) (privateKey crypto.SecretKey, publicKey
 	return crypto.GenerateKeyPair(accSeed[:])
 }
 
-func stringIndex(i uint) string {
+func stringIndex(i int) string {
 	if i < 10 {
-		return "0" + strconv.Itoa(int(i))
+		return "0" + strconv.Itoa(i)
 	}
-	return strconv.Itoa(int(i))
+	return strconv.Itoa(i)
 }

@@ -1,0 +1,26 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let wavesString = "WAVES"
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+# TODO: handle multiple calls
+@Callable(i)
+func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
+  let emitLpAmt = "putOneTknV2Result".getInteger().valueOrElse(0)
+
+  (nil, emitLpAmt)
+}
+
+@Callable(i)
+func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
+  let totalAmount = "unstakeAndGetOneTknV2Result".getInteger().valueOrElse(0)
+
+  ([
+    ScriptTransfer(i.caller, this.assetBalance(outAssetId.parseAssetId().value()), outAssetId.parseAssetId())
+  ], totalAmount)
+}

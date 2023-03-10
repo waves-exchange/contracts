@@ -17,6 +17,7 @@ let POOLWEIGHTMULT = MULT8
 let GWXvirtualPOOL = "GWXvirtualPOOL"
 let labelPoolsLp = "POOLS_LP"
 let defaultSpread = 2000000 # 2 / 100 * 10^8
+let wavesString = "WAVES"
 
 let decimalsMultPrice = 100 * 1000 * 1000 # 10^8
 let SEP = "__"
@@ -138,7 +139,9 @@ func keyOutFeeDefault()
 func getStringOrFail(key: String)   = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}
 func getBooleanOrFail(key: String)  = {this.getBoolean(key).valueOrErrorMessage("No data for this.key=" + key)}
 func getIntOrFail(key: String)      = {this.getInteger(key).valueOrErrorMessage("No data for this.key=" + key)}
-
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
 #------------------------
 # CONTRACT FUNCTIONS
 #------------------------
@@ -756,7 +759,7 @@ func onVerificationLoss(assetId: String) = {
     unit
     
   }
-  strict actions = FOLD<1>(priceAssets, unit, cb)
+  strict actions = FOLD<2>(priceAssets, unit, cb)
 
   (nil, unit)
 }
@@ -784,12 +787,39 @@ func getOutFeeREADONLY(poolAddress: String) = {
 }
 
 @Callable(i)
+func poolInfoREADONLY(amountAssetIdStr: String, priceAssetIdStr: String) = {
+  let amountAssetInternalIdOption = this.getInteger(amountAssetIdStr.keyMappingsBaseAsset2internalId())
+  let priceAssetInternalIdOption = this.getInteger(priceAssetIdStr.keyMappingsBaseAsset2internalId())
+  let poolContractAddressOption = this.getString(keyMappingPoolAssetsToPoolContractAddress(amountAssetInternalIdOption.value(), priceAssetInternalIdOption.value()))
+  let lpAssetIdOption = this.getString(poolContractAddressOption.value().keyMappingPoolContractToLPAsset())
+  let poolExists = amountAssetInternalIdOption.isDefined() && priceAssetInternalIdOption.isDefined() && poolContractAddressOption.isDefined()
+
+  let poolInfo = if (poolExists) then {
+    (
+      poolContractAddressOption.value().addressFromStringValue(),
+      lpAssetIdOption.value().parseAssetId()
+    )
+  } else unit
+
+  ([], poolInfo)
+}
+
+@Callable(i)
 func getPoolStatusREADONLY(poolAddress: String) = {
   let poolAssets = keyMappingPoolContractAddressToPoolAssets(poolAddress).getStringOrFail().split(SEP)
   let amountAssetInternal = poolAssets[1]
   let priceAssetInternal = poolAssets[2]
   let cfg = keyPoolConfig(amountAssetInternal, priceAssetInternal).getStringOrFail().split(SEP)
   ([], cfg[idxPoolStatus].parseIntValue())
+}
+
+@Callable(i)
+func getPoolConfigREADONLY(poolAddress: String) = {
+  let poolAssets = keyMappingPoolContractAddressToPoolAssets(poolAddress).getStringOrFail().split(SEP)
+  let amountAssetInternal = poolAssets[1]
+  let priceAssetInternal = poolAssets[2]
+  let cfg = keyPoolConfig(amountAssetInternal, priceAssetInternal).getStringOrFail().split(SEP)
+  ([], cfg)
 }
 
 @Callable(i)

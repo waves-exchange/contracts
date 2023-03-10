@@ -106,9 +106,10 @@ describe('User Pools - Create', /** @this {MochaSuiteModified} */() => {
     const { stateChanges } = await api.transactions.fetchInfo(createInvokeTx.id);
     expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
       .to.deep.include.members([
+        [address(this.accounts.factory, chainId), 'poolExistsREADONLY'],
         [address(this.accounts.emission, chainId), 'burn'],
       ]);
-    expect(stateChanges.invokes[0].payment).to.deep.include({
+    expect(stateChanges.invokes[1].payment).to.deep.include({
       assetId: this.wxAssetId,
       amount: 1e3,
     });

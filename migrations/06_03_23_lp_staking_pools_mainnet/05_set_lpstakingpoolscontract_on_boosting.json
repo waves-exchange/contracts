@@ -1,0 +1,16 @@
+{
+    "data": [
+      {
+        "type": "string",
+        "value": "3PAhxTWbkftrrwmRxSGCrr8pQCr5quc6FV1",
+        "key": "%s__lpStakingPoolsContract"
+      }
+    ],
+    "version": 2,
+    "type": 12,
+    "chainId": 87,
+    "fee": 500000,
+    "proofs": [],
+    "timestamp": 0,
+    "senderPublicKey": "6PdA345SW1zresPEKuWiLPsh9Ku14mFDW6cZtpCQrp3E"
+}

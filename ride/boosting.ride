@@ -7,6 +7,7 @@
 # * "%s__nextUserNum": Int
 # * "%s%s__config__factoryAddress": String
 # * "%s__config": String ("%s%d%d%d__<assetId__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>")
+# * "%s__lpStakingPoolsContract": String
 
 let SEP = "__"
 let SCALE8  = 8
@@ -224,6 +225,9 @@ let factoryCfg        = factoryContract.readFactoryCfgOrFail()
 let emissionContract  = factoryCfg.getEmissionAddressOrFail()
 let stakingContract   = factoryCfg.getStakingAddressOrFail()
 let gwxRewardContract = factoryCfg.getGwxRewardAddressOrFail()
+let lpStakingPoolsContract = ["%s", "lpStakingPoolsContract"].makeString(SEP)
+  .getString().valueOrErrorMessage("lp_staking_pools contract address is undefined".wrapErr())
+  .addressFromString().valueOrErrorMessage("invalid lp_staking_pools contract address".wrapErr())
 
 let keyVotingEmissionContract = ["%s", "votingEmissionContract"].makeString(SEP)
 let votingEmissionContract = factoryContract.getStringValue(keyVotingEmissionContract).addressFromStringValue()
@@ -629,7 +633,7 @@ func lockActions(i: Invocation, duration: Int) = {
 
   let userAmountKEY   = keyLockParamUserAmount(userNumStr)
 
-  if (pmtAmount < minLockAmount) then throw("amount is less then minLockAmount=" + minLockAmount.toString()) else
+  if ((pmtAmount < minLockAmount) && i.caller != lpStakingPoolsContract) then throw("amount is less then minLockAmount=" + minLockAmount.toString()) else
   if (duration < minLockDuration) then throw("passed duration is less then minLockDuration=" + minLockDuration.toString()) else
   if (duration > maxLockDuration) then throw("passed duration is greater then maxLockDuration=" + maxLockDuration.toString()) else
   if (userIsExisting && (this.iof(startBlockKEY) + this.iof(durationKEY)) >= lockStart) then throw("there is an active lock - consider to use increaseLock") else
@@ -793,6 +797,26 @@ func gwxUserInfoREADONLY(userAddress: String) = {
     let gwxAmount = calcCurrentGwxAmount(userAddress)
 
     ([], [gwxAmount])
+}
+
+# for lp_staking_pools
+@Callable(i)
+func userMaxDurationREADONLY(userAddressStr: String) = {
+  let cfgArray = readConfigArrayOrFail()
+  let maxLockDuration = cfgArray[IdxCfgMaxLockDuration].parseIntValue()
+
+  let userRecordOption = this.getString(userAddressStr.keyLockParamsRecord())
+  if (userRecordOption == unit) then ([], ("lock", maxLockDuration)) else {
+    let userRecordArray = userRecordOption.value().split(SEP)
+    let lockStart = userRecordArray[IdxLockStart].parseIntValue()
+    let lockDuration = userRecordArray[IdxLockDuration].parseIntValue()
+    let lockEnd = lockStart + lockDuration
+    let remainingDuration = max([lockEnd - height, 0])
+
+    let maxDeltaDuration = maxLockDuration - remainingDuration
+
+    ([], ("increaseLock", maxDeltaDuration))
+  }
 }
 
 @Callable(i)

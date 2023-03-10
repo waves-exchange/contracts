@@ -42,3 +42,8 @@ func deleteWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
 func modifyWeight(lpAssetId: String, share: Int) = {
   ([], unit)
 }
+
+@Callable(i)
+func poolExistsREADONLY(amountAssetId: String, priceAssetId: String) = {
+  ([], true)
+}

@@ -1,5 +1,5 @@
 # Waves Exchange contracts
 
-`main` branch deployed to `mainnet`
-
-See [Wiki](https://github.com/waves-exchange/contracts/wiki) for details.
+## Environments
+- [Testnet](https://github.com/waves-exchange/contracts/blob/_docs/testnet.md)
+- [Mainnet](https://github.com/waves-exchange/contracts/blob/_docs/mainnet.md)
