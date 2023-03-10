@@ -1,0 +1,14 @@
+{
+    "type": 12,
+    "version": 2,
+    "senderPublicKey": "GERKRN49XMxhcF1QrLqUAazuipfaJc7KQGq2jChkA4pb",
+    "fee": 500000,
+    "proofs": [],
+    "data": [
+        {
+            "key": "%s__protocolFee",
+            "type": "integer",
+            "value": 200000
+        }
+    ]
+}
