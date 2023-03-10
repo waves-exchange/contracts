@@ -65,6 +65,7 @@ jobs:
           type: now
           from_branch: main
           target_branch: ${{ github.ref_name }}
+          message: Auto-merge 'main' -> '${{ github.ref_name }}'
           github_token: ${{ github.token }}
       - name: Deploy changed contracts to testnet and update docs
         run: |
