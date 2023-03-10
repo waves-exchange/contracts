@@ -59,7 +59,7 @@ jobs:
           keepGit: true
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Merge 'main' -> '${{ github.ref_name }}' branch
+      - name: Merge 'main' to '${{ github.ref_name }}' branch
         uses: devmasx/merge-branch@master
         with:
           type: now
@@ -77,7 +77,7 @@ jobs:
           BRANCH: _docs
           FOLDER: docs
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MESSAGE: update docs from '${{ github.ref_name }}' branch
+          MESSAGE: Update docs from '${{ github.ref_name }}' branch
       - name: Clean repo
         uses: AutoModality/action-clean@v1
         if: always()
