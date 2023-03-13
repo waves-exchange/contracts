@@ -134,4 +134,17 @@ export const factory = {
 
     return { lpAssetId };
   },
+
+  addPoolWeight: async ({ accountsLp, accountsFactoryV2, poolWeight }) => {
+    const setPoolWeightTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: `%s%s__poolWeight__${address(accountsLp, chainId)}`,
+        type: 'integer',
+        value: poolWeight,
+      }],
+      chainId,
+    }, accountsFactoryV2);
+    await broadcastAndWait(setPoolWeightTx);
+  },
 };

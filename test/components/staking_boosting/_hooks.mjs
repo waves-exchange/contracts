@@ -161,6 +161,12 @@ export const mochaHooks = {
       accountsFeeCollector: this.accounts.feeCollector.seed,
     }));
 
+    await factory.addPoolWeight({
+      accountsLp: this.accounts.lp.seed,
+      accountsFactoryV2: this.accounts.factory.seed,
+      poolWeight: 1000,
+    });
+
     const accountsInfo = Object.entries(this.accounts)
       .map(([name, { seed, addr }]) => [name, seed, privateKey(seed), addr]);
     console.log(table(accountsInfo, {

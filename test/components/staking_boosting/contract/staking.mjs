@@ -59,4 +59,26 @@ export const staking = {
     );
     return broadcastAndWait(invokeTx);
   },
+
+  onModifyWeight: async ({
+    dApp,
+    caller,
+    lpAssetIdStr,
+    poolAddressStr,
+  }) => {
+    const invokeTx = invokeScript({
+      dApp,
+      call: {
+        function: 'onModifyWeight',
+        args: [
+          { type: 'string', value: lpAssetIdStr },
+          { type: 'string', value: poolAddressStr },
+        ],
+      },
+      payment: [],
+      additionalFee: 4e5,
+      chainId,
+    }, caller);
+    return broadcastAndWait(invokeTx);
+  },
 };
