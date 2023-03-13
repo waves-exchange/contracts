@@ -227,10 +227,10 @@ let lpStakingPoolsContract = ["%s", "lpStakingPoolsContract"].makeString(SEP)
   .getString().valueOrErrorMessage("lp_staking_pools contract address is undefined".wrapErr())
   .addressFromString().valueOrErrorMessage("invalid lp_staking_pools contract address".wrapErr())
 
-func getTotalCachedGwx(correct: Boolean) = {
-  let keyVotingEmissionContract = ["%s", "votingEmissionContract"].makeString(SEP)
-  let votingEmissionContract = factoryContract.getStringValue(keyVotingEmissionContract).addressFromStringValue()
+let keyVotingEmissionContract = ["%s", "votingEmissionContract"].makeString(SEP)
+let votingEmissionContract = factoryContract.getStringValue(keyVotingEmissionContract).addressFromStringValue()
 
+func getTotalCachedGwx(correct: Boolean) = {
   let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(SEP)
   let currentEpochUi = votingEmissionContract.getIntegerValue(keyCurrentEpochUi)
 
@@ -333,6 +333,122 @@ func calcUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
 
 func calcCurrentGwxAmount(userAddress: String) = {
   userAddress.calcUserGwxAmountAtHeight(height)
+}
+
+func getVotingEmissionEpochInfo() = {
+  let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(SEP)
+  let (currentEpochUi, lastFinalizedEpoch) = {
+    let currentEpochUi = votingEmissionContract.getInteger(keyCurrentEpochUi).value()
+    let lastFinalizedEpoch = currentEpochUi - 1
+    if (lastFinalizedEpoch < 0) then "invalid epoch".throwErr() else (currentEpochUi, lastFinalizedEpoch)
+  }
+
+  func keyStartHeightByEpoch(epoch: Int) = ["%s%d", "startHeight", epoch.toString()].makeString(SEP)
+
+  let currentEpochStartHeight = votingEmissionContract.getInteger(currentEpochUi.keyStartHeightByEpoch()).value()
+
+  (lastFinalizedEpoch, currentEpochStartHeight)
+}
+
+# User vote
+# Voting emission
+func keyVote(amountAssetId: String, priceAssetId: String, address: Address, epoch: Int) = {
+  ["%s%s%s%s%d", "vote", amountAssetId, priceAssetId, address.toString(), epoch.toString()].makeString(SEP)
+}
+
+# Initial value is stored on voting emission account
+# Following values are stored on this account
+func keyVotingResultStaked(lpAssetIdStr: String, epoch: Int) = {
+  ["%s%s%d", "votingResultStaked", lpAssetIdStr, epoch.toString()].makeString(SEP)
+}
+
+# this
+# We need to save integral to handle changing value
+func keyVotingResultStakedIntegral(lpAssetIdStr: String, epoch: Int) = {
+  ["%s%s%d", "votingResultStakedIntegral", lpAssetIdStr, epoch.toString()].makeString(SEP)
+}
+# Height at which voting result staked was last changed
+func keyVotingResultStakedLastUpdateHeight(lpAssetIdStr: String, epoch: Int) = {
+  ["%s%s%d", "votingResultStakedIntegralLastUpdateHeight", lpAssetIdStr, epoch.toString()].makeString(SEP)
+}
+
+func keyVoteStakedIntegral(lpAssetIdStr: String, address: Address, epoch: Int) = {
+  ["%s%s%s%d", "voteStakedIntegral", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
+}
+func keyVoteStakedLastUpdateHeight(lpAssetIdStr: String, address: Address, epoch: Int) = {
+  ["%s%s%s%d", "voteStakedIntegralLastUpdateHeight", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
+}
+
+func getVotingResultStaked(lpAssetIdStr: String) = {
+  let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
+  let votingResultStakedStart = votingEmissionContract.getInteger(lpAssetIdStr.keyVotingResultStaked(lastFinalizedEpoch)).valueOrElse(0)
+  let votingResultStaked = this.getInteger(lpAssetIdStr.keyVotingResultStaked(lastFinalizedEpoch)).valueOrElse(votingResultStakedStart)
+
+  votingResultStaked
+}
+
+# Voting result staked is changing only when staked vote is changing
+# So this function is called in refreshVoteStakedIntegral
+func refreshVotingResultStakedIntegral(
+  lpAssetIdStr: String,
+  stakedVoteDelta: Int
+) = {
+  let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
+  let votingResultStaked = lpAssetIdStr.getVotingResultStaked()
+  let votingResultStakedNew = votingResultStaked + stakedVoteDelta
+  let votingResultStakedIntegralKey = lpAssetIdStr.keyVotingResultStakedIntegral(lastFinalizedEpoch)
+  let votingResultStakedIntegralPrev = this.getInteger(votingResultStakedIntegralKey).valueOrElse(0)
+  let votingResultLastUpdateHeightKey = lpAssetIdStr.keyVotingResultStakedLastUpdateHeight(lastFinalizedEpoch)
+  let votingResultStakedLastUpdateHeight = this.getInteger(votingResultLastUpdateHeightKey).valueOrElse(currentEpochStartHeight)
+  let votingResultStakedIntegralDh = height - votingResultStakedLastUpdateHeight
+  let votingResultStakedIntegral = votingResultStakedIntegralDh * votingResultStaked + votingResultStakedIntegralPrev
+
+  (
+    [
+      IntegerEntry(lpAssetIdStr.keyVotingResultStaked(lastFinalizedEpoch), votingResultStakedNew),
+      IntegerEntry(votingResultLastUpdateHeightKey, height),
+      IntegerEntry(votingResultStakedIntegralKey, votingResultStakedIntegral)
+    ],
+    votingResultStakedIntegral
+  )
+}
+
+func refreshVoteStakedIntegral(
+  lpAssetIdStr: String,
+  userAddressStr: String,
+  edge: Boolean # true: add, false: remove
+) = {
+  let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
+  let userAddress = userAddressStr.addressFromStringValue()
+
+  let idxAmountAssetId = 4
+  let idxPriceAssetId = 5
+  let poolCfg = factoryContract.invoke("getPoolConfigByLpAssetId", [lpAssetIdStr], []).exactAs[List[Any]]
+  let amountAssetId = poolCfg[idxAmountAssetId].exactAs[String]
+  let priceAssetId = poolCfg[idxPriceAssetId].exactAs[String]
+
+  let userVote = votingEmissionContract.getInteger(keyVote(amountAssetId, priceAssetId, userAddress, lastFinalizedEpoch)).valueOrElse(0)
+
+  let actions = if (userVote == 0) then [] else {
+    let stakedVoteDelta = if (edge) then userVote else -userVote
+    let (votingResultActions, votingResultStakedIntegral) = lpAssetIdStr.refreshVotingResultStakedIntegral(stakedVoteDelta)
+
+    let userVoteStaked = if (edge) then 0 else userVote 
+    let userVoteStakedIntegralKey = lpAssetIdStr.keyVoteStakedIntegral(userAddress, lastFinalizedEpoch)
+    let userVoteStakedIntegralPrev = this.getInteger(userVoteStakedIntegralKey).valueOrElse(0)
+    let userVoteStakedLastUpdateHeightKey = lpAssetIdStr.keyVoteStakedLastUpdateHeight(userAddress, lastFinalizedEpoch)
+    let userVoteStakedLastUpdateHeight = this.getInteger(userVoteStakedLastUpdateHeightKey).valueOrElse(currentEpochStartHeight)
+    let userVoteStakedIntegralDh = height - userVoteStakedLastUpdateHeight
+    let userVoteStakedIntegral = userVoteStakedIntegralDh * userVoteStaked + userVoteStakedIntegralPrev
+    let voteActions = [
+      IntegerEntry(userVoteStakedLastUpdateHeightKey, height),
+      IntegerEntry(userVoteStakedIntegralKey, userVoteStakedIntegral)
+    ]
+
+    votingResultActions ++ voteActions
+  }
+
+  actions
 }
 
 func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly: Boolean) = {
@@ -705,6 +821,29 @@ func getUserGwxAmountAtHeightREADONLY(userAddress: String, targetHeight: Int) = 
 @Callable(i)
 func getTotalCachedGwxREADONLY() = {
   ([], getTotalCachedGwx(true))
+}
+
+# Staked vote = 0 if staked amount = 0
+# Staked vote = last finalized vote if staked amount ≥ 0
+# So, stakedVote = [stakedAmount ≥ 0] * lastFinalizedVote
+#                  └ this is the Iverson bracket, not the array's one
+# Staked vote updates when staked amount goes from zero to non-zero or vice versa
+# Staked vote integral and voting result integral should be updated when it happens
+#                       ╭­ edge = true (rising)
+# staked amount > 0:    ┌───┐
+# staked amount = 0: ───┘   └───
+#                           ╰ edge = false (falling)
+@Callable(i)
+func onStakedVoteUpdate(lpAssetIdStr: String, userAddressStr: String, edge: Boolean) = {
+  strict checkCaller = i.caller == stakingContract || i.mustManager()
+  let actions = lpAssetIdStr.refreshVoteStakedIntegral(userAddressStr, edge)
+
+  (actions, unit)
+}
+
+@Callable(i)
+func getVotingResultStakedREADONLY(lpAssetIdStr: String) = {
+  ([], lpAssetIdStr.getVotingResultStaked())
 }
 
 @Callable(i)
