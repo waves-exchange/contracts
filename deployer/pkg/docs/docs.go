@@ -87,7 +87,7 @@ func (d *Docs) Update(ctx context.Context) error {
 		return fmt.Errorf("d.update: %w", err)
 	}
 
-	d.logger.Info().Msg("docs updated locally, will commit only on non-main branch")
+	d.logger.Info().Msg("docs updated locally, will commit to '_docs' branch")
 	return nil
 }
 
