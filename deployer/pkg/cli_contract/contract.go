@@ -161,7 +161,7 @@ func (c Contract) selfTransferFee(ctx context.Context) error {
 
 func (c Contract) setData(ctx context.Context) error {
 	tx := proto.NewUnsignedDataWithProofs(
-		c.networkByte,
+		2,
 		crypto.GeneratePublicKey(c.basePrv),
 		500000,
 		tools.Timestamp(),
@@ -228,7 +228,7 @@ func (c Contract) setScript(ctx context.Context) error {
 		c.networkByte,
 		c.client,
 		proto.NewUnsignedSetScriptWithProofs(
-			1,
+			2,
 			c.networkByte,
 			crypto.GeneratePublicKey(c.basePrv),
 			scriptBytes,
