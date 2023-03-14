@@ -1,7 +1,7 @@
 {-# STDLIB_VERSION 5 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
-let tttttttttt = 1
+
 let SEP = "__"
 let EMPTY = ""
 let statusVerified = 2
