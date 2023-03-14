@@ -423,7 +423,7 @@ func refreshVoteStakedIntegral(
 
   let idxAmountAssetId = 4
   let idxPriceAssetId = 5
-  let poolCfg = factoryContract.invoke("getPoolConfigByLpAssetId", [lpAssetIdStr], []).exactAs[List[Any]]
+  let poolCfg = factoryContract.invoke("getPoolConfigByLpAssetIdREADONLY", [lpAssetIdStr], []).exactAs[List[Any]]
   let amountAssetId = poolCfg[idxAmountAssetId].exactAs[String]
   let priceAssetId = poolCfg[idxPriceAssetId].exactAs[String]
 
