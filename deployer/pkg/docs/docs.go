@@ -6,6 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"path"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/rs/zerolog"
 	"github.com/waves-exchange/contracts/deployer/pkg/branch"
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
@@ -15,12 +22,6 @@ import (
 	"github.com/wavesplatform/gowaves/pkg/proto"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"net/http"
-	"os"
-	"path"
-	"sort"
-	"strings"
-	"time"
 )
 
 type cfg struct {
@@ -120,14 +121,14 @@ func (d *Docs) update(
 			return fmt.Errorf("d.testnet.contractsModel.GetAll: %w", err)
 		}
 
-		b, err := d.testnet.branchModel.GetTestnetBranch(ctx)
+		b, err := d.testnet.branchModel.GetTestnetBranches(ctx)
 		if err != nil {
 			return fmt.Errorf("d.testnet.branchModel.GetTestnetBranch: %w", err)
 		}
 
 		factory = fct
 		contracts = cnt
-		brn = b
+		brn = b[0].Branch
 		url = "https://testnet.waves.exchange"
 		suffix = "?network=testnet"
 		networkByte = proto.TestNetScheme

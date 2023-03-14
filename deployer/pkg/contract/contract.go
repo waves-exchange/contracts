@@ -49,11 +49,13 @@ func (m Model) GetAll(c context.Context) ([]Contract, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
-	cur, err := m.coll.Find(ctx, bson.M{
-		"stage": 1,
-	}, options.Find().SetSort(bson.M{
-		"file": 1,
-	}))
+	cur, err := m.coll.Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{
+		Key:   "stage",
+		Value: 1,
+	}, {
+		Key:   "file",
+		Value: 1,
+	}}))
 	if err != nil {
 		return nil, fmt.Errorf("m.coll.Find: %w", err)
 	}
@@ -109,6 +111,7 @@ func (m Model) IsCompact(c context.Context, fileName string) (bool, error) {
 
 func (m Model) GetFactory(c context.Context, stage *int) (Contract, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	sortOptions := options.FindOne().SetSort(bson.M{"stage": 1})
 	defer cancel()
 
 	q := bson.M{
@@ -119,10 +122,35 @@ func (m Model) GetFactory(c context.Context, stage *int) (Contract, error) {
 	}
 
 	var doc Contract
-	err := m.coll.FindOne(ctx, q).Decode(&doc)
+	err := m.coll.FindOne(ctx, q, sortOptions).Decode(&doc)
 	if err != nil {
 		return Contract{}, fmt.Errorf("m.coll.FindOne: %w", err)
 	}
 
 	return doc, nil
+}
+
+func (m Model) Create(
+	c context.Context,
+	file string,
+	stage uint32,
+	compact bool,
+	tag, basePub, basePrv, signerPrv string,
+) error {
+	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	defer cancel()
+
+	_, err := m.coll.InsertOne(ctx, Contract{
+		File:      file,
+		Stage:     stage,
+		Compact:   compact,
+		Tag:       tag,
+		BasePub:   basePub,
+		BasePrv:   basePrv,
+		SignerPrv: signerPrv,
+	})
+	if err != nil {
+		return fmt.Errorf("m.coll.InsertOne: %w", err)
+	}
+	return nil
 }

@@ -70,7 +70,7 @@ jobs:
       - name: Deploy changed contracts to testnet and update docs
         run: |
           cd deployer
-          go run main.go
+          go run cmd/github-actions-ci/main.go
       - name: Commit docs to '_docs' branch
         uses: s0/git-publish-subdir-action@develop
         env:
@@ -121,7 +121,7 @@ jobs:
       - name: Compare contracts and print diff. Deploy changed pools
         run: |
           cd deployer
-          go run main.go
+          go run cmd/github-actions-ci/main.go
       - name: Save txs to sign in artifact folder
         uses: actions/upload-artifact@v3
         with:
