@@ -124,6 +124,10 @@ func NewSyncer(
 	}, nil
 }
 
+func intPtr(val int) *int {
+	return &val
+}
+
 func (s *Syncer) ApplyChanges(c context.Context) error {
 	ctx, cancel := context.WithTimeout(c, 8*time.Hour)
 	defer cancel()
@@ -138,9 +142,13 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("s.contractModel.GetAll: %w", err)
 	}
 
-	factory, err := s.contractModel.GetFactory(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("findFactory: %w", err)
+	var stagesFactory = map[uint32]contract.Contract{}
+	for _, brn := range branchesTestnetRaw {
+		factory, err := s.contractModel.GetFactory(ctx, intPtr(int(brn.Stage)))
+		if err != nil {
+			return fmt.Errorf("findFactory: %w", err)
+		}
+		stagesFactory[brn.Stage] = factory
 	}
 
 	var branchesTestnet []string
@@ -199,35 +207,45 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		keyAllowedLpStableAddonScriptHash = "%s__allowedLpStableAddonScriptHash"
 	)
 
-	mainnetLpHashEmpty, err := s.doHash(
-		ctx,
-		factory,
-		lpRide,
-		keyAllowedLpScriptHash,
-		s.compareLpScriptAddress,
-	)
-	if err != nil {
-		return fmt.Errorf("s.doHash: %w", err)
-	}
-	mainnetLpStableHashEmpty, err := s.doHash(
-		ctx,
-		factory,
-		lpStableRide,
-		keyAllowedLpStableScriptHash,
-		s.compareLpStableScriptAddress,
-	)
-	if err != nil {
-		return fmt.Errorf("s.doHash: %w", err)
-	}
-	mainnetLpStableAddonHashEmpty, err := s.doHash(
-		ctx,
-		factory,
-		lpStableAddonRide,
-		keyAllowedLpStableAddonScriptHash,
-		s.compareLpStableAddonScriptAddress,
-	)
-	if err != nil {
-		return fmt.Errorf("s.doHash: %w", err)
+	var stageLpHashEmpty = map[uint32]bool{}
+	var stageLpStableHashEmpty = map[uint32]bool{}
+	var stageLpStableAddonHashEmpty = map[uint32]bool{}
+
+	for stage, factory := range stagesFactory {
+		mainnetLpHashEmpty, err := s.doHash(
+			ctx,
+			factory,
+			lpRide,
+			keyAllowedLpScriptHash,
+			s.compareLpScriptAddress,
+		)
+		if err != nil {
+			return fmt.Errorf("s.doHash: %w", err)
+		}
+		mainnetLpStableHashEmpty, err := s.doHash(
+			ctx,
+			factory,
+			lpStableRide,
+			keyAllowedLpStableScriptHash,
+			s.compareLpStableScriptAddress,
+		)
+		if err != nil {
+			return fmt.Errorf("s.doHash: %w", err)
+		}
+		mainnetLpStableAddonHashEmpty, err := s.doHash(
+			ctx,
+			factory,
+			lpStableAddonRide,
+			keyAllowedLpStableAddonScriptHash,
+			s.compareLpStableAddonScriptAddress,
+		)
+		if err != nil {
+			return fmt.Errorf("s.doHash: %w", err)
+		}
+
+		stageLpHashEmpty[stage] = mainnetLpHashEmpty
+		stageLpStableHashEmpty[stage] = mainnetLpStableHashEmpty
+		stageLpStableAddonHashEmpty[stage] = mainnetLpStableAddonHashEmpty
 	}
 
 	for _, fl := range files {
@@ -235,9 +253,9 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 			ctx,
 			fl.Name(),
 			contracts,
-			mainnetLpHashEmpty,
-			mainnetLpStableHashEmpty,
-			mainnetLpStableAddonHashEmpty,
+			stageLpHashEmpty,
+			stageLpStableHashEmpty,
+			stageLpStableAddonHashEmpty,
 			true,
 			stageToBranch,
 		)
@@ -536,7 +554,7 @@ func (s *Syncer) doFile(
 	ctx context.Context,
 	fileName string,
 	contracts []contract.Contract,
-	mainnetLpHashEmpty, mainnetLpStableHashEmpty, mainnetLpStableAddonHashEmpty bool,
+	mainnetLpHashEmpty, mainnetLpStableHashEmpty, mainnetLpStableAddonHashEmpty map[uint32]bool,
 	logSkip bool,
 	stageToBranch map[uint32]string,
 ) (

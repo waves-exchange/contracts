@@ -107,6 +107,7 @@ func (m Model) IsCompact(c context.Context, fileName string) (bool, error) {
 
 func (m Model) GetFactory(c context.Context, stage *int) (Contract, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	sortOptions := options.FindOne().SetSort(bson.M{"stage": 1})
 	defer cancel()
 
 	q := bson.M{
@@ -117,7 +118,7 @@ func (m Model) GetFactory(c context.Context, stage *int) (Contract, error) {
 	}
 
 	var doc Contract
-	err := m.coll.FindOne(ctx, q).Decode(&doc)
+	err := m.coll.FindOne(ctx, q, sortOptions).Decode(&doc)
 	if err != nil {
 		return Contract{}, fmt.Errorf("m.coll.FindOne: %w", err)
 	}
