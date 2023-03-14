@@ -1005,7 +1005,7 @@ var createStageCmd = &cobra.Command{
 			cl,
 			contractModel,
 			votingVerifiedAcc.privateKey,
-			managerAcc.privateKey,
+			votingVerifiedAcc.privateKey,
 			gazPrv,
 			"voting_verified",
 			"voting_verified.ride",
