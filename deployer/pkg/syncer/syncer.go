@@ -641,7 +641,13 @@ func (s *Syncer) doFile(
 				Str(mongob, stageBranch)
 
 			if s.branch != stageBranch {
-				log.Msg("no match git and mongo branch: do nothing")
+				s.logger.Debug().
+					Str(fileStr, fileName).
+					Str(addressStr, addr.String()).
+					Str(tag, cont.Tag).
+					Uint32(stage, cont.Stage).
+					Str(gitb, s.branch).
+					Str(mongob, stageBranch).Msg("no match git and mongo branch: do nothing")
 				continue
 			}
 
