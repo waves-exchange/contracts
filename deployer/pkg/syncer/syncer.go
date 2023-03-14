@@ -164,7 +164,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 				s.logger.Info().Msgf(
 					"syncer start: branches for '%s' network is '%s' and current branch is '%s'",
 					config.Testnet,
-					strings.Join(branchesTestnet, ","),
+					strings.Join(branchesTestnet, "','"),
 					s.branch,
 				)
 				break
