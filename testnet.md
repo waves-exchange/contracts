@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-280-voting-result-staked**](https://github.com/waves-exchange/contracts/tree/wxdefi-280-voting-result-staked) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **12:14 14.03.2023** (GMT+4)
+[**wxdefi-280-voting-result-staked**](https://github.com/waves-exchange/contracts/tree/wxdefi-280-voting-result-staked) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **12:32 14.03.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
