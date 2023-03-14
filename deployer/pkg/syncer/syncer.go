@@ -142,11 +142,11 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("s.contractModel.GetAll: %w", err)
 	}
 
-	var stagesFactory = map[uint32]contract.Contract{}
+	stagesFactory := map[uint32]contract.Contract{}
 	for _, brn := range branchesTestnetRaw {
-		factory, err := s.contractModel.GetFactory(ctx, intPtr(int(brn.Stage)))
-		if err != nil {
-			return fmt.Errorf("findFactory: %w", err)
+		factory, e := s.contractModel.GetFactory(ctx, intPtr(int(brn.Stage)))
+		if e != nil {
+			return fmt.Errorf("findFactory: %w", e)
 		}
 		stagesFactory[brn.Stage] = factory
 	}
@@ -212,35 +212,35 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	var stageLpStableAddonHashEmpty = map[uint32]bool{}
 
 	for stage, factory := range stagesFactory {
-		mainnetLpHashEmpty, err := s.doHash(
+		mainnetLpHashEmpty, e := s.doHash(
 			ctx,
 			factory,
 			lpRide,
 			keyAllowedLpScriptHash,
 			s.compareLpScriptAddress,
 		)
-		if err != nil {
-			return fmt.Errorf("s.doHash: %w", err)
+		if e != nil {
+			return fmt.Errorf("s.doHash: %w", e)
 		}
-		mainnetLpStableHashEmpty, err := s.doHash(
+		mainnetLpStableHashEmpty, e := s.doHash(
 			ctx,
 			factory,
 			lpStableRide,
 			keyAllowedLpStableScriptHash,
 			s.compareLpStableScriptAddress,
 		)
-		if err != nil {
-			return fmt.Errorf("s.doHash: %w", err)
+		if e != nil {
+			return fmt.Errorf("s.doHash: %w", e)
 		}
-		mainnetLpStableAddonHashEmpty, err := s.doHash(
+		mainnetLpStableAddonHashEmpty, e := s.doHash(
 			ctx,
 			factory,
 			lpStableAddonRide,
 			keyAllowedLpStableAddonScriptHash,
 			s.compareLpStableAddonScriptAddress,
 		)
-		if err != nil {
-			return fmt.Errorf("s.doHash: %w", err)
+		if e != nil {
+			return fmt.Errorf("s.doHash: %w", e)
 		}
 
 		stageLpHashEmpty[stage] = mainnetLpHashEmpty
@@ -573,7 +573,6 @@ func (s *Syncer) doFile(
 		fileStr    = "file"
 		tag        = "tag"
 		stage      = "stage"
-		brn        = "branch"
 		gitb       = "git branch"
 		mongob     = "mongo branch"
 	)
@@ -612,11 +611,6 @@ func (s *Syncer) doFile(
 				Str(gitb, s.branch).
 				Str(mongob, stageBranch)
 
-			if s.branch != stageBranch {
-				l.Msg("no match git and mongo branch: do nothing")
-				continue
-			}
-
 			if cont.BasePrv == "" {
 				l.Msg("no private key in config")
 				continue
@@ -626,11 +620,6 @@ func (s *Syncer) doFile(
 				continue
 			}
 
-			base64Script, scriptBytes, setScriptFee, er2 := s.compile(ctx, body, cont.Compact)
-			if er2 != nil {
-				return false, fmt.Errorf("s.compile: %w", er2)
-			}
-
 			prv, er2 := crypto.NewSecretKeyFromBase58(cont.BasePrv)
 			if er2 != nil {
 				return false, fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er2)
@@ -638,19 +627,9 @@ func (s *Syncer) doFile(
 
 			pub := crypto.GeneratePublicKey(prv)
 
-			prvSigner, er2 := crypto.NewSecretKeyFromBase58(cont.SignerPrv)
-			if er2 != nil {
-				return false, fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er2)
-			}
-
 			addr, er2 := proto.NewAddressFromPublicKey(proto.TestNetScheme, pub)
 			if er2 != nil {
 				return false, fmt.Errorf("proto.NewAddressFromPublicKey: %w", er2)
-			}
-
-			fromBlockchainScript, er2 := s.getScript(ctx, addr)
-			if er2 != nil {
-				return false, fmt.Errorf("s.getScript: %w", er2)
 			}
 
 			log := s.logger.Info().
@@ -660,6 +639,26 @@ func (s *Syncer) doFile(
 				Uint32(stage, cont.Stage).
 				Str(gitb, s.branch).
 				Str(mongob, stageBranch)
+
+			if s.branch != stageBranch {
+				log.Msg("no match git and mongo branch: do nothing")
+				continue
+			}
+
+			base64Script, scriptBytes, setScriptFee, er2 := s.compile(ctx, body, cont.Compact)
+			if er2 != nil {
+				return false, fmt.Errorf("s.compile: %w", er2)
+			}
+
+			prvSigner, er2 := crypto.NewSecretKeyFromBase58(cont.SignerPrv)
+			if er2 != nil {
+				return false, fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er2)
+			}
+
+			fromBlockchainScript, er2 := s.getScript(ctx, addr)
+			if er2 != nil {
+				return false, fmt.Errorf("s.getScript: %w", er2)
+			}
 
 			if base64Script == fromBlockchainScript {
 				if logSkip {
