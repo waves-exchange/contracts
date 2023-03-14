@@ -49,9 +49,13 @@ func (m Model) GetAll(c context.Context) ([]Contract, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
-	cur, err := m.coll.Find(ctx, bson.M{}, options.Find().SetSort(bson.M{
-		"file": 1,
-	}))
+	cur, err := m.coll.Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{
+		Key:   "stage",
+		Value: 1,
+	}, {
+		Key:   "file",
+		Value: 1,
+	}}))
 	if err != nil {
 		return nil, fmt.Errorf("m.coll.Find: %w", err)
 	}
