@@ -174,7 +174,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 			s.logger.Info().Msgf(
 				"nothing to do: branches for '%s' network is '%s', but current branch is '%s'",
 				config.Testnet,
-				strings.Join(branchesTestnet, ","),
+				strings.Join(branchesTestnet, "','"),
 				s.branch,
 			)
 			return nil
