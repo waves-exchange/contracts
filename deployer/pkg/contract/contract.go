@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 type Contract struct {
@@ -106,6 +107,7 @@ func (m Model) IsCompact(c context.Context, fileName string) (bool, error) {
 
 func (m Model) GetFactory(c context.Context, stage *int) (Contract, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	sortOptions := options.FindOne().SetSort(bson.M{"stage": 1})
 	defer cancel()
 
 	q := bson.M{
@@ -116,10 +118,35 @@ func (m Model) GetFactory(c context.Context, stage *int) (Contract, error) {
 	}
 
 	var doc Contract
-	err := m.coll.FindOne(ctx, q).Decode(&doc)
+	err := m.coll.FindOne(ctx, q, sortOptions).Decode(&doc)
 	if err != nil {
 		return Contract{}, fmt.Errorf("m.coll.FindOne: %w", err)
 	}
 
 	return doc, nil
+}
+
+func (m Model) Create(
+	c context.Context,
+	file string,
+	stage uint32,
+	compact bool,
+	tag, basePub, basePrv, signerPrv string,
+) error {
+	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	defer cancel()
+
+	_, err := m.coll.InsertOne(ctx, Contract{
+		File:      file,
+		Stage:     stage,
+		Compact:   compact,
+		Tag:       tag,
+		BasePub:   basePub,
+		BasePrv:   basePrv,
+		SignerPrv: signerPrv,
+	})
+	if err != nil {
+		return fmt.Errorf("m.coll.InsertOne: %w", err)
+	}
+	return nil
 }

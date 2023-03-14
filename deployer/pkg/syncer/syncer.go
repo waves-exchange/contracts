@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -24,6 +22,7 @@ import (
 	"github.com/waves-exchange/contracts/deployer/pkg/branch"
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
 	"github.com/waves-exchange/contracts/deployer/pkg/contract"
+	"github.com/waves-exchange/contracts/deployer/pkg/tools"
 	"github.com/wavesplatform/gowaves/pkg/client"
 	"github.com/wavesplatform/gowaves/pkg/crypto"
 	"github.com/wavesplatform/gowaves/pkg/proto"
@@ -90,7 +89,7 @@ func NewSyncer(
 		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
 	}
 
-	feePrv, feePub, err := getPrivateAndPublicKey([]byte(feeSeed))
+	feePrv, feePub, err := tools.GetPrivateAndPublicKey([]byte(feeSeed))
 	if err != nil {
 		return nil, fmt.Errorf("crypto.GenerateKeyPair: %w", err)
 	}
@@ -125,11 +124,15 @@ func NewSyncer(
 	}, nil
 }
 
+func intPtr(val int) *int {
+	return &val
+}
+
 func (s *Syncer) ApplyChanges(c context.Context) error {
 	ctx, cancel := context.WithTimeout(c, 8*time.Hour)
 	defer cancel()
 
-	branchTestnet, err := s.branchModel.GetTestnetBranch(ctx)
+	branchesTestnetRaw, err := s.branchModel.GetTestnetBranches(ctx)
 	if err != nil {
 		return fmt.Errorf("s.branchModel.GetTestnetBranch: %w", err)
 	}
@@ -139,28 +142,44 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("s.contractModel.GetAll: %w", err)
 	}
 
-	factory, err := s.contractModel.GetFactory(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("findFactory: %w", err)
+	var stagesFactory = map[uint32]contract.Contract{}
+	for _, brn := range branchesTestnetRaw {
+		factory, err := s.contractModel.GetFactory(ctx, intPtr(int(brn.Stage)))
+		if err != nil {
+			return fmt.Errorf("findFactory: %w", err)
+		}
+		stagesFactory[brn.Stage] = factory
+	}
+
+	var branchesTestnet []string
+	for _, brn := range branchesTestnetRaw {
+		branchesTestnet = append(branchesTestnet, brn.Branch)
 	}
 
 	if s.network == config.Testnet {
-		if branchTestnet != s.branch {
+		found := false
+		for _, brn := range branchesTestnet {
+			if brn == s.branch {
+				found = true
+				s.logger.Info().Msgf(
+					"syncer start: branches for '%s' network is '%s' and current branch is '%s'",
+					config.Testnet,
+					strings.Join(branchesTestnet, ","),
+					s.branch,
+				)
+				break
+			}
+		}
+		if !found {
 			s.logger.Info().Msgf(
-				"nothing to do: branch for '%s' network is '%s', but current branch is '%s'",
+				"nothing to do: branches for '%s' network is '%s', but current branch is '%s'",
 				config.Testnet,
-				branchTestnet,
+				strings.Join(branchesTestnet, ","),
 				s.branch,
 			)
 			return nil
 		}
 
-		s.logger.Info().Msgf(
-			"syncer start: branch for '%s' network is '%s' and current branch is '%s'",
-			config.Testnet,
-			branchTestnet,
-			s.branch,
-		)
 	} else if s.network == config.Mainnet {
 		s.logger.Info().Msgf(
 			"syncer start: branch for '%s' network is '%s' and current branch is '%s'",
@@ -177,41 +196,56 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("os.ReadDir: %w", err)
 	}
 
+	stageToBranch := map[uint32]string{}
+	for _, brn := range branchesTestnetRaw {
+		stageToBranch[brn.Stage] = brn.Branch
+	}
+
 	const (
 		keyAllowedLpScriptHash            = "%s__allowedLpScriptHash"
 		keyAllowedLpStableScriptHash      = "%s__allowedLpStableScriptHash"
 		keyAllowedLpStableAddonScriptHash = "%s__allowedLpStableAddonScriptHash"
 	)
 
-	mainnetLpHashEmpty, err := s.doHash(
-		ctx,
-		factory,
-		lpRide,
-		keyAllowedLpScriptHash,
-		s.compareLpScriptAddress,
-	)
-	if err != nil {
-		return fmt.Errorf("s.doHash: %w", err)
-	}
-	mainnetLpStableHashEmpty, err := s.doHash(
-		ctx,
-		factory,
-		lpStableRide,
-		keyAllowedLpStableScriptHash,
-		s.compareLpStableScriptAddress,
-	)
-	if err != nil {
-		return fmt.Errorf("s.doHash: %w", err)
-	}
-	mainnetLpStableAddonHashEmpty, err := s.doHash(
-		ctx,
-		factory,
-		lpStableAddonRide,
-		keyAllowedLpStableAddonScriptHash,
-		s.compareLpStableAddonScriptAddress,
-	)
-	if err != nil {
-		return fmt.Errorf("s.doHash: %w", err)
+	var stageLpHashEmpty = map[uint32]bool{}
+	var stageLpStableHashEmpty = map[uint32]bool{}
+	var stageLpStableAddonHashEmpty = map[uint32]bool{}
+
+	for stage, factory := range stagesFactory {
+		mainnetLpHashEmpty, err := s.doHash(
+			ctx,
+			factory,
+			lpRide,
+			keyAllowedLpScriptHash,
+			s.compareLpScriptAddress,
+		)
+		if err != nil {
+			return fmt.Errorf("s.doHash: %w", err)
+		}
+		mainnetLpStableHashEmpty, err := s.doHash(
+			ctx,
+			factory,
+			lpStableRide,
+			keyAllowedLpStableScriptHash,
+			s.compareLpStableScriptAddress,
+		)
+		if err != nil {
+			return fmt.Errorf("s.doHash: %w", err)
+		}
+		mainnetLpStableAddonHashEmpty, err := s.doHash(
+			ctx,
+			factory,
+			lpStableAddonRide,
+			keyAllowedLpStableAddonScriptHash,
+			s.compareLpStableAddonScriptAddress,
+		)
+		if err != nil {
+			return fmt.Errorf("s.doHash: %w", err)
+		}
+
+		stageLpHashEmpty[stage] = mainnetLpHashEmpty
+		stageLpStableHashEmpty[stage] = mainnetLpStableHashEmpty
+		stageLpStableAddonHashEmpty[stage] = mainnetLpStableAddonHashEmpty
 	}
 
 	for _, fl := range files {
@@ -219,10 +253,11 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 			ctx,
 			fl.Name(),
 			contracts,
-			mainnetLpHashEmpty,
-			mainnetLpStableHashEmpty,
-			mainnetLpStableAddonHashEmpty,
+			stageLpHashEmpty,
+			stageLpStableHashEmpty,
+			stageLpStableAddonHashEmpty,
 			true,
+			stageToBranch,
 		)
 		if er != nil {
 			return fmt.Errorf("s.doFile: %w", er)
@@ -256,7 +291,7 @@ func (s *Syncer) ensureHasFee(ctx context.Context, to proto.WavesAddress, fee ui
 				s.feePub,
 				proto.NewOptionalAssetWaves(),
 				proto.NewOptionalAssetWaves(),
-				timestamp(),
+				tools.Timestamp(),
 				amountToSend,
 				100000,
 				proto.NewRecipientFromAddress(to),
@@ -341,7 +376,7 @@ func (s *Syncer) doHash(
 			return false, fmt.Errorf("crypto.NewSecretKeyFromBase58: %w", er)
 		}
 
-		dataTx := proto.NewUnsignedDataWithProofs(2, pub, 500000, timestamp())
+		dataTx := proto.NewUnsignedDataWithProofs(2, pub, 500000, tools.Timestamp())
 		er = dataTx.AppendEntry(dataTxValue)
 		if er != nil {
 			return false, fmt.Errorf("dataTx.AppendEntry: %w", er)
@@ -390,7 +425,7 @@ func (s *Syncer) doHash(
 		hashEmpty = actualHash == ""
 
 		const fee = 500000
-		dataTx := proto.NewUnsignedDataWithProofs(2, pub, fee, timestamp())
+		dataTx := proto.NewUnsignedDataWithProofs(2, pub, fee, tools.Timestamp())
 		er = dataTx.AppendEntry(dataTxValue)
 		if er != nil {
 			return false, fmt.Errorf("dataTx.AppendEntry: %w", er)
@@ -519,8 +554,9 @@ func (s *Syncer) doFile(
 	ctx context.Context,
 	fileName string,
 	contracts []contract.Contract,
-	mainnetLpHashEmpty, mainnetLpStableHashEmpty, mainnetLpStableAddonHashEmpty bool,
+	mainnetLpHashEmpty, mainnetLpStableHashEmpty, mainnetLpStableAddonHashEmpty map[uint32]bool,
 	logSkip bool,
+	stageToBranch map[uint32]string,
 ) (
 	bool,
 	error,
@@ -536,6 +572,10 @@ func (s *Syncer) doFile(
 		addressStr = "address"
 		fileStr    = "file"
 		tag        = "tag"
+		stage      = "stage"
+		brn        = "branch"
+		gitb       = "git branch"
+		mongob     = "mongo branch"
 	)
 
 	f, err := os.Open(path.Join(s.contractsFolder, fileName))
@@ -559,10 +599,24 @@ func (s *Syncer) doFile(
 
 		switch s.network {
 		case config.Testnet:
+			stageBranch, ok := stageToBranch[cont.Stage]
+			if !ok {
+				return false, errors.New("no value at stageToBranch map=" + strconv.Itoa(int(cont.Stage)))
+			}
+
 			l := s.logger.Info().
 				Str(fileStr, fileName).
 				Str(tag, cont.Tag).
-				Str(action, skip)
+				Str(action, skip).
+				Uint32(stage, cont.Stage).
+				Str(gitb, s.branch).
+				Str(mongob, stageBranch)
+
+			if s.branch != stageBranch {
+				l.Msg("no match git and mongo branch: do nothing")
+				continue
+			}
+
 			if cont.BasePrv == "" {
 				l.Msg("no private key in config")
 				continue
@@ -602,7 +656,10 @@ func (s *Syncer) doFile(
 			log := s.logger.Info().
 				Str(fileStr, fileName).
 				Str(addressStr, addr.String()).
-				Str(tag, cont.Tag)
+				Str(tag, cont.Tag).
+				Uint32(stage, cont.Stage).
+				Str(gitb, s.branch).
+				Str(mongob, stageBranch)
 
 			if base64Script == fromBlockchainScript {
 				if logSkip {
@@ -624,7 +681,7 @@ func (s *Syncer) doFile(
 					pub,
 					scriptBytes,
 					setScriptFee,
-					timestamp(),
+					tools.Timestamp(),
 				),
 				prvSigner,
 				true,
@@ -685,7 +742,7 @@ func (s *Syncer) doFile(
 				pub,
 				scriptBytes,
 				setScriptFee,
-				timestamp(),
+				tools.Timestamp(),
 			)
 			//doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
 			//doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
@@ -932,7 +989,7 @@ func (s *Syncer) compile(ctx context.Context, body []byte, compact bool) (string
 	if err != nil {
 		return "", nil, 0, fmt.Errorf("base64.StdEncoding.DecodeString: %w", err)
 	}
-	setScriptFee := calcSetScriptFee(scriptBytes)
+	setScriptFee := tools.CalcSetScriptFee(scriptBytes)
 
 	res := func() (string, []byte, uint64, error) {
 		return base64Script, scriptBytes, setScriptFee, nil
@@ -1045,35 +1102,6 @@ func (s *Syncer) client() *client.Client {
 	defer s.clientMutex.Unlock()
 	time.Sleep(2 * time.Second)
 	return s.rawClient
-}
-
-func calcSetScriptFee(script []byte) uint64 {
-	const min = 1300000
-	base := uint64(100000)
-	additional := uint64(400000)
-	kb := math.Ceil(float64(len(script)) / float64(1000))
-	res := uint64(kb)*base + additional
-	if res < min {
-		return min
-	}
-	return res
-}
-
-func timestamp() uint64 {
-	return uint64(time.Now().UnixMilli())
-}
-
-func getPrivateAndPublicKey(seed []byte) (privateKey crypto.SecretKey, publicKey crypto.PublicKey, err error) {
-	n := 0
-	s := seed
-	iv := make([]byte, 4)
-	binary.BigEndian.PutUint32(iv, uint32(n))
-	s = append(iv, s...)
-	accSeed, err := crypto.SecureHash(s)
-	if err != nil {
-		return crypto.SecretKey{}, crypto.PublicKey{}, err
-	}
-	return crypto.GenerateKeyPair(accSeed[:])
 }
 
 func stringIndex(i int) string {
