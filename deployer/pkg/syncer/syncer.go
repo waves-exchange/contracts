@@ -164,7 +164,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 				s.logger.Info().Msgf(
 					"syncer start: branches for '%s' network is '%s' and current branch is '%s'",
 					config.Testnet,
-					strings.Join(branchesTestnet, ","),
+					strings.Join(branchesTestnet, "','"),
 					s.branch,
 				)
 				break
@@ -641,7 +641,13 @@ func (s *Syncer) doFile(
 				Str(mongob, stageBranch)
 
 			if s.branch != stageBranch {
-				log.Msg("no match git and mongo branch: do nothing")
+				s.logger.Debug().
+					Str(fileStr, fileName).
+					Str(addressStr, addr.String()).
+					Str(tag, cont.Tag).
+					Uint32(stage, cont.Stage).
+					Str(gitb, s.branch).
+					Str(mongob, stageBranch).Msg("no match git and mongo branch: do nothing")
 				continue
 			}
 

@@ -1005,7 +1005,7 @@ var createStageCmd = &cobra.Command{
 			cl,
 			contractModel,
 			votingVerifiedAcc.privateKey,
-			managerAcc.privateKey,
+			votingVerifiedAcc.privateKey,
 			gazPrv,
 			"voting_verified",
 			"voting_verified.ride",
@@ -1283,7 +1283,8 @@ var createStageCmd = &cobra.Command{
 			false,
 			[]proto.DataEntry{
 				&proto.StringDataEntry{
-					Key:   "%s__managerPublicKey",
+					// Known typo
+					Key:   "%s__managerPublicpKey",
 					Value: managerAcc.publicKey.String(),
 				},
 			},
