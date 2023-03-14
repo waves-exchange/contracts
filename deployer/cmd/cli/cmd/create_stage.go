@@ -1283,7 +1283,8 @@ var createStageCmd = &cobra.Command{
 			false,
 			[]proto.DataEntry{
 				&proto.StringDataEntry{
-					Key:   "%s__managerPublicKey",
+					// Known typo
+					Key:   "%s__managerPublicpKey",
 					Value: managerAcc.publicKey.String(),
 				},
 			},
