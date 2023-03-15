@@ -1,0 +1,49 @@
+{-# STDLIB_VERSION 5 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+# pool labels
+let poolLabelWxEmission = "WX_EMISSION"
+let validPoolLabels = [poolLabelWxEmission]
+
+func keyWxEmission(amountAssetId: String, priceAssetId: String)
+      = "%s%s%s__wxEmission__" + amountAssetId + "__" + priceAssetId
+
+@Callable(i)
+func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr: String, lpAssetName: String, lpAssetDescr: String, poolWeight: Int, poolType: String, logo: String) = {
+  let lpAssetIssueAction = Issue(lpAssetName, lpAssetDescr, 1, 8, true)
+  let lpAssetId = lpAssetIssueAction.calculateAssetId()
+  let lpAssetIdStr = lpAssetId.toBase58String()
+  ([lpAssetIssueAction], lpAssetIdStr)
+}
+
+@Callable(i)
+func checkWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
+  let haveLabel = match keyWxEmission(amountAssetId, priceAssetId).getBoolean() {
+      case b: Boolean => b
+      case _ => false
+    }
+
+  ([], haveLabel)
+}
+
+@Callable(i)
+func setWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
+  ([BooleanEntry(keyWxEmission(amountAssetId, priceAssetId), true)], unit)
+}
+
+
+@Callable(i)
+func deleteWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
+  ([DeleteEntry(keyWxEmission(amountAssetId, priceAssetId))], unit)
+}
+
+@Callable(i)
+func modifyWeight(lpAssetId: String, share: Int) = {
+  ([], unit)
+}
+
+@Callable(i)
+func poolExistsREADONLY(amountAssetId: String, priceAssetId: String) = {
+  ([], false)
+}
