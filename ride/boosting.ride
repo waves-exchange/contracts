@@ -218,6 +218,47 @@ func keyUserBoostClaimed(userNum: String)                     = makeString(["%s%
 func keyTotalCachedGwx()                               = "%s%s__gwxCached__total"
 func keyTotalCachedGwxCorrective() = "%s__gwxCachedTotalCorrective"
 
+# Voting emission
+# User vote
+func keyVote(amountAssetId: String, priceAssetId: String, address: Address, epoch: Int) = {
+  ["%s%s%s%s%d", "vote", amountAssetId, priceAssetId, address.toString(), epoch.toString()].makeString(SEP)
+}
+func keyStartHeightByEpoch(epoch: Int) = ["%s%d", "startHeight", epoch.toString()].makeString(SEP)
+func keyCurrentEpochUi() = ["%s", "currentEpochUi"].makeString(SEP)
+
+# Initial value is stored on voting emission account
+# Following values are stored on this account
+func keyVotingResultStaked(lpAssetIdStr: String, epoch: Int) = {
+  ["%s%s%d", "votingResultStaked", lpAssetIdStr, epoch.toString()].makeString(SEP)
+}
+
+# this
+# We need to save integral to handle changing value
+func keyVotingResultStakedIntegral(lpAssetIdStr: String, epoch: Int) = {
+  ["%s%s%d", "votingResultStakedIntegral", lpAssetIdStr, epoch.toString()].makeString(SEP)
+}
+# Height at which voting result staked was last changed
+func keyVotingResultStakedLastUpdateHeight(lpAssetIdStr: String, epoch: Int) = {
+  ["%s%s%d", "votingResultStakedIntegralLastUpdateHeight", lpAssetIdStr, epoch.toString()].makeString(SEP)
+}
+# Last integral value used by user
+# This value is needed to calculate unclaimed boost
+func keyVotingResultStakedIntegralLast(lpAssetIdStr: String, address: Address, epoch: Int) = {
+  ["%s%s%s%d", "votingResultStakedIntegralLast", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
+}
+func keyVoteStakedIntegral(lpAssetIdStr: String, address: Address, epoch: Int) = {
+  ["%s%s%s%d", "voteStakedIntegral", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
+}
+func keyVoteStakedLastUpdateHeight(lpAssetIdStr: String, address: Address, epoch: Int) = {
+  ["%s%s%s%d", "voteStakedIntegralLastUpdateHeight", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
+}
+func keyVoteStakedIntegralLast(lpAssetIdStr: String, address: Address, epoch: Int) = {
+  ["%s%s%s%d", "voteStakedIntegralLast", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
+}
+
+# staking
+func keyStakedByUser(userAddressStr: String, lpAssetIdStr: String) = ["%s%s%s", "staked", userAddressStr, lpAssetIdStr].makeString(SEP)
+
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
 let factoryContract   = readFactoryAddressOrFail()
@@ -235,8 +276,7 @@ let votingEmissionContract = factoryContract.getStringValue(keyVotingEmissionCon
 let boostCoeff = emissionContract.invoke("getBoostCoeffREADONLY", [], []).exactAs[Int]
 
 func getTotalCachedGwx(correct: Boolean) = {
-  let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(SEP)
-  let currentEpochUi = votingEmissionContract.getIntegerValue(keyCurrentEpochUi)
+  let currentEpochUi = votingEmissionContract.getIntegerValue(keyCurrentEpochUi())
 
   let keyTargetEpoch = ["%s%s", "totalCachedGwxCorrection__activationEpoch"].makeString(SEP)
   let targetEpochOption = this.getInteger(keyTargetEpoch)
@@ -340,14 +380,11 @@ func calcCurrentGwxAmount(userAddress: String) = {
 }
 
 func getVotingEmissionEpochInfo() = {
-  let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(SEP)
   let (currentEpochUi, lastFinalizedEpoch) = {
-    let currentEpochUi = votingEmissionContract.getInteger(keyCurrentEpochUi).value()
+    let currentEpochUi = votingEmissionContract.getInteger(keyCurrentEpochUi()).value()
     let lastFinalizedEpoch = currentEpochUi - 1
     if (lastFinalizedEpoch < 0) then "invalid epoch".throwErr() else (currentEpochUi, lastFinalizedEpoch)
   }
-
-  func keyStartHeightByEpoch(epoch: Int) = ["%s%d", "startHeight", epoch.toString()].makeString(SEP)
 
   let currentEpochStartHeight = votingEmissionContract.getInteger(currentEpochUi.keyStartHeightByEpoch()).value()
 
@@ -357,51 +394,12 @@ func getVotingEmissionEpochInfo() = {
 func getPoolAssetsByLpAssetId(lpAssetIdStr: String) = {
   let idxAmountAssetId = 4
   let idxPriceAssetId = 5
-  let poolCfg = factoryContract.invoke("getPoolConfigByLpAssetId", [lpAssetIdStr], []).exactAs[List[Any]]
+  let poolCfg = factoryContract.invoke("getPoolConfigByLpAssetIdREADONLY", [lpAssetIdStr], []).exactAs[List[Any]]
   let amountAssetId = poolCfg[idxAmountAssetId].exactAs[String]
   let priceAssetId = poolCfg[idxPriceAssetId].exactAs[String]
 
   (amountAssetId, priceAssetId)
 }
-
-# User vote
-# Voting emission
-func keyVote(amountAssetId: String, priceAssetId: String, address: Address, epoch: Int) = {
-  ["%s%s%s%s%d", "vote", amountAssetId, priceAssetId, address.toString(), epoch.toString()].makeString(SEP)
-}
-
-# Initial value is stored on voting emission account
-# Following values are stored on this account
-func keyVotingResultStaked(lpAssetIdStr: String, epoch: Int) = {
-  ["%s%s%d", "votingResultStaked", lpAssetIdStr, epoch.toString()].makeString(SEP)
-}
-
-# this
-# We need to save integral to handle changing value
-func keyVotingResultStakedIntegral(lpAssetIdStr: String, epoch: Int) = {
-  ["%s%s%d", "votingResultStakedIntegral", lpAssetIdStr, epoch.toString()].makeString(SEP)
-}
-# Height at which voting result staked was last changed
-func keyVotingResultStakedLastUpdateHeight(lpAssetIdStr: String, epoch: Int) = {
-  ["%s%s%d", "votingResultStakedIntegralLastUpdateHeight", lpAssetIdStr, epoch.toString()].makeString(SEP)
-}
-# Last integral value used by user
-# This value is needed to calculate unclaimed boost
-func keyVotingResultStakedIntegralLast(lpAssetIdStr: String, address: Address, epoch: Int) = {
-  ["%s%s%s%d", "votingResultStakedIntegralLast", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
-}
-func keyVoteStakedIntegral(lpAssetIdStr: String, address: Address, epoch: Int) = {
-  ["%s%s%s%d", "voteStakedIntegral", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
-}
-func keyVoteStakedLastUpdateHeight(lpAssetIdStr: String, address: Address, epoch: Int) = {
-  ["%s%s%s%d", "voteStakedIntegralLastUpdateHeight", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
-}
-func keyVoteStakedIntegralLast(lpAssetIdStr: String, address: Address, epoch: Int) = {
-  ["%s%s%s%d", "voteStakedIntegralLast", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
-}
-
-# staking
-func keyStakedByUser(userAddressStr: String, lpAssetIdStr: String) = ["%s%s%s", "staked", userAddressStr, lpAssetIdStr].makeString(SEP)
 
 func getUserVoteFinalized(lpAssetIdStr: String, userAddressStr: String) = {
   let userAddress = userAddressStr.addressFromStringValue()
@@ -464,7 +462,7 @@ func refreshVoteStakedIntegral(
 
   let idxAmountAssetId = 4
   let idxPriceAssetId = 5
-  let poolCfg = factoryContract.invoke("getPoolConfigByLpAssetId", [lpAssetIdStr], []).exactAs[List[Any]]
+  let poolCfg = factoryContract.invoke("getPoolConfigByLpAssetIdREADONLY", [lpAssetIdStr], []).exactAs[List[Any]]
   let amountAssetId = poolCfg[idxAmountAssetId].exactAs[String]
   let priceAssetId = poolCfg[idxPriceAssetId].exactAs[String]
 
