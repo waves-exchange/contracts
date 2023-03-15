@@ -426,6 +426,21 @@ func getVotingResultStaked(lpAssetIdStr: String) = {
   votingResultStaked
 }
 
+func getVotingResultStakedIntegral(lpAssetIdStr: String) = {
+  let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
+  let votingResultStaked = lpAssetIdStr.getVotingResultStaked()
+  let votingResultStakedIntegralPrev = this.getInteger(
+    lpAssetIdStr.keyVotingResultStakedIntegral(lastFinalizedEpoch)
+  ).valueOrElse(0)
+  let votingResultStakedLastUpdateHeight = this.getInteger(
+    lpAssetIdStr.keyVotingResultStakedLastUpdateHeight(lastFinalizedEpoch)
+  ).valueOrElse(currentEpochStartHeight)
+  let votingResultStakedIntegralDh = height - votingResultStakedLastUpdateHeight
+  let votingResultStakedIntegral = votingResultStakedIntegralDh * votingResultStaked + votingResultStakedIntegralPrev
+
+  votingResultStakedIntegral
+}
+
 # Voting result staked is changing only when staked vote is changing
 # So this function is called in refreshVoteStakedIntegral
 func refreshVotingResultStakedIntegral(
@@ -435,21 +450,29 @@ func refreshVotingResultStakedIntegral(
   let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
   let votingResultStaked = lpAssetIdStr.getVotingResultStaked()
   let votingResultStakedNew = votingResultStaked + stakedVoteDelta
-  let votingResultStakedIntegralKey = lpAssetIdStr.keyVotingResultStakedIntegral(lastFinalizedEpoch)
-  let votingResultStakedIntegralPrev = this.getInteger(votingResultStakedIntegralKey).valueOrElse(0)
-  let votingResultLastUpdateHeightKey = lpAssetIdStr.keyVotingResultStakedLastUpdateHeight(lastFinalizedEpoch)
-  let votingResultStakedLastUpdateHeight = this.getInteger(votingResultLastUpdateHeightKey).valueOrElse(currentEpochStartHeight)
-  let votingResultStakedIntegralDh = height - votingResultStakedLastUpdateHeight
-  let votingResultStakedIntegral = votingResultStakedIntegralDh * votingResultStaked + votingResultStakedIntegralPrev
+  let votingResultStakedIntegral = lpAssetIdStr.getVotingResultStakedIntegral()
 
-  (
-    [
-      IntegerEntry(lpAssetIdStr.keyVotingResultStaked(lastFinalizedEpoch), votingResultStakedNew),
-      IntegerEntry(votingResultLastUpdateHeightKey, height),
-      IntegerEntry(votingResultStakedIntegralKey, votingResultStakedIntegral)
-    ],
-    votingResultStakedIntegral
-  )
+  [
+    IntegerEntry(lpAssetIdStr.keyVotingResultStaked(lastFinalizedEpoch), votingResultStakedNew),
+    IntegerEntry(lpAssetIdStr.keyVotingResultStakedLastUpdateHeight(lastFinalizedEpoch), height),
+    IntegerEntry(lpAssetIdStr.keyVotingResultStakedIntegral(lastFinalizedEpoch), votingResultStakedIntegral)
+  ]
+}
+
+func getUserVoteStakedIntegral(lpAssetIdStr: String, userAddressStr: String) = {
+  let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
+  let userAddress = userAddressStr.addressFromStringValue()
+  let userVoteStaked = lpAssetIdStr.getUserVoteStaked(userAddressStr)
+  let userVoteStakedIntegralPrev = this.getInteger(
+    lpAssetIdStr.keyVoteStakedIntegral(userAddress, lastFinalizedEpoch)
+  ).valueOrElse(0)
+  let userVoteStakedLastUpdateHeight = this.getInteger(
+    lpAssetIdStr.keyVoteStakedLastUpdateHeight(userAddress, lastFinalizedEpoch)
+  ).valueOrElse(currentEpochStartHeight)
+  let userVoteStakedIntegralDh = height - userVoteStakedLastUpdateHeight
+  let userVoteStakedIntegral = userVoteStakedIntegralDh * userVoteStaked + userVoteStakedIntegralPrev
+
+  userVoteStakedIntegral
 }
 
 func refreshVoteStakedIntegral(
@@ -460,28 +483,16 @@ func refreshVoteStakedIntegral(
   let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
   let userAddress = userAddressStr.addressFromStringValue()
 
-  let idxAmountAssetId = 4
-  let idxPriceAssetId = 5
-  let poolCfg = factoryContract.invoke("getPoolConfigByLpAssetIdREADONLY", [lpAssetIdStr], []).exactAs[List[Any]]
-  let amountAssetId = poolCfg[idxAmountAssetId].exactAs[String]
-  let priceAssetId = poolCfg[idxPriceAssetId].exactAs[String]
+  let userVoteFinalized = lpAssetIdStr.getUserVoteFinalized(userAddressStr)
 
-  let userVote = votingEmissionContract.getInteger(keyVote(amountAssetId, priceAssetId, userAddress, lastFinalizedEpoch)).valueOrElse(0)
+  let actions = if (userVoteFinalized == 0) then [] else {
+    let stakedVoteDelta = if (edge) then userVoteFinalized else -userVoteFinalized
+    let votingResultActions = lpAssetIdStr.refreshVotingResultStakedIntegral(stakedVoteDelta)
 
-  let actions = if (userVote == 0) then [] else {
-    let stakedVoteDelta = if (edge) then userVote else -userVote
-    let (votingResultActions, votingResultStakedIntegral) = lpAssetIdStr.refreshVotingResultStakedIntegral(stakedVoteDelta)
-
-    let userVoteStaked = if (edge) then 0 else userVote 
-    let userVoteStakedIntegralKey = lpAssetIdStr.keyVoteStakedIntegral(userAddress, lastFinalizedEpoch)
-    let userVoteStakedIntegralPrev = this.getInteger(userVoteStakedIntegralKey).valueOrElse(0)
-    let userVoteStakedLastUpdateHeightKey = lpAssetIdStr.keyVoteStakedLastUpdateHeight(userAddress, lastFinalizedEpoch)
-    let userVoteStakedLastUpdateHeight = this.getInteger(userVoteStakedLastUpdateHeightKey).valueOrElse(currentEpochStartHeight)
-    let userVoteStakedIntegralDh = height - userVoteStakedLastUpdateHeight
-    let userVoteStakedIntegral = userVoteStakedIntegralDh * userVoteStaked + userVoteStakedIntegralPrev
+    let userVoteStakedIntegral = lpAssetIdStr.getUserVoteStakedIntegral(userAddressStr)
     let voteActions = [
-      IntegerEntry(userVoteStakedLastUpdateHeightKey, height),
-      IntegerEntry(userVoteStakedIntegralKey, userVoteStakedIntegral)
+      IntegerEntry(lpAssetIdStr.keyVoteStakedLastUpdateHeight(userAddress, lastFinalizedEpoch), height),
+      IntegerEntry(lpAssetIdStr.keyVoteStakedIntegral(userAddress, lastFinalizedEpoch), userVoteStakedIntegral)
     ]
 
     votingResultActions ++ voteActions
@@ -860,8 +871,18 @@ func getVotingResultStakedREADONLY(lpAssetIdStr: String) = {
 }
 
 @Callable(i)
+func getVotingResultStakedIntegralREADONLY(lpAssetIdStr: String) = {
+  ([], lpAssetIdStr.getVotingResultStakedIntegral())
+}
+
+@Callable(i)
 func getUserVoteFinalizedREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
   ([], lpAssetIdStr.getUserVoteFinalized(userAddressStr))
+}
+
+@Callable(i)
+func getUserVoteStakedIntegralREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+  ([], lpAssetIdStr.getUserVoteStakedIntegral(userAddressStr))
 }
 
 @Callable(i)
