@@ -34,6 +34,7 @@ export const mochaHooks = {
       'staking',
       'manager',
       'user1',
+      'lpStakingPools',
     ];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
@@ -106,6 +107,11 @@ export const mochaHooks = {
         key: '%s__config',
         type: 'string',
         value: boostingConfig,
+      },
+      {
+        key: '%s__lpStakingPoolsContract',
+        type: 'string',
+        value: address(this.accounts.lpStakingPools, chainId),
       }],
       chainId,
     }, this.accounts.boosting);
