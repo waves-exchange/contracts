@@ -352,8 +352,11 @@ func get() = {
     .getString().valueOrErrorMessage("invalid share asset id".wrapErr()).parseAssetId().value()
   let userAddress = i.caller
   let (poolAddress, lpAssetId) = baseAssetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
+  strict checklp = lpAssetId.toUtf8String() != "" || "empty lp asset id".throwErr()
   let period = baseAssetId.keyPeriod().getInteger().value()
   let userShareAssetAmountToConvertPeriodOption = baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress).getInteger()
+  # strict checkOptions = userShareAssetAmountToConvertPeriodOption != unit || "options is unit"
+  # strict checkOptions2 = userShareAssetAmountToConvertPeriodOption != 0 || "options is 0"
   # call claimBaseAsset
   strict claimBaseAssetInvocation = if (userShareAssetAmountToConvertPeriodOption == unit) then unit else {
     let userShareAssetAmountToConvertPeriod = userShareAssetAmountToConvertPeriodOption.value()
@@ -394,8 +397,10 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
   let userShareAssetAmountToConvertPeriod = baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
   strict checkPeriod = period > userShareAssetAmountToConvertPeriod || "invalid period".throwErr()
   let price = baseAssetId.keyPricePeriodGet(userShareAssetAmountToConvertPeriod).getBinary().valueOrErrorMessage("failed to get price".wrapErr()).toBigInt()
+  strict checkPrice = price != toBigInt(0) || "price is zero".throwErr()
   # claim base asset with the last price (base asset / share asset ?) 
   let baseAssetAmount = fraction(userShareAssetAmountToConvert.toBigInt(), price, scale18BigInt).toInt()
+  strict checkBamount = baseAssetAmount != 0 || "base amount is is zero".throwErr()
 
   ([
     IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), 0),
