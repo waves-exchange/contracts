@@ -48,6 +48,7 @@ var createStageCmd = &cobra.Command{
 			wxAssetId   = "EMAMLxDnv3xiz8RXg8Btj33jcEw3wLczL3JKYYmuubpc"
 			xtnAssetId  = "25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT"
 			usdtAssetId = "5Sh9KghfkZyhjwuodovDhB6PghDUGBHiAPZ4MkrPgKtX"
+			usdcAssetId = "A7Ksh7fXyqm1KhKAiK3bAB2aiPSitQQF6v1pyu9SS3FR"
 
 			factoryV2PriceDecimals = 100000000
 
@@ -320,6 +321,16 @@ var createStageCmd = &cobra.Command{
 			printAndExit(err)
 		}
 
+		swapAcc, err := genAccData(seed, stage, 27)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		lpStakingPoolsAcc, err := genAccData(seed, stage, 28)
+		if err != nil {
+			printAndExit(err)
+		}
+
 		// New XTN, USDT, BTC asset issue txs
 		newXtnTx := proto.NewUnsignedIssueWithProofs(
 			2,
@@ -466,6 +477,10 @@ var createStageCmd = &cobra.Command{
 				},
 				&proto.DeleteDataEntry{
 					Key: "%s%s%s__" + lpPoolNonStableAcc.address.String() + "__mappings__poolContract2PoolAssets",
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__swapContract",
+					Value: swapAcc.address.String(),
 				},
 			},
 			[]*proto.InvokeScriptWithProofs{
@@ -715,7 +730,7 @@ var createStageCmd = &cobra.Command{
 				},
 				&proto.StringDataEntry{
 					Key:   "%s__adminPubKeys",
-					Value: managerAcc.publicKey.String() + "__" + factoryV2Acc.publicKey.String(),
+					Value: managerAcc.publicKey.String() + "__" + factoryV2Acc.publicKey.String() + "__" + lpStakingPoolsAcc.publicKey.String(),
 				},
 			},
 			[]*proto.InvokeScriptWithProofs{
@@ -1135,6 +1150,10 @@ var createStageCmd = &cobra.Command{
 					Key:   "%s__managerPublicKey",
 					Value: managerAcc.publicKey.String(),
 				},
+				&proto.StringDataEntry{
+					Key:   "%s__lpStakingPoolsContract",
+					Value: lpStakingPoolsAcc.address.String(),
+				},
 			},
 			[]*proto.InvokeScriptWithProofs{
 				proto.NewUnsignedInvokeScriptWithProofs(
@@ -1227,6 +1246,10 @@ var createStageCmd = &cobra.Command{
 				&proto.StringDataEntry{
 					Key:   "%s__managerPublicKey",
 					Value: managerAcc.publicKey.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__lpStakingPoolsContract",
+					Value: lpStakingPoolsAcc.address.String(),
 				},
 			},
 			[]*proto.InvokeScriptWithProofs{
@@ -1503,6 +1526,10 @@ var createStageCmd = &cobra.Command{
 					Key:   "%s__managerPublicKey",
 					Value: managerAcc.publicKey.String(),
 				},
+				&proto.StringDataEntry{
+					Key:   "%s__lpStakingPoolsContract",
+					Value: lpStakingPoolsAcc.address.String(),
+				},
 			},
 			[]*proto.InvokeScriptWithProofs{
 				proto.NewUnsignedInvokeScriptWithProofs(
@@ -1596,6 +1623,128 @@ var createStageCmd = &cobra.Command{
 		err = vesting.Deploy(ctx)
 		if err != nil {
 			printAndExit(fmt.Errorf("vesting.Deploy: %w", err))
+		}
+
+		swap := cli_contract.New(
+			proto.TestNetScheme,
+			cl,
+			contractModel,
+			lpStakingPoolsAcc.privateKey,
+			managerAcc.privateKey,
+			gazPrv,
+			"swap",
+			"swap.ride",
+			stage,
+			false,
+			[]proto.DataEntry{
+				&proto.StringDataEntry{
+					Key:   "%s__managerPublicKey",
+					Value: managerAcc.publicKey.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__factoryContract",
+					Value: factoryV2Acc.address.String(),
+				},
+				&proto.IntegerDataEntry{
+					Key:   "%s__protocolFee",
+					Value: 100000,
+				},
+				&proto.IntegerDataEntry{
+					Key:   "%s__poolFee",
+					Value: 200000,
+				},
+			},
+		)
+
+		err = swap.Deploy(ctx)
+		if err != nil {
+			printAndExit(fmt.Errorf("swap.Deploy: %w", err))
+		}
+
+		lpStakingPools := cli_contract.New(
+			proto.TestNetScheme,
+			cl,
+			contractModel,
+			lpStakingPoolsAcc.privateKey,
+			managerAcc.privateKey,
+			gazPrv,
+			"lp_staking_pools",
+			"lp_staking_pools.ride",
+			stage,
+			false,
+			[]proto.DataEntry{
+				&proto.StringDataEntry{
+					Key:   "%s__managerPublicKey",
+					Value: managerAcc.publicKey.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__factoryContract",
+					Value: factoryV2Acc.address.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__assetsStoreContract",
+					Value: assetStoreAcc.address.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__lpStakingContract",
+					Value: lpStakingV2Acc.address.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__stakingContract",
+					Value: stakingAcc.address.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__boostingContract",
+					Value: boostingAcc.address.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__swapContract",
+					Value: swapAcc.address.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__usdtAssetId",
+					Value: usdtAssetId,
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__wxAssetId",
+					Value: wxAssetId,
+				},
+				&proto.IntegerDataEntry{
+					Key:   "%s__minDelay",
+					Value: 60,
+				},
+				&proto.IntegerDataEntry{
+					Key:   "%s__lockFraction",
+					Value: 100000000,
+				},
+			},
+			[]*proto.InvokeScriptWithProofs{
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					lpStakingPoolsAcc.recipient,
+					proto.FunctionCall{
+						Name: "create",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(usdcAssetId),
+							proto.NewStringArgument(""),
+							proto.NewStringArgument("usdCoin"),
+							proto.NewStringArgument("usdcToken"),
+							proto.NewStringArgument(""),
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					110500000,
+					tools.Timestamp(),
+				),
+			},
+		)
+
+		err = lpStakingPools.Deploy(ctx)
+		if err != nil {
+			printAndExit(fmt.Errorf("lp_staking_pools.Deploy: %w", err))
 		}
 
 		// Save contracts to mongo
@@ -1714,6 +1863,16 @@ var createStageCmd = &cobra.Command{
 			e = vesting.Save(sc)
 			if e != nil {
 				return nil, fmt.Errorf("vesting.Save: %w", e)
+			}
+
+			e = swap.Save(sc)
+			if e != nil {
+				return nil, fmt.Errorf("swap.Save: %w", e)
+			}
+
+			e = lpStakingPools.Save(sc)
+			if e != nil {
+				return nil, fmt.Errorf("lp_staking_pools.Save: %w", e)
 			}
 
 			return nil, nil
