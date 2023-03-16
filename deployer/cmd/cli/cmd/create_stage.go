@@ -1658,7 +1658,7 @@ var createStageCmd = &cobra.Command{
 
 		err = swap.Deploy(ctx)
 		if err != nil {
-			printAndExit(fmt.Errorf("lp_staking_pools.Deploy: %w", err))
+			printAndExit(fmt.Errorf("swap.Deploy: %w", err))
 		}
 
 		lpStakingPools := cli_contract.New(
@@ -1732,22 +1732,6 @@ var createStageCmd = &cobra.Command{
 							proto.NewStringArgument("usdCoin"),
 							proto.NewStringArgument("usdcToken"),
 							proto.NewStringArgument(""),
-						},
-					},
-					nil,
-					proto.NewOptionalAssetWaves(),
-					110500000,
-					tools.Timestamp(),
-				),
-				proto.NewUnsignedInvokeScriptWithProofs(
-					1,
-					proto.TestNetScheme,
-					managerAcc.publicKey,
-					lpStakingPoolsAcc.recipient,
-					proto.FunctionCall{
-						Name: "finalize",
-						Arguments: proto.Arguments{
-							proto.NewStringArgument(usdcAssetId),
 						},
 					},
 					nil,
