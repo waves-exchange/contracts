@@ -1,0 +1,14 @@
+{
+    "type": 12,
+    "version": 2,
+    "senderPublicKey": "Ajaez2Qx6UNQu7rT1BceE2hNDrQd52fLHsoq7Js5q3by",
+    "fee": 500000,
+    "proofs": [],
+    "data": [
+        {
+            "key": "%s__labels",
+            "type": "string",
+            "value": "GATEWAY__COMMUNITY_VERIFIED__STABLECOIN__STAKING_LP__3RD_PARTY__ALGO_LP__LAMBO_LP__VIRES_LP__WX__POOLS_LP__MAIN__STAKING_POOLS_LP__PEPE"
+        }
+    ]
+}
