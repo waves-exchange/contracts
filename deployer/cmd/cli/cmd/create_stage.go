@@ -1655,9 +1655,6 @@ var createStageCmd = &cobra.Command{
 				},
 			},
 			nil,
-			proto.NewOptionalAssetWaves(),
-			800000,
-			tools.Timestamp(),
 		)
 
 		err = swap.Deploy(ctx)
