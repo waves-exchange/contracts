@@ -743,7 +743,17 @@ var createStageCmd = &cobra.Command{
 						Name: "constructor",
 						Arguments: proto.Arguments{
 							proto.NewStringArgument(userPoolsAcc.address.String()),
-							proto.ListArgument{Items: proto.Arguments{}},
+							proto.ListArgument{Items: proto.Arguments{
+								proto.NewStringArgument("COMMUNITY_VERIFIED"),
+								proto.NewStringArgument("GATEWAY"),
+								proto.NewStringArgument("STABLECOIN"),
+								proto.NewStringArgument("STAKING_LP"),
+								proto.NewStringArgument("3RD_PARTY"),
+								proto.NewStringArgument("ALGO_LP"),
+								proto.NewStringArgument("LAMBO_LP"),
+								proto.NewStringArgument("POOLS_LP"),
+								proto.NewStringArgument("WX__PEPE"),
+							}},
 						},
 					},
 					nil,
@@ -1655,9 +1665,6 @@ var createStageCmd = &cobra.Command{
 				},
 			},
 			nil,
-			proto.NewOptionalAssetWaves(),
-			800000,
-			tools.Timestamp(),
 		)
 
 		err = swap.Deploy(ctx)
@@ -1707,7 +1714,7 @@ var createStageCmd = &cobra.Command{
 				},
 				&proto.StringDataEntry{
 					Key:   "%s__usdtAssetId",
-					Value: usdtAssetId,
+					Value: newUsdtTx.ID.String(),
 				},
 				&proto.StringDataEntry{
 					Key:   "%s__wxAssetId",
@@ -1731,10 +1738,10 @@ var createStageCmd = &cobra.Command{
 					proto.FunctionCall{
 						Name: "create",
 						Arguments: proto.Arguments{
-							proto.NewStringArgument(usdcAssetId),
+							proto.NewStringArgument(newBtcTx.ID.String()),
 							proto.NewStringArgument(""),
-							proto.NewStringArgument("usdCoin"),
-							proto.NewStringArgument("usdcToken"),
+							proto.NewStringArgument("newBTC"),
+							proto.NewStringArgument("newBTCToken"),
 							proto.NewStringArgument(""),
 						},
 					},
