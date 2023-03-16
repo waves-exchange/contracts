@@ -752,7 +752,8 @@ var createStageCmd = &cobra.Command{
 								proto.NewStringArgument("ALGO_LP"),
 								proto.NewStringArgument("LAMBO_LP"),
 								proto.NewStringArgument("POOLS_LP"),
-								proto.NewStringArgument("WX__PEPE"),
+								proto.NewStringArgument("WX"),
+								proto.NewStringArgument("PEPE"),
 							}},
 						},
 					},
@@ -1728,28 +1729,6 @@ var createStageCmd = &cobra.Command{
 					Key:   "%s__lockFraction",
 					Value: 100000000,
 				},
-			},
-			[]*proto.InvokeScriptWithProofs{
-				// proto.NewUnsignedInvokeScriptWithProofs(
-				// 	1,
-				// 	proto.TestNetScheme,
-				// 	managerAcc.publicKey,
-				// 	lpStakingPoolsAcc.recipient,
-				// 	proto.FunctionCall{
-				// 		Name: "create",
-				// 		Arguments: proto.Arguments{
-				// 			proto.NewStringArgument(usdcAssetId),
-				// 			proto.NewStringArgument(""),
-				// 			proto.NewStringArgument("newUSDC"),
-				// 			proto.NewStringArgument("newUSDCtoken"),
-				// 			proto.NewStringArgument(""),
-				// 		},
-				// 	},
-				// 	nil,
-				// 	proto.NewOptionalAssetWaves(),
-				// 	110500000,
-				// 	tools.Timestamp(),
-				// ),
 			},
 		)
 
