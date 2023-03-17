@@ -505,27 +505,19 @@ func getStakedVotesIntegralsDiff(lpAssetIdStr: String, userAddressStr: String) =
   let (lastFinalizedEpoch, currentEpochStartHeight) = getVotingEmissionEpochInfo()
   let userAddress = userAddressStr.addressFromStringValue()
 
-  let userVoteStaked = lpAssetIdStr.getUserVoteStaked(userAddressStr)
-  let votingResultStaked = lpAssetIdStr.getVotingResultStaked()
-  let userVoteStakedIntegralPrev = this.getInteger(lpAssetIdStr.keyVoteStakedIntegral(userAddress, lastFinalizedEpoch)).valueOrElse(0)
-  let votingResultStakedIntegralPrev = this.getInteger(lpAssetIdStr.keyVotingResultStakedIntegral(lastFinalizedEpoch)).valueOrElse(0)
-  let userVoteStakedLastUpdateHeight = this.getInteger(lpAssetIdStr.keyVoteStakedLastUpdateHeight(userAddress, lastFinalizedEpoch)).valueOrElse(currentEpochStartHeight)
-  let votingResultStakedLastUpdateHeight = this.getInteger(lpAssetIdStr.keyVotingResultStakedLastUpdateHeight(lastFinalizedEpoch)).valueOrElse(currentEpochStartHeight)
-  let userVoteStakedIntegralKey = lpAssetIdStr.keyVoteStakedIntegralLast(userAddress, lastFinalizedEpoch)
-  let userVoteStakedIntegralLast = this.getInteger(userVoteStakedIntegralKey).valueOrElse(0)
-  let votingResultStakedIntegralKey = lpAssetIdStr.keyVotingResultStakedIntegralLast(userAddress, lastFinalizedEpoch)
-  let votingResultStakedIntegralLast = this.getInteger(votingResultStakedIntegralKey).valueOrElse(0)
-  let userVoteStakedIntegralDh = height - userVoteStakedLastUpdateHeight
-  let votingResultStakedIntegralDh = height - votingResultStakedLastUpdateHeight
-  let userVoteStakedIntegral = userVoteStakedIntegralDh * userVoteStaked + userVoteStakedIntegralPrev
-  let votingResultStakedIntegral = votingResultStakedIntegralDh * votingResultStaked + votingResultStakedIntegralPrev
+  let userVoteStakedIntegralLastKey = lpAssetIdStr.keyVoteStakedIntegralLast(userAddress, lastFinalizedEpoch)
+  let userVoteStakedIntegralLast = this.getInteger(userVoteStakedIntegralLastKey).valueOrElse(0)
+  let votingResultStakedIntegralLastKey = lpAssetIdStr.keyVotingResultStakedIntegralLast(userAddress, lastFinalizedEpoch)
+  let votingResultStakedIntegralLast = this.getInteger(votingResultStakedIntegralLastKey).valueOrElse(0)
+  let userVoteStakedIntegral = lpAssetIdStr.getUserVoteStakedIntegral(userAddressStr)
+  let votingResultStakedIntegral = lpAssetIdStr.getVotingResultStakedIntegral()
   let userVoteStakedIntegralDiff = userVoteStakedIntegral - userVoteStakedIntegralLast
   let votingResultStakedIntegralDiff = votingResultStakedIntegral - votingResultStakedIntegralLast
 
   (
     [
-      IntegerEntry(userVoteStakedIntegralKey, userVoteStakedIntegral),
-      IntegerEntry(votingResultStakedIntegralKey, votingResultStakedIntegral)
+      IntegerEntry(userVoteStakedIntegralLastKey, userVoteStakedIntegral),
+      IntegerEntry(votingResultStakedIntegralLastKey, votingResultStakedIntegral)
     ],
     userVoteStakedIntegralDiff,
     votingResultStakedIntegralDiff
