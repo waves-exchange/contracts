@@ -743,7 +743,18 @@ var createStageCmd = &cobra.Command{
 						Name: "constructor",
 						Arguments: proto.Arguments{
 							proto.NewStringArgument(userPoolsAcc.address.String()),
-							proto.ListArgument{Items: proto.Arguments{}},
+							proto.ListArgument{Items: proto.Arguments{
+								proto.NewStringArgument("COMMUNITY_VERIFIED"),
+								proto.NewStringArgument("GATEWAY"),
+								proto.NewStringArgument("STABLECOIN"),
+								proto.NewStringArgument("STAKING_LP"),
+								proto.NewStringArgument("3RD_PARTY"),
+								proto.NewStringArgument("ALGO_LP"),
+								proto.NewStringArgument("LAMBO_LP"),
+								proto.NewStringArgument("POOLS_LP"),
+								proto.NewStringArgument("WX"),
+								proto.NewStringArgument("PEPE"),
+							}},
 						},
 					},
 					nil,
@@ -1654,6 +1665,7 @@ var createStageCmd = &cobra.Command{
 					Value: 200000,
 				},
 			},
+			nil,
 		)
 
 		err = swap.Deploy(ctx)
@@ -1703,7 +1715,7 @@ var createStageCmd = &cobra.Command{
 				},
 				&proto.StringDataEntry{
 					Key:   "%s__usdtAssetId",
-					Value: usdtAssetId,
+					Value: newUsdtTx.ID.String(),
 				},
 				&proto.StringDataEntry{
 					Key:   "%s__wxAssetId",
@@ -1717,28 +1729,6 @@ var createStageCmd = &cobra.Command{
 					Key:   "%s__lockFraction",
 					Value: 100000000,
 				},
-			},
-			[]*proto.InvokeScriptWithProofs{
-				proto.NewUnsignedInvokeScriptWithProofs(
-					1,
-					proto.TestNetScheme,
-					managerAcc.publicKey,
-					lpStakingPoolsAcc.recipient,
-					proto.FunctionCall{
-						Name: "create",
-						Arguments: proto.Arguments{
-							proto.NewStringArgument(usdcAssetId),
-							proto.NewStringArgument(""),
-							proto.NewStringArgument("usdCoin"),
-							proto.NewStringArgument("usdcToken"),
-							proto.NewStringArgument(""),
-						},
-					},
-					nil,
-					proto.NewOptionalAssetWaves(),
-					110500000,
-					tools.Timestamp(),
-				),
 			},
 		)
 
