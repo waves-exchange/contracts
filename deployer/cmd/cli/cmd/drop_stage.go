@@ -82,7 +82,7 @@ var dropStageCmd = &cobra.Command{
 			printAndExit(err)
 		}
 		confirmP := promptui.Prompt{
-			Label:     fmt.Sprintf("Drop stage %d, are you sure?", stageInt),
+			Label:     fmt.Sprintf("Drop stage %d, are you sure", stageInt),
 			IsConfirm: true,
 		}
 		_, err = confirmP.Run()
@@ -112,22 +112,22 @@ var dropStageCmd = &cobra.Command{
 
 			e = dropContract(res.SignerPrv, res.BasePub, ctx, cl)
 			if e != nil {
-				printAndExit(e)
+				printAndExit(fmt.Errorf("dropContract: %s", e))
 			}
 			e = dropDataState(res.BasePrv, res.BasePub, ctx, cl)
 			if e != nil {
-				printAndExit(e)
+				printAndExit(fmt.Errorf("dropDataState: %s", e))
 			}
 		}
 
 		_, err = db.Collection(branches).DeleteMany(ctx, stageFilter)
 		if err != nil {
-			fmt.Println(err)
+			printAndExit(fmt.Errorf("branches.DeleteMany: %s", err))
 		}
 
 		_, err = db.Collection(contracts).DeleteMany(ctx, stageFilter)
 		if err != nil {
-			fmt.Println(err)
+			printAndExit(fmt.Errorf("contracts.DeleteMany: %s", err))
 		}
 		log.Info().Str("stage", stageStr).Msg("Stage dropped")
 	},
@@ -137,22 +137,32 @@ func init() {
 	rootCmd.AddCommand(dropStageCmd)
 }
 
-func dropContract(privateKeyBase58 string, publicKeyBase58 string, ctx context.Context, cl *client.Client) error {
+func getKeysFromBase58String(privateKeyBase58 string, publicKeyBase58 string) (crypto.SecretKey, crypto.PublicKey, proto.WavesAddress, error) {
 	secretKey, err := crypto.NewSecretKeyFromBase58(privateKeyBase58)
 	if err != nil {
-		return err
+		return crypto.SecretKey{}, crypto.PublicKey{}, proto.WavesAddress{}, fmt.Errorf("crypto.NewSecretKeyFromBase58: %s", err)
 	}
 	publicKey, err := crypto.NewPublicKeyFromBase58(publicKeyBase58)
 	if err != nil {
-		return err
+		return crypto.SecretKey{}, crypto.PublicKey{}, proto.WavesAddress{}, fmt.Errorf("crypto.NewPublicKeyFromBase58: %s", err)
 	}
 	address, err := proto.NewAddressFromPublicKey(proto.TestNetScheme, publicKey)
 	if err != nil {
-		return err
+		return crypto.SecretKey{}, crypto.PublicKey{}, proto.WavesAddress{}, fmt.Errorf("proto.NewAddressFromPublicKey: %s", err)
 	}
+
+	return secretKey, publicKey, address, nil
+}
+
+func dropContract(privateKeyBase58 string, publicKeyBase58 string, ctx context.Context, cl *client.Client) error {
+	secretKey, publicKey, address, err := getKeysFromBase58String(privateKeyBase58, publicKeyBase58)
+	if err != nil {
+		return fmt.Errorf("getKeysFromBase58String: %s", err)
+	}
+
 	script, _, err := cl.Addresses.ScriptInfo(ctx, address)
 	if err != nil {
-		return err
+		return fmt.Errorf("cl.Addresses.ScriptInfo: %s", err)
 	}
 	if script.Script == "" {
 		log.Info().Str("address", address.String()).Msg("Empty script")
@@ -170,7 +180,7 @@ func dropContract(privateKeyBase58 string, publicKeyBase58 string, ctx context.C
 
 	err = tools.SignBroadcastWait(ctx, proto.TestNetScheme, cl, dropScriptTx, secretKey)
 	if err != nil {
-		return err
+		return fmt.Errorf("tools.SignBroadcastWait: %s", err)
 	}
 
 	log.Info().Str("address", address.String()).Msg("Script removed")
@@ -178,21 +188,13 @@ func dropContract(privateKeyBase58 string, publicKeyBase58 string, ctx context.C
 }
 
 func dropDataState(privateKeyBase58 string, publicKeyBase58 string, ctx context.Context, cl *client.Client) error {
-	secretKey, err := crypto.NewSecretKeyFromBase58(privateKeyBase58)
+	secretKey, publicKey, address, err := getKeysFromBase58String(privateKeyBase58, publicKeyBase58)
 	if err != nil {
-		return err
-	}
-	publicKey, err := crypto.NewPublicKeyFromBase58(publicKeyBase58)
-	if err != nil {
-		return err
-	}
-	address, err := proto.NewAddressFromPublicKey(proto.TestNetScheme, publicKey)
-	if err != nil {
-		return err
+		return fmt.Errorf("getKeysFromBase58String: %s", err)
 	}
 	dState, _, err := cl.Addresses.AddressesData(ctx, address)
 	if err != nil {
-		return err
+		return fmt.Errorf("cl.Addresses.AddressesData: %s", err)
 	}
 	if len(dState) == 0 {
 		log.Info().Str("address", address.String()).Msg("Data state is empty")
@@ -224,7 +226,7 @@ func dropDataState(privateKeyBase58 string, publicKeyBase58 string, ctx context.
 		}
 		e := tools.SignBroadcastWait(ctx, proto.TestNetScheme, cl, dataTx, secretKey)
 		if e != nil {
-			return e
+			return fmt.Errorf("tools.SignBroadcastWait: %s", e)
 		}
 	}
 	log.Info().Str("address", address.String()).Msg("Data state cleared")
