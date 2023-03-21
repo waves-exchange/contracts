@@ -403,7 +403,7 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
   # strict checkBamount = baseAssetAmount != 0 || "base amount is is zero".throwErr()
 
   # write throw with all params 
-  strict checkParams = ("baseAssetAmount = " + baseAssetAmount.toString() + " price =  " + price.toString() + "  userShareAssetAmountToConvertPeriod  = " + userShareAssetAmountToConvertPeriod.toString() + "  userShareAssetAmountToConvert = " + userShareAssetAmountToConvert.toString()).throwErr()
+  # strict checkParams = ("baseAssetAmount = " + baseAssetAmount.toString() + " price =  " + price.toString() + "  userShareAssetAmountToConvertPeriod  = " + userShareAssetAmountToConvertPeriod.toString() + "  userShareAssetAmountToConvert = " + userShareAssetAmountToConvert.toString()).throwErr()
   ([
     IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), 0),
     DeleteEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress)),
