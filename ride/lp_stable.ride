@@ -138,6 +138,7 @@ func mba(bAStr: String) = {"%s%s%s__mappings__baseAsset2internalId__" + bAStr}
 func aps() = {"%s__shutdown"}
 func keyAllowedLpStableScriptHash() = "%s__allowedLpStableScriptHash"
 func keyFeeCollectorAddress() = "%s__feeCollectorAddress"
+func keySkipOrderValidation(poolAddress: String) = "%s%s__skipOrderValidation__" + poolAddress
 
 #------------------------
 # FAILURES
@@ -349,8 +350,8 @@ func getD(xp: List[BigInt]) = {
         }
       }
     }
-    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
-    let (d, found) = FOLD<18>(arr, (s, false), calc)
+    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    let (d, found) = FOLD<17>(arr, (s, false), calc)
     if (found) then {
       d
     } else {
@@ -957,6 +958,10 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
     } else {
       { "Y calculation error, Y = " + y.toString() }.throw()
     }
+}
+
+func skipOrderValidation() = {
+  fca.getBoolean(keySkipOrderValidation(this.toString())).valueOrElse(false)
 }
 
 @Callable(i)
@@ -1717,7 +1722,7 @@ func verify() = {
   match tx {
     case order: Order =>
       let matcherPub    = mp()
-      let (orderValid, orderValidInfo) = validateMatcherOrderAllowed(order)
+      let (orderValid, orderValidInfo) = if (skipOrderValidation()) then (true, "") else validateMatcherOrderAllowed(order)
       let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
       let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
 
