@@ -959,6 +959,10 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
     }
 }
 
+func skipOrderValidation() = {
+  fca.keySkipOrderValidation(this.toString()).getBoolean().valueOrElse(false)
+}
+
 @Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
    let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
@@ -1717,8 +1721,7 @@ func verify() = {
   match tx {
     case order: Order =>
       let matcherPub    = mp()
-      let skipOrderValidation = fca.invoke("skipOrderValidationREADONLY", [this.toString()], []).exactAs[Boolean]
-      let (orderValid, orderValidInfo) = if (skipOrderValidation) then (true, "") else validateMatcherOrderAllowed(order)
+      let (orderValid, orderValidInfo) = if (skipOrderValidation()) then (true, "") else validateMatcherOrderAllowed(order)
       let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
       let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
 
