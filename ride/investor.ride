@@ -38,6 +38,9 @@ func mustManager(i: Invocation) = {
 
 @Callable(i)
 func investWxXtn() = {
+  # invest disabled
+  strict checkCaller = i.mustManager()
+
   let lastCall = keyInvestWxXtnLastHeight().getInteger().valueOrElse(0)
   let delay = keyInvestWxXtnDelay().getIntegerValue()
   strict checks = [
