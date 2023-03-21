@@ -134,7 +134,7 @@ func keyOutFeeDefault()
       = "%s__outFeeDefault"
 
 func keySkipOrderValidation(poolAddress: String)
-      = "%s__skipOrderValidation__" + poolAddress
+      = "%s%s__skipOrderValidation__" + poolAddress
 
 #------------------------
 # GLOBAL FUNCTIONS

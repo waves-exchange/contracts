@@ -138,7 +138,7 @@ func mba(bAStr: String) = {"%s%s%s__mappings__baseAsset2internalId__" + bAStr}
 func aps() = {"%s__shutdown"}
 func keyAllowedLpStableScriptHash() = "%s__allowedLpStableScriptHash"
 func keyFeeCollectorAddress() = "%s__feeCollectorAddress"
-func keySkipOrderValidation(poolAddress: String) = "%s__skipOrderValidation__" + poolAddress
+func keySkipOrderValidation(poolAddress: String) = "%s%s__skipOrderValidation__" + poolAddress
 
 #------------------------
 # FAILURES
