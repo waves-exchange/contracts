@@ -961,7 +961,7 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
 }
 
 func skipOrderValidation() = {
-  fca.keySkipOrderValidation(this.toString()).getBoolean().valueOrElse(false)
+  fca.getBoolean(keySkipOrderValidation(this.toString())).valueOrElse(false)
 }
 
 @Callable(i)
