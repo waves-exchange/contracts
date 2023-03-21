@@ -6,7 +6,7 @@ import {
   nodeInteraction,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { format } from 'path';
+import { format, join } from 'path';
 import ora from 'ora';
 import { setScriptFromFile } from '../../utils/utils.mjs';
 
@@ -20,9 +20,10 @@ const ridePath = '../ride';
 const testPath = 'common_mock';
 const userPoolsPath = format({ dir: ridePath, base: 'user_pools.ride' });
 const assetsStoreMockPath = format({ dir: testPath, base: 'assets_store.mock.ride' });
-const factoryV2MockPath = format({ dir: testPath, base: 'factory_v2.mock.ride' });
 const emissionMockPath = format({ dir: testPath, base: 'emission.mock.ride' });
 const lpMockPath = format({ dir: testPath, base: 'lp.mock.ride' });
+const mockPath = join('components', 'user_pools', 'mocks');
+const factoryV2MockPath = format({ dir: mockPath, base: 'factory_v2.mock.ride' });
 
 export const mochaHooks = {
   async beforeAll() {

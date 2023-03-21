@@ -17,3 +17,19 @@ func unstake(lpAssetIdStr: String, amount: Int) = {
     unit
    )
 }
+
+@Callable(i)
+func unstakeINTERNAL(
+  lpAssetId: ByteVector,
+  amount: Int,
+  userAddress: ByteVector,
+  lpAssetRecipientAddress: ByteVector
+  ) = {
+  (
+    [
+      ScriptTransfer(Address(lpAssetRecipientAddress), amount, lpAssetId)
+    ],
+    unit
+   )
+}
+

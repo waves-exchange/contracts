@@ -106,6 +106,7 @@ export const mochaHooks = {
         { key: '%s__swapContract', type: 'string', value: this.accounts.swap.addr },
         { key: '%s__usdnAssetId', type: 'string', value: this.usdnAssetId },
         { key: '%s__wxAssetId', type: 'string', value: this.wxAssetId },
+        { key: '%s__usdtAssetId', type: 'string', value: this.usdtAssetId },
       ],
       chainId,
     }, this.accounts.lpStakingPools.seed);
