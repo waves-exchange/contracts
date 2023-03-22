@@ -1,5 +1,5 @@
 # Testnet environment
-[**lpstakingpools-debug**](https://github.com/waves-exchange/contracts/tree/lpstakingpools-debug) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:37 22.03.2023** (GMT+4)
+[**lpstakingpools-debug**](https://github.com/waves-exchange/contracts/tree/lpstakingpools-debug) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:52 22.03.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
