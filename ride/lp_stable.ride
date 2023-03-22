@@ -1726,7 +1726,7 @@ func changeAmp() = {
   let cfg = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
   let (delay, delta, target) = match cfg {
     case list: List[Any] => {
-      (list[0].parseIntValue(), list[1].parseIntValue(), list[2].parseIntValue())
+      (list[0].exactAs[Int], list[1].exactAs[Int], list[2].exactAs[Int])
     }
     case _ => "invalid entry type".throw()
   }
