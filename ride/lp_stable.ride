@@ -1740,7 +1740,6 @@ func changeAmp() = {
   }
 
   strict curAmp = amp().getStringValue().parseIntValue()
-  strict tt2 = "2".throw()
 
   strict lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
   strict t3 = "3".throw()
