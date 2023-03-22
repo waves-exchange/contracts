@@ -1740,10 +1740,9 @@ func changeAmp() = {
     if (newAmpRaw > target) then target else newAmpRaw
   }
 
-#  strict t = ["lastCall="+lastCall.toString(), "delay="+delay.toString(), "height="+height.toString(), "curAmp="+curAmp.toString(), "target="+target.toString()].makeString(" ").throw()
   strict checks = [
     lastCall+delay < height || "try again in few blocks".throwErr(),
-    curAmp != target || "already reached target".throwErr()
+    curAmp != newAmp || "already reached target".throwErr()
   ]
 
   [
