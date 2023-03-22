@@ -86,7 +86,7 @@ func fromX18Round(
   round: Ceiling|Floor
 ) = fraction(val, resultScaleMult.toBigInt(), scale18, round).toInt()
 
-func t2(origVal: BigInt, origScaleMult: Int) = fraction(origVal, scale18, origScaleMult.toBigInt()) 
+func t2(origVal: BigInt, origScaleMult: Int) = fraction(origVal, scale18, origScaleMult.toBigInt())
 func f2(val: BigInt, resultScaleMult: Int) = fraction(val, resultScaleMult.toBigInt(), scale18)
 
 # cast passed amount to specified 'resScale' scale value from 'curScale' scale value
@@ -221,15 +221,15 @@ func parsePoolConfig(poolConfig: List[String]) = {
 
 let poolConfigParsed = gpc().parsePoolConfig()
 let (
-  cfgPoolAddress,
-  cfgPoolStatus,
-  cfgLpAssetId,
-  cfgAmountAssetId,
-  cfgPriceAssetId,
-  cfgAmountAssetDecimals,
-  cfgPriceAssetDecimals,
-  cfgInAmountAssedId,
-  cfgInPriceAssetId
+cfgPoolAddress,
+cfgPoolStatus,
+cfgLpAssetId,
+cfgAmountAssetId,
+cfgPriceAssetId,
+cfgAmountAssetDecimals,
+cfgPriceAssetDecimals,
+cfgInAmountAssedId,
+cfgInPriceAssetId
 ) = poolConfigParsed
 
 # getFactoryConfig
@@ -269,7 +269,7 @@ func vad(A1: BigInt, A2: BigInt, slippage: BigInt) = {
   let diff = fraction(A1 - A2, scale8BigInt, A2)
   let pass = (slippage - abs(diff)) > zeroBigInt
   if (!pass) then throw("Big slpg: " + diff.toString()) else
-  (pass, min([A1, A2]))
+    (pass, min([A1, A2]))
 }
 
 # validateD
@@ -277,15 +277,15 @@ func vd(D1: BigInt, D0: BigInt, slpg: BigInt) = {
   let diff = fraction(D0, scale8BigInt, D1)
   let fail = diff < slpg
   if (fail || D1 < D0) then throw(D0.toString() + " " + D1.toString() + " " + diff.toString() + " " + slpg.toString()) else
-  fail
+    fail
 }
 
 # privateCalcPrice
 # cast assets and calc price
 func pcp(amAssetDcm: Int, prAssetDcm: Int, amAmt: Int, prAmt: Int) = {
-    let amtAsAmtX18 = amAmt.t1(amAssetDcm)
-    let prAsAmtX18 = prAmt.t1(prAssetDcm)
-    cpbi(prAsAmtX18, amtAsAmtX18)
+  let amtAsAmtX18 = amAmt.t1(amAssetDcm)
+  let prAsAmtX18 = prAmt.t1(prAssetDcm)
+  cpbi(prAsAmtX18, amtAsAmtX18)
 }
 
 # used only in stats endpoint, so result values are in scale8 as required
@@ -307,10 +307,10 @@ func calcPrices(amAmt: Int, prAmt: Int, lpAmt: Int) = {
 
 # public API which is used by backend
 func calculatePrices(amAmt: Int, prAmt: Int, lpAmt: Int) = {
-    let p = calcPrices(amAmt, prAmt, lpAmt)
-    [p[0].f1(scale8),
-        p[1].f1(scale8),
-        p[2].f1(scale8)]
+  let p = calcPrices(amAmt, prAmt, lpAmt)
+  [p[0].f1(scale8),
+  p[1].f1(scale8),
+  p[2].f1(scale8)]
 }
 
 func takeFee(amount: Int, fee: Int) = {
@@ -376,183 +376,183 @@ func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address
   # validation block
   if (lpId.toBase58String() != pmtAssetId) then throw("Wrong pmt asset") else
 
-  let amBalance = getAccBalance(amId)
-  let amBalanceX18 = amBalance.t1(amDcm)
+    let amBalance = getAccBalance(amId)
+    let amBalanceX18 = amBalance.t1(amDcm)
 
-  let prBalance = getAccBalance(prId)
-  let prBalanceX18 = prBalance.t1(prDcm)
+    let prBalance = getAccBalance(prId)
+    let prBalanceX18 = prBalance.t1(prDcm)
 
-  let curPriceX18 = cpbi(prBalanceX18, amBalanceX18)
-  let curPrice = curPriceX18.f1(scale8)
+    let curPriceX18 = cpbi(prBalanceX18, amBalanceX18)
+    let curPrice = curPriceX18.f1(scale8)
 
-  let pmtLpAmtX18 = pmtLpAmt.t1(scale8)
-  let lpEmissX18 = lpEmiss.t1(scale8)
-  # calculations
-  let outAmAmtX18 = fraction(amBalanceX18, pmtLpAmtX18, lpEmissX18)
-  let outPrAmtX18 = fraction(prBalanceX18, pmtLpAmtX18, lpEmissX18)
+    let pmtLpAmtX18 = pmtLpAmt.t1(scale8)
+    let lpEmissX18 = lpEmiss.t1(scale8)
+    # calculations
+    let outAmAmtX18 = fraction(amBalanceX18, pmtLpAmtX18, lpEmissX18)
+    let outPrAmtX18 = fraction(prBalanceX18, pmtLpAmtX18, lpEmissX18)
 
-  # cast amounts to asset decimals
-  let outAmAmt = outAmAmtX18.fromX18Round(amDcm, FLOOR)
-  let outPrAmt = outPrAmtX18.fromX18Round(prDcm, FLOOR)
+    # cast amounts to asset decimals
+    let outAmAmt = outAmAmtX18.fromX18Round(amDcm, FLOOR)
+    let outPrAmt = outPrAmtX18.fromX18Round(prDcm, FLOOR)
 
-  let state = if (txId58 == "") then [] else
-  [
-    ScriptTransfer(userAddress, outAmAmt, if (amId == "WAVES") then unit else amId.fromBase58String()),
-    ScriptTransfer(userAddress, outPrAmt, if (prId == "WAVES") then unit else prId.fromBase58String()),
+    let state = if (txId58 == "") then [] else
+      [
+        ScriptTransfer(userAddress, outAmAmt, if (amId == "WAVES") then unit else amId.fromBase58String()),
+        ScriptTransfer(userAddress, outPrAmt, if (prId == "WAVES") then unit else prId.fromBase58String()),
 
-    StringEntry(
+        StringEntry(
           gau(userAddress.toString(), txId58),
           dataGetActionInfo(outAmAmt, outPrAmt, pmtLpAmt, curPrice, height, lastBlock.timestamp)),
-    IntegerEntry(pl(), curPrice),
-    IntegerEntry(ph(height, lastBlock.timestamp), curPrice)
-  ]
+        IntegerEntry(pl(), curPrice),
+        IntegerEntry(ph(height, lastBlock.timestamp), curPrice)
+      ]
 
-  ( outAmAmt,     # 1
-    outPrAmt,     # 2
-    amId,         # 3
-    prId,         # 4
-    amBalance,    # 5
-    prBalance,    # 6
-    lpEmiss,   # 7
-    curPriceX18,  # 8
-    sts,   # 9
-    state         # 10
-  )
+      ( outAmAmt,     # 1
+      outPrAmt,     # 2
+      amId,         # 3
+      prId,         # 4
+      amBalance,    # 5
+      prBalance,    # 6
+      lpEmiss,   # 7
+      curPriceX18,  # 8
+      sts,   # 9
+      state         # 10
+      )
 }
 
 # estimatePutOperation
 func epo(txId58: String,
-                          slippage: Int,
-                          inAmAmt: Int,
-                          inAmId: ByteVector|Unit,
-                          inPrAmt: Int,
-                          inPrId: ByteVector|Unit,
-                          userAddress: String,
-                          isEval: Boolean,
-                          emitLp: Boolean,
-                          isOneAsset: Boolean,
-                          validateSlippage: Boolean,
-                          pmtAmt: Int,
-                          pmtId: String) = {
-    let lpId      = cfgLpAssetId
-    let amIdStr   = cfgAmountAssetId.value().toBase58String()
-    let prIdStr   = cfgPriceAssetId.value().toBase58String()
-    let inAmIdStr = cfgInAmountAssedId
-    let inPrIdStr = cfgInPriceAssetId
-    let amtDcm    = cfgAmountAssetDecimals
-    let priceDcm  = cfgPriceAssetDecimals
-    let sts       = cfgPoolStatus.toString()
+slippage: Int,
+inAmAmt: Int,
+inAmId: ByteVector|Unit,
+inPrAmt: Int,
+inPrId: ByteVector|Unit,
+userAddress: String,
+isEval: Boolean,
+emitLp: Boolean,
+isOneAsset: Boolean,
+validateSlippage: Boolean,
+pmtAmt: Int,
+pmtId: String) = {
+  let lpId      = cfgLpAssetId
+  let amIdStr   = cfgAmountAssetId.value().toBase58String()
+  let prIdStr   = cfgPriceAssetId.value().toBase58String()
+  let inAmIdStr = cfgInAmountAssedId
+  let inPrIdStr = cfgInPriceAssetId
+  let amtDcm    = cfgAmountAssetDecimals
+  let priceDcm  = cfgPriceAssetDecimals
+  let sts       = cfgPoolStatus.toString()
 
-    let lpEm = assetInfo(lpId).valueOrErrorMessage("Wr lp as").quantity
+  let lpEm = assetInfo(lpId).valueOrErrorMessage("Wr lp as").quantity
 
-    # get current balances from acc
-    let amBalance = if(isEval) then getAccBalance(amIdStr) else
-                                                              if(isOneAsset && pmtId == amIdStr) then getAccBalance(amIdStr) - pmtAmt else
-                                                                                            if(isOneAsset) then getAccBalance(amIdStr) else getAccBalance(amIdStr) - inAmAmt
-    let prBalance = if(isEval) then getAccBalance(prIdStr) else
-                                                              if(isOneAsset && pmtId == prIdStr) then getAccBalance(prIdStr) - pmtAmt  else
-                                                                                            if(isOneAsset) then getAccBalance(prIdStr) else getAccBalance(prIdStr) - inPrAmt
+  # get current balances from acc
+  let amBalance = if(isEval) then getAccBalance(amIdStr) else
+  if(isOneAsset && pmtId == amIdStr) then getAccBalance(amIdStr) - pmtAmt else
+  if(isOneAsset) then getAccBalance(amIdStr) else getAccBalance(amIdStr) - inAmAmt
+  let prBalance = if(isEval) then getAccBalance(prIdStr) else
+  if(isOneAsset && pmtId == prIdStr) then getAccBalance(prIdStr) - pmtAmt  else
+  if(isOneAsset) then getAccBalance(prIdStr) else getAccBalance(prIdStr) - inPrAmt
 
-    #if(true) then throw("lpEmission = "+ lpEmission.toString() +
-    #                    " amBalance = " + amBalance.toString() +
-    #                    " prBalance = " + prBalance.toString() +
-    #                    " getAccBalance(amIdStr) = " + getAccBalance(amIdStr).toString() +
-    #                    " etAccBalance(prIdStr) = " + getAccBalance(prIdStr).toString()) else
+  #if(true) then throw("lpEmission = "+ lpEmission.toString() +
+  #                    " amBalance = " + amBalance.toString() +
+  #                    " prBalance = " + prBalance.toString() +
+  #                    " getAccBalance(amIdStr) = " + getAccBalance(amIdStr).toString() +
+  #                    " etAccBalance(prIdStr) = " + getAccBalance(prIdStr).toString()) else
 
-    # cast amounts to the lp decimals
-    let inAmAssetAmtX18 = inAmAmt.t1(amtDcm)
-    let inPrAssetAmtX18 = inPrAmt.t1(priceDcm)
+  # cast amounts to the lp decimals
+  let inAmAssetAmtX18 = inAmAmt.t1(amtDcm)
+  let inPrAssetAmtX18 = inPrAmt.t1(priceDcm)
 
-    # calc user expected price
-    let userPriceX18 = cpbi(inPrAssetAmtX18, inAmAssetAmtX18)
+  # calc user expected price
+  let userPriceX18 = cpbi(inPrAssetAmtX18, inAmAssetAmtX18)
 
-    # calc pool price
-    let amBalanceX18 = amBalance.t1(amtDcm)
-    let prBalanceX18 = prBalance.t1(priceDcm)
+  # calc pool price
+  let amBalanceX18 = amBalance.t1(amtDcm)
+  let prBalanceX18 = prBalance.t1(priceDcm)
 
-    let D0 = [amBalanceX18, prBalanceX18].getD()
+  let D0 = [amBalanceX18, prBalanceX18].getD()
 
-    # case of the initial or first deposit
-    # result is a tuple containing the following:
-    # 1. lp amount that user got
-    # 2. amtAsset amount that goes to Pool liquidity
-    # 3. priceAsset amount that goes to Pool liquidity
-    # 4. pool price after PUT operation
-    let r = if(lpEm == 0) then {
-      let D1 = [amBalanceX18 + inAmAssetAmtX18, prBalanceX18 + inPrAssetAmtX18].getD()
+  # case of the initial or first deposit
+  # result is a tuple containing the following:
+  # 1. lp amount that user got
+  # 2. amtAsset amount that goes to Pool liquidity
+  # 3. priceAsset amount that goes to Pool liquidity
+  # 4. pool price after PUT operation
+  let r = if(lpEm == 0) then {
+    let D1 = [amBalanceX18 + inAmAssetAmtX18, prBalanceX18 + inPrAssetAmtX18].getD()
+
+    strict checkD = D1 > D0 || "D1 should be greater than D0".throw()
+    let curPriceX18 = zeroBigInt
+    let slippageX18 = zeroBigInt
+    # calc initial deposit by geometric mean
+    # let lpAmtX18 = pow(inAmAssetAmtX18 * inPrAssetAmtX18, 0, 5.toBigInt(), 1, 0, DOWN)
+    let lpAmtX18 = D1
+    (
+      lpAmtX18.f1(scale8),
+      inAmAssetAmtX18.f1(amtDcm),
+      inPrAssetAmtX18.f1(priceDcm),
+      cpbi(prBalanceX18 + inPrAssetAmtX18, amBalanceX18 + inAmAssetAmtX18),
+      slippageX18
+    )
+  } else {
+    let curPriceX18 = cpbi(prBalanceX18, amBalanceX18)
+    let slippageRealX18 = fraction(abs(curPriceX18 - userPriceX18), scale18, curPriceX18)
+    let slippageX18 = slippage.t1(scale8)
+    # validate slippage
+    if (validateSlippage && curPriceX18 != zeroBigInt && slippageRealX18 > slippageX18) then throw("Price slippage " + slippageRealX18.toString() + " > " + slippageX18.toString()) else
+
+      let lpEmissionX18 = lpEm.t1(scale8)
+      # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
+
+      let prViaAmX18 = fraction(inAmAssetAmtX18, cpbir(prBalanceX18, amBalanceX18, CEILING), scale18, CEILING)
+      let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, cpbir(prBalanceX18, amBalanceX18, FLOOR), CEILING)
+
+      # calculate amount and price assets to perform pool deposit in proportion to current pool price
+      let expectedAmts= if (prViaAmX18 > inPrAssetAmtX18)
+      then (amViaPrX18, inPrAssetAmtX18)
+      else (inAmAssetAmtX18, prViaAmX18)
+
+      let expAmtAssetAmtX18   = expectedAmts._1
+      let expPriceAssetAmtX18 = expectedAmts._2
+      # calculate LP amount that user
+      # let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18, FLOOR)
+      let D1 = [amBalanceX18 + expAmtAssetAmtX18, prBalanceX18 + expPriceAssetAmtX18].getD()
 
       strict checkD = D1 > D0 || "D1 should be greater than D0".throw()
-        let curPriceX18 = zeroBigInt
-        let slippageX18 = zeroBigInt
-        # calc initial deposit by geometric mean
-        # let lpAmtX18 = pow(inAmAssetAmtX18 * inPrAssetAmtX18, 0, 5.toBigInt(), 1, 0, DOWN)
-        let lpAmtX18 = D1
-        (
-          lpAmtX18.f1(scale8),
-          inAmAssetAmtX18.f1(amtDcm),
-          inPrAssetAmtX18.f1(priceDcm),
-          cpbi(prBalanceX18 + inPrAssetAmtX18, amBalanceX18 + inAmAssetAmtX18),
-          slippageX18
-        )
-    } else {
-            let curPriceX18 = cpbi(prBalanceX18, amBalanceX18)
-            let slippageRealX18 = fraction(abs(curPriceX18 - userPriceX18), scale18, curPriceX18)
-            let slippageX18 = slippage.t1(scale8)
-            # validate slippage
-            if (validateSlippage && curPriceX18 != zeroBigInt && slippageRealX18 > slippageX18) then throw("Price slippage " + slippageRealX18.toString() + " > " + slippageX18.toString()) else
+      let lpAmtX18 = fraction(lpEmissionX18, D1 - D0, D0)
+      (
+        lpAmtX18.fromX18Round(scale8, FLOOR),
+        expAmtAssetAmtX18.fromX18Round(amtDcm, CEILING),
+        expPriceAssetAmtX18.fromX18Round(priceDcm, CEILING),
+        curPriceX18,
+        slippageX18
+      )
+  }
 
-            let lpEmissionX18 = lpEm.t1(scale8)
-            # calculate amount of price asset needed to deposit pool by current price and user's amountAsset amount
+  let calcLpAmt         = r._1
+  let calcAmAssetPmt    = r._2
+  let calcPrAssetPmt    = r._3
+  let curPrice          = r._4.f1(scale8)
+  let slippageCalc      = r._5.f1(scale8)
 
-            let prViaAmX18 = fraction(inAmAssetAmtX18, cpbir(prBalanceX18, amBalanceX18, CEILING), scale18, CEILING)
-            let amViaPrX18 = fraction(inPrAssetAmtX18, scale18, cpbir(prBalanceX18, amBalanceX18, FLOOR), CEILING)
-
-            # calculate amount and price assets to perform pool deposit in proportion to current pool price
-            let expectedAmts= if (prViaAmX18 > inPrAssetAmtX18)
-                    then (amViaPrX18, inPrAssetAmtX18)
-                    else (inAmAssetAmtX18, prViaAmX18)
-
-            let expAmtAssetAmtX18   = expectedAmts._1
-            let expPriceAssetAmtX18 = expectedAmts._2
-            # calculate LP amount that user
-            # let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18, FLOOR)
-            let D1 = [amBalanceX18 + expAmtAssetAmtX18, prBalanceX18 + expPriceAssetAmtX18].getD()
-
-            strict checkD = D1 > D0 || "D1 should be greater than D0".throw()
-            let lpAmtX18 = fraction(lpEmissionX18, D1 - D0, D0)
-            (
-              lpAmtX18.fromX18Round(scale8, FLOOR),
-              expAmtAssetAmtX18.fromX18Round(amtDcm, CEILING),
-              expPriceAssetAmtX18.fromX18Round(priceDcm, CEILING),
-              curPriceX18,
-              slippageX18
-            )
-        }
-
-    let calcLpAmt         = r._1
-    let calcAmAssetPmt    = r._2
-    let calcPrAssetPmt    = r._3
-    let curPrice          = r._4.f1(scale8)
-    let slippageCalc      = r._5.f1(scale8)
-
-    if(calcLpAmt <= 0) then throw("LP <= 0") else
+  if(calcLpAmt <= 0) then throw("LP <= 0") else
 
     let emitLpAmt = if (!emitLp) then 0 else calcLpAmt
     let amDiff = inAmAmt - calcAmAssetPmt
     let prDiff = inPrAmt - calcPrAssetPmt
 
     let (writeAmAmt, writePrAmt) = if(isOneAsset && pmtId == amIdStr)
-                                  then (pmtAmt, 0)
-                                        else if(isOneAsset && pmtId == prIdStr)
-                                            then (0, pmtAmt)
-                                                  else (calcAmAssetPmt, calcPrAssetPmt)
+    then (pmtAmt, 0)
+    else if(isOneAsset && pmtId == prIdStr)
+    then (0, pmtAmt)
+    else (calcAmAssetPmt, calcPrAssetPmt)
 
     let commonState = [
       IntegerEntry(pl(), curPrice),
       IntegerEntry(ph(height, lastBlock.timestamp), curPrice),
       StringEntry(
-          pau(userAddress, txId58),
-          dataPutActionInfo(writeAmAmt, writePrAmt, emitLpAmt, curPrice, slippage, slippageCalc, height, lastBlock.timestamp, amDiff, prDiff))
+        pau(userAddress, txId58),
+        dataPutActionInfo(writeAmAmt, writePrAmt, emitLpAmt, curPrice, slippage, slippageCalc, height, lastBlock.timestamp, amDiff, prDiff))
     ]
 
     (
@@ -663,75 +663,75 @@ func validateMatcherOrderAllowed(order: Order) = {
   # validate pairs
   if (order.assetPair.amountAsset != cfgAmountAssetId || order.assetPair.priceAsset != cfgPriceAssetId) then throw("Wr assets") else
 
-  let dLp = this.getString(keyDLp).valueOrElse("0").parseBigIntValue()
-  let (unusedActions, dLpNew) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
-  let isOrderValid = dLpNew >= dLp
+    let dLp = this.getString(keyDLp).valueOrElse("0").parseBigIntValue()
+    let (unusedActions, dLpNew) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+    let isOrderValid = dLpNew >= dLp
 
-  let info = [
-    "dLp=", dLp.toString(),
-    " dLpNew=", dLpNew.toString(),
-    " amountAssetBalance=", amountAssetBalance.toString(),
-    " priceAssetBalance=", priceAssetBalance.toString(),
-    " amountAssetBalanceDelta=", amountAssetBalanceDelta.toString(),
-    " priceAssetBalanceDelta=", priceAssetBalanceDelta.toString(),
-    " height=", height.toString()
-  ].makeString("")
+    let info = [
+      "dLp=", dLp.toString(),
+      " dLpNew=", dLpNew.toString(),
+      " amountAssetBalance=", amountAssetBalance.toString(),
+      " priceAssetBalance=", priceAssetBalance.toString(),
+      " amountAssetBalanceDelta=", amountAssetBalanceDelta.toString(),
+      " priceAssetBalanceDelta=", priceAssetBalanceDelta.toString(),
+      " height=", height.toString()
+    ].makeString("")
 
-  (isOrderValid, info)
+    (isOrderValid, info)
 }
 
 # commonGet
 func cg(i: Invocation) = {
   if (i.payments.size() != 1) then throw("1 pmnt exp") else
 
-  let pmt         = i.payments[0].value()
-  let pmtAssetId  = pmt.assetId.value()
-  let pmtAmt      = pmt.amount
+    let pmt         = i.payments[0].value()
+    let pmtAssetId  = pmt.assetId.value()
+    let pmtAmt      = pmt.amount
 
-  let r = ego(i.transactionId.toBase58String(), pmtAssetId.toBase58String(), pmtAmt, i.caller)
-  let outAmAmt    = r._1
-  let outPrAmt    = r._2
-  let sts  = r._9.parseIntValue()
-  let state       = r._10
+    let r = ego(i.transactionId.toBase58String(), pmtAssetId.toBase58String(), pmtAmt, i.caller)
+    let outAmAmt    = r._1
+    let outPrAmt    = r._2
+    let sts  = r._9.parseIntValue()
+    let state       = r._10
 
-  if(igs() || sts == PoolShutdown) then throw("Admin blocked: " + sts.toString()) else
+    if(igs() || sts == PoolShutdown) then throw("Admin blocked: " + sts.toString()) else
 
-  (outAmAmt,
-  outPrAmt,
-  pmtAmt,
-  pmtAssetId,
-  state
-  )
+      (outAmAmt,
+      outPrAmt,
+      pmtAmt,
+      pmtAssetId,
+      state
+      )
 }
 
 # commonPut
 func cp(caller: String,
-              txId: String,
-              amAsPmt: AttachedPayment,
-              prAsPmt: AttachedPayment,
-              slippage: Int,
-              emitLp: Boolean,
-              isOneAsset: Boolean,
-              validateSlippage: Boolean,
-              pmtAmt: Int,
-              pmtId: String) = {
+txId: String,
+amAsPmt: AttachedPayment,
+prAsPmt: AttachedPayment,
+slippage: Int,
+emitLp: Boolean,
+isOneAsset: Boolean,
+validateSlippage: Boolean,
+pmtAmt: Int,
+pmtId: String) = {
 
-    let r = epo(txId, # i.transactionId.toBase58String()
-                      slippage,
-                      amAsPmt.value().amount,
-                      amAsPmt.value().assetId,
-                      prAsPmt.value().amount,
-                      prAsPmt.value().assetId,
-                      caller,     #i.caller.toString()
-                      txId == "",
-                      emitLp,
-                      isOneAsset,
-                      validateSlippage,
-                      pmtAmt,
-                      pmtId)
+  let r = epo(txId, # i.transactionId.toBase58String()
+  slippage,
+  amAsPmt.value().amount,
+  amAsPmt.value().assetId,
+  prAsPmt.value().amount,
+  prAsPmt.value().assetId,
+  caller,     #i.caller.toString()
+  txId == "",
+  emitLp,
+  isOneAsset,
+  validateSlippage,
+  pmtAmt,
+  pmtId)
 
-    let sts  = r._8.parseIntValue()
-    if(igs() || sts == PoolPutDis || sts == PoolShutdown) then throw("Blocked:" + sts.toString()) else
+  let sts  = r._8.parseIntValue()
+  if(igs() || sts == PoolPutDis || sts == PoolShutdown) then throw("Blocked:" + sts.toString()) else
     r
 }
 
@@ -755,16 +755,16 @@ func calcPutOneTkn(
   let prBalance = prId.getAccBalance()
 
   let (amBalanceOld, prBalanceOld) =
-    if (txId == "") then (amBalance, prBalance) else {
-      if (pmtAssetId == amId) then {
-        if (amBalance < pmtAmtRaw) then "invalid payment amount".throw() else
-          (amBalance - pmtAmtRaw, prBalance)
-      } else if (pmtAssetId == prId) then {
-        if (prBalance < pmtAmtRaw) then "invalid payment amount".throw() else
-          (amBalance, prBalance - pmtAmtRaw)
-      } else "wrong pmtAssetId".throw()
-    }
-  
+  if (txId == "") then (amBalance, prBalance) else {
+    if (pmtAssetId == amId) then {
+      if (amBalance < pmtAmtRaw) then "invalid payment amount".throw() else
+        (amBalance - pmtAmtRaw, prBalance)
+    } else if (pmtAssetId == prId) then {
+      if (prBalance < pmtAmtRaw) then "invalid payment amount".throw() else
+        (amBalance, prBalance - pmtAmtRaw)
+    } else "wrong pmtAssetId".throw()
+  }
+
   let (amAmountRaw, prAmountRaw) = if (pmtAssetId == amId) then {
     (pmtAmtRaw, 0)
   } else if (pmtAssetId == prId) then {
@@ -812,7 +812,7 @@ func calcPutOneTkn(
   let priceAssetPart = pmtAmtRaw - amountAssetPart
   let lpAmtBoth = fraction(lpAssetEmission, priceAssetPart.toBigInt(), prBalanceOld.toBigInt())
   let bonus = fraction(lpAmount - lpAmtBoth, scale8BigInt, lpAmtBoth).toInt()
-  
+
   (lpAmount.toInt(), commonState, feeAmount, bonus)
 }
 
@@ -843,54 +843,54 @@ func getOneTknV2Internal(
 
   if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
 
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
+    let amBalance = amId.getAccBalance()
+    let prBalance = prId.getAccBalance()
 
-  strict (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
+    strict (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
 
-  let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
-    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
-  } else totalGet
+    let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
+      ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
+    } else totalGet
 
-  let (outAm, outPr, amBalanceNew, prBalanceNew) = if (outAssetId == amId) then {
-    (totalAmount, 0, amBalance - totalAmount - feeAmount, prBalance)
-  } else if (outAssetId == prId) then {
-    (0, totalAmount, amBalance, prBalance - totalAmount - feeAmount)
-  } else {
-    "invalid out asset id".throw()
-  }
+    let (outAm, outPr, amBalanceNew, prBalanceNew) = if (outAssetId == amId) then {
+      (totalAmount, 0, amBalance - totalAmount - feeAmount, prBalance)
+    } else if (outAssetId == prId) then {
+      (0, totalAmount, amBalance, prBalance - totalAmount - feeAmount)
+    } else {
+      "invalid out asset id".throw()
+    }
 
-  let curPrX18 = cpbi(prBalanceNew.t1(prDecimals), amBalanceNew.t1(amDecimals))
-  let curPr = curPrX18.f1(scale8)
+    let curPrX18 = cpbi(prBalanceNew.t1(prDecimals), amBalanceNew.t1(amDecimals))
+    let curPr = curPrX18.f1(scale8)
 
-  let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
-  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetIdOrWaves)] else []
+    let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
+    let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetIdOrWaves)] else []
 
-  strict state = [
-    ScriptTransfer(userAddress, totalAmount, outAssetIdOrWaves),
-    StringEntry(
-      gau(userAddress.toString(), txId58),
-      dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)),
-    IntegerEntry(pl(), curPr),
-    IntegerEntry(ph(height, lastBlock.timestamp), curPr)
-  ] ++ sendFeeToMatcher
+    strict state = [
+      ScriptTransfer(userAddress, totalAmount, outAssetIdOrWaves),
+      StringEntry(
+        gau(userAddress.toString(), txId58),
+        dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)),
+      IntegerEntry(pl(), curPr),
+      IntegerEntry(ph(height, lastBlock.timestamp), curPr)
+    ] ++ sendFeeToMatcher
 
-  strict burn = invoke(fca,
+    strict burn = invoke(fca,
     "burn",
     [pmtAmt],
     [AttachedPayment(pmtAssetId, pmtAmt)]
-  )
+    )
 
-  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
-    let feeAmountForCalc = if (this == feeCollectorAddress) then 0 else feeAmount
-    let outInAmountAsset = if (outAssetId.parseAssetId() == cfgAmountAssetId) then true else false
-    if (outInAmountAsset) then (-(totalGet + feeAmountForCalc), 0) else (0, -(totalGet + feeAmountForCalc))
-  }
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+    let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
+      let feeAmountForCalc = if (this == feeCollectorAddress) then 0 else feeAmount
+      let outInAmountAsset = if (outAssetId.parseAssetId() == cfgAmountAssetId) then true else false
+      if (outInAmountAsset) then (-(totalGet + feeAmountForCalc), 0) else (0, -(totalGet + feeAmountForCalc))
+    }
+    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+    strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
-  (state ++ refreshDLpActions, totalAmount)
+    (state ++ refreshDLpActions, totalAmount)
 }
 
 # managerPublicKeyOrUnit
@@ -929,7 +929,7 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
   let n = big2
   let aPrecision = Amult.parseBigIntValue()
   let a = A.parseBigIntValue() * aPrecision
-  let xp = if (isReverse == false) then { 
+  let xp = if (isReverse == false) then {
     [amId.getAccBalance().toBigInt() + poolAmountInBalance, prId.getAccBalance().toBigInt()]
   } else {
     [prId.getAccBalance().toBigInt() + poolAmountInBalance, amId.getAccBalance().toBigInt()]
@@ -942,24 +942,24 @@ func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
   let c = D * D / (x * n) * D * aPrecision / (ann * n)
   let b = s + D * aPrecision / ann - D
   func calc(acc: (BigInt, Int|Unit), cur: Int) = {
-      let (y, found) = acc
-      if (found != unit) then acc else {
-        let yNext = (y * y + c) / (big2 * y + b)
-        let yDiff = absBigInt(yNext - y.value())
-        if (yDiff <= big1) then {
-          (yNext, cur)
-        } else {
-          (yNext, unit)
-        }
+    let (y, found) = acc
+    if (found != unit) then acc else {
+      let yNext = (y * y + c) / (big2 * y + b)
+      let yDiff = absBigInt(yNext - y.value())
+      if (yDiff <= big1) then {
+        (yNext, cur)
+      } else {
+        (yNext, unit)
       }
     }
-    let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-    let (y, found) = FOLD<15>(arr, (D, unit), calc)
-    if (found != unit) then {
-      y
-    } else {
-      { "Y calculation error, Y = " + y.toString() }.throw()
-    }
+  }
+  let arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  let (y, found) = FOLD<15>(arr, (D, unit), calc)
+  if (found != unit) then {
+    y
+  } else {
+    { "Y calculation error, Y = " + y.toString() }.throw()
+  }
 }
 
 func skipOrderValidation() = {
@@ -968,21 +968,21 @@ func skipOrderValidation() = {
 
 @Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
-   let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
+  let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
     let assetOut = this.strf(pa())
     let poolAmountInBalance = getAccBalance(this.strf(aa())).toBigInt() + cleanAmountIn.toBigInt()
     (assetOut, poolAmountInBalance)
   } else {
     let assetOut = this.strf(aa())
     let poolAmountInBalance = getAccBalance(this.strf(pa())).toBigInt() + cleanAmountIn.toBigInt()
-    (assetOut, poolAmountInBalance) 
+    (assetOut, poolAmountInBalance)
   }
 
   let poolConfig = gpc()
   let amId = poolConfig[idxAmAsId]
   let prId = poolConfig[idxPrAsId]
   let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
-  
+
   let D = xp.getD()
   let y = getY(isReverse, D, cleanAmountIn.toBigInt())
 
@@ -992,12 +992,12 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, f
 
   let newXp = if (isReverse == false) then {
     [amId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt(), prId.getAccBalance().toBigInt() - dy]
-  } else { 
+  } else {
     [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt()]
   }
   let newD = newXp.getD()
   strict checkD = newD >= D || makeString(["new D is fewer error", D.toString(), newD.toString()], "__").throw()
-  
+
   (nil, totalGetRaw)
 }
 
@@ -1005,8 +1005,8 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, f
 func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String, feePoolAmount: Int) = {
   let swapContact = invoke(
     fca,
-    "getSwapContractREADONLY", 
-    [], 
+    "getSwapContractREADONLY",
+    [],
     []
   ).exactAs[String]
   strict checks = [
@@ -1023,7 +1023,7 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   } else {
     let assetOut = this.strf(aa())
     let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
-    (assetOut, poolAmountInBalance) 
+    (assetOut, poolAmountInBalance)
   }
 
   let poolConfig = gpc()
@@ -1031,7 +1031,7 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   let prId = poolConfig[idxPrAsId]
   let xp = if (isReverse == false) then {
     [amId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt(), prId.getAccBalance().toBigInt()]
-  } else { 
+  } else {
     [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt()]
   }
   let D = xp.getD()
@@ -1045,12 +1045,12 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
 
   let newXp = if (isReverse == false) then {
     [amId.getAccBalance().toBigInt() + feePoolAmount.toBigInt(), prId.getAccBalance().toBigInt() - dy]
-  } else { 
+  } else {
     [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + feePoolAmount.toBigInt()]
   }
   let newD = newXp.getD()
   strict checkD = newD >= D || "new D is fewer error".throw()
-  
+
   (
     [
       ScriptTransfer(addressTo.addressFromStringValue(), totalGetRaw, assetOut.parseAssetId())
@@ -1105,11 +1105,11 @@ func confirmManager() = {
 #    transfer LP tokens based on deposit share
 @Callable(i)
 func put(slip: Int, autoStake: Boolean) = {
-    let factCfg = gfc()
-    let stakingCntr = addressFromString(factCfg[idxFactStakCntr]).valueOrErrorMessage("Wr st addr")
-    let slipCntr = addressFromString(factCfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
-    if(slip < 0) then throw("Wrong slippage") else
-    if (i.payments.size() != 2) then throw("2 pmnts expd") else
+  let factCfg = gfc()
+  let stakingCntr = addressFromString(factCfg[idxFactStakCntr]).valueOrErrorMessage("Wr st addr")
+  let slipCntr = addressFromString(factCfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
+  if(slip < 0) then throw("Wrong slippage") else
+  if (i.payments.size() != 2) then throw("2 pmnts expd") else
 
     let amAssetPmt = i.payments[0].value().amount.toBigInt()
     let prAssetPmt = i.payments[1].value().amount.toBigInt()
@@ -1120,15 +1120,15 @@ func put(slip: Int, autoStake: Boolean) = {
     strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
     # estPut
     let e = cp(i.caller.toString(),
-                          i.transactionId.toBase58String(),
-                          AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
-                          i.payments[1],
-                          slip,
-                          true,
-                          false,
-                          true,
-                          0,
-                          "")
+    i.transactionId.toBase58String(),
+    AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
+    i.payments[1],
+    slip,
+    true,
+    false,
+    true,
+    0,
+    "")
 
     let emitLpAmt = e._2
     let lpAssetId = e._7
@@ -1149,9 +1149,9 @@ func put(slip: Int, autoStake: Boolean) = {
     strict sp = if(prDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(prId, prDiff)])        else []
 
     let lpTrnsfr =
-      if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
-      else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
-    
+    if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
+    else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
+
     let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
 
     # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
@@ -1226,21 +1226,21 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   }
 
   let lpTrnsfr =
-    if (autoStake) then {
-      strict ss = stakingContract.invoke(
-        "stakeFor",
-        [i.caller.toString()],
-        [AttachedPayment(lpId, emitLpAmt)]
-      )
+  if (autoStake) then {
+    strict ss = stakingContract.invoke(
+      "stakeFor",
+      [i.caller.toString()],
+      [AttachedPayment(lpId, emitLpAmt)]
+    )
 
-      []
-    } else [ScriptTransfer(i.caller, emitLpAmt, lpId)]
+    []
+  } else [ScriptTransfer(i.caller, emitLpAmt, lpId)]
 
   let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, pmtAssetId.fromBase58String())] else []
 
   let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
     if (this == feeCollectorAddress) then (0, 0) else {
-      # full payment asset id validation is in calcPutOneTkn
+    # full payment asset id validation is in calcPutOneTkn
       let paymentInAmountAsset = if (pmt.assetId == cfgAmountAssetId) then true else false
       if (paymentInAmountAsset) then (-feeAmount, 0) else (0, -feeAmount)
     }
@@ -1264,15 +1264,15 @@ func putForFree(maxSlpg: Int) = {
   if(maxSlpg < 0) then throw("Wrong slpg") else
   if (i.payments.size() != 2) then throw("2 pmnts expd") else
     let estPut = cp(i.caller.toString(),
-                          i.transactionId.toBase58String(),
-                          AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
-                          i.payments[1],
-                          maxSlpg,
-                          false,
-                          false,
-                          true,
-                          0,
-                          "")
+    i.transactionId.toBase58String(),
+    AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
+    i.payments[1],
+    maxSlpg,
+    false,
+    false,
+    true,
+    0,
+    "")
 
     let state = estPut._9
 
@@ -1301,14 +1301,14 @@ func putForFree(maxSlpg: Int) = {
 #    transfer to user his share of pool tokens base on passed lp token amount
 @Callable(i)
 func get() = {
-  # amountAssetBalance
-  # strict aab = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
-  # # priceAssetBalance
-  # strict pab = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
-  # # lpAssetEmission
-  # strict lae = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
-  # # lpAssetEmissionAfter
-  # strict laea = lae - i.payments[0].value().amount.toBigInt()
+# amountAssetBalance
+# strict aab = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
+# # priceAssetBalance
+# strict pab = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
+# # lpAssetEmission
+# strict lae = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
+# # lpAssetEmissionAfter
+# strict laea = lae - i.payments[0].value().amount.toBigInt()
   strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   let r = cg(i)
@@ -1318,9 +1318,9 @@ func get() = {
   let pmtAssetId   = r._4
   let state        = r._5
   strict b = invoke(fca,
-                    "burn",
-                    [pmtAmt],
-                    [AttachedPayment(pmtAssetId, pmtAmt)])
+  "burn",
+  [pmtAmt],
+  [AttachedPayment(pmtAssetId, pmtAmt)])
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmtAmt, -outPrAmt, 0)
 
@@ -1367,9 +1367,9 @@ func refreshDLp() = {
   }
 
   let dLp = this.getString(keyDLp)
-    .valueOrElse("0")
-    .parseBigInt()
-    .valueOrErrorMessage("invalid dLp".fmtErr())
+  .valueOrElse("0")
+  .parseBigInt()
+  .valueOrErrorMessage("invalid dLp".fmtErr())
 
   let (dLpUpdateActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
   let actions = if (dLp != updatedDLp) then dLpUpdateActions else "nothing to refresh".throwErr()
@@ -1429,7 +1429,7 @@ func getOneTknV2WithBonusREADONLY(
   let outAmAmt = r._1
   let outPrAmt = r._2
   let sumOfGetAssets = outAmAmt + outPrAmt
-  
+
   let bonus = if (sumOfGetAssets == 0) then {
     if (totalGet == 0) then 0 else "bonus calculation error".throw()
   } else {
@@ -1450,18 +1450,18 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
   if (outAmAmt < noLessThenAmtAsset) then throw("Failed:  " + outAmAmt.toString() + " < " + noLessThenAmtAsset.toString()) else
   if (outPrAmt < noLessThenPriceAsset) then throw("Failed: " + outPrAmt.toString() + " < " + noLessThenPriceAsset.toString()) else
 
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+    strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
-  strict burnLPAssetOnFactory = invoke(fca,
-                                  "burn",
-                                  [pmtAmt],
-                                  [AttachedPayment(pmtAssetId, pmtAmt)])
+    strict burnLPAssetOnFactory = invoke(fca,
+    "burn",
+    [pmtAmt],
+    [AttachedPayment(pmtAssetId, pmtAmt)])
 
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
+    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
 
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
+    strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
-  state ++ refreshDLpActions
+    state ++ refreshDLpActions
 }
 
 # Unstake LP tokens and exit from pool
@@ -1592,13 +1592,13 @@ func putOneTknV2WithoutTakeFeeREADONLY(paymentAmountRaw: Int, paymentAssetId: St
 # return:
 @Callable(i)
 func activate(amtAsStr: String, prAsStr: String) = {
-    if (i.caller.toString() != fca.toString()) then throw("denied") else {
-        ([
-            StringEntry(aa(),amtAsStr),
-            StringEntry(pa(),prAsStr)
-            ],
-        "success")
-    }
+  if (i.caller.toString() != fca.toString()) then throw("denied") else {
+    ([
+      StringEntry(aa(),amtAsStr),
+      StringEntry(pa(),prAsStr)
+    ],
+    "success")
+  }
 }
 
 # Set string from addon
@@ -1606,9 +1606,9 @@ func activate(amtAsStr: String, prAsStr: String) = {
 func setS(k: String, v: String) = {
   if (i.caller.toString() != this.strf(ada())) then pd else
 
-  [
-    StringEntry(k, v)
-  ]
+    [
+      StringEntry(k, v)
+    ]
 }
 
 # Set integer from addon
@@ -1616,9 +1616,9 @@ func setS(k: String, v: String) = {
 func setI(k: String, v: Int) = {
   if (i.caller.toString() != this.strf(ada())) then pd else
 
-  [
-    IntegerEntry(k, v)
-  ]
+    [
+      IntegerEntry(k, v)
+    ]
 }
 
 # API wrappers
@@ -1726,35 +1726,46 @@ func changeAmp() = {
 #  let cfgRaw = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
   strict (delay, delta, target) = match "1__2__3" {
     case str: String => {
-      let list = str.split(SEP)
-      (list[0].parseIntValue(), list[1].parseIntValue(), list[2].parseIntValue())
+      strict list = str.split(SEP)
+      strict tm1 = "match 1".throw()
+
+      strict v1 = list[0].parseIntValue()
+      strict tm2 = "match 2".throw()
+
+      strict v2 = list[1].parseIntValue()
+      strict tm3 = "match 3".throw()
+
+      strict v3 = list[2].parseIntValue()
+      strict tm4 = "match 4".throw()
+
+      (v1, v2, v3)
     }
     case _ => "invalid entry type".throw()
   }
-  strict t1 = "1".throw()
+  strict tt1 = "1".throw()
 
   strict curAmp = amp().getStringValue().parseIntValue()
-  strict t2 = "2".throw()
+  strict tt2 = "2".throw()
 
   strict lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
   strict t3 = "3".throw()
 
   strict newAmpRaw = curAmp + delta
-  strict t3 = "3".throw()
+  strict t4 = "4".throw()
   # to not increment/decrement too much
   strict newAmp = if (delta < 0) then {
     if (newAmpRaw < target) then target else newAmpRaw
   } else {
     if (newAmpRaw > target) then target else newAmpRaw
   }
-  strict t4 = "4".throw()
+  strict t5 = "5".throw()
 
   strict checks = [
     lastCall+delay < height || "try again in few blocks".throwErr(),
     curAmp != newAmp || "already reached target".throwErr()
   ]
 
-  strict t5 = "5".throw()
+  strict t6 = "6".throw()
 
   [
     IntegerEntry(keyChangeAmpLastCall(), height),
