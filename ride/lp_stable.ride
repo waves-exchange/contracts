@@ -111,7 +111,7 @@ func aa() = {"%s__amountAsset"}
 func pa() = {"%s__priceAsset"}
 # keyAmplificator
 func amp() = {"%s__amp"}
-func keyAmpHistory(heightBlocks: Int) = "%s%d__amp__" + heightBlocks.toString()
+func keyAmpHistory(height: Int) = "%s%d__amp__" + height.toString()
 func ada() = "%s__addonAddr"
 func keyChangeAmpLastCall() = "%s__changeAmpLastCall"
 
