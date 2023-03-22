@@ -1724,6 +1724,7 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 @Callable(i)
 func changeAmp() = {
   let cfg = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], []).exactAs[List[Any]]
+  strict t = "testing".throw()
   let delay = cfg[0].exactAs[Int]
   let delta = cfg[1].exactAs[Int]
   let target = cfg[2].exactAs[Int]
