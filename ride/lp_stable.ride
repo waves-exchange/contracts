@@ -1729,13 +1729,10 @@ func changeAmp() = {
       strict list = str.split(SEP)
 
       strict v1 = list[0].parseIntValue()
-      strict tm2 = "match 2".throw()
 
       strict v2 = list[1].parseIntValue()
-      strict tm3 = "match 3".throw()
 
       strict v3 = list[2].parseIntValue()
-      strict tm4 = "match 4".throw()
 
       (v1, v2, v3)
     }
