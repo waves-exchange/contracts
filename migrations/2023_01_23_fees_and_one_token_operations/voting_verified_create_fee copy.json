@@ -1,0 +1,15 @@
+{
+  "type": 12,
+  "version": 2,
+  "senderPublicKey": "7wRNg48gMG7eZWCzb7RedQqoccX7Tx6Foptzk7Nxkv7H",
+  "fee": 500000,
+  "proofs": [],
+  "chainId": 87,
+  "data": [
+    {
+      "key": "%s__fee",
+      "type": "integer",
+      "value": 100000000000
+    }
+  ]
+}

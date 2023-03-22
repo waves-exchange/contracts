@@ -133,6 +133,9 @@ func keyOutFee(poolAddress: String)
 func keyOutFeeDefault()
       = "%s__outFeeDefault"
 
+func keySkipOrderValidation(poolAddress: String)
+      = "%s%s__skipOrderValidation__" + poolAddress
+
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------
@@ -834,6 +837,11 @@ func getPoolConfigByLpAssetIdREADONLY(lpAssetIdStr: String) = {
 @Callable(i)
 func poolExistsREADONLY(amountAssetId: String, priceAssetId: String) = {
   ([], poolExistsInternal(amountAssetId, priceAssetId))
+}
+
+@Callable(i)
+func skipOrderValidationREADONLY(poolAddress: String) = {
+  ([], keySkipOrderValidation(poolAddress).getBoolean().valueOrElse(false))
 }
 
 @Verifier(tx)

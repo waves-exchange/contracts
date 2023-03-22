@@ -1730,6 +1730,28 @@ var createStageCmd = &cobra.Command{
 					Value: 100000000,
 				},
 			},
+			[]*proto.InvokeScriptWithProofs{
+				proto.NewUnsignedInvokeScriptWithProofs(
+					1,
+					proto.TestNetScheme,
+					managerAcc.publicKey,
+					lpStakingPoolsAcc.recipient,
+					proto.FunctionCall{
+						Name: "create",
+						Arguments: proto.Arguments{
+							proto.NewStringArgument(newBtcTx.ID.String()),
+							proto.NewStringArgument(""),
+							proto.NewStringArgument("newBTC"),
+							proto.NewStringArgument("newBTCToken"),
+							proto.NewStringArgument(""),
+						},
+					},
+					nil,
+					proto.NewOptionalAssetWaves(),
+					110500000,
+					tools.Timestamp(),
+				),
+			},
 		)
 
 		err = lpStakingPools.Deploy(ctx)

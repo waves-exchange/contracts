@@ -376,6 +376,41 @@ func mustManager(i: Invocation) = {
   }
 }
 
+func stakeActions(
+  i: Invocation,
+  lpAssetId: ByteVector,
+  poolAddress: Address,
+  userAddress: Address,
+  amount: Int
+) = {
+  let userAddressStr = userAddress.toString()
+  let lpAssetIdStr = lpAssetId.toBase58String()
+  let poolAddressStr = poolAddress.toString()
+
+  let stakedByUserKEY = keyStakedByUser(userAddressStr, lpAssetIdStr)
+  let stakedTotalKEY = keyStakedTotal(lpAssetIdStr)
+
+  let stakedByUser = stakedByUserKEY.readStaked()
+  strict refreshStakedVote = if (stakedByUser == 0) then {
+    boostingContract.invoke("onStakedVoteUpdate", [lpAssetIdStr, userAddressStr, true], [])
+  } else unit
+  let stakedTotal = stakedTotalKEY.readStaked()
+
+  # TODO обработать кейс когда эмиссия еще не началась
+  let (wxToClaimUserNew, integralSTATE, debug) = refreshINTEGRALS(lpAssetIdStr, userAddressStr, poolAddressStr, amount)
+
+  let listName = lpAssetIdStr.getUsersListName()
+  let listActions = if (listName.containsNode(userAddressStr)) then [] else {
+    listName.insertNodeActions(userAddressStr)
+  }
+
+  [IntegerEntry(stakedByUserKEY, stakedByUser + amount),
+    IntegerEntry(stakedTotalKEY, stakedTotal + amount),
+    OperationHistoryEntry("stake", userAddressStr, lpAssetIdStr, amount, i.transactionId)]
+  ++ integralSTATE
+  ++ listActions
+}
+
 func unstakeActions(
   i: Invocation,
   lpAssetId: ByteVector,
@@ -471,31 +506,37 @@ func stake() = {
   let amount = pmt.amount
 
   let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
-  let callerStr = i.caller.toString()
-  let userAddressStr = if (callerStr == poolAddressStr) then i.originCaller.toString() else callerStr
+  let poolAddress = poolAddressStr.addressFromStringValue()
+  let userAddress = if (i.caller == poolAddress) then i.originCaller else i.caller
 
-  let stakedByUserKEY = keyStakedByUser(userAddressStr, lpAssetIdStr)
-  let stakedTotalKEY = keyStakedTotal(lpAssetIdStr)
+  i.stakeActions(
+    lpAssetId,
+    poolAddress,
+    userAddress,
+    amount
+  )
+}
 
-  let stakedByUser = stakedByUserKEY.readStaked()
-  strict refreshStakedVote = if (stakedByUser == 0) then {
-    boostingContract.invoke("onStakedVoteUpdate", [lpAssetIdStr, userAddressStr, true], [])
-  } else unit
-  let stakedTotal = stakedTotalKEY.readStaked()
+@Callable(i)
+func stakeFor(userAddressStr: String) = {
+  if (i.payments.size() != 1) then throw("invalid payment - exact one payment must be attached") else
+  let pmt = i.payments[0]
+  let lpAssetId = pmt.assetId.value()
+  let lpAssetIdStr = lpAssetId.toBase58String()
+  let amount = pmt.amount
 
-  # TODO обработать кейс когда эмиссия еще не началась
-  let (wxToClaimUserNew, integralSTATE, debug) = refreshINTEGRALS(lpAssetIdStr, userAddressStr, poolAddressStr, amount)
+  let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
+  let poolAddress = poolAddressStr.addressFromStringValue()
+  let userAddress = userAddressStr
+    .addressFromString()
+    .valueOrErrorMessage("invalid user address".wrapErr())
 
-  let listName = lpAssetIdStr.getUsersListName()
-  let listActions = if (listName.containsNode(userAddressStr)) then [] else {
-    listName.insertNodeActions(userAddressStr)
-  }
-
-  [IntegerEntry(stakedByUserKEY, stakedByUser + amount),
-    IntegerEntry(stakedTotalKEY, stakedTotal + amount),
-    OperationHistoryEntry("stake", userAddressStr, lpAssetIdStr, amount, i.transactionId)]
-  ++ integralSTATE
-  ++ listActions
+  i.stakeActions(
+    lpAssetId,
+    poolAddress,
+    userAddress,
+    amount
+  )
 }
 
 @Callable(i)

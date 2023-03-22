@@ -352,8 +352,11 @@ func get() = {
     .getString().valueOrErrorMessage("invalid share asset id".wrapErr()).parseAssetId().value()
   let userAddress = i.caller
   let (poolAddress, lpAssetId) = baseAssetId.getPoolInfo().valueOrErrorMessage("invalid asset".wrapErr())
+  # strict checklp = lpAssetId.toUtf8String() != "" || "empty lp asset id".throwErr()
   let period = baseAssetId.keyPeriod().getInteger().value()
   let userShareAssetAmountToConvertPeriodOption = baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress).getInteger()
+  # strict checkOptions = userShareAssetAmountToConvertPeriodOption != unit || "options is unit"
+  # strict checkOptions2 = userShareAssetAmountToConvertPeriodOption != 0 || "options is 0"
   # call claimBaseAsset
   strict claimBaseAssetInvocation = if (userShareAssetAmountToConvertPeriodOption == unit) then unit else {
     let userShareAssetAmountToConvertPeriod = userShareAssetAmountToConvertPeriodOption.value()
@@ -390,13 +393,17 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
     .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
   strict period = baseAssetId.keyPeriod().getInteger().valueOrErrorMessage("invalid period".wrapErr())
   let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
-  strict checkAmountToConvert = userShareAssetAmountToConvert > 0 || "nothing to claim".throwErr()
+  # strict checkAmountToConvert = userShareAssetAmountToConvert > 0 || "nothing to claim".throwErr()
   let userShareAssetAmountToConvertPeriod = baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
   strict checkPeriod = period > userShareAssetAmountToConvertPeriod || "invalid period".throwErr()
   let price = baseAssetId.keyPricePeriodGet(userShareAssetAmountToConvertPeriod).getBinary().valueOrErrorMessage("failed to get price".wrapErr()).toBigInt()
+  # strict checkPrice = price != toBigInt(0) || "price is zero".throwErr()
   # claim base asset with the last price (base asset / share asset ?) 
   let baseAssetAmount = fraction(userShareAssetAmountToConvert.toBigInt(), price, scale18BigInt).toInt()
+  # strict checkBamount = baseAssetAmount != 0 || "base amount is is zero".throwErr()
 
+  # write throw with all params 
+  # strict checkParams = ("baseAssetAmount = " + baseAssetAmount.toString() + " price =  " + price.toString() + "  userShareAssetAmountToConvertPeriod  = " + userShareAssetAmountToConvertPeriod.toString() + "  userShareAssetAmountToConvert = " + userShareAssetAmountToConvert.toString()).throwErr()
   ([
     IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), 0),
     DeleteEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress)),
@@ -536,7 +543,9 @@ func finalize(baseAssetIdStr: String) = {
     }
     # convert lpAsset amount to share asset amount using price (lp asset / share asset)
     strict price = calcPrice(lpAssetId, shareAssetId)
+    strict checkPrice = price.toInt().value() != 0 || "price is ZERO".throw()
     let shareAssetAmount = fraction(lpAssetAmount.toBigInt(), scale18BigInt, price, FLOOR).toInt()
+    strict checkShareAssetAmount= price.toInt().value() != 0 || "shareAssetAmount is ZERO".throw()
     strict shareAssetReissue = if (shareAssetInfo.issuer == this) then {
       this.invoke("emit", [shareAssetId, shareAssetAmount], [])
     } else "invalid share asset issuer".throwErr()
