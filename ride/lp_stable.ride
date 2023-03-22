@@ -1742,7 +1742,6 @@ func changeAmp() = {
   strict curAmp = amp().getStringValue().parseIntValue()
 
   strict lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
-  strict t3 = "3".throw()
 
   strict newAmpRaw = curAmp + delta
   strict t4 = "4".throw()
