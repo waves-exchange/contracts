@@ -111,7 +111,7 @@ func aa() = {"%s__amountAsset"}
 func pa() = {"%s__priceAsset"}
 # keyAmplificator
 func amp() = {"%s__amp"}
-func keyAmpHistory(height: Int) = "%s%d__amp__" + height.toString()
+func keyAmpHistory(heightBlocks: Int) = "%s%d__amp__" + heightBlocks.toString()
 func ada() = "%s__addonAddr"
 func keyChangeAmpLastCall() = "%s__changeAmpLastCall"
 
@@ -1742,17 +1742,16 @@ func changeAmp() = {
 
   let lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
   let wait = lastCall+delay
-  strict h = height
 
   strict checks = [
-    h > wait || "try again in few blocks".throwErr(),
+    height > wait || "try again in few blocks".throwErr(),
     curAmp != newAmp || "already reached target".throwErr()
   ]
 
   [
-    IntegerEntry(keyChangeAmpLastCall(), h),
+    IntegerEntry(keyChangeAmpLastCall(), height),
     StringEntry(amp(), newAmp.toString()),
-    StringEntry(keyAmpHistory(h), newAmp.toString())
+    StringEntry(keyAmpHistory(height), newAmp.toString())
   ]
 }
 
