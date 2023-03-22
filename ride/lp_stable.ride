@@ -1750,7 +1750,6 @@ func changeAmp() = {
   } else {
     if (newAmpRaw > target) then target else newAmpRaw
   }
-  strict t5 = "5".throw()
 
   strict checks = [
     lastCall+delay < height || "try again in few blocks".throwErr(),
