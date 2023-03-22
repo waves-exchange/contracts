@@ -1725,8 +1725,7 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 func changeAmp() = {
   let cfg = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
   let (delay, delta, target) = match cfg {
-    case str: String => {
-      let list = str.split(SEP)
+    case list: List[Any] => {
       (list[0].parseIntValue(), list[1].parseIntValue(), list[2].parseIntValue())
     }
     case _ => "invalid entry type".throw()
@@ -1735,7 +1734,7 @@ func changeAmp() = {
   let curAmp = amp().getStringValue().parseIntValue()
   let newAmpRaw = curAmp + delta
   # to not increment/decrement too much
-  strict newAmp = if (delta < 0) then {
+  let newAmp = if (delta < 0) then {
     if (newAmpRaw < target) then target else newAmpRaw
   } else {
     if (newAmpRaw > target) then target else newAmpRaw
