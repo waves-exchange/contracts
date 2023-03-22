@@ -1727,7 +1727,6 @@ func changeAmp() = {
   strict (delay, delta, target) = match "1__2__3" {
     case str: String => {
       strict list = str.split(SEP)
-      strict tm1 = "match 1".throw()
 
       strict v1 = list[0].parseIntValue()
       strict tm2 = "match 2".throw()
