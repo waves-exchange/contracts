@@ -1750,9 +1750,10 @@ func changeAmp() = {
   strict wait = lastCall+delay
 
   strict checks = [
-#    height > wait || "try again in few blocks".throwErr(),
     curAmp != newAmp || "already reached target".throwErr()
   ]
+
+  strict cond = height > wait || "try again in few blocks".throwErr()
 
   strict t6 = "6".throw()
 
