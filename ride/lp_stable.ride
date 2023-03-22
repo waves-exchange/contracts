@@ -1725,7 +1725,7 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 func changeAmp() = {
   let cfgRaw = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
   let (delay, delta, target) = match cfgRaw {
-    case l: List[Int] => (l[0], l[1], l[2])
+    case l: List[Any] => (l[0].exactAs[Int], l[1].exactAs[Int], l[2].exactAs[Int])
     case _ => "invalid entry type".throw()
   }
 
