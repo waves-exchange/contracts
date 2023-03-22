@@ -851,7 +851,6 @@ func skipOrderValidationREADONLY(poolAddress: String) = {
   ([], keySkipOrderValidation(poolAddress).getBoolean().valueOrElse(false))
 }
 
-# returns List[Int]
 @Callable(i)
 func getChangeAmpConfigREADONLY(poolAddress: String) = {
 #  let delay = keyChangeAmpDelay(poolAddress).getIntegerValue()
