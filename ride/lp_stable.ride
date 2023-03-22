@@ -111,7 +111,9 @@ func aa() = {"%s__amountAsset"}
 func pa() = {"%s__priceAsset"}
 # keyAmplificator
 func amp() = {"%s__amp"}
+func keyAmpHistory(height: Int) = "%s%d__amp__" + height.toString()
 func ada() = "%s__addonAddr"
+func keyChangeAmpLastCall() = "%s__changeAmpLastCall"
 
 let keyFee = "%s__fee"
 let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
@@ -1717,6 +1719,36 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
     [],
     (r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8.toString(), r._9, r._10)
   )
+}
+
+@Callable(i)
+func changeAmp() = {
+  let cfg = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], []).exactAs[List[Any]]
+  let delay = cfg[0].exactAs[Int]
+  let delta = cfg[1].exactAs[Int]
+  let target = cfg[2].exactAs[Int]
+
+  let curAmp = amp().getStringValue().parseIntValue()
+  let lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
+
+  strict checks = [
+    lastCall+delay < height || "try again in few blocks".throwErr(),
+    curAmp != target || "already reached target".throwErr()
+  ]
+
+  let newAmpRaw = curAmp + delta
+  # to not increment/decrement too much
+  let newAmp = if (delta < 0) then {
+    if (newAmpRaw < target) then target else newAmpRaw
+  } else {
+    if (newAmpRaw > target) then target else newAmpRaw
+  }
+
+  [
+    IntegerEntry(keyChangeAmpLastCall(), height),
+    StringEntry(amp(), newAmp.toString()),
+    StringEntry(keyAmpHistory(height), newAmp.toString())
+  ]
 }
 
 @Verifier(tx)

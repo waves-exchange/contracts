@@ -136,6 +136,14 @@ func keyOutFeeDefault()
 func keySkipOrderValidation(poolAddress: String)
       = "%s%s__skipOrderValidation__" + poolAddress
 
+func keyChangeAmpDelay(poolAddress: String)
+      = "%s%s__changeAmpDelay__" + poolAddress
+# can be positive or negative
+func keyChangeAmpDelta(poolAddress: String)
+      = "%s%s__changeAmpDelta__" + poolAddress
+func keyChangeAmpTarget(poolAddress: String)
+      = "%s%s__changeAmpTarget__" + poolAddress
+
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------
@@ -842,6 +850,15 @@ func poolExistsREADONLY(amountAssetId: String, priceAssetId: String) = {
 @Callable(i)
 func skipOrderValidationREADONLY(poolAddress: String) = {
   ([], keySkipOrderValidation(poolAddress).getBoolean().valueOrElse(false))
+}
+
+# returns List[Int]
+@Callable(i)
+func getChangeAmpConfigREADONLY(poolAddress: String) = {
+  let delay = keyChangeAmpDelay(poolAddress).getIntegerValue()
+  let delta = keyChangeAmpDelta(poolAddress).getIntegerValue()
+  let target = keyChangeAmpTarget(poolAddress).getIntegerValue()
+  ([], [delay, delta, target])
 }
 
 @Verifier(tx)
