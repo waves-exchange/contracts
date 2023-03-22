@@ -1723,23 +1723,17 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 
 @Callable(i)
 func changeAmp() = {
-#  let cfgRaw = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
-  strict str = match "1__2__3" {
-    case s: String => s
+  let cfg = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
+  let (delay, delta, target) = match cfg {
+    case str: String => {
+      let list = str.split(SEP)
+      (list[0].parseIntValue(), list[1].parseIntValue(), list[2].parseIntValue())
+    }
     case _ => "invalid entry type".throw()
   }
 
-  strict list = str.split(SEP)
-
-  strict delay = list[0].parseIntValue()
-  strict delta = list[1].parseIntValue()
-  strict target = list[2].parseIntValue()
-
-  strict curAmp = amp().getStringValue().parseIntValue()
-
-  strict lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
-
-  strict newAmpRaw = curAmp + delta
+  let curAmp = amp().getStringValue().parseIntValue()
+  let newAmpRaw = curAmp + delta
   # to not increment/decrement too much
   strict newAmp = if (delta < 0) then {
     if (newAmpRaw < target) then target else newAmpRaw
@@ -1747,15 +1741,13 @@ func changeAmp() = {
     if (newAmpRaw > target) then target else newAmpRaw
   }
 
-  strict wait = lastCall+delay
+  let lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
+  let wait = lastCall+delay
 
   strict checks = [
+    1000000000 > wait || "try again in few blocks".throwErr(),
     curAmp != newAmp || "already reached target".throwErr()
   ]
-
-  strict cond = if (1000000000 > wait) then unit else "err".throw()
-
-  strict t6 = "6".throw()
 
   [
     IntegerEntry(keyChangeAmpLastCall(), height),
