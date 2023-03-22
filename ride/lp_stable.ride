@@ -1751,7 +1751,7 @@ func changeAmp() = {
     if (newAmpRaw > target) then target else newAmpRaw
   }
 
-  strict wait = lastCall+delay
+  strict wait = 1+1
 
   strict checks = [
     height > wait || "try again in few blocks".throwErr(),
