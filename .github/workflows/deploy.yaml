@@ -1,31 +1,7 @@
-name: CI
+name: Deploy
 on: push
 
 jobs:
-  compile:
-    env:
-      TESTNETNODE: ${{ secrets.TESTNETNODE }}
-      MAINNETNODE: ${{ secrets.MAINNETNODE }}
-    runs-on: self-hosted
-    container:
-      image: golang:1.18
-      options: --user root
-    steps:
-      - name: Clean step
-        uses: mickem/clean-after-action@v1
-        if: always()
-        with:
-          keepGit: true
-      - name: Check out the repo
-        uses: actions/checkout@v2
-      - name: Compile .ride files
-        run: |
-          cd compiler
-          go run main.go
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
-        if: always()
-
   deploy_testnet:
     env:
       BRANCH: ${{ github.ref_name }}
@@ -127,73 +103,3 @@ jobs:
         with:
           name: txs
           path: .github/artifacts/txs
-
-  lint_go:
-    runs-on: self-hosted
-    container:
-      image: golang:1.18
-      options: --user root
-    steps:
-      - name: Clean step
-        uses: mickem/clean-after-action@v1
-        if: always()
-        with:
-          keepGit: true
-      - name: Check out the repo
-        uses: actions/checkout@v2
-      - name: Check .go code gofmt-formatted
-        run: |
-          gofmt -l .
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
-        if: always()
-
-  lint_js:
-    runs-on: self-hosted
-    container:
-      image: node:18.1
-      options: --user root
-    steps:
-      - name: Clean step
-        uses: mickem/clean-after-action@v1
-        if: always()
-        with:
-          keepGit: true
-      - name: Check out the repo
-        uses: actions/checkout@v2
-      - name: Check .js and .mjs code eslint-formatted
-        run: |
-          cd test
-          npm i
-          npm run lint
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
-        if: always()
-
-  test:
-    runs-on: self-hosted
-    container:
-      image: node:18.1
-      options: --user root
-    services:
-      waves-private-node:
-        image: wavesplatform/waves-private-node
-    env:
-      API_NODE_URL: http://waves-private-node:6869
-    steps:
-      - name: Clean step
-        uses: mickem/clean-after-action@v1
-        if: always()
-        with:
-          keepGit: true
-      - name: Check out the repo
-        uses: actions/checkout@v2
-      - name: Run tests on private node
-        run: |
-          cd test
-          npm i
-          npm run ci-test
-      - name: Clean repo
-        uses: AutoModality/action-clean@v1
-        if: always()
-
