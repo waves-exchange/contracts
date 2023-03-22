@@ -1752,7 +1752,7 @@ func changeAmp() = {
   }
 
   strict checks = [
-    lastCall+delay < height || "try again in few blocks".throwErr(),
+#    lastCall+delay < height || "try again in few blocks".throwErr(),
     curAmp != newAmp || "already reached target".throwErr()
   ]
 
