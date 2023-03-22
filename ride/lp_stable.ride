@@ -1742,16 +1742,17 @@ func changeAmp() = {
 
   let lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
   let wait = lastCall+delay
+  let h = height
 
   strict checks = [
-    height > wait || "try again in few blocks".throwErr(),
+    h > wait || "try again in few blocks".throwErr(),
     curAmp != newAmp || "already reached target".throwErr()
   ]
 
   [
-    IntegerEntry(keyChangeAmpLastCall(), height),
+    IntegerEntry(keyChangeAmpLastCall(), h),
     StringEntry(amp(), newAmp.toString()),
-    StringEntry(keyAmpHistory(height), newAmp.toString())
+    StringEntry(keyAmpHistory(h), newAmp.toString())
   ]
 }
 
