@@ -1753,7 +1753,7 @@ func changeAmp() = {
     curAmp != newAmp || "already reached target".throwErr()
   ]
 
-  strict cond = if (height > wait) then unit else "try again in few blocks".throwErr()
+  strict cond = if (1000000000 > wait) then unit else "err".throw()
 
   strict t6 = "6".throw()
 
