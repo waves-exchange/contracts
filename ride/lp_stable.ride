@@ -1731,7 +1731,7 @@ func changeAmp() = {
   let curAmp = amp().getStringValue().parseIntValue()
   let lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
 
-  strict t = ["lastCall="+lastCall.toString(), "delay="+delay, "height="+height, "curAmp="+curAmp, "target="+target].makeString(" ").throw()
+  strict t = ["lastCall="+lastCall.toString(), "delay="+delay.toString(), "height="+height.toString(), "curAmp="+curAmp.toString(), "target="+target.toString()].makeString(" ").throw()
   strict checks = [
     lastCall+delay < height || "try again in few blocks".throwErr(),
     curAmp != target || "already reached target".throwErr()
