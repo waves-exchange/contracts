@@ -1724,20 +1724,16 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 @Callable(i)
 func changeAmp() = {
 #  let cfgRaw = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
-  strict (delay, delta, target) = match "1__2__3" {
-    case str: String => {
-      strict list = str.split(SEP)
-
-      strict v1 = list[0].parseIntValue()
-
-      strict v2 = list[1].parseIntValue()
-
-      strict v3 = list[2].parseIntValue()
-
-      (v1, v2, v3)
-    }
+  strict str = match "1__2__3" {
+    case s: String => s
     case _ => "invalid entry type".throw()
   }
+
+  strict list = str.split(SEP)
+
+  strict delay = list[0].parseIntValue()
+  strict delta = list[1].parseIntValue()
+  strict target = list[2].parseIntValue()
 
   strict curAmp = amp().getStringValue().parseIntValue()
 
@@ -1751,10 +1747,10 @@ func changeAmp() = {
     if (newAmpRaw > target) then target else newAmpRaw
   }
 
-  strict wait = 1+1
+  strict wait = lastCall+delay
 
   strict checks = [
-    height > wait || "try again in few blocks".throwErr(),
+#    height > wait || "try again in few blocks".throwErr(),
     curAmp != newAmp || "already reached target".throwErr()
   ]
 
