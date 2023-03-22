@@ -2,7 +2,7 @@ name: Deploy
 on: push
 
 jobs:
-  deploy_testnet:
+  testnet:
     env:
       BRANCH: ${{ github.ref_name }}
       NETWORK: testnet
@@ -59,7 +59,7 @@ jobs:
         uses: AutoModality/action-clean@v1
         if: always()
 
-  deploy_mainnet:
+  mainnet:
     env:
       BRANCH: ${{ github.ref_name }}
       NETWORK: mainnet
