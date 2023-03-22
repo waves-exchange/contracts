@@ -1742,7 +1742,7 @@ func changeAmp() = {
 
   let lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
   let wait = lastCall+delay
-  let h = height
+  strict h = height
 
   strict checks = [
     h > wait || "try again in few blocks".throwErr(),
