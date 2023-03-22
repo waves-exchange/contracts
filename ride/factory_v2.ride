@@ -858,7 +858,7 @@ func getChangeAmpConfigREADONLY(poolAddress: String) = {
 #  let delay = keyChangeAmpDelay(poolAddress).getIntegerValue()
 #  let delta = keyChangeAmpDelta(poolAddress).getIntegerValue()
 #  let target = keyChangeAmpTarget(poolAddress).getIntegerValue()
-  ([], ["1", "2", "3"].makeString(SEP))
+  ([], "[delay, delta, target]")
 }
 
 @Verifier(tx)

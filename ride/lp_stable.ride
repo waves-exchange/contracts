@@ -1723,7 +1723,12 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 
 @Callable(i)
 func changeAmp() = {
-  strict cfg = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], []).exactAs[String].split(SEP)
+  strict cfgRaw = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
+  strict cfg = match cfgRaw {
+    case s: String => s
+    case _ => "invalid entry type".throw()
+  }
+  strict w = "works".throw()
   let delay = cfg[0].parseIntValue()
   let delta = cfg[1].parseIntValue()
   let target = cfg[2].parseIntValue()
