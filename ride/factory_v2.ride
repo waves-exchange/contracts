@@ -138,7 +138,6 @@ func keySkipOrderValidation(poolAddress: String)
 
 func keyChangeAmpDelay(poolAddress: String)
       = "%s%s__changeAmpDelay__" + poolAddress
-# can be positive or negative
 func keyChangeAmpDelta(poolAddress: String)
       = "%s%s__changeAmpDelta__" + poolAddress
 func keyChangeAmpTarget(poolAddress: String)
