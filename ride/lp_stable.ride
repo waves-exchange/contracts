@@ -1224,8 +1224,15 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   }
 
   let lpTrnsfr =
-    if (autoStake) then strict ss = stakingContract.invoke("stake", [], [AttachedPayment(lpId, emitLpAmt)]); []
-    else [ScriptTransfer(i.caller, emitLpAmt, lpId)]
+    if (autoStake) then {
+      strict ss = stakingContract.invoke(
+        "stakeFor",
+        [i.caller.toString()],
+        [AttachedPayment(lpId, emitLpAmt)]
+      )
+
+      []
+    } else [ScriptTransfer(i.caller, emitLpAmt, lpId)]
 
   let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, pmtAssetId.fromBase58String())] else []
 
