@@ -1723,8 +1723,8 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 
 @Callable(i)
 func changeAmp() = {
-  let cfgRaw = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
-  let (delay, delta, target) = match cfgRaw {
+#  let cfgRaw = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
+  let (delay, delta, target) = match "1__2__3" {
     case str: String => {
       let list = str.split(SEP)
       (list[0].parseIntValue(), list[1].parseIntValue(), list[2].parseIntValue())
