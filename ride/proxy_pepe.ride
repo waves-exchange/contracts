@@ -1,0 +1,48 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let contract = "proxy_pepe.ride"
+let pepeContractAddress = "3N4kXZHGke6yRq3Z57q7BTgCrT2SCvQCYER"
+let sWavesIdString = "FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm"
+let pepeContract = addressFromStringValue(pepeContractAddress)
+let sWaves = sWavesIdString.fromBase58String()
+
+func error(msg: String) = {
+    throw(contract + ": " + msg)
+}
+
+@Callable(i)
+func getRate() = {
+    let results = invoke(pepeContract, "getRate", [], [])
+    match (results) {
+        case t:String => ([], t)
+        case _ => error("getRate(): unexpected return")
+    }
+}
+
+@Callable(i)
+func deposit() = {
+    strict startBalance = assetBalance(this, sWaves)
+    let results = invoke(pepeContract, "deposit", [], i.payments)
+    let newBalance = assetBalance(this, sWaves)
+    let sendAmount = newBalance - startBalance
+    if (sendAmount == 0) then { 
+        error("deposit(): sendAmount = 0") 
+    } else {
+        ([ScriptTransfer(i.caller, sendAmount, sWaves)], sendAmount)
+    }
+}
+
+@Callable(i)
+func withdraw() = {
+    strict startBalance = wavesBalance(this).available
+    let results = invoke(pepeContract, "withdraw", [], i.payments)
+    let newBalance = wavesBalance(this).available
+    let sendAmount = newBalance - startBalance
+    if (sendAmount == 0) then { 
+        error("withdraw(): sendAmount = 0") 
+    } else {
+        ([ScriptTransfer(i.caller, sendAmount, unit)], sendAmount)
+    }
+}
