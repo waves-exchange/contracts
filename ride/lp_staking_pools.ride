@@ -403,7 +403,7 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
   # strict checkBamount = baseAssetAmount != 0 || "base amount is is zero".throwErr()
 
   # write throw with all params 
-  strict checkParams = ("baseAssetAmount = " + baseAssetAmount.toString() + " price =  " + price.toString() + "  userShareAssetAmountToConvertPeriod  = " + userShareAssetAmountToConvertPeriod.toString() + "  userShareAssetAmountToConvert = " + userShareAssetAmountToConvert.toString()).throwErr()
+  # strict checkParams = ("baseAssetAmount = " + baseAssetAmount.toString() + " price =  " + price.toString() + "  userShareAssetAmountToConvertPeriod  = " + userShareAssetAmountToConvertPeriod.toString() + "  userShareAssetAmountToConvert = " + userShareAssetAmountToConvert.toString()).throwErr()
   ([
     IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), 0),
     DeleteEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress)),
@@ -543,7 +543,9 @@ func finalize(baseAssetIdStr: String) = {
     }
     # convert lpAsset amount to share asset amount using price (lp asset / share asset)
     strict price = calcPrice(lpAssetId, shareAssetId)
+    strict checkPrice = price.toInt().value() != 0 || "price is ZERO".throw()
     let shareAssetAmount = fraction(lpAssetAmount.toBigInt(), scale18BigInt, price, FLOOR).toInt()
+    strict checkShareAssetAmount= price.toInt().value() != 0 || "shareAssetAmount is ZERO".throw()
     strict shareAssetReissue = if (shareAssetInfo.issuer == this) then {
       this.invoke("emit", [shareAssetId, shareAssetAmount], [])
     } else "invalid share asset issuer".throwErr()
