@@ -853,10 +853,10 @@ func skipOrderValidationREADONLY(poolAddress: String) = {
 
 @Callable(i)
 func getChangeAmpConfigREADONLY(poolAddress: String) = {
-  let delay = keyChangeAmpDelay(poolAddress).getIntegerValue()
-  let delta = keyChangeAmpDelta(poolAddress).getIntegerValue()
-  let target = keyChangeAmpTarget(poolAddress).getIntegerValue()
-  ([], [delay, delta, target])
+  let delay = poolAddress.keyChangeAmpDelay().getIntegerValue()
+  let delta = poolAddress.keyChangeAmpDelta().getIntegerValue()
+  let target = poolAddress.keyChangeAmpTarget().getIntegerValue()
+  ([], (delay, delta, target))
 }
 
 @Verifier(tx)
