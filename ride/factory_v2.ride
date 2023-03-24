@@ -143,6 +143,21 @@ func keyChangeAmpDelta(poolAddress: String)
 func keyChangeAmpTarget(poolAddress: String)
       = "%s%s__changeAmpTarget__" + poolAddress
 
+func keySWavesProxyAddress()
+      = "%s__sWavesProxyAddress"
+func keySWavesAssetId()
+      = "%s__sWavesAssetId"
+func keyStakingProfitAddress()
+      = "%s__stakingProfitAddress"
+func keyLeasedRatio(poolAddress: String, assetId: String)
+      = makeString(["%s%s%s", "leasedRatio", poolAddress, assetId], SEP)
+func keyLeasedRatioTolerance(poolAddress: String, assetId: String)
+      = makeString(["%s%s%s", "leasedRatioTolerance", poolAddress, assetId], SEP)
+func keyMinBalance(poolAddress: String, assetId: String)
+      = makeString(["%s%s%s", "minBalance", poolAddress, assetId], SEP)
+func keyMinBalanceDefault(assetId: String)
+      = makeString(["%s%s", "minBalanceDefault", assetId], SEP)
+
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------
