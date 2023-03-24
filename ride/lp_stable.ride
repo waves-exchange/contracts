@@ -111,7 +111,9 @@ func aa() = {"%s__amountAsset"}
 func pa() = {"%s__priceAsset"}
 # keyAmplificator
 func amp() = {"%s__amp"}
+func keyAmpHistory(heightBlocks: Int) = "%s%d__amp__" + heightBlocks.toString()
 func ada() = "%s__addonAddr"
+func keyChangeAmpLastCall() = "%s__changeAmpLastCall"
 
 let keyFee = "%s__fee"
 let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
@@ -1717,6 +1719,40 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
     [],
     (r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8.toString(), r._9, r._10)
   )
+}
+
+@Callable(i)
+func changeAmp() = {
+  let cfg = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
+  let (delay, delta, target) = match cfg {
+    case list: List[Any] => {
+      (list[0].exactAs[Int], list[1].exactAs[Int], list[2].exactAs[Int])
+    }
+    case _ => "invalid entry type".throwErr()
+  }
+
+  let curAmp = amp().getStringValue().parseIntValue()
+  let newAmpRaw = curAmp + delta
+  # to not increment/decrement too much
+  let newAmp = if (delta < 0) then {
+    if (newAmpRaw < target) then target else newAmpRaw
+  } else {
+    if (newAmpRaw > target) then target else newAmpRaw
+  }
+
+  let lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
+  let wait = lastCall+delay
+
+  strict checks = [
+    height > wait || "try again in few blocks".throwErr(),
+    curAmp != newAmp || "already reached target".throwErr()
+  ]
+
+  [
+    IntegerEntry(keyChangeAmpLastCall(), height),
+    StringEntry(amp(), newAmp.toString()),
+    StringEntry(keyAmpHistory(height), newAmp.toString())
+  ]
 }
 
 @Verifier(tx)
