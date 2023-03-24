@@ -138,8 +138,7 @@ func setVerifiedActions(assetId: String, verified: Boolean) = {
 
 func updateTickerActions(assetId: String, ticker: String) = {
   strict checkTicker = {
-    let linkedAssetIdOrUnit = ticker.keyTickerToAssetId().getString()
-    let tickerIsValid = ticker != "" && (linkedAssetIdOrUnit == unit || linkedAssetIdOrUnit.value() == assetId)
+    let tickerIsValid = ticker != ""
     tickerIsValid || "Invalid ticker".throw()
   }
 
