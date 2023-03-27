@@ -1,0 +1,14 @@
+{
+  "type": 12,
+  "data": [
+    { "key": "%s__boostCoeff", "type": "integer", "value": 5 },
+    { "key": "%s%s__ratePerBlock__current", "type": "integer", "value": 1902587519 },
+    { "key": "%s%s__emission__duration", "type": "integer", "value": 5256000 },
+    { "key": "%s%s__emission__endBlock", "type": "integer", "value": 7062750 }
+  ],
+  "senderPublicKey": "H19CeJVbUnfsK8EYs8K6fHxwBH7pLyxw8WCDFu7D4rGQ",
+  "chainId": 84,
+  "fee": 500000,
+  "proofs": [],
+  "version": 2
+}
