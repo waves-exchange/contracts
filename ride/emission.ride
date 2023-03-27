@@ -4,7 +4,11 @@
 
 # COMMON API
 let SEP = "__"
-func getStringOrFail(address: Address, key: String) = address.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+
+func wrapErr(msg: String) = ["emission.ride:", this.toString(), msg].makeString(" ")
+func throwErr(msg: String) = msg.wrapErr().throw()
+
+func getStringOrFail(address: Address, key: String) = address.getString(key).valueOrErrorMessage(("mandatory this." + key + " is not defined").wrapErr())
 
 # FACTORY API
 # own factory address key
@@ -74,7 +78,7 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
 }
 
 func mustManager(i: Invocation) = {
-  let pd = "Permission denied".throw()
+  let pd = "Permission denied".throwErr()
 
   match managerPublicKeyOrUnit() {
     case pk: ByteVector => i.callerPublicKey == pk || pd
@@ -119,7 +123,7 @@ func emit(amount: Int) = {
   let stakingContract = factoryCfg.getStakingAddressOrFail()
   let gwxRewardsContract = factoryCfg.getGwxRewardAddressOrFail()
   let caller = i.caller
-  if (caller != stakingContract && caller != gwxRewardsContract) then throw("permissions denied") else
+  if (caller != stakingContract && caller != gwxRewardsContract) then throwErr("permissions denied") else
 
   let wxAssetIdStr = this.getStringOrFail(keyConfig()).split(SEP)[1]
   let wxAssetId = wxAssetIdStr.fromBase58String()
@@ -133,15 +137,15 @@ func burn() = {
   let factoryCfg = factoryContract.readFactoryCfgOrFail()
   let boostingContract = factoryCfg.getBoostingAddressOrFail()
 
-  if (i.payments.size() != 1)  then throw("exact one payment is allowed") else
+  if (i.payments.size() != 1)  then throwErr("exact one payment is allowed") else
 
   let pmt = i.payments[0]
   let assetId = pmt.assetId.value()
   let pmtAmount = pmt.amount
 
   let wxAssetId = this.getStringOrFail(keyConfig()).split(SEP)[1].fromBase58String()
-  if (assetId != wxAssetId) then throw("invalid wxAssetId is passed") else
-  if (![boostingContract, votingVerifiedContract, votingEmissionCandidateContract, userPoolsContract].containsElement(i.caller)) then throw("permissions denied") else
+  if (assetId != wxAssetId) then throwErr("invalid wxAssetId is passed") else
+  if (![boostingContract, votingVerifiedContract, votingEmissionCandidateContract, userPoolsContract].containsElement(i.caller)) then throwErr("permissions denied") else
 
   [Burn(assetId, pmtAmount),
   StringEntry(
@@ -161,8 +165,8 @@ func setManager(pendingManagerPublicKey: String) = {
 @Callable(i)
 func confirmManager() = {
   let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
+  strict hasPM = pm.isDefined() || throwErr("No pending manager")
+  strict checkPM = i.callerPublicKey == pm.value() || throwErr("You are not pending manager")
 
   [
     StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),

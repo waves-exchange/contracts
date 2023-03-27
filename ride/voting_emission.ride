@@ -69,13 +69,13 @@ func wrapErr(msg: String) = ["voting_emission.ride:", msg].makeString(" ")
 func throwErr(msg: String) = msg.wrapErr().throw()
 
 func getValueOrFail(address: Address, key: String, type: String|Int) = {
-  let error = ["mandatory ", address.toString(), ".", key, " is not defined"].makeString("")
+  let error = ["mandatory ", address.toString(), ".", key, " is not defined"].makeString("").wrapErr()
 
   {
     match type {
       case str: String => address.getString(key)
       case int: Int => address.getInteger(key)
-      case _ => "invalid entry type".throw()
+      case _ => "invalid entry type".throwErr()
     }
   }.valueOrErrorMessage(error)
 }
@@ -86,7 +86,7 @@ func poolToString(pool: (String, String)) = pool._1 + separator + pool._2
 func stringToPool(str: String) = {
   let parts = str.split(separator)
 
-  if (parts.size() == 2) then (parts[0], parts[1]) else "invalid pool string".throw()
+  if (parts.size() == 2) then (parts[0], parts[1]) else "invalid pool string".throwErr()
 }
 
 func getLpAssetByPoolAssets(amountAssetId: String, priceAssetId: String) = {
@@ -153,7 +153,7 @@ func containsNode(listName: String, id: String) = {
 func insertNodeActions(listName: String, id: String) = {
   let headOrUnit = this.getString(listName.keyListHead())
   let listSize = this.getInteger(listName.keyListSize()).valueOrElse(0)
-  strict checkNode = !listName.containsNode(id) || "Node exists".throw()
+  strict checkNode = !listName.containsNode(id) || "Node exists".throwErr()
 
   [IntegerEntry(listName.keyListSize(), listSize + 1)]
   ++
@@ -196,7 +196,7 @@ func deleteNodeActions(listName: String, id: String) = {
         DeleteEntry(listName.keyListNext(prevOrUnit.value()))
       ]
     } else {
-      if (id == headOrUnit.valueOrElse("")) then [DeleteEntry(listName.keyListHead())] else {"invalid node: " + listName + "." + id}.throw()
+      if (id == headOrUnit.valueOrElse("")) then [DeleteEntry(listName.keyListHead())] else {"invalid node: " + listName + "." + id}.throwErr()
     }
   }
 }
@@ -216,7 +216,7 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
   case _: Unit => unit
 }
 
-let permissionDeniedError = "Permission denied".throw()
+let permissionDeniedError = "Permission denied".throwErr()
 
 func mustThis(i: Invocation) = {
   i.caller == this || permissionDeniedError
@@ -240,8 +240,8 @@ func setManager(pendingManagerPublicKey: String) = {
 @Callable(i)
 func confirmManager() = {
   let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
+  strict hasPM = pm.isDefined() || throwErr("No pending manager")
+  strict checkPM = i.callerPublicKey == pm.value() || throwErr("You are not pending manager")
 
   [
     StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
@@ -253,7 +253,7 @@ func confirmManager() = {
 # TODO: Сделать обычной функцией
 @Callable(i)
 func getUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
-  let boostingContractAddress = this.getStrOrFail(keyBoostingContract).addressFromString().valueOrErrorMessage("invalid boosting contract address")
+  let boostingContractAddress = this.getStrOrFail(keyBoostingContract).addressFromString().valueOrErrorMessage(("invalid boosting contract address").wrapErr())
 
   ([], boostingContractAddress.invoke("getUserGwxAmountAtHeightREADONLY", [userAddress, targetHeight], []).exactAs[Int])
 }
@@ -272,7 +272,7 @@ func constructor(
     votingEmissionCandidateContract.addressFromString() != unit || "invalid voting emission candidate contract address",
     boostingContract.addressFromString() != unit || "invalid boosting contract address",
     stakingContract.addressFromString() != unit || "invalid staking contract address",
-    epochLength > 0 || "invalid epoch length".throw()
+    epochLength > 0 || "invalid epoch length".throwErr()
   ]
 
   (
@@ -332,12 +332,12 @@ func vote(amountAssetId: String, priceAssetId: String, amount: Int) = {
   let newVote = vote + amount
   let wxEmission = pool.checkWxEmissionPoolLabel()
   strict checks = [
-    pool.keyInList().getBoolean() != unit || "invalid assets".throw(),
-    height < endHeight || "invalid height".throw(),
-    finalizationStageOrUnit == unit || "finalization in progress".throw(),
-    gwxAmountAtEndTotal > 0 || "you do not have gWX".throw(),
-    (amount > 0 && amount <= available) || "invalid amount".throw(),
-    wxEmission || "pool hasn't WX_EMISSION label".throw()
+    pool.keyInList().getBoolean() != unit || "invalid assets".throwErr(),
+    height < endHeight || "invalid height".throwErr(),
+    finalizationStageOrUnit == unit || "finalization in progress".throwErr(),
+    gwxAmountAtEndTotal > 0 || "you do not have gWX".throwErr(),
+    (amount > 0 && amount <= available) || "invalid amount".throwErr(),
+    wxEmission || "pool hasn't WX_EMISSION label".throwErr()
   ]
   let votesListName = pool.getVotesListName()
   let userAddressStr = i.caller.toString()
@@ -369,10 +369,10 @@ func cancelVote(amountAssetId: String, priceAssetId: String) = {
   let poolResult = this.getInteger(pool.keyVotingResult(epoch)).valueOrElse(0)
   let totalVotes = this.getInteger(epoch.keyTotalVotes()).valueOrElse(0)
   strict checks = [
-    pool.keyInList().getBoolean() != unit || "invalid assets".throw(),
-    height < endHeight || "invalid height".throw(),
-    finalizationStageOrUnit == unit || "finalization in progress".throw(),
-    vote > 0 || "no vote".throw()
+    pool.keyInList().getBoolean() != unit || "invalid assets".throwErr(),
+    height < endHeight || "invalid height".throwErr(),
+    finalizationStageOrUnit == unit || "finalization in progress".throwErr(),
+    vote > 0 || "no vote".throwErr()
   ]
   let votesListName = pool.getVotesListName()
   let userAddressStr = i.caller.toString()
@@ -392,7 +392,7 @@ func cancelVote(amountAssetId: String, priceAssetId: String) = {
 func setEpochLength(newEpochLength: Int) = {
   strict checks = [
     i.mustManager(),
-    newEpochLength > 0 || "invalid epoch length".throw()
+    newEpochLength > 0 || "invalid epoch length".throwErr()
   ]
 
   (
@@ -407,7 +407,7 @@ func setEpochLength(newEpochLength: Int) = {
 func setMaxDepth(newMaxDepth: Int) = {
   strict checks = [
     i.mustManager(),
-    newMaxDepth > 0 || "invalid max depth".throw()
+    newMaxDepth > 0 || "invalid max depth".throwErr()
   ]
 
   (
@@ -444,7 +444,7 @@ func setMaxDepth(newMaxDepth: Int) = {
 @Callable(i)
 func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   strict checkCaller = i.mustThis()
-  let userAddress = userAddressStr.addressFromString().valueOrErrorMessage("processVoteINTERNAL: invalid user address " + userAddressStr)
+  let userAddress = userAddressStr.addressFromString().valueOrErrorMessage(("processVoteINTERNAL: invalid user address " + userAddressStr).wrapErr())
   let epoch = this.getIntOrFail(keyCurrentEpoch)
   let epochPrevious = epoch - 1
   let epochLength = this.getIntOrFail(keyEpochLength)
@@ -453,7 +453,7 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   let startHeightPrevious = this.getIntOrFail(epochPrevious.keyStartHeightByEpoch())
   let epochLengthPrevious = this.getIntOrFail(epochPrevious.keyEpochLengthByEpoch())
   let endHeightPrevious = startHeightPrevious + epochLengthPrevious
-  strict checkTargetEpoch = epochPrevious >= 0 || "processVoteINTERNAL: invalid previous epoch".throw()
+  strict checkTargetEpoch = epochPrevious >= 0 || "processVoteINTERNAL: invalid previous epoch".throwErr()
   let pool = poolStr.stringToPool()
   let (amountAssetId, priceAssetId) = pool
   let wxEmission = pool.checkWxEmissionPoolLabel()
@@ -462,7 +462,7 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   let totalVotes = epoch.keyTotalVotes().getInteger().valueOrElse(0)
   let votingResult = pool.keyVotingResult(epoch).getInteger().valueOrElse(0)
   let votePrevious = pool.keyVote(userAddress, epochPrevious).getInteger()
-    .valueOrErrorMessage("processVoteINTERNAL " + poolStr + " " + userAddressStr + ": no previous vote")
+    .valueOrErrorMessage(("processVoteINTERNAL " + poolStr + " " + userAddressStr + ": no previous vote").wrapErr())
   let used = this.getInteger(userAddress.keyUsed(epoch)).valueOrElse(0)
 
   # staked votes
@@ -500,7 +500,7 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
     # if force then epoch was not increased, so use current one
     if (force) then currentEpoch else currentEpoch - 1
   }
-  strict checkTargetEpoch = targetEpoch >= 0 || "processPoolINTERNAL: invalid target epoch".throw()
+  strict checkTargetEpoch = targetEpoch >= 0 || "processPoolINTERNAL: invalid target epoch".throwErr()
   let pool = poolStr.stringToPool()
   let (amountAssetId, priceAssetId) = pool
   let stakingContract = this.getStrOrFail(keyStakingContract).addressFromStringValue()
@@ -706,7 +706,7 @@ func finalizeHelper() = {
         }
       }
     }
-  } else "finalization is broken".throw()
+  } else "finalization is broken".throwErr()
 }
 
 @Callable(i)
@@ -714,7 +714,7 @@ func finalizeWrapper(counter: Int) = {
   strict result = this.invoke("finalizeHelper", [], []).exactAs[Boolean]
   if (!result) then {
     if (counter == 0) then {
-      throw("Current voting is not over yet")
+      throwErr("Current voting is not over yet")
     } else {
       ([], unit)
     }

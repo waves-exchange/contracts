@@ -18,20 +18,20 @@ func wrapErr(msg: String) = ["boosting.ride:", msg].makeString(" ")
 func throwErr(msg: String) = msg.wrapErr().throw()
 
 # getStringOrFail
-func strf(address: Address, key: String)   = address.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+func strf(address: Address, key: String)   = address.getString(key).valueOrErrorMessage(("mandatory this." + key + " is not defined").wrapErr())
 # getIntOrZero
 func ioz(address: Address, key: String)      = address.getInteger(key).valueOrElse(0)
 # getIntOrDefault
 func iod(address: Address, key: String, defaultVal: Int)      = address.getInteger(key).valueOrElse(defaultVal)
 # getIntOrFail
-func iof(address: Address, key: String)      = address.getInteger(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+func iof(address: Address, key: String)      = address.getInteger(key).valueOrErrorMessage(("mandatory this." + key + " is not defined").wrapErr())
 func abs(val: Int) = if (val < 0) then -val else val
 
 # asAnyList
 func aal(val: Any) = {
   match val {
     case valAnyLyst: List[Any] => valAnyLyst
-    case _ => throw("fail to cast into List[Any]")
+    case _ => throwErr("fail to cast into List[Any]")
   }
 }
 
@@ -39,7 +39,7 @@ func aal(val: Any) = {
 func ai(val: Any) = {
   match val {
     case valInt: Int => valInt
-    case _ => throw("fail to cast into Int")
+    case _ => throwErr("fail to cast into Int")
   }
 }
 
@@ -140,7 +140,7 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
 }
 
 func mustManager(i: Invocation) = {
-  let pd = "Permission denied".throw()
+  let pd = "Permission denied".throwErr()
 
   match managerPublicKeyOrUnit() {
     case pk: ByteVector => i.callerPublicKey == pk || pd
@@ -353,10 +353,10 @@ func LockParamsEntry(userAddress: String, userNum: String, amount: Int, start: I
 }
 
 func extractOptionalPaymentAmountOrFail(i: Invocation, expectedAssetId: ByteVector) = {
-  if (i.payments.size() > 1)  then throw("only one payment is allowed") else
+  if (i.payments.size() > 1)  then throwErr("only one payment is allowed") else
   if (i.payments.size() == 0) then 0 else
   let pmt = i.payments[0]
-  if (pmt.assetId.value() != expectedAssetId) then throw("invalid asset id in payment") else
+  if (pmt.assetId.value() != expectedAssetId) then throwErr("invalid asset id in payment") else
   pmt.amount
 }
 
@@ -558,10 +558,10 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
 
   let EMPTYSTR = "empty" # is used from REST
   let poolWeight = if (lpAssetIdStr != EMPTYSTR) then {
-    let poolAddressStr = factoryContract.getString(keyFactoryLpAssetToPoolContractAddress(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
+    let poolAddressStr = factoryContract.getString(keyFactoryLpAssetToPoolContractAddress(lpAssetIdStr)).valueOrErrorMessage(("unsupported lp asset " + lpAssetIdStr).wrapErr())
     factoryContract.getIntegerValue(poolAddressStr.keyFactoryPoolWeight())
   } else {
-    if (readOnly) then 0 else throw("not readonly mode: unsupported lp asset " + lpAssetIdStr)
+    if (readOnly) then 0 else throwErr("not readonly mode: unsupported lp asset " + lpAssetIdStr)
   }
 
   # BOOST INTEGRAL RECALC
@@ -576,7 +576,7 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   let boostEmissionIntegral = refreshBoostEmissionIntegral()._2
   let userBoostEmissionIntegral = boostEmissionIntegral - userBoostEmissionLastIntegral
 
-  if (userBoostEmissionIntegral < 0) then throw("wrong calculations") else
+  if (userBoostEmissionIntegral < 0) then throwErr("wrong calculations") else
 
   let (stakedVotesIntegralsActions, userVoteIntegralDiff, totalVotesIntegralDiff) = getStakedVotesIntegralsDiff(lpAssetIdStr, userAddressStr)
 
@@ -610,11 +610,11 @@ func lockActions(i: Invocation, duration: Int) = {
   let minLockDuration   = cfgArray[IdxCfgMinLockDuration].parseIntValue()
   let maxLockDuration   = cfgArray[IdxCfgMaxLockDuration].parseIntValue()
 
-  if (i.payments.size() != 1) then throw("invalid payment - exact one payment must be attached") else
+  if (i.payments.size() != 1) then throwErr("invalid payment - exact one payment must be attached") else
   let pmt = i.payments[0]
   let pmtAmount = pmt.amount
 
-  if (assetId != pmt.assetId.value()) then throw("invalid asset is in payment - " + assetIdStr + " is expected") else
+  if (assetId != pmt.assetId.value()) then throwErr("invalid asset is in payment - " + assetIdStr + " is expected") else
 
   let nextUserNumKEY  = keyNextUserNum()
   let userAddressStr  = i.caller.toString()
@@ -633,11 +633,11 @@ func lockActions(i: Invocation, duration: Int) = {
 
   let userAmountKEY   = keyLockParamUserAmount(userNumStr)
 
-  if ((pmtAmount < minLockAmount) && i.caller != lpStakingPoolsContract) then throw("amount is less then minLockAmount=" + minLockAmount.toString()) else
-  if (duration < minLockDuration) then throw("passed duration is less then minLockDuration=" + minLockDuration.toString()) else
-  if (duration > maxLockDuration) then throw("passed duration is greater then maxLockDuration=" + maxLockDuration.toString()) else
-  if (userIsExisting && (this.iof(startBlockKEY) + this.iof(durationKEY)) >= lockStart) then throw("there is an active lock - consider to use increaseLock") else
-  if (this.ioz(userAmountKEY) > 0) then throw("there are locked WXs - consider to use increaseLock " + userAmountKEY) else
+  if ((pmtAmount < minLockAmount) && i.caller != lpStakingPoolsContract) then throwErr("amount is less then minLockAmount=" + minLockAmount.toString()) else
+  if (duration < minLockDuration) then throwErr("passed duration is less then minLockDuration=" + minLockDuration.toString()) else
+  if (duration > maxLockDuration) then throwErr("passed duration is greater then maxLockDuration=" + maxLockDuration.toString()) else
+  if (userIsExisting && (this.iof(startBlockKEY) + this.iof(durationKEY)) >= lockStart) then throwErr("there is an active lock - consider to use increaseLock") else
+  if (this.ioz(userAmountKEY) > 0) then throwErr("there are locked WXs - consider to use increaseLock " + userAmountKEY) else
 
   let coeffX8 = fraction(duration, MULT8, maxLockDuration)
   let gWxAmountStart = fraction(pmtAmount, coeffX8, MULT8)
@@ -723,10 +723,10 @@ func increaseLock(deltaDuration: Int) = {
   let userAmountNew       = userAmount + pmtAmount
   let lockDurationNew     = remainingDuration + deltaDuration
 
-  if (deltaDuration < 0) then throw("duration is less then zero") else
-  if (lockDurationNew < minLockDuration) then throw("lockDurationNew is less then minLockDuration=" + minLockDuration.toString()) else
-  if (lockDurationNew > maxLockDuration) then throw("deltaDuration + existedLockDuration is greater then maxLockDuration=" + maxLockDuration.toString()) else
-  #if (lockEnd <= height && userAmount > 0) then throw("there is an expired lock - need to unlock before new lock") else
+  if (deltaDuration < 0) then throwErr("duration is less then zero") else
+  if (lockDurationNew < minLockDuration) then throwErr("lockDurationNew is less then minLockDuration=" + minLockDuration.toString()) else
+  if (lockDurationNew > maxLockDuration) then throwErr("deltaDuration + existedLockDuration is greater then maxLockDuration=" + maxLockDuration.toString()) else
+  #if (lockEnd <= height && userAmount > 0) then throwErr("there is an expired lock - need to unlock before new lock") else
 
   let coeffX8 = fraction(lockDurationNew, MULT8, maxLockDuration)
   let gWxAmountStart = fraction(userAmountNew, coeffX8, MULT8)
@@ -742,7 +742,7 @@ func increaseLock(deltaDuration: Int) = {
 
   let currUserGwx = calcCurrentGwxAmount(userAddressStr)
   let gwxDiff = gWxAmountStart - currUserGwx
-  if (gwxDiff < 0) then throw("gwxDiff is less then 0: " + gwxDiff.toString()) else
+  if (gwxDiff < 0) then throwErr("gwxDiff is less then 0: " + gwxDiff.toString()) else
   let totalCachedGwxRaw = getTotalCachedGwx(false)
   let totalCachedGwxCorrected = getTotalCachedGwx(true)
 
@@ -756,7 +756,7 @@ func increaseLock(deltaDuration: Int) = {
 
 @Callable(i)
 func claimWxBoost(lpAssetIdStr: String, userAddressStr: String) = {
-  if (stakingContract != i.caller) then throw("permissions denied") else
+  if (stakingContract != i.caller) then throwErr("permissions denied") else
   let (userBoostAvailable, dataState, debug) = internalClaimWxBoost(lpAssetIdStr, userAddressStr, false)
 
   (dataState, [userBoostAvailable])
@@ -781,8 +781,8 @@ func unlock(userAddress: String) = {
   let cfgArray          = readConfigArrayOrFail()
   let assetId           = cfgArray[IdxCfgAssetId].fromBase58String()
 
-  if (lockEnd >= height) then throw("wait " + lockEnd.toString() + " to unlock") else
-  if (userAmount <= 0) then throw("nothing to unlock") else
+  if (lockEnd >= height) then throwErr("wait " + lockEnd.toString() + " to unlock") else
+  if (userAmount <= 0) then throwErr("nothing to unlock") else
 
   let period = mathContract.getInteger(keyNextPeriod()).valueOrElse(0)
 
@@ -887,8 +887,8 @@ func setManager(pendingManagerPublicKey: String) = {
 @Callable(i)
 func confirmManager() = {
   let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
+  strict hasPM = pm.isDefined() || throwErr("No pending manager")
+  strict checkPM = i.callerPublicKey == pm.value() || throwErr("You are not pending manager")
 
   [
     StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
