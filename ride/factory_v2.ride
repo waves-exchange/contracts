@@ -532,7 +532,6 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
 
             let assetsStoreContract = keyAssetsStoreContract().getStringOrFail().addressFromStringValue()
             strict createOrUpdateLpAssetInv = assetsStoreContract.invoke("createOrUpdate", [lpAssetIdStr, lpAssetName, false], [])
-            # strict error = lpAssetIdStr.throw()
             strict addPoolsLpLabelInv = assetsStoreContract.invoke("addLabel", [lpAssetIdStr, labelPoolsLp], [])
             strict setLogoInv = assetsStoreContract.invoke("setLogo", [lpAssetIdStr, logo], [])
             strict addAssetsLinkInv = assetsStoreContract.invoke("addAssetsLink", [amountAssetStr, priceAssetStr, lpAssetIdStr], [])
