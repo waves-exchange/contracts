@@ -67,7 +67,6 @@ let IdxFactoryCfgGwxRewardDapp  = 10
 let IdxFactoryCfgBirdsDapp      = 11
 
 func keyFactoryCfg()      = "%s__factoryConfig"
-func keyFactoryLp2AssetsMapping(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
 func keyFactoryLpList()   = "%s__lpTokensList" # not used anymore
 func keyFactoryLpAssetToPoolContractAddress(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
 func keyFactoryPoolWeight(contractAddress: String) = { ["%s%s", "poolWeight", contractAddress].makeString(SEP) }
@@ -559,7 +558,7 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
 
   let EMPTYSTR = "empty" # is used from REST
   let poolWeight = if (lpAssetIdStr != EMPTYSTR) then {
-    let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
+    let poolAddressStr = factoryContract.getString(keyFactoryLpAssetToPoolContractAddress(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
     factoryContract.getIntegerValue(poolAddressStr.keyFactoryPoolWeight())
   } else {
     if (readOnly) then 0 else throw("not readonly mode: unsupported lp asset " + lpAssetIdStr)
