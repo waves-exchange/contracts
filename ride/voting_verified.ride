@@ -301,8 +301,9 @@ func constructor(
 func suggest(assetId: String, assetImage: String) = {
   let info = assetId.fromBase58String().assetInfo().valueOrErrorMessage("Invalid asset ID")
   let payment = i.payments[0].value()
+  let thisOrIssuer = i.caller == this || info.issuer == i.caller
   strict checks = [
-    info.issuer == i.caller || "Asset can only be suggested by its issuer".throw(),
+    thisOrIssuer || "Asset can only be suggested by its issuer".throw(),
     payment.assetId.value() == wxAssetId || "Invalid fee asset".throw(),
     payment.amount == feeAmount || "Invalid fee amount".throw()
   ]
