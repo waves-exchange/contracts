@@ -308,7 +308,11 @@ func suggest(assetId: String, assetImage: String) = {
     isThis || payment.amount == feeAmount || "Invalid fee amount".throw()
   ]
   strict assetsStoreCreateOrUpdateInv = assetsStoreContract.invoke("createOrUpdate", [assetId, assetImage, false], [])
-  strict burnFeeInv = emissionContract.invoke("burn", [], [AttachedPayment(payment.assetId, payment.amount)])
+  strict burnFeeInv = if (isThis) then {
+    unit
+  } else {
+    emissionContract.invoke("burn", [], [AttachedPayment(payment.assetId, payment.amount)])
+  }
   let addAssetActions = assetsListName.insertNode(assetId)
   let nextPeriod = currentPeriod + 1
   let targetPeriod = if (height < endHeight) then currentPeriod else nextPeriod
