@@ -7,7 +7,7 @@
     { "key": "%s%s__emission__endBlock", "type": "integer", "value": 8127851 }
   ],
   "senderPublicKey": "FoGdD9qz4AFW3pdmp1QCA5vvo9wn3fTbv4JnYrWZe3BB",
-  "chainId": 84,
+  "chainId": 87,
   "fee": 500000,
   "proofs": [],
   "version": 2

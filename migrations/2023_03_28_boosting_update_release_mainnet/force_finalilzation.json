@@ -4,7 +4,7 @@
     { "key": "%s__force", "type": "boolean", "value": true }
   ],
   "senderPublicKey": "7CCBtvKD4K6UAqDwpQKssA3WsvR2sdh1rq7CEZ5Gp5aL",
-  "chainId": 84,
+  "chainId": 87,
   "fee": 500000,
   "proofs": [],
   "version": 2
