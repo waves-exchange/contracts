@@ -1,0 +1,11 @@
+{
+  "type": 12,
+  "data": [
+    { "key": "%s__force", "type": "boolean", "value": true }
+  ],
+  "senderPublicKey": "D46gQxzmdzdCTYRg6dMcwFoUrc6ZmxF6GKd5ZoTkvzp1",
+  "chainId": 84,
+  "fee": 500000,
+  "proofs": [],
+  "version": 2
+}
