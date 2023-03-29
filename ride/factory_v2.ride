@@ -364,6 +364,25 @@ func getSwapContractREADONLY() = {
   )
 } 
 
+@Callable(i)
+func getPoolLeaseConfigREADONLY(poolAddress: String, assetId: String) = {
+  let leasedRatio = match getInteger(keyLeasedRatio(poolAddress, assetId)) {
+    case r:Int => min([100, max([0, r])])
+    case _ => 0
+  }
+
+  let minBalance = match getInteger(keyMinBalance(poolAddress, assetId)) {
+    case b:Int => max([0, b])
+    case _ => {
+      match getInteger(keyMinBalanceDefault(assetId)) {
+        case bd:Int => max([0, bd])
+        case _ => 0
+      }
+    }
+  }
+
+  ([], (leasedRatio, minBalance))
+}
 
 @Callable(i)
 func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
