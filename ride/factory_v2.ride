@@ -11,6 +11,7 @@
 #-----------------
 let SCALE8  = 8
 let MULT8   = 100000000
+let MULT12  = 1000000000000
 let SCALE18 = 18
 let MULT18  = 1000_000_000_000_000_000.toBigInt() # 10^18
 let POOLWEIGHTMULT = MULT8
@@ -151,6 +152,8 @@ func keyStakingProfitAddress()
       = "%s__stakingProfitAddress"
 func keyLeasedRatio(poolAddress: String, assetId: String)
       = makeString(["%s%s%s", "leasedRatio", poolAddress, assetId], SEP)
+func keyLeasedRatioDefault(assetId: String)
+      = makeString(["%s%s", "leasedRatioDefault", assetId], SEP)
 func keyLeasedRatioTolerance(poolAddress: String, assetId: String)
       = makeString(["%s%s%s", "leasedRatioTolerance", poolAddress, assetId], SEP)
 func keyMinBalance(poolAddress: String, assetId: String)
@@ -366,9 +369,12 @@ func getSwapContractREADONLY() = {
 
 @Callable(i)
 func getPoolLeaseConfigREADONLY(poolAddress: String, assetId: String) = {
-  let leasedRatio = match getInteger(keyLeasedRatio(poolAddress, assetId)) {
-    case r:Int => min([100, max([0, r])])
-    case _ => 0
+  let (isLeasable, leasedRatio) = match getInteger(keyLeasedRatio(poolAddress, assetId)) {
+    case r:Int => (true, min([100, max([0, r])]))
+    case _ => match getInteger(keyLeasedRatioDefault(assetId)) {
+      case rd:Int => (true, min([100, max([0, rd])]))
+      case _ => (false, 0)
+    }
   }
 
   let minBalance = match getInteger(keyMinBalance(poolAddress, assetId)) {
@@ -381,7 +387,13 @@ func getPoolLeaseConfigREADONLY(poolAddress: String, assetId: String) = {
     }
   }
 
-  ([], (leasedRatio, minBalance))
+  let (proxyAddress, proxyAssetId, proxyRateMul) = if (assetId == "WAVES") then 
+    (this.getString(keySWavesProxyAddress()).valueOrElse(""), this.getString(keySWavesAssetId().valueOrElse("")), MULT12)
+  else 
+    ("", "", 0)
+  let stakingProfitAddress = this.getString(keyStakingProfitAddress()).valueOrElse("")
+
+  ([], (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress))
 }
 
 @Callable(i)
