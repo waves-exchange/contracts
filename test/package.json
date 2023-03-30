@@ -26,6 +26,7 @@
     "test-lp-staking-pools": "mocha -r dotenv/config --parallel --require components/lp_staking_pools/_hooks.mjs components/lp_staking_pools",
     "ci-test": "node_modules/.bin/concurrently --max-processes 8 --timings npm:test-*",
     "exchange-test": "mocha -r dotenv/config --parallel --require components/exchange/_hooks.mjs components/exchange",
+    "staking-boosting-test": "mocha -r dotenv/config --parallel --require components/staking_boosting/_hooks.mjs components/staking_boosting",
     "test": "API_NODE_URL=http://localhost:6869 npm run ci-test",
     "lint": "node_modules/.bin/eslint . --ext .mjs --ext .js",
     "lint-fix": "node_modules/.bin/eslint . --ext .mjs --ext .js --fix"
@@ -38,7 +39,7 @@
     "@types/chai-as-promised": "^7.1.5",
     "@types/mocha": "^9.1.0",
     "@waves/bignumber": "^1.1.1",
-    "@waves/node-api-js": "^1.2.6",
+    "@waves/node-api-js": "^1.3.0",
     "@waves/ride-js": "^2.2.0",
     "@waves/ts-lib-crypto": "^1.4.4-beta.1",
     "@waves/ts-types": "^1.1.0",

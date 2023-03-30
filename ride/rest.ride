@@ -148,7 +148,7 @@ func internalCurrentRewardRate(lpAssetId: String) = {
   let wxEmissionPerBlock = emissionDapp.getIntOrFail(keyEmissionRatePerBlockCurrent())
   let wxEmissionPerBlockMax = emissionDapp.getIntOrFail(keyEmissionRatePerBlockMaxCurrent())
 
-  let boostMaxCoeff = 3
+  let boostMaxCoeff = emissionDapp.invoke("getBoostCoeffREADONLY", [], []).exactAs[Int]
   let poolWxEmissionPerBlock = fraction(wxEmissionPerBlock, poolWeight, poolWeightMult) / boostMaxCoeff
   let poolWxEmissionPerBlockMax = fraction(wxEmissionPerBlockMax, poolWeight, poolWeightMult)
 
@@ -201,6 +201,7 @@ func constructor(factoryAddress: String) = {
   [StringEntry(keyFactoryAddress(), factoryAddress)]
 }
 
+# Returns %d%d%d%d__<wxEmissionPerBlock>__<maxFactor>__<totalLpStaked>__<votingResultStaked>
 @Callable(i)
 func currentRewardRateREADONLY(lpAssetId: String) = {
   let rewardData      = internalCurrentRewardRate(lpAssetId)
@@ -209,11 +210,18 @@ func currentRewardRateREADONLY(lpAssetId: String) = {
   let maxFactor           = rewardData[1]
   let totalLpStaked       = rewardData[2]
 
-  ([], makeString(["%d%d%d",
-          wxEmissionPerBlock.toString(),
-          maxFactor.toString(),
-          totalLpStaked.toString()],
-    SEP))
+  let votingResultStaked = boostingDapp.invoke("getVotingResultStakedREADONLY", [lpAssetId], []).exactAs[Int]
+
+  (
+    [],
+    [
+      "%d%d%d%d",
+      wxEmissionPerBlock.toString(),
+      maxFactor.toString(),
+      totalLpStaked.toString(),
+      votingResultStaked.toString()
+    ].makeString(SEP)
+  )
 }
 
 @Callable(i)
@@ -245,6 +253,7 @@ func currentUserRewardRateREADONLY(lpAssetId: String, userAddress: String) = {
     SEP))
 }
 
+# Deprecated
 @Callable(i)
 func calcBoostBulkInternalREADONLY(currentIter: Int, deltaWxAmountBulk: List[Int], deltaLockPeriodInBlocksBulk: List[Int], deltaLpAmountBulk: List[Int], lpAssetIdOptBulk: List[String], userAddressOpt: String, resAcc: List[String]) = {
   if (currentIter == deltaWxAmountBulk.size()) then ([], resAcc) else
@@ -259,14 +268,17 @@ func calcBoostBulkInternalREADONLY(currentIter: Int, deltaWxAmountBulk: List[Int
   ([], inv)
 }
 
+# Deprecated
 @Callable(i)
 func calcBoostBulkREADONLY(deltaWxAmount: List[Int], deltaLockPeriodInBlocks: List[Int], deltaLpAmount: List[Int], lpAssetIdOpt: List[String], userAddressOpt: String) = {
   let res = this.invoke("calcBoostBulkInternalREADONLY", [0, deltaWxAmount, deltaLockPeriodInBlocks, deltaLpAmount, lpAssetIdOpt, userAddressOpt, []], [])
   ([], res)
 }
 
+# Deprecated
 @Callable(i)
 func calcBoostREADONLY(deltaWxAmount: Int, deltaLockPeriodInBlocks: Int, deltaLpAmount: Int, lpAssetIdOpt: String, userAddressOpt: String) = {
+  let boostCoeff = emissionDapp.invoke("getBoostCoeffREADONLY", [], []).exactAs[Int]
   let mathDapp = gwxRewardDapp
   let EMPTYSTR = "empty"
 
@@ -284,40 +296,20 @@ func calcBoostREADONLY(deltaWxAmount: Int, deltaLockPeriodInBlocks: Int, deltaLp
   let userAmountNew = userAmount + deltaWxAmount
   let lockDurationNew = min([remainingDuration + deltaLockPeriodInBlocks, maxLockDurationInBlocks])
 
-  #let gWxAmountStart = invoke(mathDapp, "calcGwxAmountStartREADONLY", [userAmountNew, lockDurationNew, maxLockDurationInBlocks], []).asAnyList()[0].asInt()
   let userCurrgWxAmount = invoke(boostingDapp, "gwxUserInfoREADONLY", [userAddressStr], []).asAnyList()[0].asInt()
   let gWxAmountStartNew = calcGwxAmountStartREADONLY(userAmountNew, lockDurationNew, maxLockDurationInBlocks)[0]
-  let gWxParamsResultList = invoke(mathDapp, "calcGwxParamsREADONLY", [gWxAmountStartNew, height, lockDurationNew], []).asAnyList()
-  let gWxAmountDiff = gWxAmountStartNew - userCurrgWxAmount
 
-  # if gwxAmountDiff is less then 0 then it means that our gwxAmount has been decreased
-  #if (gWxAmountDiff < 0) then throw("gWxAmountDiff is less then 0") else
-
-
-  # TODO check the following macros: gWxParamsInvokeResult[0].exactAs[Int]
-  let k = gWxParamsResultList[0].asInt()
-  let b = gWxParamsResultList[1].asInt()
-  let period = gWxParamsResultList[2].asInt().toString()
-
-  let totalMaxBoostIntegralKEY = keyTotalMaxBoostINTEGRAL()
-
-  let userMaxBoostIntNew = (gWxAmountStartNew * lockDurationNew) / 2
-
-  let totalMaxBoostInt = boostingDapp.getIntOrZero(totalMaxBoostIntegralKEY)
   let totalCachedGwx = boostingDapp.invoke("getTotalCachedGwxREADONLY", [], []).exactAs[Int]
 
   # TODO MOVE TO emission contract
   let MULT3 = 1000
-  let wxEmissionPerBlockX3  = emissionDapp.getIntOrFail(keyEmissionRatePerBlockCurrent()) * MULT3
+  let wxEmissionPerBlockX3 = emissionDapp.getIntOrFail(keyEmissionRatePerBlockCurrent()) * MULT3
 
   # LP Staking
   let stakedByUserKEY = keyStakedByUser(userAddressStr, lpAssetIdStr)
   let stakedTotalKEY = keyStakedTotal(lpAssetIdStr)
   let stakedByUser = stakingDapp.readStaked(stakedByUserKEY)
   let stakedTotal = stakingDapp.readStaked(stakedTotalKEY)
-
-  let stakedByUserNew = stakedByUser + deltaLpAmount
-  let stakedTotalNew = stakedTotal + deltaLpAmount
 
   let poolWeight = if (lpAssetIdStr != EMPTYSTR) then {
     let poolAddressStr = factoryDapp.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
@@ -327,21 +319,18 @@ func calcBoostREADONLY(deltaWxAmount: Int, deltaLockPeriodInBlocks: Int, deltaLp
   }
 
   # TODO MOVE TO emission contract
-  # TODO 3 is hardcoded
-  let poolWxEmissionPerBlockX3 = fraction(wxEmissionPerBlockX3, poolWeight, POOLWEIGHTMULT * 3) # TODO POOLWEIGHTMULT*3
-  let wxPerLpX3 = if (stakedTotalNew != 0) then fraction(poolWxEmissionPerBlockX3, MULT8, stakedTotalNew) else 0
-  let userWxPerBlockX3 = fraction(wxPerLpX3, stakedByUserNew, MULT8)
+  let poolWxEmissionPerBlockX3 = fraction(wxEmissionPerBlockX3, poolWeight, POOLWEIGHTMULT * boostCoeff)
+  let wxPerLpX3 = if (stakedTotal != 0) then fraction(poolWxEmissionPerBlockX3, MULT8, stakedTotal) else 0
+  let userWxPerBlockX3 = fraction(wxPerLpX3, stakedByUser, MULT8)
 
-  let boostEmissionPerBlockX3 = poolWxEmissionPerBlockX3 * 2
-  #let tmpUserBoostPerBlockX3 = fraction(userMaxBoostIntNew, boostEmissionPerBlockX3, totalMaxBoostInt)
-  let tmpUserBoostPerBlockX3 = fraction(gWxAmountStartNew, boostEmissionPerBlockX3, totalCachedGwx + gWxAmountDiff)
+  let boostEmissionPerBlockX3 = poolWxEmissionPerBlockX3 * (boostCoeff - 1)
+  let tmpUserBoostPerBlockX3 = fraction(userCurrgWxAmount, boostEmissionPerBlockX3, totalCachedGwx)
 
+  let userBoostPerBlockX3 = min([tmpUserBoostPerBlockX3, userWxPerBlockX3 * (boostCoeff - 1)])
 
-  let userBoostPerBlockX3 = min([tmpUserBoostPerBlockX3, userWxPerBlockX3*2])
+  let userBoostCoeff = if (userWxPerBlockX3 == 0) then 1*MULT8 else fraction(userBoostPerBlockX3 + userWxPerBlockX3, MULT8, userWxPerBlockX3)
 
-  let boostCoeff = if (userWxPerBlockX3 == 0) then 1*MULT8 else fraction(userBoostPerBlockX3 + userWxPerBlockX3, MULT8, userWxPerBlockX3)
-
-  ([], makeString(["%d%d%s", gWxAmountStartNew.toString(), boostCoeff.toString(), "d"], SEP))
+  ([], makeString(["%d%d%s", gWxAmountStartNew.toString(), userBoostCoeff.toString(), "d"], SEP))
 }
 
 @Callable(i)

@@ -16,6 +16,7 @@
     "import/extensions": "off",
     "no-restricted-syntax": "off",
     "func-names": "off",
-    "import/prefer-default-export": "off"
+    "import/prefer-default-export": "off",
+    "no-underscore-dangle": "off"
   }
 }

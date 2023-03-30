@@ -6,6 +6,7 @@
 # * "%s__lpStakingPoolsContract": String
 
 let SCALE8  = 8
+let MULT3 = 1000
 let MULT8   = 100000000
 let SCALE18 = 18
 let MULT18  = 1000_000_000_000_000_000.toBigInt() # 10^18
@@ -20,37 +21,37 @@ func throwErr(msg: String) = msg.wrapErr().throw()
 func asAnyList(val: Any) = {
   match val {
     case valAnyLyst: List[Any] => valAnyLyst
-    case _ => throw("fail to cast into List[Any]")
+    case _ => throwErr("fail to cast into List[Any]")
   }
 }
 
 func asInt(val: Any) = {
   match val {
     case valInt: Int => valInt
-    case _ => throw("fail to cast into Int")
+    case _ => throwErr("fail to cast into Int")
   }
 }
 
 func asString(val: Any) = {
   match val {
     case valStr: String => valStr
-    case _ => throw("fail to cast into Int")
+    case _ => throwErr("fail to cast into Int")
   }
 }
 
 func asByteVector(val: Any) = {
   match val {
     case valBin: ByteVector => valBin
-    case _ => throw("fail to cast into Int")
+    case _ => throwErr("fail to cast into Int")
   }
 }
 
-func getStringOrFail(address: Address, key: String)   = address.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
-func getStringByAddressOrFail(address: Address, key: String) = address.getString(key).valueOrErrorMessage("mandatory " + address.toString() + "." + key + " is not defined")
+func getStringOrFail(address: Address, key: String)   = address.getString(key).valueOrErrorMessage(("mandatory this." + key + " is not defined").wrapErr())
+func getStringByAddressOrFail(address: Address, key: String) = address.getString(key).valueOrErrorMessage(("mandatory " + address.toString() + "." + key + " is not defined").wrapErr())
 
 func getIntOrZero(address: Address, key: String) = address.getInteger(key).valueOrElse(0)
 func getIntOrDefault(address: Address, key: String, defaultVal: Int) = address.getInteger(key).valueOrElse(defaultVal)
-func getIntOrFail(address: Address, key: String)      = address.getInteger(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+func getIntOrFail(address: Address, key: String)      = address.getInteger(key).valueOrErrorMessage(("mandatory this." + key + " is not defined").wrapErr())
 
 func getBigIntFromStringOrZero(address: Address, key: String) = address.getString(key).valueOrElse("0").parseBigInt().value()
 func getBigIntFromStringOrDefault(address: Address, key: String, defaultVal: BigInt) = {
@@ -151,6 +152,8 @@ let factoryCfg        = factoryContract.readFactoryCfgOrFail()
 let emissionContract  = factoryCfg.getEmissionAddressOrFail()
 let boostingContract  = factoryCfg.getBoostingAddressOrFail()
 
+let boostCoeff = emissionContract.invoke("getBoostCoeffREADONLY", [], []).exactAs[Int]
+
 let lpStakingPoolsContract = ["%s", "lpStakingPoolsContract"].makeString(SEP)
   .getString().valueOrErrorMessage("lp_staking_pools contract address is undefined".wrapErr())
   .addressFromString().valueOrErrorMessage("invalid lp_staking_pools contract address".wrapErr())
@@ -180,7 +183,7 @@ func containsNode(listName: String, id: String) = {
 func insertNodeActions(listName: String, id: String) = {
   let headOrUnit = this.getString(listName.keyListHead())
   let listSize = this.getInteger(listName.keyListSize()).valueOrElse(0)
-  strict checkNode = !listName.containsNode(id) || "Node exists".throw()
+  strict checkNode = !listName.containsNode(id) || "Node exists".throwErr()
 
   [IntegerEntry(listName.keyListSize(), listSize + 1)]
   ++
@@ -223,7 +226,7 @@ func deleteNodeActions(listName: String, id: String) = {
         DeleteEntry(listName.keyListNext(prevOrUnit.value()))
       ]
     } else {
-      if (id == headOrUnit.valueOrElse("")) then [DeleteEntry(listName.keyListHead())] else {"invalid node: " + listName + "." + id}.throw()
+      if (id == headOrUnit.valueOrElse("")) then [DeleteEntry(listName.keyListHead())] else {"invalid node: " + listName + "." + id}.throwErr()
     }
   }
 }
@@ -245,7 +248,7 @@ func calcWxPerLpIntegralUserLast(
   } else if (wxPerLpIntegralUserLastUpdHeightOrZero > zeroBigInt && stakedByUser > zeroBigInt) then {
     # 5. эмиссия начата - стейкинг был начат во время эмиссии
     this.getStringOrFail(wxPerLpIntegralUserLastKEY).parseBigInt().value()
-  } else throw("calcWxPerLpIntegralUserLast: unexpected state")
+  } else throwErr("calcWxPerLpIntegralUserLast: unexpected state")
 }
 
 func refreshPoolINTEGRALS(lpAssetIdStr: String, poolAddressStr: String, lpDeltaAmount: Int) = {
@@ -256,11 +259,8 @@ func refreshPoolINTEGRALS(lpAssetIdStr: String, poolAddressStr: String, lpDeltaA
   let poolWeight          = factoryContract.getIntegerValue(poolAddressStr.keyFactoryPoolWeight())
   let emissionStartBlock  = emissionContract.getIntOrFail(keyEmissionStartBlock())
 
-  # TODO MOVE TO emission contract
-  let MULT3 = 1000
   let wxEmissionPerBlockX3 = emissionContract.getIntOrFail(keyEmissionRatePerBlockCurrent()) * MULT3
-  # TODO 3 is hardcoded
-  let poolWxEmissionPerBlockX3 = fraction(wxEmissionPerBlockX3, poolWeight, POOLWEIGHTMULT * 3) # TODO POOLWEIGHTMULT*3
+  let poolWxEmissionPerBlockX3 = fraction(wxEmissionPerBlockX3, poolWeight, POOLWEIGHTMULT * boostCoeff)
 
   # POOL INTEGRAL values
   let wxPerLpIntegralKEY                  = keyWxPerLpIntegral(lpAssetIdStr)
@@ -311,7 +311,6 @@ func refreshINTEGRALS(lpAssetIdStr: String, userAddressStr: String, poolAddressS
 
   let (wxPerLpIntegralNew, poolIntegralSTATE, poolDEBUG) = refreshPoolINTEGRALS(lpAssetIdStr, poolAddressStr, lpDeltaAmount)
 
-  let MULT3 = 1000
   let stakedByUserKEY = keyStakedByUser(userAddressStr, lpAssetIdStr)
   let stakedByUser = stakedByUserKEY.readStaked()
 
@@ -364,7 +363,7 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
   case _: Unit => unit
 }
 
-let permissionDeniedError = "Permission denied".throw()
+let permissionDeniedError = "Permission denied".throwErr()
 
 func mustThis(i: Invocation) = {
   i.caller == this || permissionDeniedError
@@ -450,7 +449,7 @@ func unstakeActions(
   let throwIfNothingToClaim = true
   strict r = if (availableToClaim > zeroBigInt) then this.invoke("claimWxINTERNAL", [lpAssetIdStr, userAddressStr, throwIfNothingToClaim], []) else unit
 
-  if (amount > stakedByUser) then throw("passed amount="+amount.toString()+" is greater than available="+stakedByUser.toString()+". lpAssetId="+lpAssetIdStr+". stakedByUserKEY="+stakedByUserKEY) else
+  if (amount > stakedByUser) then throwErr("passed amount="+amount.toString()+" is greater than available="+stakedByUser.toString()+". lpAssetId="+lpAssetIdStr+". stakedByUserKEY="+stakedByUserKEY) else
   [IntegerEntry(stakedByUserKEY, stakedByUser - amount),
     IntegerEntry(stakedTotalKEY, stakedTotal - amount),
     ScriptTransfer(lpAssetRecipientAddress, amount, lpAssetId),
@@ -489,8 +488,8 @@ func setManager(pendingManagerPublicKey: String) = {
 @Callable(i)
 func confirmManager() = {
   let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
+  strict hasPM = pm.isDefined() || throwErr("No pending manager")
+  strict checkPM = i.callerPublicKey == pm.value() || throwErr("You are not pending manager")
 
   [
     StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
@@ -500,13 +499,13 @@ func confirmManager() = {
 
 @Callable(i)
 func stake() = {
-  if (i.payments.size() != 1) then throw("invalid payment - exact one payment must be attached") else
+  if (i.payments.size() != 1) then throwErr("invalid payment - exact one payment must be attached") else
   let pmt = i.payments[0]
   let lpAssetId = pmt.assetId.value()
   let lpAssetIdStr = lpAssetId.toBase58String()
   let amount = pmt.amount
 
-  let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
+  let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage(("unsupported lp asset " + lpAssetIdStr).wrapErr())
   let poolAddress = poolAddressStr.addressFromStringValue()
   let userAddress = if (i.caller == poolAddress) then i.originCaller else i.caller
 
@@ -520,13 +519,13 @@ func stake() = {
 
 @Callable(i)
 func stakeFor(userAddressStr: String) = {
-  if (i.payments.size() != 1) then throw("invalid payment - exact one payment must be attached") else
+  if (i.payments.size() != 1) then throwErr("invalid payment - exact one payment must be attached") else
   let pmt = i.payments[0]
   let lpAssetId = pmt.assetId.value()
   let lpAssetIdStr = lpAssetId.toBase58String()
   let amount = pmt.amount
 
-  let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
+  let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage(("unsupported lp asset " + lpAssetIdStr).wrapErr())
   let poolAddress = poolAddressStr.addressFromStringValue()
   let userAddress = userAddressStr
     .addressFromString()
@@ -543,7 +542,7 @@ func stakeFor(userAddressStr: String) = {
 @Callable(i)
 func unstake(lpAssetIdStr: String, amount: Int) = {
   let lpAssetId = lpAssetIdStr.fromBase58String()
-  let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
+  let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage(("unsupported lp asset " + lpAssetIdStr).wrapErr())
   let poolAddress = poolAddressStr.addressFromStringValue()
   # TODO: temporal fix, remove after node increase max possible script size and pool addon contract is removed
   let poolAddon = poolAddress.getString(keyAddonAddr()).valueOrElse(poolAddressStr)
@@ -570,7 +569,7 @@ func unstakeINTERNAL(
   let lpAssetIdStr = lpAssetId.toBase58String()
   let poolAddress = factoryContract
     .getString(keyFactoryLp2AssetsMapping(lpAssetIdStr))
-    .valueOrErrorMessage("unsupported lp asset " + lpAssetIdStr)
+    .valueOrErrorMessage(("unsupported lp asset " + lpAssetIdStr).wrapErr())
     .addressFromStringValue()
   strict checkCaller = i.caller == poolAddress || permissionDeniedError
 
@@ -604,7 +603,7 @@ func claimWxDoNotThrow(lpAssetIdStr: String) = {
 @Callable(i)
 func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String, throwIfNothingToClaim: Boolean) = {
   strict checkCaller = i.mustThis()
-  let userAddress = userAddressStr.addressFromString().valueOrErrorMessage("claimWxINTERNAL: invalid user address")
+  let userAddress = userAddressStr.addressFromString().valueOrErrorMessage(("claimWxINTERNAL: invalid user address").wrapErr())
 
   let poolAddressStr = factoryContract.getStringByAddressOrFail(lpAssetIdStr.keyFactoryLpAssetToPoolContractAddress())
   let claimedByUserKEY = keyClaimedByUser(lpAssetIdStr, userAddressStr)
@@ -621,14 +620,14 @@ func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String, throwIfNothin
 
   let availableToClaim = max([wxToClaimUserNew - claimedByUserMinReward, zeroBigInt])
   if (availableToClaim <= zeroBigInt) then {
-    if (throwIfNothingToClaim) then "nothing to claim".throw() else ([], 0)
+    if (throwIfNothingToClaim) then "nothing to claim".throwErr() else ([], 0)
   } else
 
   # boost integral resfreshed here
   let wxAmountBoostTotal = max([boostingContract.invoke("claimWxBoost", [lpAssetIdStr, userAddressStr], []).asAnyList()[0].asInt(), 0])
 
   let minRewardPart = availableToClaim
-  let boostRewardPart = min([minRewardPart * 2.toBigInt(), wxAmountBoostTotal.toBigInt()])
+  let boostRewardPart = min([minRewardPart * (boostCoeff - 1).toBigInt(), wxAmountBoostTotal.toBigInt()])
   let totalReward = minRewardPart + boostRewardPart
 
   let wxAssetId = emissionContract.invoke("emit", [minRewardPart.toInt()], []).asAnyList()[0].asByteVector()
@@ -658,11 +657,13 @@ func claimWxBulkInternalREADONLY(currentIter: Int, lpAssetIds: List[String], use
   let info = this.invoke("claimWxREADONLY", [lpAssetId, userAddressStr], []).exactAs[String].split(SEP)
   let unclaimed = info[3]
   let claimed = info[4]
-  let res = resAcc :+ ["%d%d", unclaimed, claimed].makeString(SEP)
+  let userVoteFinalized = boostingContract.invoke("getUserVoteFinalizedREADONLY", [lpAssetId, userAddressStr], []).exactAs[Int]
+  let res = resAcc :+ ["%d%d%d", unclaimed, claimed, userVoteFinalized.toString()].makeString(SEP)
   strict inv = this.invoke("claimWxBulkInternalREADONLY", [currentIter+1, lpAssetIds, userAddressStr, res], []).exactAs[List[Any]]
   ([], inv)
 }
 
+# Returns [%d%d%d__<unclaimed>__<claimed>__<userVoteFinalized>]
 @Callable(i)
 func claimWxBulkREADONLY(lpAssetIds: List[String], userAddressStr: String) = {
   let res = this.invoke("claimWxBulkInternalREADONLY", [0, lpAssetIds, userAddressStr, []], [])
@@ -701,7 +702,7 @@ func claimWxREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
   let boostDebug = boostInvResult[1].asString()
 
   let minRewardPart = availableToClaim
-  let boostRewardPart = min([minRewardPart * 2.toBigInt(), wxAmountBoostTotal.toBigInt()])
+  let boostRewardPart = min([minRewardPart * (boostCoeff - 1).toBigInt(), wxAmountBoostTotal.toBigInt()])
   let totalReward = minRewardPart + boostRewardPart
 
   ([], makeString(["%s%s%d%d%d%d%s", lpAssetIdStr, userAddressStr, totalReward.toString(), claimedByUser.toString(), minRewardPart.toString(), boostRewardPart.toString(), "soon"], SEP))
@@ -751,7 +752,7 @@ func usersListTraversal(lpAssetId: String) = {
 
 @Callable(i)
 func onModifyWeight(lpAssetIdStr: String, poolAddressStr: String) = {
-  if (i.caller != factoryContract) then throw("permissions denied") else
+  if (i.caller != factoryContract) then throwErr("permissions denied") else
   let (wxPerLpIntegralNew, poolIntegralSTATE, poolDEBUG) = refreshPoolINTEGRALS(lpAssetIdStr, poolAddressStr, 0)
   poolIntegralSTATE
 }
