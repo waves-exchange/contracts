@@ -122,6 +122,13 @@ let keyKLpRefreshDelay = ["%s", "refreshKLpDelay"].makeString(SEP)
 let kLpRefreshDelayDefault = 30
 let kLpRefreshDelay = this.getInteger(keyKLpRefreshDelay).valueOrElse(kLpRefreshDelayDefault)
 
+# Additional balances keys
+func keyAdditionalBalance(assetId: String) = makeString(["%s%s", "additionalBalance", assetId], SEP)
+func keyStakingAssetBalance(assetId: String) = makeString(["%s%s", "stakingAssetBalance", assetId], SEP)
+# Additional balance value or zero
+func getAdditionalBalance(assetId: String) = this.getInteger(keyAdditionalBalance(assetId)).valueOrElse(0)
+func getStakingAssetBalance(assetId: String) = this.getInteger(keyStakingAssetBalance(assetId)).valueOrElse(0)
+
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
@@ -240,6 +247,122 @@ func calcPriceBigInt(prAmtX18: BigInt, amAmtX18: BigInt) = {
 
 func calcPriceBigIntRound(prAmtX18: BigInt, amAmtX18: BigInt, round: Ceiling|Floor) = {
   fraction(prAmtX18, scale18, amAmtX18, round)
+}
+
+#--------------------
+# Free assets staking
+#--------------------
+
+# Get current rate from proxy contract
+# returns Int
+func getRate(proxy: Address) = {
+  strict inv = proxy.invoke("getRate", [], [])
+  match (inv) {
+    case r:Int => r
+    case _ => "proxy.getRate() unexpected value".throwErr()
+  }
+}
+
+# Deposit amount of assetId to Leasing through Proxy
+# Write new additionalBalalnce and stakingAssetBalance
+func deposit(assetId: String, amount: Int, stakingAssetId: String, proxy: Address) = {
+  strict currentAdditionalBalance = getAdditionalBalance(assetId)
+  strict currentStakingAssetBalance = getStakingAssetBalance(stakingAssetId)
+  let asset = parseAssetId(assetId)
+
+  if (amount > 0) then {
+    strict depositInvoke = proxy.invoke("deposit", [], [AttachedPayment(asset, amount)])
+    match depositInvoke {
+      case receivedStakingAsset:Int => {
+        let newAdditionalBalance = currentAdditionalBalance + amount
+        let newStakingAssetBalance = currentStakingAssetBalance + receivedStakingAsset
+          [
+            IntegerEntry(keyAdditionalBalance(assetId), newAdditionalBalance),
+            IntegerEntry(keyStakingAssetBalance(stakingAssetId), newStakingAssetBalance)
+          ]
+      }
+      case _ => []
+    }
+  } else { [] }
+}
+
+# Withdraw requested amount of assetId from Leased assets through Proxy
+# Amount of attached stakingAsset is calculated from Proxy rate
+func withdraw(assetId: String, amount: Int, stakingAssetId: String, proxy: Address, proxyRateMul: Int) = {
+  strict currentAdditionalBalance = getAdditionalBalance(assetId)
+  strict currentStakingAssetBalance = getStakingAssetBalance(stakingAssetId)
+  strict currentProxyRate = getRate(proxy)
+  let stakingAsset = parseAssetId(stakingAssetId)
+
+  let sendStakingAssetAmount = fraction(proxyRateMul, amount, currentProxyRate)
+  if (sendStakingAssetAmount > 0) then {
+    strict withdrawInvoke = proxy.invoke("withdraw", [], [AttachedPayment(stakingAsset, sendStakingAssetAmount)])
+    match withdrawInvoke {
+      case receivedAssets:Int => {
+        let newAdditionalBalance = currentAdditionalBalance - receivedAssets
+        let newStakingAssetBalance = currentStakingAssetBalance - sendStakingAssetAmount
+        [
+          IntegerEntry(keyAdditionalBalance(assetId), newAdditionalBalance),
+          IntegerEntry(keyStakingAssetBalance(stakingAssetId), newStakingAssetBalance)
+        ]
+      }
+      case _ => []
+    }
+    } else { [] }
+}
+
+# Returns lease proxy config from Factory
+# for this pool and assetId
+#
+# return tuple:
+# (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress)
+func getLeaseProxyConfig(assetId: String) = {
+  factoryContract.invoke("getPoolLeaseConfigREADONLY", [this.toString(), assetId], [])
+}
+
+# Rebalance assetId to targetRatio and minBalance through Proxy
+func rebalanceInternal(targetRatio: Int, assetId: String, stakingAssetId: String, minBalance: Int, proxy: Address, proxyRateMul: Int) = {
+  strict currentAdditionalBalance = getAdditionalBalance(assetId)
+  strict currentStakingAssetBalance = getStakingAssetBalance(stakingAssetId)
+
+  strict availableBalance = match parseAssetId(assetId) {
+    case b:ByteVector => this.assetBalance(b)
+    case u:Unit => this.wavesBalance().available
+  }
+
+  let wholeBalance = max([0, availableBalance + currentAdditionalBalance - minBalance])
+  let targetAdditionalBalance = fraction(targetRatio, wholeBalance, 100)
+  let diff = currentAdditionalBalance - targetAdditionalBalance
+     
+  if (diff == 0) then { [] } 
+  else if (diff < 0) then {
+      let sendAssetAmount = -diff
+      deposit(assetId, sendAssetAmount, stakingAssetId, proxy)
+  } else {
+      let getAssetAmount = diff
+      withdraw(assetId, getAssetAmount, stakingAssetId, proxy, proxyRateMul)
+  }
+}
+
+# Get lease proxy config from Factory for assetId
+# and call rebalanceInternal()
+func rebalanceAsset(assetId: String) = {
+  match getLeaseProxyConfig(assetId) {
+    case a: (Boolean, Int, Int, String, String, Int, String) => {
+      let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = a
+      if (isLeasable) then {
+        rebalanceInternal(leasedRatio, assetId, proxyAssetId, minBalance, addressFromStringValue(proxyAddress), proxyRateMul)
+      } else {
+        []
+      }
+    }
+    case _ => ("[" + assetId + "] Rebalance error").throwErr()
+  }
+}
+
+# Rebalance AmountAsset and PriceAsset
+func rebalance() = {
+  rebalanceAsset(aa()) ++ rebalanceAsset(pa())
 }
 
 # cast assets and calc price
