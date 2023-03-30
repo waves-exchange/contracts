@@ -46,7 +46,7 @@ func mustManager(i: Invocation) = {
 func getRate() = {
     let results = invoke(pepeContract, "getRate", [], [])
     match (results) {
-        case t:String => ([], t)
+        case t:String => ([], t.parseIntValue())
         case _ => error("getRate(): unexpected return")
     }
 }
