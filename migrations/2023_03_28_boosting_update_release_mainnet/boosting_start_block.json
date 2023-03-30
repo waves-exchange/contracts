@@ -1,0 +1,11 @@
+{
+  "type": 12,
+  "data": [
+    { "key": "%s%s__boostingV2__startBlock", "type": "integer", "value": 3575413 }
+  ],
+  "senderPublicKey": "6PdA345SW1zresPEKuWiLPsh9Ku14mFDW6cZtpCQrp3E",
+  "chainId": 87,
+  "fee": 500000,
+  "proofs": [],
+  "version": 2
+}

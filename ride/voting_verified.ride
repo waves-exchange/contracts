@@ -299,15 +299,20 @@ func constructor(
 # TODO: проверить, что токена нет в списке
 @Callable(i)
 func suggest(assetId: String, assetImage: String) = {
-  let info = assetId.fromBase58String().assetInfo().valueOrErrorMessage("Invalid asset ID")
+  strict info = assetId.fromBase58String().assetInfo().valueOrErrorMessage("Invalid asset ID")
   let payment = i.payments[0].value()
+  let isThis = i.caller == this
   strict checks = [
-    info.issuer == i.caller || "Asset can only be suggested by its issuer".throw(),
-    payment.assetId.value() == wxAssetId || "Invalid fee asset".throw(),
-    payment.amount == feeAmount || "Invalid fee amount".throw()
+    isThis || info.issuer == i.caller || "Asset can only be suggested by its issuer".throw(),
+    isThis || payment.assetId.value() == wxAssetId || "Invalid fee asset".throw(),
+    isThis || payment.amount == feeAmount || "Invalid fee amount".throw()
   ]
   strict assetsStoreCreateOrUpdateInv = assetsStoreContract.invoke("createOrUpdate", [assetId, assetImage, false], [])
-  strict burnFeeInv = emissionContract.invoke("burn", [], [AttachedPayment(payment.assetId, payment.amount)])
+  strict burnFeeInv = if (isThis) then {
+    unit
+  } else {
+    emissionContract.invoke("burn", [], [AttachedPayment(payment.assetId, payment.amount)])
+  }
   let addAssetActions = assetsListName.insertNode(assetId)
   let nextPeriod = currentPeriod + 1
   let targetPeriod = if (height < endHeight) then currentPeriod else nextPeriod
