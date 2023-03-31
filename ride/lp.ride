@@ -122,6 +122,9 @@ let keyKLpRefreshDelay = ["%s", "refreshKLpDelay"].makeString(SEP)
 let kLpRefreshDelayDefault = 30
 let kLpRefreshDelay = this.getInteger(keyKLpRefreshDelay).valueOrElse(kLpRefreshDelayDefault)
 
+func keySWavesAssetId() = "%s__sWavesAssetId"
+func keySWavesProxyAddress() = "%s__sWavesProxyAddress"
+
 # Additional balances keys
 func keyAdditionalBalance(assetId: String) = makeString(["%s%s", "additionalBalance", assetId], SEP)
 func keyStakingAssetBalance(assetId: String) = makeString(["%s%s", "stakingAssetBalance", assetId], SEP)
@@ -171,6 +174,9 @@ let feeCollectorAddress = factoryContract.getStringOrFail(keyFeeCollectorAddress
 
 let inFee = factoryContract.invoke("getInFeeREADONLY", [this.toString()], []).exactAs[Int]
 let outFee = factoryContract.invoke("getOutFeeREADONLY", [this.toString()], []).exactAs[Int]
+
+func sWavesId() =  getStringOrFail(factoryContract, keySWavesAssetId())
+func sWavesProxy() =  getStringOrFail(factoryContract, keySWavesProxyAddress())
 
 # check that global shutdown is take place
 func isGlobalShutdown() = {
@@ -238,7 +244,19 @@ func dataGetActionInfo(outAmtAssetAmt: Int, outPriceAssetAmt: Int, inLpAmt: Int,
 }
 
 func getAccBalance(assetId: String) = {
-  if(assetId == "WAVES") then wavesBalance(this).available else assetBalance(this, fromBase58String(assetId))
+  if(assetId == "WAVES") then {
+    wavesBalance(this).available + getAdditionalBalance(assetId)
+  } else if (assetId == sWavesId()) then {
+    let amtAsset = getStringOrFail(this, aa())
+    let priceAsset = getStringOrFail(this, pa())
+    if ((amtAsset == "WAVES" && priceAsset == sWavesId()) || (priceAsset == "WAVES" && amtAsset == sWavesId())) then {
+      assetBalance(this, fromBase58String(assetId))
+    } else {
+      assetBalance(this, fromBase58String(assetId)) + getStakingAssetBalance(assetId)
+    }
+  } else  {
+    assetBalance(this, fromBase58String(assetId))
+  }
 }
 
 func calcPriceBigInt(prAmtX18: BigInt, amAmtX18: BigInt) = {
@@ -971,8 +989,30 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
 
   strict checkK = newK >= oldK || "new K is fewer error".throw()
   strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
+
+  let lsConf = match getLeaseProxyConfig(assetOut) {
+    case a: (Boolean, Int, Int, String, String, Int, String) => {
+      a
+    }
+    case _ => "error lease config".throw()
+  }
+  let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = lsConf
+
+  let assetOnPool = assetBalance(this, fromBase58String(assetOut))
+  let amountOfProfit = if (assetOut == "WAVES" && amountOut > assetOnPool) then {
+    let amountDiff = amountOut - assetOnPool
+    let oldRatio = getAdditionalBalance(assetOut)/getStakingAssetBalance(sWavesId())
+    let oldWavesRoughBalane = wavesBalance(this).available
+
+    strict wd = this.invoke("deleteWxEmissionPoolLabel", [assetOut, amountDiff, sWavesId(), sWavesProxy(), proxyRateMul], [])
+    let newWavesRoughBalane = wavesBalance(this).available
+    let wavesDiff = newWavesRoughBalane - oldWavesRoughBalane
+    wavesDiff
+  } else {0}
+  strict reb = this.invoke("rebalance", [], [])
   (
     [
+      ScriptTransfer(stakingProfitAddress.addressFromStringValue(), amountOfProfit, unit),
       ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.parseAssetId())
     ],
     amountOut
@@ -1195,6 +1235,28 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else amountEstimated
 
+  let lsConf = match getLeaseProxyConfig(outAssetIdStr) {
+    case a: (Boolean, Int, Int, String, String, Int, String) => {
+      a
+    }
+    case _ => "error lease config".throw()
+  }
+  let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = lsConf
+
+  let assetOnPool = assetBalance(this, fromBase58String(outAssetIdStr))
+  let amountOfProfit = if (outAssetIdStr == "WAVES" && amount > assetOnPool) then {
+    let amountDiff = amount - assetOnPool
+    let oldRatio = getAdditionalBalance(outAssetIdStr)/getStakingAssetBalance(sWavesId())
+    let oldWavesRoughBalane = wavesBalance(this).available
+
+    strict wd = this.invoke("deleteWxEmissionPoolLabel", [outAssetIdStr, amountDiff, sWavesId(), sWavesProxy(), proxyRateMul], [])
+    let newWavesRoughBalane = wavesBalance(this).available
+    let wavesDiff = newWavesRoughBalane - oldWavesRoughBalane
+    wavesDiff
+  } else {0}
+
+  let profitTransfer = [ScriptTransfer(stakingProfitAddress.addressFromStringValue(), amountOfProfit, unit)]
+
   strict burnInv = factoryContract.invoke("burn", [paymentAmount], [AttachedPayment(paymentAssetId, paymentAmount)])
 
   let assetTransfer = [ScriptTransfer(userAddress, amount, outAssetId)]
@@ -1208,10 +1270,12 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
   let (refreshKLpActions, updatedKLp) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+  strict reb = this.invoke("rebalance", [], [])
 
   (
     commonState
     ++ assetTransfer
+    ++ profitTransfer
     ++ sendFee
     ++ refreshKLpActions,
     amount
