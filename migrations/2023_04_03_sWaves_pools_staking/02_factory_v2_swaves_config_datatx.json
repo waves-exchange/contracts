@@ -1,0 +1,34 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "feeAssetId": null,
+    "version": 2,
+    "senderPublicKey": "",
+    "data": [
+        {
+            "key": "%s__sWavesProxyAddress",
+            "type": "string",
+            "value": ""
+        },
+        {
+            "key": "%s__sWavesAssetId",
+            "type": "string",
+            "value": ""
+        },
+        {
+            "key": "%s__stakingProfitAddress",
+            "type": "string",
+            "value": ""
+        },
+        {
+            "key": "%s%s__leasedRatioDefault__WAVES",
+            "type": "integer",
+            "value": 80
+        },
+        {
+            "key": "%s%s__minBalanceDefault__WAVES",
+            "type": "integer",
+            "value": 10
+        }
+    ]
+}
