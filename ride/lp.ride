@@ -378,12 +378,6 @@ func rebalanceAsset(assetId: String) = {
   }
 }
 
-# Rebalance AmountAsset and PriceAsset
-@Callable(i)
-func rebalance() = {
-  rebalanceAsset(aa()) ++ rebalanceAsset(pa())
-}
-
 # cast assets and calc price
 func privateCalcPrice(amAssetDcm: Int, prAssetDcm: Int, amAmt: Int, prAmt: Int) = {
     let amtAssetAmtX18 = amAmt.toX18(amAssetDcm)
@@ -937,6 +931,12 @@ func mustManager(i: Invocation) = {
     case pk: ByteVector => i.callerPublicKey == pk || pd
     case _: Unit => i.caller == this || pd
   }
+}
+
+# Rebalance AmountAsset and PriceAsset
+@Callable(i)
+func rebalance() = {
+  rebalanceAsset(aa()) ++ rebalanceAsset(pa())
 }
 
 @Callable(i)
