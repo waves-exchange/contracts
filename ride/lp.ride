@@ -378,11 +378,6 @@ func rebalanceAsset(assetId: String) = {
   }
 }
 
-# Rebalance AmountAsset and PriceAsset
-func rebalance() = {
-  rebalanceAsset(aa()) ++ rebalanceAsset(pa())
-}
-
 # cast assets and calc price
 func privateCalcPrice(amAssetDcm: Int, prAssetDcm: Int, amAmt: Int, prAmt: Int) = {
     let amtAssetAmtX18 = amAmt.toX18(amAssetDcm)
@@ -938,6 +933,12 @@ func mustManager(i: Invocation) = {
   }
 }
 
+# Rebalance AmountAsset and PriceAsset
+@Callable(i)
+func rebalance() = {
+  rebalanceAsset(aa()) ++ rebalanceAsset(pa())
+}
+
 @Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int,  isReverse: Boolean, feePoolAmount: Int) = {
   let (assetOut, assetIn) = if (isReverse == false) then {
@@ -1004,10 +1005,10 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
     let oldRatio = getAdditionalBalance(assetOut)/getStakingAssetBalance(sWavesId())
     let oldWavesRoughBalane = wavesBalance(this).available
 
-    strict wd = this.invoke("deleteWxEmissionPoolLabel", [assetOut, amountDiff, sWavesId(), sWavesProxy(), proxyRateMul], [])
+    strict wd = this.invoke("withdraw", [assetOut, amountDiff, sWavesId(), sWavesProxy(), proxyRateMul], [])
     let newWavesRoughBalane = wavesBalance(this).available
     let wavesDiff = newWavesRoughBalane - oldWavesRoughBalane
-    wavesDiff
+    wavesDiff - amountDiff
   } else {0}
   strict reb = this.invoke("rebalance", [], [])
   (
@@ -1188,6 +1189,8 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
 
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
+  strict reb = this.invoke("rebalance", [], [])
+
   (
     commonState
     ++ lpTransfer
@@ -1249,10 +1252,10 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
     let oldRatio = getAdditionalBalance(outAssetIdStr)/getStakingAssetBalance(sWavesId())
     let oldWavesRoughBalane = wavesBalance(this).available
 
-    strict wd = this.invoke("deleteWxEmissionPoolLabel", [outAssetIdStr, amountDiff, sWavesId(), sWavesProxy(), proxyRateMul], [])
+    strict wd = this.invoke("withdraw", [outAssetIdStr, amountDiff, sWavesId(), sWavesProxy(), proxyRateMul], [])
     let newWavesRoughBalane = wavesBalance(this).available
     let wavesDiff = newWavesRoughBalane - oldWavesRoughBalane
-    wavesDiff
+    wavesDiff - amountDiff
   } else {0}
 
   let profitTransfer = [ScriptTransfer(stakingProfitAddress.addressFromStringValue(), amountOfProfit, unit)]
