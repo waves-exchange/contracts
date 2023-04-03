@@ -936,7 +936,7 @@ func mustManager(i: Invocation) = {
 # Rebalance AmountAsset and PriceAsset
 @Callable(i)
 func rebalance() = {
-  rebalanceAsset(aa()) ++ rebalanceAsset(pa())
+  rebalanceAsset(getStringOrFail(this, aa())) ++ rebalanceAsset(getStringOrFail(this, pa()))
 }
 
 @Callable(i)
