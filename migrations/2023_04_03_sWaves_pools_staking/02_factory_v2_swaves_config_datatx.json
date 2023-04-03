@@ -3,7 +3,7 @@
     "fee": 500000,
     "feeAssetId": null,
     "version": 2,
-    "senderPublicKey": "",
+    "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
     "data": [
         {
             "key": "%s__sWavesProxyAddress",
@@ -13,7 +13,7 @@
         {
             "key": "%s__sWavesAssetId",
             "type": "string",
-            "value": ""
+            "value": "YiNbofFzC17jEHHCMwrRcpy9MrrjabMMLZxg8g5xmf7"
         },
         {
             "key": "%s__stakingProfitAddress",
@@ -28,7 +28,7 @@
         {
             "key": "%s%s__minBalanceDefault__WAVES",
             "type": "integer",
-            "value": 10
+            "value": 10000000000
         }
     ]
 }

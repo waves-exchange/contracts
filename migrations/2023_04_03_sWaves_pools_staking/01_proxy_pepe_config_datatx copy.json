@@ -8,12 +8,12 @@
         {
             "key": "%s__sWavesContract",
             "type": "string",
-            "value": ""
+            "value": "3PDPzZVLhN1EuzGy4xAxjjTVkawKDLEaHiV"
         },
         {
             "key": "%s__sWavesAssetId",
             "type": "string",
-            "value": ""
+            "value": "YiNbofFzC17jEHHCMwrRcpy9MrrjabMMLZxg8g5xmf7"
         }
     ]
 }
