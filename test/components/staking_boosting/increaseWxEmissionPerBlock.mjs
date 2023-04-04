@@ -91,6 +91,5 @@ describe(`${process.pid}: increaseWxEmissionPerBlock`, () => {
       caller: this.accounts.user0.seed,
       lpAssetId: this.lpAssetId,
     });
-    console.log(txInfo);
   });
 });

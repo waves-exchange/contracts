@@ -1,8 +1,15 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
-import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import {
+  data,
+  transfer,
+  reissue,
+  invokeScript,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -12,14 +19,55 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully lockRef is signatur is empty',
+    'should successfully lockRef if userIsExisting',
     async function () {
       const duration = this.maxDuration - 1;
-      const referrer = address(this.accounts.referrer, chainId);
-      const assetAmount = this.minLockAmount;
+      const referrer = '';
       const signature = 'base64:';
+      const assetAmount = this.minLockAmount;
+
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
+
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.emission.seed));
+
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
+        chainId,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
+
+      const { height: currentHeight } = await api.blocks.fetchHeight();
+      const emissionEndBlock = currentHeight - 1;
+      const setEmissionEndBlockTx = data({
+        additionalFee: 4e5,
+        data: [
+          {
+            key: '%s%s__emission__endBlock',
+            type: 'integer',
+            value: emissionEndBlock,
+          },
+        ],
+        chainId,
+      }, this.accounts.emission.seed);
+      await broadcastAndWait(setEmissionEndBlockTx);
 
       const lockRefTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
@@ -31,18 +79,17 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
           args: [
             { type: 'integer', value: duration },
             { type: 'string', value: referrer },
-            { type: 'binary', value: signature },
+            { type: 'string', value: signature },
           ],
         },
         chainId,
-      }, this.accounts.user1);
-      await api.transactions.broadcast(lockRefTx, {});
-      const { id, height, stateChanges } = await ni.waitForTx(lockRefTx.id, { apiBase });
+      }, this.accounts.user0.seed);
+      const { id, height, stateChanges } = await broadcastAndWait(lockRefTx);
 
       const expectedTimestamp = (await api.blocks.fetchHeadersAt(height)).timestamp;
+      const expectedUserNum = 0;
       const expectedNextUserNum = 1;
       const expectedUserNumStr = '0';
-      const expectedUserNum = 0;
       const expectedK = 0;
       const expectedB = 0;
       const expectedPeriod = 0;
@@ -61,13 +108,13 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
         type: 'integer',
         value: expectedNextUserNum,
       }, {
-        key: `%s%s%s__mapping__user2num__${address(this.accounts.user1, chainId)}`,
+        key: `%s%s%s__mapping__user2num__${address(this.accounts.user0, chainId)}`,
         type: 'string',
         value: expectedUserNumStr,
       }, {
         key: `%s%s%s__mapping__num2user__${expectedUserNum}`,
         type: 'string',
-        value: address(this.accounts.user1, chainId),
+        value: address(this.accounts.user0, chainId),
       }, {
         key: `%s%d%s__paramByUserNum__${expectedUserNum}__amount`,
         type: 'integer',
@@ -97,7 +144,7 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
         type: 'integer',
         value: expectedB,
       }, {
-        key: `%s%s__lock__${address(this.accounts.user1, chainId)}`,
+        key: `%s%s__lock__${address(this.accounts.user0, chainId)}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d%d__${expectedUserNum}__${assetAmount}__${height}__${duration}__${expectedK}__${expectedB}__${expectedTimestamp}__${expectedGwxAmount}`,
       }, {
@@ -117,7 +164,7 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
         type: 'integer',
         value: expectedActiveTotalLocked,
       }, {
-        key: `%s%s%s%s__history__lock__${address(this.accounts.user1, chainId)}__${id}`,
+        key: `%s%s%s%s__history__lock__${address(this.accounts.user0, chainId)}__${id}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d__${height}__${expectedTimestamp}__${assetAmount}__${expectedLockStart}__${duration}__${expectedK}__${expectedB}`,
       }, {
@@ -152,7 +199,7 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
       expect(invokes[1].call.args).to.eql([
         {
           type: 'String',
-          value: address(this.accounts.user1, chainId),
+          value: address(this.accounts.user0, chainId),
         }, {
           type: 'Int',
           value: expectedTotalCachedGwxKEY,

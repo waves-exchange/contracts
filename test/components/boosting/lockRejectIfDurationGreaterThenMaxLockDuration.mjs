@@ -1,8 +1,14 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
-import { invokeScript } from '@waves/waves-transactions';
+import {
+  transfer,
+  reissue,
+  invokeScript,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -24,6 +30,32 @@ describe('boosting: lockRejectIfDurationGreaterThenMaxLockDuration.mjs', /** @th
 
       const expectedRejectMessage = `passed duration is greater then maxLockDuration=${this.maxDuration}`;
 
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
+
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.emission.seed));
+
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
+        chainId,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
+
       const lockRefTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
         payment: [
@@ -38,12 +70,12 @@ describe('boosting: lockRejectIfDurationGreaterThenMaxLockDuration.mjs', /** @th
           ],
         },
         chainId,
-      }, this.accounts.user1);
+      }, this.accounts.user0.seed);
 
       await expect(
         api.transactions.broadcast(lockRefTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        `Error while executing dApp: boosting.ride: ${expectedRejectMessage}`,
       );
     },
   );

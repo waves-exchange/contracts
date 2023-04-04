@@ -2,13 +2,15 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import {
-  invokeScript,
-  issue,
+  transfer,
   massTransfer,
-  nodeInteraction as ni,
-  waitForTx,
+  issue,
+  reissue,
+  invokeScript,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -21,12 +23,12 @@ const api = create(apiBase);
 describe('boosting: increaseLockRejectIfPaymentsMoreThanOne.mjs', /** @this {MochaSuiteModified} */() => {
   const seed = 'waves private node seed with waves tokens';
   let someAssetId;
-  let user1;
+  let user0;
   let boosting;
   let wxAssetId;
 
   before(async function () {
-    user1 = this.accounts.user1;
+    user0 = this.accounts.user0;
     boosting = address(this.accounts.boosting, chainId);
     wxAssetId = this.wxAssetId;
 
@@ -37,18 +39,16 @@ describe('boosting: increaseLockRejectIfPaymentsMoreThanOne.mjs', /** @this {Moc
       decimals: 8,
       chainId,
     }, seed);
-    await api.transactions.broadcast(someIssueTx, {});
-    await waitForTx(someIssueTx.id, { apiBase });
+    await broadcastAndWait(someIssueTx);
     someAssetId = someIssueTx.id;
 
     const someAmount = 1e16;
     const massTransferTxWX = massTransfer({
-      transfers: [{ recipient: address(user1, chainId), amount: someAmount }],
+      transfers: [{ recipient: address(user0, chainId), amount: someAmount }],
       assetId: someAssetId,
       chainId,
     }, seed);
-    await api.transactions.broadcast(massTransferTxWX, {});
-    await waitForTx(massTransferTxWX.id, { apiBase });
+    await broadcastAndWait(massTransferTxWX);
   });
   it(
     'should reject increaseLock',
@@ -60,6 +60,32 @@ describe('boosting: increaseLockRejectIfPaymentsMoreThanOne.mjs', /** @this {Moc
       const signature = 'base64:';
 
       const expectedRejectMessage = 'only one payment is allowed';
+
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
+
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.emission.seed));
+
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
+        chainId,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
 
       const lockRefTx = invokeScript({
         dApp: boosting,
@@ -75,9 +101,8 @@ describe('boosting: increaseLockRejectIfPaymentsMoreThanOne.mjs', /** @this {Moc
           ],
         },
         chainId,
-      }, this.accounts.user1);
-      await api.transactions.broadcast(lockRefTx, {});
-      await ni.waitForTx(lockRefTx.id, { apiBase });
+      }, this.accounts.user0.seed);
+      await broadcastAndWait(lockRefTx);
 
       const increaseLockTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
@@ -92,12 +117,12 @@ describe('boosting: increaseLockRejectIfPaymentsMoreThanOne.mjs', /** @this {Moc
           ],
         },
         chainId,
-      }, this.accounts.user1);
+      }, this.accounts.user0.seed);
 
       await expect(
         api.transactions.broadcast(increaseLockTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        `Error while executing dApp: boosting.ride: ${expectedRejectMessage}`,
       );
     },
   );

@@ -1,8 +1,13 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
-import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import {
+  transfer,
+  reissue,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -19,21 +24,41 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
       const duration = this.maxDuration - 1;
       const assetAmount = this.minLockAmount;
 
-      const lockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
-        payment: [
-          { assetId: this.wxAssetId, amount: assetAmount },
-        ],
-        call: {
-          function: 'lock',
-          args: [
-            { type: 'integer', value: duration },
-          ],
-        },
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
+
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.emission.seed));
+
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
         chainId,
-      }, this.accounts.user1);
-      await api.transactions.broadcast(lockTx, {});
-      const { id, height, stateChanges } = await ni.waitForTx(lockTx.id, { apiBase });
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
+
+      const { height: lockStartHeight } = await boosting.lock({
+        dApp: this.accounts.boosting.addr,
+        caller: this.accounts.user0.seed,
+        duration: this.maxLockDuration,
+        payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
+      });
+      await waitForHeight(lockStartHeight + 1);
+
+      const { id, height, stateChanges } = await broadcastAndWait(lockTx);
 
       const expectedTimestamp = (await api.blocks.fetchHeadersAt(height)).timestamp;
       const expectedNextUserNum = 1;
@@ -57,13 +82,13 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: expectedNextUserNum,
       }, {
-        key: `%s%s%s__mapping__user2num__${address(this.accounts.user1, chainId)}`,
+        key: `%s%s%s__mapping__user2num__${address(this.accounts.user0, chainId)}`,
         type: 'string',
         value: expectedUserNumStr,
       }, {
         key: `%s%s%s__mapping__num2user__${expectedUserNum}`,
         type: 'string',
-        value: address(this.accounts.user1, chainId),
+        value: address(this.accounts.user0, chainId),
       }, {
         key: `%s%d%s__paramByUserNum__${expectedUserNum}__amount`,
         type: 'integer',
@@ -93,7 +118,7 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: expectedB,
       }, {
-        key: `%s%s__lock__${address(this.accounts.user1, chainId)}`,
+        key: `%s%s__lock__${address(this.accounts.user0, chainId)}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d%d__${expectedUserNum}__${assetAmount}__${height}__${duration}__${expectedK}__${expectedB}__${expectedTimestamp}__${expectedGwxAmount}`,
       }, {
@@ -113,7 +138,7 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: expectedActiveTotalLocked,
       }, {
-        key: `%s%s%s%s__history__lock__${address(this.accounts.user1, chainId)}__${id}`,
+        key: `%s%s%s%s__history__lock__${address(this.accounts.user0, chainId)}__${id}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d__${height}__${expectedTimestamp}__${assetAmount}__${expectedLockStart}__${duration}__${expectedK}__${expectedB}`,
       }, {
@@ -148,7 +173,7 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
       expect(invokes[1].call.args).to.eql([
         {
           type: 'String',
-          value: address(this.accounts.user1, chainId),
+          value: address(this.accounts.user0, chainId),
         }, {
           type: 'Int',
           value: expectedTotalCachedGwxKEY,

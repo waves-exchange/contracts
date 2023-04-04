@@ -858,6 +858,14 @@ func getChangeAmpConfigREADONLY(poolAddress: String) = {
   ([], [delay, delta, target])
 }
 
+@Callable(i)
+func getPoolWeightREADONLY(lpAssetId: String) = {
+  let poolAddress = keyMappingPoolLPAssetToPoolContractAddress(lpAssetId).getStringOrFail()
+  let weight = keyPoolToWeight(poolAddress).getInteger().valueOrElse(0)
+
+  ([], weight)
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {

@@ -1,66 +1,66 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
-import { data, invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
-import { create } from '@waves/node-api-js';
+import {
+  data,
+  transfer,
+  reissue,
+  invokeScript,
+} from '@waves/waves-transactions';
+
+import { broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
+import { boosting } from './contract/boosting.mjs';
+import { staking } from './contract/staking.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
-
-const api = create(apiBase);
 
 describe('boosting: claimWxBoostIfHeightMoreEmissionEnd.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully claimWxBoost',
     async function () {
-      const duration = this.maxDuration - 1;
-      const assetAmount = this.minLockAmount;
-      const someLpAssetIdStr = '2DnDS3MqJFjopXx4Wtyv7uvt3Jdt6hBoR6gAbjBiceEg';
-      const somePoolContract = '3Mt3gNcHWcJYCuFHYtsggAdFadVGso8RNjB';
-      const userAddressStr = address(this.accounts.user1, chainId);
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
 
-      const lockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
-        payment: [
-          { assetId: this.wxAssetId, amount: assetAmount },
-        ],
-        call: {
-          function: 'lock',
-          args: [
-            { type: 'integer', value: duration },
-          ],
-        },
-        chainId,
-      }, this.accounts.user1);
-      await api.transactions.broadcast(lockTx, {});
-      await ni.waitForTx(lockTx.id, { apiBase });
-
-      const setLpAsset2PoolContractTx = data({
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
         additionalFee: 4e5,
-        data: [{
-          key: `%s%s%s__${someLpAssetIdStr}__mappings__lpAsset2PoolContract`,
-          type: 'string',
-          value: somePoolContract,
-        }],
-        chainId,
-      }, this.accounts.factoryV2);
-      await api.transactions.broadcast(setLpAsset2PoolContractTx, {});
-      await ni.waitForTx(setLpAsset2PoolContractTx.id, { apiBase });
+      }, this.accounts.emission.seed));
 
-      const setPoolWeightTx = data({
-        additionalFee: 4e5,
-        data: [{
-          key: `%s%s__poolWeight__${somePoolContract}`,
-          type: 'integer',
-          value: 0,
-        }],
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
         chainId,
-      }, this.accounts.factoryV2);
-      await api.transactions.broadcast(setPoolWeightTx, {});
-      await ni.waitForTx(setPoolWeightTx.id, { apiBase });
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
+
+      const { height: lockStartHeight } = await boosting.lock({
+        dApp: this.accounts.boosting.addr,
+        caller: this.accounts.user0.seed,
+        duration: this.maxLockDuration,
+        payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
+      });
+      await waitForHeight(lockStartHeight + 1);
+
+      const { height: stakeHeight } = await staking.stake({
+        dApp: this.accounts.staking.addr,
+        caller: this.accounts.user0.seed,
+        payments: [{ assetId: this.lpAssetId, amount: lpAssetAmount }],
+      });
+      await waitForHeight(stakeHeight + 1);
 
       const emissionEndBlock = 0;
       const setEmissionEndBlockTx = data({
@@ -73,9 +73,8 @@ describe('boosting: claimWxBoostIfHeightMoreEmissionEnd.mjs', /** @this {MochaSu
           },
         ],
         chainId,
-      }, this.accounts.emission);
-      await api.transactions.broadcast(setEmissionEndBlockTx, {});
-      await ni.waitForTx(setEmissionEndBlockTx.id, { apiBase });
+      }, this.accounts.emission.seed);
+      await broadcastAndWait(setEmissionEndBlockTx);
 
       const claimWxBoostTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
@@ -83,20 +82,31 @@ describe('boosting: claimWxBoostIfHeightMoreEmissionEnd.mjs', /** @this {MochaSu
         call: {
           function: 'claimWxBoost',
           args: [
-            { type: 'string', value: someLpAssetIdStr },
-            { type: 'string', value: userAddressStr },
+            { type: 'string', value: this.lpAssetId },
+            { type: 'string', value: this.accounts.user0.addr },
           ],
         },
         chainId,
-      }, this.accounts.staking);
-      await api.transactions.broadcast(claimWxBoostTx, {});
-      const { stateChanges } = await ni.waitForTx(claimWxBoostTx.id, { apiBase });
+      }, this.accounts.staking.seed);
+      const { stateChanges } = await broadcastAndWait(claimWxBoostTx);
 
-      expect(stateChanges.data).to.eql([{
-        key: `%s%d__userBoostEmissionLastInt__0__${someLpAssetIdStr}`,
-        type: 'integer',
-        value: 0,
-      }]);
+      expect(stateChanges.data).to.eql([
+        {
+          key: `%s%d__userBoostEmissionLastIntV2__0__${this.lpAssetId}`,
+          type: 'integer',
+          value: 0,
+        },
+        {
+          key: `%s%s%s%d__voteStakedIntegralLast__${this.lpAssetId}__${this.accounts.user0.addr}__0`,
+          type: 'integer',
+          value: 0,
+        },
+        {
+          key: `%s%s%s%d__votingResultStakedIntegralLast__${this.lpAssetId}__${this.accounts.user0.addr}__0`,
+          type: 'integer',
+          value: 0,
+        },
+      ]);
     },
   );
 });

@@ -1,9 +1,14 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
-import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import {
+  transfer,
+  reissue,
+  invokeScript,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { waitForHeight } from '../../utils/api.mjs';
+
+import { broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -22,6 +27,32 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
 
       const expectedLocksCount = 1;
 
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
+
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.emission.seed));
+
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
+        chainId,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
+
       const lockTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
         payment: [
@@ -34,9 +65,8 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
           ],
         },
         chainId,
-      }, this.accounts.user1);
-      await api.transactions.broadcast(lockTx, {});
-      const { height } = await ni.waitForTx(lockTx.id, { apiBase });
+      }, this.accounts.user0.seed);
+      const { height } = await broadcastAndWait(lockTx);
 
       const expectedLockStart = height;
 
@@ -48,17 +78,16 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
         call: {
           function: 'unlock',
           args: [
-            { type: 'string', value: address(this.accounts.user1, chainId) },
+            { type: 'string', value: address(this.accounts.user0, chainId) },
           ],
         },
         chainId,
-      }, this.accounts.user1);
-      await api.transactions.broadcast(unlockTx, {});
+      }, this.accounts.user0.seed);
       const {
         id,
         height: heightUnlock,
         stateChanges,
-      } = await ni.waitForTx(unlockTx.id, { apiBase });
+      } = await broadcastAndWait(unlockTx);
 
       const expectedTimestamp = (await api.blocks.fetchHeadersAt(heightUnlock)).timestamp;
 
@@ -91,7 +120,7 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: 0,
       }, {
-        key: `%s%s__lock__${address(this.accounts.user1, chainId)}`,
+        key: `%s%s__lock__${address(this.accounts.user0, chainId)}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d%d__0__0__${height}__${duration}__0__0__${expectedTimestamp}__0`,
       }, {
@@ -111,7 +140,7 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: 0,
       }, {
-        key: `%s%s%s%s__history__unlock__${address(this.accounts.user1, chainId)}__${id}`,
+        key: `%s%s%s%s__history__unlock__${address(this.accounts.user0, chainId)}__${id}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d__${heightUnlock}__${expectedTimestamp}__${assetAmount}__${expectedLockStart}__${duration}__0__0`,
       }]);

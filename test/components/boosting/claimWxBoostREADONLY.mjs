@@ -1,77 +1,62 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
-import { data, invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
-import { create } from '@waves/node-api-js';
+import { transfer, reissue } from '@waves/waves-transactions';
+
+import { api, broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
+import { boosting } from './contract/boosting.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
 
-const api = create(apiBase);
-
 describe('boosting: claimWxBoostREADONLY.mjs', /** @this {MochaSuiteModified} */() => {
-  it(
-    'should successfully claimWxBoost',
-    async function () {
-      const duration = this.maxDuration - 1;
-      const assetAmount = this.minLockAmount;
-      const someLpAssetIdStr = '2DnDS3MqJFjopXx4Wtyv7uvt3Jdt6hBoR6gAbjBiceEg';
-      const somePoolContract = '3Mt3gNcHWcJYCuFHYtsggAdFadVGso8RNjB';
-      const userAddressStr = address(this.accounts.user1, chainId);
+  it('should successfully claimWxBoostREADONLY', async function () {
+    const lpAssetAmount = 1e3 * 1e8;
+    const wxAmount = 1e3 * 1e8;
 
-      const lockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
-        payment: [
-          { assetId: this.wxAssetId, amount: assetAmount },
-        ],
-        call: {
-          function: 'lock',
-          args: [
-            { type: 'integer', value: duration },
-          ],
-        },
-        chainId,
-      }, this.accounts.user1);
-      await api.transactions.broadcast(lockTx, {});
-      await ni.waitForTx(lockTx.id, { apiBase });
+    await broadcastAndWait(transfer({
+      recipient: this.accounts.user0.addr,
+      amount: wxAmount,
+      assetId: this.wxAssetId,
+      additionalFee: 4e5,
+    }, this.accounts.emission.seed));
 
-      const setLpAsset2PoolContractTx = data({
-        additionalFee: 4e5,
-        data: [{
-          key: `%s%s%s__${someLpAssetIdStr}__mappings__lpAsset2PoolContract`,
-          type: 'string',
-          value: somePoolContract,
-        }],
-        chainId,
-      }, this.accounts.factoryV2);
-      await api.transactions.broadcast(setLpAsset2PoolContractTx, {});
-      await ni.waitForTx(setLpAsset2PoolContractTx.id, { apiBase });
+    const lpAssetIssueTx = reissue({
+      assetId: this.lpAssetId,
+      quantity: lpAssetAmount * 10,
+      reissuable: true,
+      chainId,
+    }, this.accounts.factory.seed);
+    await broadcastAndWait(lpAssetIssueTx);
 
-      const setPoolWeightTx = data({
-        additionalFee: 4e5,
-        data: [{
-          key: `%s%s__poolWeight__${somePoolContract}`,
-          type: 'integer',
-          value: 0,
-        }],
-        chainId,
-      }, this.accounts.factoryV2);
-      await api.transactions.broadcast(setPoolWeightTx, {});
-      await ni.waitForTx(setPoolWeightTx.id, { apiBase });
+    const lpAssetTransferTx = transfer({
+      recipient: this.accounts.user0.addr,
+      amount: lpAssetAmount,
+      assetId: this.lpAssetId,
+      additionalFee: 4e5,
+    }, this.accounts.factory.seed);
+    await broadcastAndWait(lpAssetTransferTx);
 
-      const expr = `claimWxBoostREADONLY(\"${someLpAssetIdStr}\", \"${userAddressStr}\")`; /* eslint-disable-line */
-      const response = await api.utils.fetchEvaluate(
-        address(this.accounts.boosting, chainId),
-        expr,
-      );
-      const checkData = response.result.value._2.value; /* eslint-disable-line */
-      expect(checkData[0]).to.eql({
-        type: 'Int',
-        value: 0,
-      });
-    },
-  );
+    const { height: lockStartHeight } = await boosting.lock({
+      dApp: this.accounts.boosting.addr,
+      caller: this.accounts.user0.seed,
+      duration: this.maxLockDuration,
+      payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
+    });
+    await waitForHeight(lockStartHeight + 1);
+
+    const expr = `claimWxBoostREADONLY(\"${this.lpAssetId}\", \"${this.accounts.user0.addr}\")`; /* eslint-disable-line */
+    const response = await api.utils.fetchEvaluate(
+      address(this.accounts.boosting, chainId),
+      expr,
+    );
+
+    const checkData = response.result.value._2.value; /* eslint-disable-line */
+    expect(checkData[0]).to.eql({
+      type: 'Int',
+      value: 0,
+    });
+  });
 });

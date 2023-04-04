@@ -1,8 +1,15 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address, publicKey } from '@waves/ts-lib-crypto';
-import { data, invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import {
+  data,
+  transfer,
+  reissue,
+  invokeScript,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -25,9 +32,34 @@ describe('boosting: lockRejectIfLockedWXs.mjs', /** @this {MochaSuiteModified} *
 
       const expectedRejectMessage = 'there are locked WXs - consider to use increaseLock %s%d%s__paramByUserNum__0__amount';
 
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
+
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.emission.seed));
+
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
+        chainId,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
+
       const setParamByUserNumStartTx = data({
         additionalFee: 4e5,
-        senderPublicKey: publicKey(this.accounts.boosting),
         data: [
           {
             key: '%s%d%s__paramByUserNum__0__amount',
@@ -36,9 +68,8 @@ describe('boosting: lockRejectIfLockedWXs.mjs', /** @this {MochaSuiteModified} *
           },
         ],
         chainId,
-      }, this.accounts.manager);
-      await api.transactions.broadcast(setParamByUserNumStartTx, {});
-      await ni.waitForTx(setParamByUserNumStartTx.id, { apiBase });
+      }, this.accounts.boosting.seed);
+      await broadcastAndWait(setParamByUserNumStartTx);
 
       const lockRefTx = invokeScript({
         dApp: address(this.accounts.boosting, chainId),
@@ -54,12 +85,12 @@ describe('boosting: lockRejectIfLockedWXs.mjs', /** @this {MochaSuiteModified} *
           ],
         },
         chainId,
-      }, this.accounts.user1);
+      }, this.accounts.user0.seed);
 
       await expect(
         api.transactions.broadcast(lockRefTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        `Error while executing dApp: boosting.ride: ${expectedRejectMessage}`,
       );
     },
   );
