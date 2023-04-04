@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **16:46 04.04.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **18:35 04.04.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -169,7 +169,7 @@ VIRES | [`DSbbhLsSTeDg5Lsiufk2Aneh3DjVqJuPr2M9uU1gwy5p`](https://wavesexplorer.c
 VVUSDNLP | [`8KEtor9aSsSj38MknyAE7k1uRThHY9prAXgiE4D7WpyL`](https://wavesexplorer.com/assets/8KEtor9aSsSj38MknyAE7k1uRThHY9prAXgiE4D7WpyL) | Vires Vested USDN LP 
 WAPE | [`2GBgdhqMjUPqreqPziXvZFSmDiQVrxNuGxR1z7ZVsm4Z`](https://wavesexplorer.com/assets/2GBgdhqMjUPqreqPziXvZFSmDiQVrxNuGxR1z7ZVsm4Z) | Wrapped APE token 
 Waves World | [`AbunLGErT5ctzVN8MVjb4Ad9YgjpubB8Hqb17VxzfAck`](https://wavesexplorer.com/assets/AbunLGErT5ctzVN8MVjb4Ad9YgjpubB8Hqb17VxzfAck) | WavesWorld Token is the internal Currency of WavesWorld.io. Waves World offers AirDrop services for Waves Tokens, a full Waves Leasing Node, with much more to come. Come visit us at WavesWorld.io and Waves Platform Cryptocurrency Club for the latest updates. 
-Waves.Exchange | [`Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on`](https://wavesexplorer.com/assets/Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on) | Waves.Exchange protocol token 
+Waves.Exchange | [`Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on`](https://wavesexplorer.com/assets/Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on) | WX protocol token 
 WavesCommunity | [`DHgwrRvVyqJsepd32YbBqUeDH4GJ1N984X8QoekjgH8J`](https://wavesexplorer.com/assets/DHgwrRvVyqJsepd32YbBqUeDH4GJ1N984X8QoekjgH8J) | Waves community token. 
 WAXS | [`ATQdLbehsMrmHZLNFhUm1r6s14NBT5JCFcSJGpaMrkAr`](https://wavesexplorer.com/assets/ATQdLbehsMrmHZLNFhUm1r6s14NBT5JCFcSJGpaMrkAr) | Wrapped AXS token 
 WBNB | [`5UYBPpq4WoU5n4MwpFkgJnW3Fq4B1u3ukpK33ik4QerR`](https://wavesexplorer.com/assets/5UYBPpq4WoU5n4MwpFkgJnW3Fq4B1u3ukpK33ik4QerR) | Wrapped BNB token 

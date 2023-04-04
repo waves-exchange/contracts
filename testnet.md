@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-341-pools-swaves-leasing**](https://github.com/waves-exchange/contracts/tree/wxdefi-341-pools-swaves-leasing) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:46 04.04.2023** (GMT+4)
+[**wxdefi-341-pools-swaves-leasing**](https://github.com/waves-exchange/contracts/tree/wxdefi-341-pools-swaves-leasing) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **18:35 04.04.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
