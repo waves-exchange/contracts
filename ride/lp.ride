@@ -129,8 +129,8 @@ func keySWavesProxyAddress() = "%s__sWavesProxyAddress"
 func keyAdditionalBalance(assetId: String) = makeString(["%s%s", "additionalBalance", assetId], SEP) # TODO: rename to stakedAssetBalance
 func keyStakingAssetBalance(assetId: String) = makeString(["%s%s", "stakingAssetBalance", assetId], SEP) # TODO: rename to shareAssetBalance
 # Additional balance value or zero
-func getAdditionalBalance(assetId: String) = this.getInteger(keyAdditionalBalance(assetId)).valueOrElse(0)
-func getStakingAssetBalance(assetId: String) = this.getInteger(keyStakingAssetBalance(assetId)).valueOrElse(0)
+func getAdditionalBalanceOrZero(assetId: String) = this.getInteger(keyAdditionalBalance(assetId)).valueOrElse(0)
+func getStakingAssetBalanceOrZero(assetId: String) = this.getInteger(keyStakingAssetBalance(assetId)).valueOrElse(0)
 
 #------------------------
 # KEYS ON OTHER CONTRACTS
@@ -244,19 +244,13 @@ func dataGetActionInfo(outAmtAssetAmt: Int, outPriceAssetAmt: Int, inLpAmt: Int,
 }
 
 func getAccBalance(assetId: String) = {
-  if(assetId == "WAVES") then {
-    wavesBalance(this).available + getAdditionalBalance(assetId)
-  } else if (assetId == sWavesId()) then {
-    let amtAsset = getStringOrFail(this, aa())
-    let priceAsset = getStringOrFail(this, pa())
-    if ((amtAsset == "WAVES" && priceAsset == sWavesId()) || (priceAsset == "WAVES" && amtAsset == sWavesId())) then {
-      assetBalance(this, fromBase58String(assetId))
-    } else {
-      assetBalance(this, fromBase58String(assetId)) + getStakingAssetBalance(assetId)
-    }
-  } else  {
+  let balanceOnPool = if (assetId == "WAVES") then {
+    wavesBalance(this).available
+  } else { 
     assetBalance(this, fromBase58String(assetId))
   }
+  let totalBalance = balanceOnPool + getAdditionalBalanceOrZero(assetId) - getStakingAssetBalanceOrZero(assetId)
+  max([0, totalBalance])
 }
 
 func calcPriceBigInt(prAmtX18: BigInt, amAmtX18: BigInt) = {
@@ -284,8 +278,8 @@ func getRate(proxy: Address) = {
 # Deposit amount of assetId to Leasing through Proxy
 # Write new additionalBalalnce and stakingAssetBalance
 func deposit(assetId: String, amount: Int, stakingAssetId: String, proxy: Address) = {
-  strict currentAdditionalBalance = getAdditionalBalance(assetId)
-  strict currentStakingAssetBalance = getStakingAssetBalance(stakingAssetId)
+  strict currentAdditionalBalance = getAdditionalBalanceOrZero(assetId)
+  strict currentStakingAssetBalance = getStakingAssetBalanceOrZero(stakingAssetId)
   let asset = parseAssetId(assetId)
 
   if (amount > 0) then {
@@ -308,8 +302,8 @@ func deposit(assetId: String, amount: Int, stakingAssetId: String, proxy: Addres
 # Amount of attached stakingAsset is calculated from Proxy rate
 # Diff amount of sWaves from old Rate is sent to Profit Address
 func withdraw(assetId: String, amount: Int, stakingAssetId: String, proxy: Address, proxyRateMul: Int, profitAddress: Address) = {
-  strict currentAdditionalBalance = getAdditionalBalance(assetId)
-  strict currentStakingAssetBalance = getStakingAssetBalance(stakingAssetId)
+  strict currentAdditionalBalance = getAdditionalBalanceOrZero(assetId)
+  strict currentStakingAssetBalance = getStakingAssetBalanceOrZero(stakingAssetId)
   strict currentProxyRate = getRate(proxy)
   let oldRate = fraction(proxyRateMul, currentAdditionalBalance, currentStakingAssetBalance)
   let stakingAsset = parseAssetId(stakingAssetId)
@@ -345,8 +339,8 @@ func getLeaseProxyConfig(assetId: String) = {
 
 # Rebalance assetId to targetRatio and minBalance through Proxy
 func rebalanceInternal(targetRatio: Int, assetId: String, stakingAssetId: String, minBalance: Int, proxy: Address, proxyRateMul: Int, profitAddress: Address) = {
-  strict currentAdditionalBalance = getAdditionalBalance(assetId)
-  strict currentStakingAssetBalance = getStakingAssetBalance(stakingAssetId)
+  strict currentAdditionalBalance = getAdditionalBalanceOrZero(assetId)
+  strict currentStakingAssetBalance = getStakingAssetBalanceOrZero(stakingAssetId)
 
   strict availableBalance = match parseAssetId(assetId) {
     case b:ByteVector => this.assetBalance(b)
