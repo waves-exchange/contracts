@@ -1128,6 +1128,7 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
     # ].makeString(" ").throwErr()
 
     strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+    strict reb = this.invoke("rebalance", [], [])
 
     state
       ++ lpTransfer
