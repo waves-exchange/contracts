@@ -126,8 +126,8 @@ func keySWavesAssetId() = "%s__sWavesAssetId"
 func keySWavesProxyAddress() = "%s__sWavesProxyAddress"
 
 # Additional balances keys
-func keyAdditionalBalance(assetId: String) = makeString(["%s%s", "additionalBalance", assetId], SEP)
-func keyStakingAssetBalance(assetId: String) = makeString(["%s%s", "stakingAssetBalance", assetId], SEP)
+func keyAdditionalBalance(assetId: String) = makeString(["%s%s", "additionalBalance", assetId], SEP) # TODO: rename to stakedAssetBalance
+func keyStakingAssetBalance(assetId: String) = makeString(["%s%s", "stakingAssetBalance", assetId], SEP) # TODO: rename to shareAssetBalance
 # Additional balance value or zero
 func getAdditionalBalance(assetId: String) = this.getInteger(keyAdditionalBalance(assetId)).valueOrElse(0)
 func getStakingAssetBalance(assetId: String) = this.getInteger(keyStakingAssetBalance(assetId)).valueOrElse(0)
@@ -306,22 +306,27 @@ func deposit(assetId: String, amount: Int, stakingAssetId: String, proxy: Addres
 
 # Withdraw requested amount of assetId from Leased assets through Proxy
 # Amount of attached stakingAsset is calculated from Proxy rate
-func withdraw(assetId: String, amount: Int, stakingAssetId: String, proxy: Address, proxyRateMul: Int) = {
+# Diff amount of sWaves from old Rate is sent to Profit Address
+func withdraw(assetId: String, amount: Int, stakingAssetId: String, proxy: Address, proxyRateMul: Int, profitAddress: Address) = {
   strict currentAdditionalBalance = getAdditionalBalance(assetId)
   strict currentStakingAssetBalance = getStakingAssetBalance(stakingAssetId)
   strict currentProxyRate = getRate(proxy)
+  let oldRate = fraction(proxyRateMul, currentAdditionalBalance, currentStakingAssetBalance)
   let stakingAsset = parseAssetId(stakingAssetId)
 
+  let oldSendStakingAmount = fraction(proxyRateMul, amount, oldRate)
   let sendStakingAssetAmount = fraction(proxyRateMul, amount, currentProxyRate)
+  let profitAmount = max([0, oldSendStakingAmount - sendStakingAssetAmount])
   if (sendStakingAssetAmount > 0) then {
     strict withdrawInvoke = proxy.invoke("withdraw", [], [AttachedPayment(stakingAsset, sendStakingAssetAmount)])
     match withdrawInvoke {
       case receivedAssets:Int => {
         let newAdditionalBalance = currentAdditionalBalance - receivedAssets
-        let newStakingAssetBalance = currentStakingAssetBalance - sendStakingAssetAmount
+        let newStakingAssetBalance = currentStakingAssetBalance - sendStakingAssetAmount - profitAmount
         [
           IntegerEntry(keyAdditionalBalance(assetId), newAdditionalBalance),
-          IntegerEntry(keyStakingAssetBalance(stakingAssetId), newStakingAssetBalance)
+          IntegerEntry(keyStakingAssetBalance(stakingAssetId), newStakingAssetBalance),
+          ScriptTransfer(profitAddress, profitAmount, parseAssetId(stakingAssetId))
         ]
       }
       case _ => []
@@ -339,7 +344,7 @@ func getLeaseProxyConfig(assetId: String) = {
 }
 
 # Rebalance assetId to targetRatio and minBalance through Proxy
-func rebalanceInternal(targetRatio: Int, assetId: String, stakingAssetId: String, minBalance: Int, proxy: Address, proxyRateMul: Int) = {
+func rebalanceInternal(targetRatio: Int, assetId: String, stakingAssetId: String, minBalance: Int, proxy: Address, proxyRateMul: Int, profitAddress: Address) = {
   strict currentAdditionalBalance = getAdditionalBalance(assetId)
   strict currentStakingAssetBalance = getStakingAssetBalance(stakingAssetId)
 
@@ -358,7 +363,7 @@ func rebalanceInternal(targetRatio: Int, assetId: String, stakingAssetId: String
       deposit(assetId, sendAssetAmount, stakingAssetId, proxy)
   } else {
       let getAssetAmount = diff
-      withdraw(assetId, getAssetAmount, stakingAssetId, proxy, proxyRateMul)
+      withdraw(assetId, getAssetAmount, stakingAssetId, proxy, proxyRateMul, profitAddress)
   }
 }
 
@@ -369,13 +374,40 @@ func rebalanceAsset(assetId: String) = {
     case a: (Boolean, Int, Int, String, String, Int, String) => {
       let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = a
       if (isLeasable) then {
-        rebalanceInternal(leasedRatio, assetId, proxyAssetId, minBalance, addressFromStringValue(proxyAddress), proxyRateMul)
+        rebalanceInternal(leasedRatio, assetId, proxyAssetId, minBalance, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
       } else {
         []
       }
     }
     case _ => ("[" + assetId + "] Rebalance error").throwErr()
   }
+}
+
+# Withdraw provided amount of assets Wrapper
+func withdrawAssetWrapper(assetId: String, amount: Int) = {
+    match getLeaseProxyConfig(assetId) {
+    case a: (Boolean, Int, Int, String, String, Int, String) => {
+      let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = a
+      if (isLeasable) then {
+        withdraw(assetId, amount, proxyAssetId, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
+      } else {
+        []
+      }
+    }
+    case _ => ("[" + assetId + "] withdrawAssetWrapper() error").throwErr()
+  }
+}
+
+# Withdraw assets if assetOnPool is not enough
+func getWithdrawAssetState(assetId: String, amount: Int) = {
+    let assetOnPool = match parseAssetId(assetId) {
+    case b:ByteVector => assetBalance(this, b)
+    case w:Unit => wavesBalance(this).available
+  }
+  if (amount > assetOnPool) then {
+    let amountDiff = amount - assetOnPool
+    withdrawAssetWrapper(assetId, amountDiff)
+  } else { [] }
 }
 
 # cast assets and calc price
@@ -444,7 +476,13 @@ func estimateGetOperation(txId58: String, pmtAssetId: String, pmtLpAmt: Int, use
   let outAmAmt = outAmAmtX18.fromX18Round(amAssetDcm, FLOOR)
   let outPrAmt = outPrAmtX18.fromX18Round(prAssetDcm, FLOOR)
 
+  # withdraw assets from proxy if needed
+  strict AmAmtWithdrawState = getWithdrawAssetState(amAssetId, outAmAmt)
+  strict PrAmtWithdrawState = getWithdrawAssetState(prAssetId, outPrAmt)
+  strict reb = this.invoke("rebalance", [], [])
   let state = if (txId58 == "") then [] else
+  AmAmtWithdrawState ++
+  PrAmtWithdrawState ++
   [
     ScriptTransfer(userAddress, outAmAmt, if (amAssetId == "WAVES") then unit else amAssetId.fromBase58String()),
     ScriptTransfer(userAddress, outPrAmt, if (prAssetId == "WAVES") then unit else prAssetId.fromBase58String()),
@@ -997,23 +1035,11 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
     }
     case _ => "error lease config".throw()
   }
-  let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = lsConf
-
-  let assetOnPool = assetBalance(this, fromBase58String(assetOut))
-  let amountOfProfit = if (assetOut == "WAVES" && amountOut > assetOnPool) then {
-    let amountDiff = amountOut - assetOnPool
-    let oldRatio = getAdditionalBalance(assetOut)/getStakingAssetBalance(sWavesId())
-    let oldWavesRoughBalane = wavesBalance(this).available
-
-    strict wd = this.invoke("withdraw", [assetOut, amountDiff, sWavesId(), sWavesProxy(), proxyRateMul], [])
-    let newWavesRoughBalane = wavesBalance(this).available
-    let wavesDiff = newWavesRoughBalane - oldWavesRoughBalane
-    wavesDiff - amountDiff
-  } else {0}
+  strict withdrawState = getWithdrawAssetState(assetOut, amountOut)
+  
   strict reb = this.invoke("rebalance", [], [])
-  (
+  ( withdrawState ++
     [
-      ScriptTransfer(stakingProfitAddress.addressFromStringValue(), amountOfProfit, unit),
       ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.parseAssetId())
     ],
     amountOut
@@ -1244,24 +1270,10 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
     }
     case _ => "error lease config".throw()
   }
-  let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = lsConf
-
-  let assetOnPool = assetBalance(this, fromBase58String(outAssetIdStr))
-  let amountOfProfit = if (outAssetIdStr == "WAVES" && amount > assetOnPool) then {
-    let amountDiff = amount - assetOnPool
-    let oldRatio = getAdditionalBalance(outAssetIdStr)/getStakingAssetBalance(sWavesId())
-    let oldWavesRoughBalane = wavesBalance(this).available
-
-    strict wd = this.invoke("withdraw", [outAssetIdStr, amountDiff, sWavesId(), sWavesProxy(), proxyRateMul], [])
-    let newWavesRoughBalane = wavesBalance(this).available
-    let wavesDiff = newWavesRoughBalane - oldWavesRoughBalane
-    wavesDiff - amountDiff
-  } else {0}
-
-  let profitTransfer = [ScriptTransfer(stakingProfitAddress.addressFromStringValue(), amountOfProfit, unit)]
 
   strict burnInv = factoryContract.invoke("burn", [paymentAmount], [AttachedPayment(paymentAssetId, paymentAmount)])
 
+  strict withdrawState = getWithdrawAssetState(outAssetIdStr, amount)
   let assetTransfer = [ScriptTransfer(userAddress, amount, outAssetId)]
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
@@ -1278,7 +1290,6 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
   (
     commonState
     ++ assetTransfer
-    ++ profitTransfer
     ++ sendFee
     ++ refreshKLpActions,
     amount
@@ -1321,6 +1332,7 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
 
   strict burnInv = factoryContract.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
 
+  strict withdrawState = getWithdrawAssetState(outAssetIdStr, amount)
   let assetTransfer = [ScriptTransfer(i.caller, amount, outAssetId)]
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
@@ -1332,9 +1344,10 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
   let (refreshKLpActions, updatedKLp) = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
-
+  strict reb = this.invoke("rebalance", [], [])
   (
     commonState
+    ++ withdrawState
     ++ assetTransfer
     ++ sendFee
     ++ refreshKLpActions,
