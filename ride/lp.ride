@@ -1016,12 +1016,6 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   strict checkK = newK >= oldK || "new K is fewer error".throw()
   strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
 
-  let lsConf = match getLeaseProxyConfig(assetOut) {
-    case a: (Boolean, Int, Int, String, String, Int, String) => {
-      a
-    }
-    case _ => "error lease config".throw()
-  }
   strict withdrawState = getWithdrawAssetState(assetOut, amountOut)
   
   ( withdrawState ++
@@ -1250,13 +1244,6 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
   let amount = if (minOutAmount > 0 && amountEstimated < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
   } else amountEstimated
-
-  let lsConf = match getLeaseProxyConfig(outAssetIdStr) {
-    case a: (Boolean, Int, Int, String, String, Int, String) => {
-      a
-    }
-    case _ => "error lease config".throw()
-  }
 
   strict burnInv = factoryContract.invoke("burn", [paymentAmount], [AttachedPayment(paymentAssetId, paymentAmount)])
 
