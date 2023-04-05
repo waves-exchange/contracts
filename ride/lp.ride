@@ -122,9 +122,6 @@ let keyKLpRefreshDelay = ["%s", "refreshKLpDelay"].makeString(SEP)
 let kLpRefreshDelayDefault = 30
 let kLpRefreshDelay = this.getInteger(keyKLpRefreshDelay).valueOrElse(kLpRefreshDelayDefault)
 
-func keySWavesAssetId() = "%s__sWavesAssetId"
-func keySWavesProxyAddress() = "%s__sWavesProxyAddress"
-
 # Additional balances keys
 func keyAdditionalBalance(assetId: String) = makeString(["%s%s", "additionalBalance", assetId], SEP) # TODO: rename to stakedAssetBalance
 func keyStakingAssetBalance(assetId: String) = makeString(["%s%s", "stakingAssetBalance", assetId], SEP) # TODO: rename to shareAssetBalance
@@ -174,9 +171,6 @@ let feeCollectorAddress = factoryContract.getStringOrFail(keyFeeCollectorAddress
 
 let inFee = factoryContract.invoke("getInFeeREADONLY", [this.toString()], []).exactAs[Int]
 let outFee = factoryContract.invoke("getOutFeeREADONLY", [this.toString()], []).exactAs[Int]
-
-func sWavesId() =  getStringOrFail(factoryContract, keySWavesAssetId())
-func sWavesProxy() =  getStringOrFail(factoryContract, keySWavesProxyAddress())
 
 # check that global shutdown is take place
 func isGlobalShutdown() = {
