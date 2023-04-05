@@ -328,7 +328,10 @@ func withdraw(assetId: String, amount: Int, stakingAssetId: String, proxy: Addre
 # return tuple:
 # (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress)
 func getLeaseProxyConfig(assetId: String) = {
-  factoryContract.invoke("getPoolLeaseConfigREADONLY", [this.toString(), assetId], [])
+  match factoryContract.invoke("getPoolLeaseConfigREADONLY", [this.toString(), assetId], []) {
+    case a: (Boolean, Int, Int, String, String, Int, String) => { a }
+    case _ => ("[" + assetId + "] getLeaseProxyConfig() error").throwErr()
+  }
 }
 
 # Rebalance assetId to targetRatio and minBalance through Proxy
@@ -358,37 +361,23 @@ func rebalanceInternal(targetRatio: Int, assetId: String, stakingAssetId: String
 # Get lease proxy config from Factory for assetId
 # and call rebalanceInternal()
 func rebalanceAsset(assetId: String) = {
-  match getLeaseProxyConfig(assetId) {
-    case a: (Boolean, Int, Int, String, String, Int, String) => {
-      let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = a
-      if (isLeasable) then {
-        rebalanceInternal(leasedRatio, assetId, proxyAssetId, minBalance, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
-      } else {
-        []
-      }
-    }
-    case _ => ("[" + assetId + "] Rebalance error").throwErr()
-  }
+  let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = getLeaseProxyConfig(assetId)
+  if (isLeasable) then {
+    rebalanceInternal(leasedRatio, assetId, proxyAssetId, minBalance, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
+  } else { [] }
 }
 
 # Calculate and withdraw from staked assets 
 # to reach targetRatio after getAmount is transfered to user
-func getWithdrawAssetState(assetId: String, getAmount: Int) = {
-  match getLeaseProxyConfig(assetId) {
-    case a: (Boolean, Int, Int, String, String, Int, String) => {
-      let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = a
-      if (isLeasable) then {
-        strict newTotalCalcBalance = max([0, getAccBalance(assetId) - getAmount - minBalance])
-        strict newAdditionalBalance = fraction(leasedRatio, newTotalCalcBalance, 100)
-        strict withdrawAmount = max([0, getAdditionalBalanceOrZero(assetId) - newAdditionalBalance])
+func withdrawAndRebalanceAsset(assetId: String, getAmount: Int) = {
+  let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = getLeaseProxyConfig(assetId)
+  if (isLeasable) then {
+    strict newTotalCalcBalance = max([0, getAccBalance(assetId) - getAmount - minBalance])
+    strict newAdditionalBalance = fraction(leasedRatio, newTotalCalcBalance, 100)
+    strict withdrawAmount = max([0, getAdditionalBalanceOrZero(assetId) - newAdditionalBalance])
 
-        withdraw(assetId, withdrawAmount, proxyAssetId, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
-      } else {
-        []
-      }
-    }
-    case _ => ("[" + assetId + "] getWithdrawAssetState() error").throwErr()
-  }
+    withdraw(assetId, withdrawAmount, proxyAssetId, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
+  } else { [] }
 }
 
 # cast assets and calc price
@@ -458,8 +447,8 @@ func estimateGetOperation(txId58: String, pmtAssetId: String, pmtLpAmt: Int, use
   let outPrAmt = outPrAmtX18.fromX18Round(prAssetDcm, FLOOR)
 
   # withdraw assets from proxy if needed
-  strict AmAmtWithdrawState = getWithdrawAssetState(amAssetId, outAmAmt)
-  strict PrAmtWithdrawState = getWithdrawAssetState(prAssetId, outPrAmt)
+  strict AmAmtWithdrawState = withdrawAndRebalanceAsset(amAssetId, outAmAmt)
+  strict PrAmtWithdrawState = withdrawAndRebalanceAsset(prAssetId, outPrAmt)
 
   let state = if (txId58 == "") then [] else
   AmAmtWithdrawState ++
@@ -1011,7 +1000,7 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
 
   strict rebalanceState = rebalanceAsset(assetIn)
-  strict withdrawState = getWithdrawAssetState(assetOut, amountOut)
+  strict withdrawState = withdrawAndRebalanceAsset(assetOut, amountOut)
   ( withdrawState ++
     rebalanceState ++
     [
@@ -1242,7 +1231,7 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
 
   strict burnInv = factoryContract.invoke("burn", [paymentAmount], [AttachedPayment(paymentAssetId, paymentAmount)])
 
-  strict withdrawState = getWithdrawAssetState(outAssetIdStr, amount)
+  strict withdrawState = withdrawAndRebalanceAsset(outAssetIdStr, amount)
   let assetTransfer = [ScriptTransfer(userAddress, amount, outAssetId)]
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
@@ -1301,7 +1290,7 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
 
   strict burnInv = factoryContract.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
 
-  strict withdrawState = getWithdrawAssetState(outAssetIdStr, amount)
+  strict withdrawState = withdrawAndRebalanceAsset(outAssetIdStr, amount)
   let assetTransfer = [ScriptTransfer(i.caller, amount, outAssetId)]
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
