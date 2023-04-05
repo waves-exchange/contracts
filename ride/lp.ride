@@ -123,8 +123,8 @@ let kLpRefreshDelayDefault = 30
 let kLpRefreshDelay = this.getInteger(keyKLpRefreshDelay).valueOrElse(kLpRefreshDelayDefault)
 
 # Additional balances keys
-func keyAdditionalBalance(assetId: String) = makeString(["%s%s", "additionalBalance", assetId], SEP) # TODO: rename to stakedAssetBalance
-func keyStakingAssetBalance(assetId: String) = makeString(["%s%s", "stakingAssetBalance", assetId], SEP) # TODO: rename to shareAssetBalance
+func keyAdditionalBalance(assetId: String) = makeString(["%s%s", "stakedBalance", assetId], SEP)
+func keyStakingAssetBalance(assetId: String) = makeString(["%s%s", "shareAssetBalance", assetId], SEP)
 # Additional balance value or zero
 func getAdditionalBalanceOrZero(assetId: String) = this.getInteger(keyAdditionalBalance(assetId)).valueOrElse(0)
 func getStakingAssetBalanceOrZero(assetId: String) = this.getInteger(keyStakingAssetBalance(assetId)).valueOrElse(0)
