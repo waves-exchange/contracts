@@ -1,6 +1,5 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
 import {
   issue,
   transfer,
@@ -23,15 +22,8 @@ const api = create(apiBase);
 describe('boosting: increaseLockRejectIfInvalidAsset.mjs', /** @this {MochaSuiteModified} */() => {
   const seed = 'waves private node seed with waves tokens';
   let someAssetId;
-  let user0;
-  let boosting;
-  let wxAssetId;
 
   before(async function () {
-    user0 = this.accounts.user0;
-    boosting = address(this.accounts.boosting, chainId);
-    wxAssetId = this.wxAssetId;
-
     const someIssueTx = issue({
       name: 'Some Token',
       description: '',
@@ -44,7 +36,7 @@ describe('boosting: increaseLockRejectIfInvalidAsset.mjs', /** @this {MochaSuite
 
     const someAmount = 1e16;
     const massTransferTxWX = massTransfer({
-      transfers: [{ recipient: address(user0, chainId), amount: someAmount }],
+      transfers: [{ recipient: this.accounts.user0.addr, amount: someAmount }],
       assetId: someAssetId,
       chainId,
     }, seed);
@@ -88,9 +80,9 @@ describe('boosting: increaseLockRejectIfInvalidAsset.mjs', /** @this {MochaSuite
       await broadcastAndWait(lpAssetTransferTx);
 
       const lockRefTx = invokeScript({
-        dApp: boosting,
+        dApp: this.accounts.boosting.addr,
         payment: [
-          { assetId: wxAssetId, amount: assetAmount },
+          { assetId: this.wxAssetId, amount: assetAmount },
         ],
         call: {
           function: 'lockRef',
@@ -105,7 +97,7 @@ describe('boosting: increaseLockRejectIfInvalidAsset.mjs', /** @this {MochaSuite
       await broadcastAndWait(lockRefTx);
 
       const increaseLockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: someAssetId, amount: assetAmount },
         ],

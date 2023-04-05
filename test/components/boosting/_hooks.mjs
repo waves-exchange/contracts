@@ -53,6 +53,7 @@ export const mochaHooks = {
       'manager',
       'referral',
       'referrer',
+      'lpStakingPools',
     ];
     const userNames = Array.from({ length: 3 }, (_, k) => `user${k}`);
     const names = [...contractNames, ...userNames, 'pacemaker'];
@@ -107,10 +108,13 @@ export const mochaHooks = {
       caller: this.accounts.boosting.seed,
       factoryAddress: this.accounts.factory.addr,
       referralsAddress: this.accounts.referral.addr,
+      votingEmissionAddress: this.accounts.votingEmission.addr,
+      lpStakingPoolsAddress: this.accounts.lpStakingPools.addr,
       lockAssetId: this.wxAssetId,
+      minLockAmount: this.minLockAmount,
+      minLockDuration: this.minDuration,
       maxLockDuration: this.maxLockDuration,
       mathContract: this.accounts.gwx.addr,
-      votingEmissionAddress: this.accounts.votingEmission.addr,
     });
 
     const { height } = await api.blocks.fetchHeight();

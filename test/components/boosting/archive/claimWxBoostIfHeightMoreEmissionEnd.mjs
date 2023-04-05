@@ -1,7 +1,7 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
 import {
+  data,
   transfer,
   reissue,
   invokeScript,
@@ -16,7 +16,7 @@ const { expect } = chai;
 
 const chainId = 'R';
 
-describe('boosting: claimWxBoostIfHeightLessEmissionEnd.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: claimWxBoostIfHeightMoreEmissionEnd.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully claimWxBoost',
     async function () {
@@ -61,8 +61,22 @@ describe('boosting: claimWxBoostIfHeightLessEmissionEnd.mjs', /** @this {MochaSu
       });
       await waitForHeight(stakeHeight + 1);
 
+      const emissionEndBlock = 0;
+      const setEmissionEndBlockTx = data({
+        additionalFee: 4e5,
+        data: [
+          {
+            key: '%s%s__emission__endBlock',
+            type: 'integer',
+            value: emissionEndBlock,
+          },
+        ],
+        chainId,
+      }, this.accounts.emission.seed);
+      await broadcastAndWait(setEmissionEndBlockTx);
+
       const claimWxBoostTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [],
         call: {
           function: 'claimWxBoost',

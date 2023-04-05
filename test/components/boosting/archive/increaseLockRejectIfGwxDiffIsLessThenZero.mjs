@@ -1,6 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import {
   data,
   transfer,
@@ -58,7 +58,7 @@ describe('boosting: increaseLockRejectIfGwxDiffIsLessThenZero.mjs', /** @this {M
       await broadcastAndWait(lpAssetTransferTx);
 
       const lockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -78,7 +78,7 @@ describe('boosting: increaseLockRejectIfGwxDiffIsLessThenZero.mjs', /** @this {M
         additionalFee: 4e5,
         data: [
           {
-            key: `%s%s__lock__${address(this.accounts.user0, chainId)}`,
+            key: `%s%s__lock__${this.accounts.user0.addr}`,
             type: 'string',
             value: `%d%d%d%d%d%d%d%d__0__${userAmount}__${lockEnd}__0__0__0__0__0`,
           },
@@ -88,7 +88,7 @@ describe('boosting: increaseLockRejectIfGwxDiffIsLessThenZero.mjs', /** @this {M
       await broadcastAndWait(setLockTx);
 
       const { value: config } = await api.addresses.fetchDataKey(
-        address(this.accounts.boosting, chainId),
+        this.accounts.boosting.addr,
         '%s__config',
       );
 
@@ -110,7 +110,7 @@ describe('boosting: increaseLockRejectIfGwxDiffIsLessThenZero.mjs', /** @this {M
       await broadcastAndWait(setConfigTx);
 
       const increaseLockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],

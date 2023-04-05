@@ -29,7 +29,7 @@ describe('boosting: increaseLockRejectIfPaymentsMoreThanOne.mjs', /** @this {Moc
 
   before(async function () {
     user0 = this.accounts.user0;
-    boosting = address(this.accounts.boosting, chainId);
+    boosting = this.accounts.boosting.addr;
     wxAssetId = this.wxAssetId;
 
     const someIssueTx = issue({
@@ -105,7 +105,7 @@ describe('boosting: increaseLockRejectIfPaymentsMoreThanOne.mjs', /** @this {Moc
       await broadcastAndWait(lockRefTx);
 
       const increaseLockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: wxAssetId, amount: assetAmount },
           { assetId: someAssetId, amount: assetAmount },

@@ -1,6 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import {
   transfer,
   reissue,
@@ -22,7 +22,7 @@ describe('boosting: lockRejectIfInvalidPayment.mjs', /** @this {MochaSuiteModifi
   it(
     'should reject lockRef',
     async function () {
-      const boosting = address(this.accounts.boosting, chainId);
+      const boosting = this.accounts.boosting.addr;
       const duration = 0;
       const referrer = '';
       const signature = 'base64:';

@@ -1,6 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import {
   transfer,
   reissue,
@@ -54,7 +54,7 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
       await broadcastAndWait(lpAssetTransferTx);
 
       const lockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -73,12 +73,12 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
       await waitForHeight(height + duration + 1);
 
       const unlockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [],
         call: {
           function: 'unlock',
           args: [
-            { type: 'string', value: address(this.accounts.user0, chainId) },
+            { type: 'string', value: this.accounts.user0.addr },
           ],
         },
         chainId,
@@ -120,7 +120,7 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: 0,
       }, {
-        key: `%s%s__lock__${address(this.accounts.user0, chainId)}`,
+        key: `%s%s__lock__${this.accounts.user0.addr}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d%d__0__0__${height}__${duration}__0__0__${expectedTimestamp}__0`,
       }, {
@@ -140,7 +140,7 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: 0,
       }, {
-        key: `%s%s%s%s__history__unlock__${address(this.accounts.user0, chainId)}__${id}`,
+        key: `%s%s%s%s__history__unlock__${this.accounts.user0.addr}__${id}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d__${heightUnlock}__${expectedTimestamp}__${assetAmount}__${expectedLockStart}__${duration}__0__0`,
       }]);

@@ -1,6 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import {
   transfer,
   reissue,
@@ -18,17 +18,17 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: lockRefRejectIfAmountIsLessThenMinLockAmount.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: lockRejectIfDurationLessThenMinLockDuration.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should reject lockRef',
     async function () {
-      const duration = 0;
+      const durationLessThenMinLockDuration = this.minDuration - 1;
       const referrer = '';
       const signature = 'base64:';
 
-      const lessThanMinLockAmount = this.minLockAmount - 2;
+      const assetAmount = this.minLockAmount;
 
-      const expectedRejectMessage = `amount is less then minLockAmount=${this.minLockAmount}`;
+      const expectedRejectMessage = `passed duration is less then minLockDuration=${this.minDuration}`;
 
       const lpAssetAmount = 1e3 * 1e8;
       const wxAmount = 1e3 * 1e8;
@@ -57,14 +57,14 @@ describe('boosting: lockRefRejectIfAmountIsLessThenMinLockAmount.mjs', /** @this
       await broadcastAndWait(lpAssetTransferTx);
 
       const lockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
-          { assetId: this.wxAssetId, amount: lessThanMinLockAmount },
+          { assetId: this.wxAssetId, amount: assetAmount },
         ],
         call: {
           function: 'lockRef',
           args: [
-            { type: 'integer', value: duration },
+            { type: 'integer', value: durationLessThenMinLockDuration },
             { type: 'string', value: referrer },
             { type: 'binary', value: signature },
           ],

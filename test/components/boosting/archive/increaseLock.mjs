@@ -1,6 +1,5 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
 import {
   data,
   transfer,
@@ -19,6 +18,7 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
+// TODO: rewrite all
 describe('boosting: increaseLock.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully increaseLock',
@@ -62,7 +62,7 @@ describe('boosting: increaseLock.mjs', /** @this {MochaSuiteModified} */() => {
       await broadcastAndWait(lpAssetTransferTx);
 
       const lockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -82,7 +82,7 @@ describe('boosting: increaseLock.mjs', /** @this {MochaSuiteModified} */() => {
         additionalFee: 4e5,
         data: [
           {
-            key: `%s%s__lock__${address(this.accounts.user0, chainId)}`,
+            key: `%s%s__lock__${this.accounts.user0.addr}`,
             type: 'string',
             value: '%d%d%d%d%d%d%d%d__0__0__0__0__0__0__0__0',
           },
@@ -92,7 +92,7 @@ describe('boosting: increaseLock.mjs', /** @this {MochaSuiteModified} */() => {
       await broadcastAndWait(setLockTx);
 
       const increaseLockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -136,7 +136,7 @@ describe('boosting: increaseLock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: 0,
       }, {
-        key: `%s%s__lock__${address(this.accounts.user0, chainId)}`,
+        key: `%s%s__lock__${this.accounts.user0.addr}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d%d__0__${assetAmount}__${height}__${deltaDuration}__0__0__${timestamp}__0`,
       }, {
@@ -156,7 +156,7 @@ describe('boosting: increaseLock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: expectedActiveTotalLocked,
       }, {
-        key: `%s%s%s%s__history__lock__${address(this.accounts.user0, chainId)}__${id}`,
+        key: `%s%s%s%s__history__lock__${this.accounts.user0.addr}__${id}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d__${height}__${timestamp}__${assetAmount}__0__${deltaDuration}__0__0`,
       }, {
@@ -168,18 +168,18 @@ describe('boosting: increaseLock.mjs', /** @this {MochaSuiteModified} */() => {
       const { invokes } = stateChanges;
       expect(invokes.length).to.eql(expectedInvokesCount);
 
-      expect(invokes[0].dApp).to.eql(address(this.accounts.mathContract, chainId));
+      expect(invokes[0].dApp).to.eql(this.accounts.mathContract.addr);
       expect(invokes[0].call.function).to.eql('updateReferralActivity');
       expect(invokes[0].call.args).to.eql([
         {
           type: 'String',
-          value: address(this.accounts.user0, chainId),
+          value: this.accounts.user0.addr,
         }, {
           type: 'Int',
           value: expectedGWxAmountStart,
         }]);
 
-      expect(invokes[1].dApp).to.eql(address(this.accounts.mathContract, chainId));
+      expect(invokes[1].dApp).to.eql(this.accounts.mathContract.addr);
       expect(invokes[1].call.function).to.eql('calcGwxParamsREADONLY');
       expect(invokes[1].call.args).to.eql([
         {

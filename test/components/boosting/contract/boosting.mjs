@@ -7,6 +7,7 @@ export const boosting = {
     factoryAddress,
     referralsAddress,
     votingEmissionAddress,
+    lpStakingPoolsAddress,
     lockAssetId,
     minLockAmount = 0,
     minLockDuration = 0,
@@ -18,6 +19,7 @@ export const boosting = {
       data: [
         { key: '%s%s__config__factoryAddress', type: 'string', value: factoryAddress },
         { key: '%s%s__config__referralsContractAddress', type: 'string', value: referralsAddress },
+        { key: '%s__lpStakingPoolsContract', type: 'string', value: lpStakingPoolsAddress },
         { key: '%s__nextUserNum', type: 'integer', value: nextUserNum },
         {
           key: '%s__config',

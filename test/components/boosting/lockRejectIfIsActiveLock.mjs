@@ -1,6 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import {
   transfer,
   reissue,
@@ -57,7 +57,7 @@ describe('boosting: lockRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModified
       await broadcastAndWait(lpAssetTransferTx);
 
       const fisrtLockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -74,7 +74,7 @@ describe('boosting: lockRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModified
       await broadcastAndWait(fisrtLockRefTx);
 
       const secondLockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],

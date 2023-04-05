@@ -1,6 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import { invokeScript } from '@waves/waves-transactions';
 
 import { api } from '../../utils/api.mjs';
@@ -19,7 +19,7 @@ describe('boosting: claimWxBoostRejectIfCallerIsNotStakingContract.mjs', /** @th
       const expectedRejectMessage = 'permissions denied';
 
       const claimWxBoostTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [],
         call: {
           function: 'claimWxBoost',

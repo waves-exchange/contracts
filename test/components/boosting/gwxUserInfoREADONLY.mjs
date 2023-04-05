@@ -90,6 +90,7 @@ describe('boosting: gwxUserInfoREADONLY.mjs', /** @this {MochaSuiteModified} */(
       );
       const checkData = response.result.value._2.value; /* eslint-disable-line */
 
+      // TODO: check all checkData
       expect(checkData[0]).to.eql({
         type: 'Int',
         value: expectedGwxAmount,

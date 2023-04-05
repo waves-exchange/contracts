@@ -1,6 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import {
   data,
   transfer,
@@ -70,7 +70,7 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
       await broadcastAndWait(setEmissionEndBlockTx);
 
       const lockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -108,13 +108,13 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
         type: 'integer',
         value: expectedNextUserNum,
       }, {
-        key: `%s%s%s__mapping__user2num__${address(this.accounts.user0, chainId)}`,
+        key: `%s%s%s__mapping__user2num__${this.accounts.user0.addr}`,
         type: 'string',
         value: expectedUserNumStr,
       }, {
         key: `%s%s%s__mapping__num2user__${expectedUserNum}`,
         type: 'string',
-        value: address(this.accounts.user0, chainId),
+        value: this.accounts.user0.addr,
       }, {
         key: `%s%d%s__paramByUserNum__${expectedUserNum}__amount`,
         type: 'integer',
@@ -144,7 +144,7 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
         type: 'integer',
         value: expectedB,
       }, {
-        key: `%s%s__lock__${address(this.accounts.user0, chainId)}`,
+        key: `%s%s__lock__${this.accounts.user0.addr}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d%d__${expectedUserNum}__${assetAmount}__${height}__${duration}__${expectedK}__${expectedB}__${expectedTimestamp}__${expectedGwxAmount}`,
       }, {
@@ -164,7 +164,7 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
         type: 'integer',
         value: expectedActiveTotalLocked,
       }, {
-        key: `%s%s%s%s__history__lock__${address(this.accounts.user0, chainId)}__${id}`,
+        key: `%s%s%s%s__history__lock__${this.accounts.user0.addr}__${id}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d__${height}__${expectedTimestamp}__${assetAmount}__${expectedLockStart}__${duration}__${expectedK}__${expectedB}`,
       }, {
@@ -180,7 +180,7 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
       const { invokes } = stateChanges;
       expect(invokes.length).to.eql(expectedInvokesCount);
 
-      expect(invokes[0].dApp).to.eql(address(this.accounts.mathContract, chainId));
+      expect(invokes[0].dApp).to.eql(this.accounts.mathContract.addr);
       expect(invokes[0].call.function).to.eql('calcGwxParamsREADONLY');
       expect(invokes[0].call.args).to.eql([
         {
@@ -194,12 +194,12 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
           value: duration,
         }]);
 
-      expect(invokes[1].dApp).to.eql(address(this.accounts.mathContract, chainId));
+      expect(invokes[1].dApp).to.eql(this.accounts.mathContract.addr);
       expect(invokes[1].call.function).to.eql('updateReferralActivity');
       expect(invokes[1].call.args).to.eql([
         {
           type: 'String',
-          value: address(this.accounts.user0, chainId),
+          value: this.accounts.user0.addr,
         }, {
           type: 'Int',
           value: expectedTotalCachedGwxKEY,

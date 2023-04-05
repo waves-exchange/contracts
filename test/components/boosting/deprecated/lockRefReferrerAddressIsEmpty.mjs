@@ -1,6 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import {
   transfer,
   reissue,
@@ -18,14 +18,15 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: lockRefReferrerAddressIsEmpty.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully lockRef is signatur is empty',
+    'should successfully lockRef is referrer is empty',
     async function () {
       const duration = this.maxDuration - 1;
-      const referrer = this.accounts.referrer.addr;
-      const assetAmount = this.minLockAmount;
+      const referrer = '';
       const signature = 'base64:';
+
+      const assetAmount = this.minLockAmount;
 
       const lpAssetAmount = 1e3 * 1e8;
       const wxAmount = 1e3 * 1e8;
@@ -54,7 +55,7 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
       await broadcastAndWait(lpAssetTransferTx);
 
       const lockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -92,13 +93,13 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
         type: 'integer',
         value: expectedNextUserNum,
       }, {
-        key: `%s%s%s__mapping__user2num__${address(this.accounts.user0, chainId)}`,
+        key: `%s%s%s__mapping__user2num__${this.accounts.user0.addr}`,
         type: 'string',
         value: expectedUserNumStr,
       }, {
         key: `%s%s%s__mapping__num2user__${expectedUserNum}`,
         type: 'string',
-        value: address(this.accounts.user0, chainId),
+        value: this.accounts.user0.addr,
       }, {
         key: `%s%d%s__paramByUserNum__${expectedUserNum}__amount`,
         type: 'integer',
@@ -128,7 +129,7 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
         type: 'integer',
         value: expectedB,
       }, {
-        key: `%s%s__lock__${address(this.accounts.user0, chainId)}`,
+        key: `%s%s__lock__${this.accounts.user0.addr}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d%d__${expectedUserNum}__${assetAmount}__${height}__${duration}__${expectedK}__${expectedB}__${expectedTimestamp}__${expectedGwxAmount}`,
       }, {
@@ -148,7 +149,7 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
         type: 'integer',
         value: expectedActiveTotalLocked,
       }, {
-        key: `%s%s%s%s__history__lock__${address(this.accounts.user0, chainId)}__${id}`,
+        key: `%s%s%s%s__history__lock__${this.accounts.user0.addr}__${id}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d__${height}__${expectedTimestamp}__${assetAmount}__${expectedLockStart}__${duration}__${expectedK}__${expectedB}`,
       }, {
@@ -164,7 +165,7 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
       const { invokes } = stateChanges;
       expect(invokes.length).to.eql(expectedInvokesCount);
 
-      expect(invokes[0].dApp).to.eql(address(this.accounts.mathContract, chainId));
+      expect(invokes[0].dApp).to.eql(this.accounts.mathContract.addr);
       expect(invokes[0].call.function).to.eql('calcGwxParamsREADONLY');
       expect(invokes[0].call.args).to.eql([
         {
@@ -178,12 +179,12 @@ describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModifie
           value: duration,
         }]);
 
-      expect(invokes[1].dApp).to.eql(address(this.accounts.mathContract, chainId));
+      expect(invokes[1].dApp).to.eql(this.accounts.mathContract.addr);
       expect(invokes[1].call.function).to.eql('updateReferralActivity');
       expect(invokes[1].call.args).to.eql([
         {
           type: 'String',
-          value: address(this.accounts.user0, chainId),
+          value: this.accounts.user0.addr,
         }, {
           type: 'Int',
           value: expectedTotalCachedGwxKEY,

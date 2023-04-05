@@ -1,16 +1,14 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import {
   transfer,
   reissue,
   invokeScript,
-  libs,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 
 import { broadcastAndWait } from '../../utils/api.mjs';
-import { referral } from './contract/referral.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -20,26 +18,17 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: lockRefIfRefferAndSignatureExist.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: lockRefIfSignatureIsEmpty.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully lockRef',
+    'should successfully lockRef is signatur is empty',
     async function () {
       const duration = this.maxDuration - 1;
-      const bytes = libs.crypto.stringToBytes('dummySignature');
-      const signature = libs.crypto.signBytes(this.accounts.user0.seed, bytes);
+      const referrer = this.accounts.referrer.addr;
       const assetAmount = this.minLockAmount;
+      const signature = 'base64:';
 
       const lpAssetAmount = 1e3 * 1e8;
       const wxAmount = 1e3 * 1e8;
-
-      await referral.createProgram({
-        caller: this.accounts.referral.seed,
-        referralAddr: this.accounts.referral.addr,
-        programName: 'wxlock',
-        treasuryContract: '',
-        implementationContract: '',
-        wxAssetId: this.wxAssetId,
-      });
 
       await broadcastAndWait(transfer({
         recipient: this.accounts.user0.addr,
@@ -65,7 +54,7 @@ describe('boosting: lockRefIfRefferAndSignatureExist.mjs', /** @this {MochaSuite
       await broadcastAndWait(lpAssetTransferTx);
 
       const lockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -73,8 +62,8 @@ describe('boosting: lockRefIfRefferAndSignatureExist.mjs', /** @this {MochaSuite
           function: 'lockRef',
           args: [
             { type: 'integer', value: duration },
-            { type: 'string', value: this.accounts.referrer.addr },
-            { type: 'string', value: signature },
+            { type: 'string', value: referrer },
+            { type: 'binary', value: signature },
           ],
         },
         chainId,
@@ -96,20 +85,20 @@ describe('boosting: lockRefIfRefferAndSignatureExist.mjs', /** @this {MochaSuite
       const expectedLockStart = height;
       const expectedUserBoostEmissionLastIntegralKEY = 0;
       const expectedTotalCachedGwxKEY = 499999760;
-      const expectedInvokesCount = 3;
+      const expectedInvokesCount = 2;
 
       expect(stateChanges.data).to.eql([{
         key: '%s__nextUserNum',
         type: 'integer',
         value: expectedNextUserNum,
       }, {
-        key: `%s%s%s__mapping__user2num__${address(this.accounts.user0, chainId)}`,
+        key: `%s%s%s__mapping__user2num__${this.accounts.user0.addr}`,
         type: 'string',
         value: expectedUserNumStr,
       }, {
         key: `%s%s%s__mapping__num2user__${expectedUserNum}`,
         type: 'string',
-        value: address(this.accounts.user0, chainId),
+        value: this.accounts.user0.addr,
       }, {
         key: `%s%d%s__paramByUserNum__${expectedUserNum}__amount`,
         type: 'integer',
@@ -139,7 +128,7 @@ describe('boosting: lockRefIfRefferAndSignatureExist.mjs', /** @this {MochaSuite
         type: 'integer',
         value: expectedB,
       }, {
-        key: `%s%s__lock__${address(this.accounts.user0, chainId)}`,
+        key: `%s%s__lock__${this.accounts.user0.addr}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d%d__${expectedUserNum}__${assetAmount}__${height}__${duration}__${expectedK}__${expectedB}__${expectedTimestamp}__${expectedGwxAmount}`,
       }, {
@@ -159,7 +148,7 @@ describe('boosting: lockRefIfRefferAndSignatureExist.mjs', /** @this {MochaSuite
         type: 'integer',
         value: expectedActiveTotalLocked,
       }, {
-        key: `%s%s%s%s__history__lock__${address(this.accounts.user0, chainId)}__${id}`,
+        key: `%s%s%s%s__history__lock__${this.accounts.user0.addr}__${id}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d__${height}__${expectedTimestamp}__${assetAmount}__${expectedLockStart}__${duration}__${expectedK}__${expectedB}`,
       }, {
@@ -175,26 +164,9 @@ describe('boosting: lockRefIfRefferAndSignatureExist.mjs', /** @this {MochaSuite
       const { invokes } = stateChanges;
       expect(invokes.length).to.eql(expectedInvokesCount);
 
-      expect(invokes[0].dApp).to.eql(this.accounts.referral.addr);
-      expect(invokes[0].call.function).to.eql('createPair');
+      expect(invokes[0].dApp).to.eql(this.accounts.mathContract.addr);
+      expect(invokes[0].call.function).to.eql('calcGwxParamsREADONLY');
       expect(invokes[0].call.args).to.eql([
-        {
-          type: 'String',
-          value: 'wxlock',
-        }, {
-          type: 'String',
-          value: address(this.accounts.referrer, chainId),
-        }, {
-          type: 'String',
-          value: address(this.accounts.user0, chainId),
-        }, {
-          type: 'String',
-          value: signature,
-        }]);
-
-      expect(invokes[1].dApp).to.eql(address(this.accounts.mathContract, chainId));
-      expect(invokes[1].call.function).to.eql('calcGwxParamsREADONLY');
-      expect(invokes[1].call.args).to.eql([
         {
           type: 'Int',
           value: expectedTotalCachedGwxKEY,
@@ -203,15 +175,15 @@ describe('boosting: lockRefIfRefferAndSignatureExist.mjs', /** @this {MochaSuite
           value: height,
         }, {
           type: 'Int',
-          value: expectedLocksDurationSumInBlock,
+          value: duration,
         }]);
 
-      expect(invokes[2].dApp).to.eql(address(this.accounts.mathContract, chainId));
-      expect(invokes[2].call.function).to.eql('updateReferralActivity');
-      expect(invokes[2].call.args).to.eql([
+      expect(invokes[1].dApp).to.eql(this.accounts.mathContract.addr);
+      expect(invokes[1].call.function).to.eql('updateReferralActivity');
+      expect(invokes[1].call.args).to.eql([
         {
           type: 'String',
-          value: address(this.accounts.user0, chainId),
+          value: this.accounts.user0.addr,
         }, {
           type: 'Int',
           value: expectedTotalCachedGwxKEY,

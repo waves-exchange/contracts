@@ -1,6 +1,5 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address, publicKey } from '@waves/ts-lib-crypto';
 import {
   data,
   transfer,
@@ -16,11 +15,11 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 const chainId = 'R';
-
-describe('boosting: claimWxBoostIfTotalCachedGwxEqlZero.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: claimWxBoostIfUdhNotEqlZero.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully claimWxBoost',
     async function () {
+      const somePoolContract = '3Mt3gNcHWcJYCuFHYtsggAdFadVGso8RNjB';
       const lpAssetAmount = 1e3 * 1e8;
       const wxAmount = 1e3 * 1e8;
 
@@ -61,22 +60,46 @@ describe('boosting: claimWxBoostIfTotalCachedGwxEqlZero.mjs', /** @this {MochaSu
         payments: [{ assetId: this.lpAssetId, amount: lpAssetAmount }],
       });
       await waitForHeight(stakeHeight + 1);
+      const setPoolWeightTx = data({
+        additionalFee: 4e5,
+        data: [{
+          key: `%s%s__poolWeight__${somePoolContract}`,
+          type: 'integer',
+          value: 0,
+        }],
+        chainId,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(setPoolWeightTx);
 
-      const setGwxCachedTx = data({
+      const ratePerBlock = 1;
+      const setRatePerBlockTx = data({
         additionalFee: 4e5,
         data: [
           {
-            key: '%s%s__gwxCached__total',
+            key: '%s%s__ratePerBlock__current',
             type: 'integer',
-            value: 0,
+            value: ratePerBlock,
+          },
+        ],
+        chainId,
+      }, this.accounts.emission.seed);
+      await broadcastAndWait(setRatePerBlockTx);
+
+      const setUserBoostEmissionLastIntTx = data({
+        additionalFee: 4e5,
+        data: [
+          {
+            key: '%s%d__userBoostEmissionLastIntV2__0',
+            type: 'integer',
+            value: -10,
           },
         ],
         chainId,
       }, this.accounts.boosting.seed);
-      await broadcastAndWait(setGwxCachedTx);
+      await broadcastAndWait(setUserBoostEmissionLastIntTx);
 
       const claimWxBoostTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [],
         call: {
           function: 'claimWxBoost',

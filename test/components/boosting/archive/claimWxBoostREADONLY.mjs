@@ -1,6 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import { transfer, reissue } from '@waves/waves-transactions';
 
 import { api, broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
@@ -49,7 +49,7 @@ describe('boosting: claimWxBoostREADONLY.mjs', /** @this {MochaSuiteModified} */
 
     const expr = `claimWxBoostREADONLY(\"${this.lpAssetId}\", \"${this.accounts.user0.addr}\")`; /* eslint-disable-line */
     const response = await api.utils.fetchEvaluate(
-      address(this.accounts.boosting, chainId),
+      this.accounts.boosting.addr,
       expr,
     );
 

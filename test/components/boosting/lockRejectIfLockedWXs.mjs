@@ -1,6 +1,5 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address, publicKey } from '@waves/ts-lib-crypto';
 import {
   data,
   transfer,
@@ -72,7 +71,7 @@ describe('boosting: lockRejectIfLockedWXs.mjs', /** @this {MochaSuiteModified} *
       await broadcastAndWait(setParamByUserNumStartTx);
 
       const lockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],

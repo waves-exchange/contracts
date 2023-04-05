@@ -1,13 +1,15 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import {
   transfer,
   reissue,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 
-import { broadcastAndWait } from '../../utils/api.mjs';
+import { broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
+
+import { boosting } from './contract/boosting.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -50,15 +52,13 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
       }, this.accounts.factory.seed);
       await broadcastAndWait(lpAssetTransferTx);
 
-      const { height: lockStartHeight } = await boosting.lock({
+      const { id, height, stateChanges } = await boosting.lock({
         dApp: this.accounts.boosting.addr,
         caller: this.accounts.user0.seed,
         duration: this.maxLockDuration,
         payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
       });
-      await waitForHeight(lockStartHeight + 1);
-
-      const { id, height, stateChanges } = await broadcastAndWait(lockTx);
+      await waitForHeight(height + 1);
 
       const expectedTimestamp = (await api.blocks.fetchHeadersAt(height)).timestamp;
       const expectedNextUserNum = 1;
@@ -82,13 +82,13 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: expectedNextUserNum,
       }, {
-        key: `%s%s%s__mapping__user2num__${address(this.accounts.user0, chainId)}`,
+        key: `%s%s%s__mapping__user2num__${this.accounts.user0.addr}`,
         type: 'string',
         value: expectedUserNumStr,
       }, {
         key: `%s%s%s__mapping__num2user__${expectedUserNum}`,
         type: 'string',
-        value: address(this.accounts.user0, chainId),
+        value: this.accounts.user0.addr,
       }, {
         key: `%s%d%s__paramByUserNum__${expectedUserNum}__amount`,
         type: 'integer',
@@ -118,7 +118,7 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: expectedB,
       }, {
-        key: `%s%s__lock__${address(this.accounts.user0, chainId)}`,
+        key: `%s%s__lock__${this.accounts.user0.addr}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d%d__${expectedUserNum}__${assetAmount}__${height}__${duration}__${expectedK}__${expectedB}__${expectedTimestamp}__${expectedGwxAmount}`,
       }, {
@@ -138,7 +138,7 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
         type: 'integer',
         value: expectedActiveTotalLocked,
       }, {
-        key: `%s%s%s%s__history__lock__${address(this.accounts.user0, chainId)}__${id}`,
+        key: `%s%s%s%s__history__lock__${this.accounts.user0.addr}__${id}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d__${height}__${expectedTimestamp}__${assetAmount}__${expectedLockStart}__${duration}__${expectedK}__${expectedB}`,
       }, {
@@ -173,7 +173,7 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
       expect(invokes[1].call.args).to.eql([
         {
           type: 'String',
-          value: address(this.accounts.user0, chainId),
+          value: this.accounts.user0.addr,
         }, {
           type: 'Int',
           value: expectedTotalCachedGwxKEY,

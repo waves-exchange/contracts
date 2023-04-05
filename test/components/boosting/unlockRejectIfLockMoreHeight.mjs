@@ -1,6 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import {
   transfer,
   reissue,
@@ -52,7 +52,7 @@ describe('boosting: unlockRejectIfLockMoreHeight.mjs', /** @this {MochaSuiteModi
       await broadcastAndWait(lpAssetTransferTx);
 
       const lockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -69,12 +69,12 @@ describe('boosting: unlockRejectIfLockMoreHeight.mjs', /** @this {MochaSuiteModi
       const expectedRejectMessage = `wait ${height + duration} to unlock`;
 
       const unlockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [],
         call: {
           function: 'unlock',
           args: [
-            { type: 'string', value: address(this.accounts.user0, chainId) },
+            { type: 'string', value: this.accounts.user0.addr },
           ],
         },
         chainId,
