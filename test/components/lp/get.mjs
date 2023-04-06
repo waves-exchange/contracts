@@ -24,7 +24,7 @@ describe('lp: get.mjs', /** @this {MochaSuiteModified} */() => {
 
       const expectedPriceLast = 1e8;
       const expectedPriceHistory = 1e8;
-      const expectedInvokesCount = 1;
+      const expectedInvokesCount = 3;
       const expectedUsdnAmount = usdnAmount - 1;
       const expectedShibAmount = shibAmount - 1;
 
@@ -64,9 +64,8 @@ describe('lp: get.mjs', /** @this {MochaSuiteModified} */() => {
 
       const { timestamp } = await api.blocks.fetchHeadersAt(height);
       const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
-
       expect(
-        await checkStateChanges(stateChanges, 5, 2, 0, 0, 0, 0, 0, 0, 1),
+        await checkStateChanges(stateChanges, 5, 2, 0, 0, 0, 0, 0, 0, expectedInvokesCount),
       ).to.eql(true);
 
       expect(stateChanges.data).to.eql([{
