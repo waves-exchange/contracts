@@ -30,6 +30,7 @@ const votingEmissionPath = format({ dir: ridePath, base: 'voting_emission.ride' 
 const factoryPath = format({ dir: ridePath, base: 'factory_v2.ride' });
 const assetsStorePath = format({ dir: ridePath, base: 'assets_store.ride' });
 const lpPath = format({ dir: ridePath, base: 'lp.ride' });
+const votingEmissionCandidate = format({ dir: ridePath, base: 'voting_emission_candidate.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -46,6 +47,7 @@ export const mochaHooks = {
       'factory',
       'votingEmission',
       'referral',
+      'votingEmissionCandidate',
     ];
     const userNames = Array.from({ length: 3 }, (_, k) => `user${k}`);
     const names = [...contractNames, ...userNames, 'pacemaker'];
@@ -82,6 +84,7 @@ export const mochaHooks = {
     await setScriptFromFile(factoryPath, this.accounts.factory.seed);
     await setScriptFromFile(assetsStorePath, this.accounts.store.seed);
     await setScriptFromFile(lpPath, this.accounts.lp.seed);
+    await setScriptFromFile(votingEmissionCandidate, this.accounts.votingEmissionCandidate.seed);
 
     await staking.init({
       caller: this.accounts.staking.seed,
@@ -137,10 +140,27 @@ export const mochaHooks = {
       labels: 'COMMUNITY_VERIFIED__GATEWAY__STABLECOIN__STAKING_LP__3RD_PARTY__ALGO_LP__LAMBO_LP__POOLS_LP__WX__PEPE',
     });
 
-    const votingEmissionDapp = address(this.accounts.votingEmission, chainId);
+    this.epochLength = 7;
+
+    await votingEmission.init({
+      dApp: this.accounts.votingEmission.addr,
+      caller: this.accounts.votingEmission.seed,
+      factoryAddress: this.accounts.factory.addr,
+      votingEmissionCandidateAddress: this.accounts.votingEmissionCandidate.addr,
+      boostingAddress: this.accounts.boosting.addr,
+      stakingAddress: this.accounts.staking.addr,
+      epochLength: this.epochLength,
+    });
+
+    await factory.setWxEmissionPoolLabel({
+      dApp: this.accounts.factory.addr,
+      caller: this.accounts.factory.seed,
+      amountAssetId: this.wxAssetId,
+      priceAssetId: this.wavesAssetId,
+    });
 
     await votingEmission.create({
-      dApp: votingEmissionDapp,
+      dApp: this.accounts.votingEmission.addr,
       caller: this.accounts.votingEmission.seed,
       amountAssetId: this.wxAssetId,
       priceAssetId: this.wavesAssetId,

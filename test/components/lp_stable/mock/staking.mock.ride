@@ -33,3 +33,7 @@ func unstakeINTERNAL(
    )
 }
 
+@Callable(i)
+func stakeFor(userAddressStr: String) = {
+  (nil, unit)
+}

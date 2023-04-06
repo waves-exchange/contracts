@@ -1,28 +1,29 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address, publicKey } from '@waves/ts-lib-crypto';
-import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
-import { create } from '@waves/node-api-js';
+import {
+  invokeScript,
+} from '@waves/waves-transactions';
+import {
+  publicKey,
+} from '@waves/ts-lib-crypto';
+
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
-
-const api = create(apiBase);
 
 describe('boosting: confirmManager.mjs', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully confirmManager',
     async function () {
-      const anotherPublicKeyManager = publicKey(this.accounts.factoryV2);
-      const boosting = address(this.accounts.boosting, chainId);
+      const anotherPublicKeyManager = publicKey(this.accounts.manager.seed);
 
       const expectedPendingManagerPublicKey = null;
 
       const setManagerTx = invokeScript({
-        dApp: boosting,
+        dApp: this.accounts.boosting.addr,
         payment: [],
         call: {
           function: 'setManager',
@@ -31,21 +32,19 @@ describe('boosting: confirmManager.mjs', /** @this {MochaSuiteModified} */() => 
           ],
         },
         chainId,
-      }, this.accounts.manager);
-      await api.transactions.broadcast(setManagerTx, {});
-      await ni.waitForTx(setManagerTx.id, { apiBase });
+      }, this.accounts.boosting.seed);
+      await broadcastAndWait(setManagerTx);
 
       const confirmManagerTx = invokeScript({
-        dApp: boosting,
+        dApp: this.accounts.boosting.addr,
         payment: [],
         call: {
           function: 'confirmManager',
           args: [],
         },
         chainId,
-      }, this.accounts.factoryV2);
-      await api.transactions.broadcast(confirmManagerTx, {});
-      const { stateChanges } = await ni.waitForTx(confirmManagerTx.id, { apiBase });
+      }, this.accounts.manager.seed);
+      const { stateChanges } = await broadcastAndWait(confirmManagerTx);
 
       expect(stateChanges.data).to.eql([{
         key: '%s__managerPublicKey',

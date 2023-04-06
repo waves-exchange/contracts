@@ -1,33 +1,27 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-
 import {
+  data,
   transfer,
   reissue,
   invokeScript,
 } from '@waves/waves-transactions';
-import { create } from '@waves/node-api-js';
 
 import { broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
 import { boosting } from './contract/boosting.mjs';
+import { staking } from './contract/staking.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
 
-const api = create(apiBase);
-
-describe('boosting: claimWxBoostRejectIfUnsupportedLpAssetEmpty.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: claimWxBoostIfHeightMoreEmissionEnd.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should reject claimWxBoost',
+    'should successfully claimWxBoost',
     async function () {
       const lpAssetAmount = 1e3 * 1e8;
       const wxAmount = 1e3 * 1e8;
-      const emptyLpAssetId = 'empty';
-
-      const expectedRejectMessage = 'not readonly mode: unsupported lp asset empty';
 
       await broadcastAndWait(transfer({
         recipient: this.accounts.user0.addr,
@@ -60,24 +54,58 @@ describe('boosting: claimWxBoostRejectIfUnsupportedLpAssetEmpty.mjs', /** @this 
       });
       await waitForHeight(lockStartHeight + 1);
 
+      const { height: stakeHeight } = await staking.stake({
+        dApp: this.accounts.staking.addr,
+        caller: this.accounts.user0.seed,
+        payments: [{ assetId: this.lpAssetId, amount: lpAssetAmount }],
+      });
+      await waitForHeight(stakeHeight + 1);
+
+      const emissionEndBlock = 0;
+      const setEmissionEndBlockTx = data({
+        additionalFee: 4e5,
+        data: [
+          {
+            key: '%s%s__emission__endBlock',
+            type: 'integer',
+            value: emissionEndBlock,
+          },
+        ],
+        chainId,
+      }, this.accounts.emission.seed);
+      await broadcastAndWait(setEmissionEndBlockTx);
+
       const claimWxBoostTx = invokeScript({
         dApp: this.accounts.boosting.addr,
         payment: [],
         call: {
           function: 'claimWxBoost',
           args: [
-            { type: 'string', value: emptyLpAssetId },
+            { type: 'string', value: this.lpAssetId },
             { type: 'string', value: this.accounts.user0.addr },
           ],
         },
         chainId,
       }, this.accounts.staking.seed);
+      const { stateChanges } = await broadcastAndWait(claimWxBoostTx);
 
-      await expect(
-        api.transactions.broadcast(claimWxBoostTx, {}),
-      ).to.be.rejectedWith(
-        `Error while executing dApp: boosting.ride: ${expectedRejectMessage}`,
-      );
+      expect(stateChanges.data).to.eql([
+        {
+          key: `%s%d__userBoostEmissionLastIntV2__0__${this.lpAssetId}`,
+          type: 'integer',
+          value: 0,
+        },
+        {
+          key: `%s%s%s%d__voteStakedIntegralLast__${this.lpAssetId}__${this.accounts.user0.addr}__0`,
+          type: 'integer',
+          value: 0,
+        },
+        {
+          key: `%s%s%s%d__votingResultStakedIntegralLast__${this.lpAssetId}__${this.accounts.user0.addr}__0`,
+          type: 'integer',
+          value: 0,
+        },
+      ]);
     },
   );
 });

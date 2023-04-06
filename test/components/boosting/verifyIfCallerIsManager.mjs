@@ -1,18 +1,15 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address, publicKey } from '@waves/ts-lib-crypto';
-import { data, nodeInteraction as ni } from '@waves/waves-transactions';
-import { create } from '@waves/node-api-js';
+import { data } from '@waves/waves-transactions';
 import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
+import { api, broadcastAndWait } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
-
-const api = create(apiBase);
 
 const ridePath = '../ride';
 const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
@@ -22,8 +19,8 @@ describe('boosting: verifyIfCallerIsManager.mjs', /** @this {MochaSuiteModified}
   let managerAccount;
 
   before(async function () {
-    someAccount = this.accounts.factoryV2;
-    managerAccount = this.accounts.manager;
+    someAccount = this.accounts.factory.seed;
+    managerAccount = this.accounts.manager.seed;
     await setScriptFromFile(boostingPath, someAccount);
   });
   it(
@@ -41,8 +38,7 @@ describe('boosting: verifyIfCallerIsManager.mjs', /** @this {MochaSuiteModified}
         }],
         chainId,
       }, someAccount);
-      await api.transactions.broadcast(setManagerBoostingTx, {});
-      await ni.waitForTx(setManagerBoostingTx.id, { apiBase });
+      await broadcastAndWait(setManagerBoostingTx);
 
       const setDummyKeyTx = data({
         additionalFee: 4e5,
@@ -56,8 +52,7 @@ describe('boosting: verifyIfCallerIsManager.mjs', /** @this {MochaSuiteModified}
         ],
         chainId,
       }, managerAccount);
-      await api.transactions.broadcast(setDummyKeyTx, {});
-      await ni.waitForTx(setDummyKeyTx.id, { apiBase });
+      await broadcastAndWait(setDummyKeyTx);
 
       const dataFromNode = await api.addresses.fetchDataKey(
         address(someAccount, chainId),

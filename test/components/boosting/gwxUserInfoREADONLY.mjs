@@ -1,8 +1,14 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address, publicKey } from '@waves/ts-lib-crypto';
-import { data, invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import {
+  data,
+  transfer,
+  reissue,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+
+import { broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
+import { boosting } from './contract/boosting.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -16,63 +22,75 @@ describe('boosting: gwxUserInfoREADONLY.mjs', /** @this {MochaSuiteModified} */(
   it(
     'should successfully gwxUserInfoREADONLY',
     async function () {
-      const duration = this.maxDuration - 1;
-      const assetAmount = this.minLockAmount;
-      const userAddressStr = address(this.accounts.user1, chainId);
       const k = 1000;
       const b = 10;
 
-      const lockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
-        payment: [
-          { assetId: this.wxAssetId, amount: assetAmount },
-        ],
-        call: {
-          function: 'lock',
-          args: [
-            { type: 'integer', value: duration },
-          ],
-        },
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
+
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.emission.seed));
+
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
         chainId,
-      }, this.accounts.user1);
-      await api.transactions.broadcast(lockTx, {});
-      await ni.waitForTx(lockTx.id, { apiBase });
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
+
+      const { height: lockStartHeight } = await boosting.lock({
+        dApp: this.accounts.boosting.addr,
+        caller: this.accounts.user0.seed,
+        duration: this.maxLockDuration,
+        payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
+      });
+      await waitForHeight(lockStartHeight + 1);
 
       const setKTx = data({
         additionalFee: 4e5,
-        senderPublicKey: publicKey(this.accounts.boosting),
         data: [{
           key: '%s%d%s__paramByUserNum__0__k',
           type: 'integer',
           value: k,
         }],
         chainId,
-      }, this.accounts.manager);
-      await api.transactions.broadcast(setKTx, {});
-      await ni.waitForTx(setKTx.id, { apiBase });
+      }, this.accounts.boosting.seed);
+      await broadcastAndWait(setKTx);
 
       const setBTx = data({
         additionalFee: 4e5,
-        senderPublicKey: publicKey(this.accounts.boosting),
         data: [{
           key: '%s%d%s__paramByUserNum__0__b',
           type: 'integer',
           value: b,
         }],
         chainId,
-      }, this.accounts.manager);
-      await api.transactions.broadcast(setBTx, {});
-      const { height } = await ni.waitForTx(setBTx.id, { apiBase });
+      }, this.accounts.boosting.seed);
+      const { height } = await broadcastAndWait(setBTx);
 
       const expectedGwxAmount = Math.floor((k * height + b) / 1000);
 
-      const expr = `gwxUserInfoREADONLY(\"${userAddressStr}\")`; /* eslint-disable-line */
+      const expr = `gwxUserInfoREADONLY(\"${this.accounts.user0.addr}\")`; /* eslint-disable-line */
       const response = await api.utils.fetchEvaluate(
-        address(this.accounts.boosting, chainId),
+        this.accounts.boosting.addr,
         expr,
       );
       const checkData = response.result.value._2.value; /* eslint-disable-line */
 
+      // TODO: check all checkData
       expect(checkData[0]).to.eql({
         type: 'Int',
         value: expectedGwxAmount,

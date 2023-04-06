@@ -1,218 +1,214 @@
-import { address, publicKey, randomSeed } from '@waves/ts-lib-crypto';
 import {
-  data, invokeScript,
-  issue,
+  address, privateKey, publicKey, random,
+} from '@waves/ts-lib-crypto';
+import {
   massTransfer,
-  nodeInteraction,
+  issue,
 } from '@waves/waves-transactions';
-import { create } from '@waves/node-api-js';
-import { format, join } from 'path';
+import { table, getBorderCharacters } from 'table';
+import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
+import { api, broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
+import { staking } from './contract/staking.mjs';
+import { boosting } from './contract/boosting.mjs';
+import { emission } from './contract/emission.mjs';
+import { factory } from './contract/factory.mjs';
+import { assetsStore } from './contract/assetsStore.mjs';
+import { gwx } from './contract/gwx.mjs';
+import { votingEmission } from './contract/votingEmission.mjs';
 
-const { waitForTx } = nodeInteraction;
-const apiBase = process.env.API_NODE_URL;
-const seed = 'waves private node seed with waves tokens';
-const chainId = 'R';
-const api = create(apiBase);
-const seedWordsCount = 5;
+const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
+const nonceLength = 3;
+
 const ridePath = '../ride';
-const mockRidePath = join('components', 'boosting', 'mock');
+const mockPath = './components/staking_boosting/mock';
+const stakingPath = format({ dir: ridePath, base: 'staking.ride' });
 const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
-const factoryV2Path = format({ dir: mockRidePath, base: 'factory_v2.ride' });
-const mathContractPath = format({ dir: mockRidePath, base: 'math_contract.ride' });
-const referralProgramPath = format({ dir: mockRidePath, base: 'refferal.ride' });
+const gwxPath = format({ dir: ridePath, base: 'gwx_reward.ride' });
+const emissionPath = format({ dir: ridePath, base: 'emission.ride' });
+const referralMockPath = format({ dir: mockPath, base: 'referral.mock.ride' });
+const votingEmissionPath = format({ dir: ridePath, base: 'voting_emission.ride' });
+const factoryPath = format({ dir: ridePath, base: 'factory_v2.ride' });
+const assetsStorePath = format({ dir: ridePath, base: 'assets_store.ride' });
+const lpPath = format({ dir: ridePath, base: 'lp.ride' });
+const votingEmissionCandidate = format({ dir: ridePath, base: 'voting_emission_candidate.ride' });
+const referralPath = format({ dir: ridePath, base: 'referral.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
-    const names = [
-      'boosting',
-      'factoryV2',
-      'referralProgram',
-      'referrer',
-      'mathContract',
-      'emission',
+    const nonce = random(nonceLength, 'Buffer').toString('hex');
+    // setup accounts
+    const contractNames = [
       'staking',
+      'store',
+      'feeCollector',
+      'boosting',
+      'emission',
+      'gwx',
+      'lp',
+      'factory',
+      'votingEmission',
+      'referral',
+      'votingEmissionCandidate',
       'manager',
-      'user1',
+      'referral',
+      'referrer',
       'lpStakingPools',
     ];
-    this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
-    const seeds = Object.values(this.accounts);
+    const userNames = Array.from({ length: 3 }, (_, k) => `user${k}`);
+    const names = [...contractNames, ...userNames, 'pacemaker'];
+    this.accounts = Object.fromEntries(names.map((item) => {
+      const seed = `${item}#${nonce}`;
+      return [item, { seed, addr: address(seed, chainId), publicKey: publicKey(seed) }];
+    }));
     const amount = 1e10;
     const massTransferTx = massTransfer({
-      transfers: seeds.map((item) => ({ recipient: address(item, chainId), amount })),
+      transfers: Object.values(this.accounts)
+        .map(({ addr: recipient }) => ({ recipient, amount })),
       chainId,
-    }, seed);
-    await api.transactions.broadcast(massTransferTx, {});
-    await waitForTx(massTransferTx.id, { apiBase });
-
-    await setScriptFromFile(boostingPath, this.accounts.boosting);
-    await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
-    await setScriptFromFile(mathContractPath, this.accounts.mathContract);
-    await setScriptFromFile(referralProgramPath, this.accounts.referralProgram);
+    }, baseSeed);
+    await broadcastAndWait(massTransferTx);
 
     const wxIssueTx = issue({
       name: 'WX Token',
       description: '',
-      quantity: 10e16,
+      quantity: 1e10 * 1e8,
       decimals: 8,
       chainId,
-    }, seed);
-    await api.transactions.broadcast(wxIssueTx, {});
-    await waitForTx(wxIssueTx.id, { apiBase });
+    }, this.accounts.emission.seed);
+    await broadcastAndWait(wxIssueTx);
     this.wxAssetId = wxIssueTx.id;
 
-    const wxAmount = 1e16;
-    const massTransferTxWX = massTransfer({
-      transfers: names.slice(names.length - 2).map((name) => ({
-        recipient: address(this.accounts[name], chainId), amount: wxAmount,
-      })),
-      assetId: this.wxAssetId,
-      chainId,
-    }, seed);
-    await api.transactions.broadcast(massTransferTxWX, {});
-    await waitForTx(massTransferTxWX.id, { apiBase });
+    this.wavesAssetId = 'WAVES';
 
-    const factoryV2AddressStr = address(this.accounts.factoryV2, chainId);
-    const lockAssetIdStr = this.wxAssetId;
+    await setScriptFromFile(stakingPath, this.accounts.staking.seed);
+    await setScriptFromFile(boostingPath, this.accounts.boosting.seed);
+    await setScriptFromFile(gwxPath, this.accounts.gwx.seed);
+    await setScriptFromFile(emissionPath, this.accounts.emission.seed);
+    await setScriptFromFile(referralMockPath, this.accounts.referral.seed);
+    await setScriptFromFile(votingEmissionPath, this.accounts.votingEmission.seed);
+    await setScriptFromFile(factoryPath, this.accounts.factory.seed);
+    await setScriptFromFile(assetsStorePath, this.accounts.store.seed);
+    await setScriptFromFile(lpPath, this.accounts.lp.seed);
+    await setScriptFromFile(votingEmissionCandidate, this.accounts.votingEmissionCandidate.seed);
+    await setScriptFromFile(referralPath, this.accounts.referral.seed);
 
     this.minLockAmount = 500000000;
     this.minDuration = 2;
     this.maxDuration = 2102400;
-    const mathContract = address(this.accounts.mathContract, chainId);
 
-    const constructorTx = invokeScript({
-      dApp: address(this.accounts.boosting, chainId),
-      additionalFee: 4e5,
-      call: {
-        function: 'constructor',
-        args: [
-          { type: 'string', value: factoryV2AddressStr },
-          { type: 'string', value: lockAssetIdStr },
-          { type: 'integer', value: this.minLockAmount },
-          { type: 'integer', value: this.minDuration },
-          { type: 'integer', value: this.maxDuration },
-          { type: 'string', value: mathContract },
-        ],
-      },
-      chainId,
-    }, this.accounts.boosting);
-    await api.transactions.broadcast(constructorTx, {});
-    await waitForTx(constructorTx.id, { apiBase });
+    await staking.init({
+      caller: this.accounts.staking.seed,
+      factoryAddress: this.accounts.factory.addr,
+      votingEmissionAddress: this.accounts.votingEmission.addr,
+    });
 
-    const boostingConfig = `%s%d%d%d__${lockAssetIdStr}__${this.minLockAmount}__${this.minDuration}__${this.maxDuration}__${mathContract}`;
-    const setConfigTx = data({
-      additionalFee: 4e5,
-      data: [{
-        key: '%s__config',
-        type: 'string',
-        value: boostingConfig,
-      },
-      {
-        key: '%s__lpStakingPoolsContract',
-        type: 'string',
-        value: address(this.accounts.lpStakingPools, chainId),
-      }],
-      chainId,
-    }, this.accounts.boosting);
-    await api.transactions.broadcast(setConfigTx, {});
-    await waitForTx(setConfigTx.id, { apiBase });
+    this.maxLockDuration = 2102400;
+    await boosting.init({
+      caller: this.accounts.boosting.seed,
+      factoryAddress: this.accounts.factory.addr,
+      referralsAddress: this.accounts.referral.addr,
+      votingEmissionAddress: this.accounts.votingEmission.addr,
+      lpStakingPoolsAddress: this.accounts.lpStakingPools.addr,
+      lockAssetId: this.wxAssetId,
+      minLockAmount: this.minLockAmount,
+      minLockDuration: this.minDuration,
+      maxLockDuration: this.maxLockDuration,
+      mathContract: this.accounts.gwx.addr,
+    });
 
-    const setReferralsContractAddressTx = data({
-      additionalFee: 4e5,
-      data: [{
-        key: '%s%s__config__referralsContractAddress',
-        type: 'string',
-        value: address(this.accounts.referralProgram, chainId),
-      }],
-      chainId,
-    }, this.accounts.boosting);
-    await api.transactions.broadcast(setReferralsContractAddressTx, {});
-    await waitForTx(setReferralsContractAddressTx.id, { apiBase });
+    const { height } = await api.blocks.fetchHeight();
+    this.releaseRate = 3805175038;
+    this.releaseRateMax = 19025875190;
+    this.emissionStartBlock = 1806750;
+    this.emissionEndBlock = 4434750;
+    this.emissionDuration = this.emissionEndBlock - this.emissionStartBlock;
 
-    const setManagerBoostingTx = data({
-      additionalFee: 4e5,
-      data: [{
-        key: '%s__managerPublicKey',
-        type: 'string',
-        value: publicKey(this.accounts.manager),
-      }],
-      chainId,
-    }, this.accounts.boosting);
-    await api.transactions.broadcast(setManagerBoostingTx, {});
-    await waitForTx(setManagerBoostingTx.id, { apiBase });
+    await emission.init({
+      caller: this.accounts.emission.seed,
+      factoryAddress: this.accounts.factory.addr,
+      ratePerBlockMax: this.releaseRateMax,
+      ratePerBlock: this.releaseRate,
+      emissionStartBlock: this.emissionStartBlock,
+      emissionDuration: this.emissionDuration,
+      wxAssetId: this.wxAssetId,
+      boostingV2StartHeight: height,
+    });
+    await waitForHeight(height + 1);
 
-    const stakingContract = address(this.accounts.staking, chainId);
-    const boostingContract = address(this.accounts.boosting, chainId);
-    const idoContract = '';
-    const teamContract = '';
-    const emissionContract = address(this.accounts.emission, chainId);
-    const restContract = '';
-    const slpipageContract = '';
-    const daoContract = '';
-    const marketingContract = '';
-    const gwxRewardsContract = mathContract;
-    const birdsContract = '';
+    await factory.init({
+      caller: this.accounts.factory.seed,
+      stakingAddress: this.accounts.staking.addr,
+      boostingAddress: this.accounts.boosting.addr,
+      emissionAddress: this.accounts.emission.addr,
+      gwxAddress: this.accounts.gwx.addr,
+      votingEmissionAddress: this.accounts.votingEmission.addr,
+    });
 
-    const factoryV2Config = `%s%s%s%s%s%s%s%s%s%s%s__${stakingContract}__${boostingContract}__${idoContract}__${teamContract}__${emissionContract}__${restContract}__${slpipageContract}__${daoContract}__${marketingContract}__${gwxRewardsContract}__${birdsContract}`;
+    await gwx.init({
+      caller: this.accounts.gwx.seed,
+      referralAddress: this.accounts.referral.addr,
+    });
 
-    const setFactoryV2ConfigTx = data({
-      additionalFee: 4e5,
-      data: [
-        {
-          key: '%s__factoryConfig',
-          type: 'string',
-          value: factoryV2Config,
-        },
-      ],
-      chainId,
-    }, this.accounts.factoryV2);
-    await api.transactions.broadcast(setFactoryV2ConfigTx, {});
-    await waitForTx(setFactoryV2ConfigTx.id, { apiBase });
+    await assetsStore.init({
+      caller: this.accounts.store.seed,
+      factorySeed: this.accounts.factory.seed,
+      labels: 'COMMUNITY_VERIFIED__GATEWAY__STABLECOIN__STAKING_LP__3RD_PARTY__ALGO_LP__LAMBO_LP__POOLS_LP__WX__PEPE',
+    });
 
-    const ratePerBlock = 3805175038;
-    const setRatePerBlockTx = data({
-      additionalFee: 4e5,
-      data: [
-        {
-          key: '%s%s__ratePerBlock__current',
-          type: 'integer',
-          value: ratePerBlock,
-        },
-      ],
-      chainId,
-    }, this.accounts.emission);
-    await api.transactions.broadcast(setRatePerBlockTx, {});
-    await waitForTx(setRatePerBlockTx.id, { apiBase });
+    this.epochLength = 7;
 
-    const emissionStartBlock = 1806750;
-    const setEmissionStartBlockTx = data({
-      additionalFee: 4e5,
-      data: [
-        {
-          key: '%s%s__emission__startBlock',
-          type: 'integer',
-          value: emissionStartBlock,
-        },
-      ],
-      chainId,
-    }, this.accounts.emission);
-    await api.transactions.broadcast(setEmissionStartBlockTx, {});
-    await waitForTx(setEmissionStartBlockTx.id, { apiBase });
+    await votingEmission.init({
+      dApp: this.accounts.votingEmission.addr,
+      caller: this.accounts.votingEmission.seed,
+      factoryAddress: this.accounts.factory.addr,
+      votingEmissionCandidateAddress: this.accounts.votingEmissionCandidate.addr,
+      boostingAddress: this.accounts.boosting.addr,
+      stakingAddress: this.accounts.staking.addr,
+      epochLength: this.epochLength,
+    });
 
-    const emissionEndBlock = 4434750;
-    const setEmissionEndBlockTx = data({
-      additionalFee: 4e5,
-      data: [
-        {
-          key: '%s%s__emission__endBlock',
-          type: 'integer',
-          value: emissionEndBlock,
-        },
-      ],
-      chainId,
-    }, this.accounts.emission);
-    await api.transactions.broadcast(setEmissionEndBlockTx, {});
-    await waitForTx(setEmissionEndBlockTx.id, { apiBase });
+    await factory.setWxEmissionPoolLabel({
+      dApp: this.accounts.factory.addr,
+      caller: this.accounts.factory.seed,
+      amountAssetId: this.wxAssetId,
+      priceAssetId: this.wavesAssetId,
+    });
+
+    await votingEmission.create({
+      dApp: this.accounts.votingEmission.addr,
+      caller: this.accounts.votingEmission.seed,
+      amountAssetId: this.wxAssetId,
+      priceAssetId: this.wavesAssetId,
+    });
+
+    await votingEmission.updateEpochUiKey({
+      caller: this.accounts.votingEmission.seed,
+      epochUiKey: height + 10,
+      epochStartHeight: height,
+    });
+
+    ({ lpAssetId: this.lpAssetId } = await factory.createPool({
+      amountAssetId: this.wxAssetId,
+      priceAssetId: this.wavesAssetId,
+      accountsStore: this.accounts.store.seed,
+      accountsFactoryV2: this.accounts.factory.seed,
+      accountsLp: this.accounts.lp.seed,
+      accountsFeeCollector: this.accounts.feeCollector.seed,
+    }));
+
+    await factory.addPoolWeight({
+      accountsLp: this.accounts.lp.seed,
+      accountsFactoryV2: this.accounts.factory.seed,
+      poolWeight: 1000,
+    });
+
+    const accountsInfo = Object.entries(this.accounts)
+      .map(([name, { seed, addr }]) => [name, seed, privateKey(seed), addr]);
+    console.log(table(accountsInfo, {
+      border: getBorderCharacters('norc'),
+      drawHorizontalLine: (index, size) => index === 0 || index === 1 || index === size,
+      header: { content: `pid = ${process.pid}, nonce = ${nonce}` },
+    }));
   },
 };
