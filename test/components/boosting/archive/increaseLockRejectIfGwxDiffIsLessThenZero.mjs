@@ -1,12 +1,15 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address, publicKey } from '@waves/ts-lib-crypto';
+
 import {
   data,
+  transfer,
+  reissue,
   invokeScript,
-  nodeInteraction as ni,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -28,8 +31,34 @@ describe('boosting: increaseLockRejectIfGwxDiffIsLessThenZero.mjs', /** @this {M
       const userAmount = -10000000000000;
       const lockEnd = this.maxDuration - 1;
 
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
+
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.emission.seed));
+
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
+        chainId,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
+
       const lockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -42,27 +71,24 @@ describe('boosting: increaseLockRejectIfGwxDiffIsLessThenZero.mjs', /** @this {M
           ],
         },
         chainId,
-      }, this.accounts.user1);
-      await api.transactions.broadcast(lockRefTx, {});
-      await ni.waitForTx(lockRefTx.id, { apiBase });
+      }, this.accounts.user0.seed);
+      await broadcastAndWait(lockRefTx);
 
       const setLockTx = data({
         additionalFee: 4e5,
-        senderPublicKey: publicKey(this.accounts.boosting),
         data: [
           {
-            key: `%s%s__lock__${address(this.accounts.user1, chainId)}`,
+            key: `%s%s__lock__${this.accounts.user0.addr}`,
             type: 'string',
             value: `%d%d%d%d%d%d%d%d__0__${userAmount}__${lockEnd}__0__0__0__0__0`,
           },
         ],
         chainId,
-      }, this.accounts.manager);
-      await api.transactions.broadcast(setLockTx, {});
-      await ni.waitForTx(setLockTx.id, { apiBase });
+      }, this.accounts.boosting.seed);
+      await broadcastAndWait(setLockTx);
 
       const { value: config } = await api.addresses.fetchDataKey(
-        address(this.accounts.boosting, chainId),
+        this.accounts.boosting.addr,
         '%s__config',
       );
 
@@ -72,7 +98,6 @@ describe('boosting: increaseLockRejectIfGwxDiffIsLessThenZero.mjs', /** @this {M
 
       const setConfigTx = data({
         additionalFee: 4e5,
-        senderPublicKey: publicKey(this.accounts.boosting),
         data: [
           {
             key: '%s__config',
@@ -81,12 +106,11 @@ describe('boosting: increaseLockRejectIfGwxDiffIsLessThenZero.mjs', /** @this {M
           },
         ],
         chainId,
-      }, this.accounts.manager);
-      await api.transactions.broadcast(setConfigTx, {});
-      await ni.waitForTx(setConfigTx.id, { apiBase });
+      }, this.accounts.boosting.seed);
+      await broadcastAndWait(setConfigTx);
 
       const increaseLockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -97,7 +121,7 @@ describe('boosting: increaseLockRejectIfGwxDiffIsLessThenZero.mjs', /** @this {M
           ],
         },
         chainId,
-      }, this.accounts.user1);
+      }, this.accounts.user0.seed);
 
       const { height: currentHeight } = await api.blocks.fetchHeight();
       const remainingDuration = lockEnd - currentHeight;
@@ -111,7 +135,7 @@ describe('boosting: increaseLockRejectIfGwxDiffIsLessThenZero.mjs', /** @this {M
       await expect(
         api.transactions.broadcast(increaseLockTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        `Error while executing dApp: boosting.ride: ${expectedRejectMessage}`,
       );
     },
   );

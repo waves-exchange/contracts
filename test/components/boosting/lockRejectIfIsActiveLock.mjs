@@ -1,8 +1,14 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
-import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+
+import {
+  transfer,
+  reissue,
+  invokeScript,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -24,8 +30,34 @@ describe('boosting: lockRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModified
 
       const expectedRejectMessage = 'there is an active lock - consider to use increaseLock';
 
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
+
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.emission.seed));
+
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
+        chainId,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
+
       const fisrtLockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -38,13 +70,11 @@ describe('boosting: lockRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModified
           ],
         },
         chainId,
-      }, this.accounts.user1);
-
-      await api.transactions.broadcast(fisrtLockRefTx, {});
-      await ni.waitForTx(fisrtLockRefTx.id, { apiBase });
+      }, this.accounts.user0.seed);
+      await broadcastAndWait(fisrtLockRefTx);
 
       const secondLockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -57,12 +87,12 @@ describe('boosting: lockRejectIfIsActiveLock.mjs', /** @this {MochaSuiteModified
           ],
         },
         chainId,
-      }, this.accounts.user1);
+      }, this.accounts.user0.seed);
 
       await expect(
         api.transactions.broadcast(secondLockRefTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        `Error while executing dApp: boosting.ride: ${expectedRejectMessage}`,
       );
     },
   );

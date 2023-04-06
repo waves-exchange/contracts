@@ -1,8 +1,15 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
-import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+
+import {
+  transfer,
+  reissue,
+  invokeScript,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+
+import { broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
+import { boosting } from './contract/boosting.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -16,46 +23,60 @@ describe('boosting: claimWxBoostRejectIfUnsupportedLpAsset.mjs', /** @this {Moch
   it(
     'should reject claimWxBoost',
     async function () {
-      const duration = this.maxDuration - 1;
-      const assetAmount = this.minLockAmount;
-      const lpAssetIdStr = 'lpAssetId';
-      const userAddressStr = address(this.accounts.user1, chainId);
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
 
+      const someNonExistentLpAssetId = 'lpAssetId';
       const expectedRejectMessage = 'unsupported lp asset lpAssetId';
 
-      const lockTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
-        payment: [
-          { assetId: this.wxAssetId, amount: assetAmount },
-        ],
-        call: {
-          function: 'lock',
-          args: [
-            { type: 'integer', value: duration },
-          ],
-        },
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.emission.seed));
+
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
         chainId,
-      }, this.accounts.user1);
-      await api.transactions.broadcast(lockTx, {});
-      await ni.waitForTx(lockTx.id, { apiBase });
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
+
+      const { height: lockStartHeight } = await boosting.lock({
+        dApp: this.accounts.boosting.addr,
+        caller: this.accounts.user0.seed,
+        duration: this.maxLockDuration,
+        payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
+      });
+      await waitForHeight(lockStartHeight + 1);
 
       const claimWxBoostTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [],
         call: {
           function: 'claimWxBoost',
           args: [
-            { type: 'string', value: lpAssetIdStr },
-            { type: 'string', value: userAddressStr },
+            { type: 'string', value: someNonExistentLpAssetId },
+            { type: 'string', value: this.accounts.user0.addr },
           ],
         },
         chainId,
-      }, this.accounts.staking);
+      }, this.accounts.staking.seed);
 
       await expect(
         api.transactions.broadcast(claimWxBoostTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        `Error while executing dApp: boosting.ride: ${expectedRejectMessage}`,
       );
     },
   );

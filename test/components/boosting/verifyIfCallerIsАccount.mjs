@@ -1,10 +1,11 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
-import { data, nodeInteraction as ni } from '@waves/waves-transactions';
+import { data } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -21,7 +22,7 @@ describe('boosting: verifyIfCallerIsАccount.mjs', /** @this {MochaSuiteModified
   let someAccount;
 
   before(async function () {
-    someAccount = this.accounts.factoryV2;
+    someAccount = this.accounts.factory.seed;
     await setScriptFromFile(boostingPath, someAccount);
   });
 
@@ -41,8 +42,7 @@ describe('boosting: verifyIfCallerIsАccount.mjs', /** @this {MochaSuiteModified
         ],
         chainId,
       }, someAccount);
-      await api.transactions.broadcast(setDummyKeyTx, {});
-      await ni.waitForTx(setDummyKeyTx.id, { apiBase });
+      await broadcastAndWait(setDummyKeyTx);
 
       const dataFromNode = await api.addresses.fetchDataKey(
         address(someAccount, chainId),
