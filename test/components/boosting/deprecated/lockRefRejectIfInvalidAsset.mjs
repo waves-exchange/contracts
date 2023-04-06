@@ -1,10 +1,15 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
 import {
-  invokeScript, issue, massTransfer, waitForTx,
+  transfer,
+  massTransfer,
+  reissue,
+  issue,
+  invokeScript,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -16,15 +21,41 @@ const api = create(apiBase);
 
 describe('boosting: lockRefRejectIfInvalidAsset.mjs', /** @this {MochaSuiteModified} */() => {
   const seed = 'waves private node seed with waves tokens';
-  let boosting;
+  let boostingAddr;
   let wxAssetId;
   let invalidAssetId;
-  let user1;
+  let user0;
 
   before(async function () {
-    boosting = this.accounts.boosting;
-    user1 = this.accounts.user1;
+    boostingAddr = this.accounts.boosting.addr;
+    user0 = this.accounts.user0.seed;
     wxAssetId = this.wxAssetId;
+
+    const lpAssetAmount = 1e3 * 1e8;
+    const wxAmount = 1e3 * 1e8;
+
+    await broadcastAndWait(transfer({
+      recipient: this.accounts.user0.addr,
+      amount: wxAmount,
+      assetId: this.wxAssetId,
+      additionalFee: 4e5,
+    }, this.accounts.emission.seed));
+
+    const lpAssetIssueTx = reissue({
+      assetId: this.lpAssetId,
+      quantity: lpAssetAmount * 10,
+      reissuable: true,
+      chainId,
+    }, this.accounts.factory.seed);
+    await broadcastAndWait(lpAssetIssueTx);
+
+    const lpAssetTransferTx = transfer({
+      recipient: this.accounts.user0.addr,
+      amount: lpAssetAmount,
+      assetId: this.lpAssetId,
+      additionalFee: 4e5,
+    }, this.accounts.factory.seed);
+    await broadcastAndWait(lpAssetTransferTx);
 
     const someIssueTx = issue({
       name: 'Some Token',
@@ -33,18 +64,16 @@ describe('boosting: lockRefRejectIfInvalidAsset.mjs', /** @this {MochaSuiteModif
       decimals: 8,
       chainId,
     }, seed);
-    await api.transactions.broadcast(someIssueTx, {});
-    await waitForTx(someIssueTx.id, { apiBase });
+    await broadcastAndWait(someIssueTx);
     invalidAssetId = someIssueTx.id;
 
     const someAmount = 1e16;
     const massTransferTxWX = massTransfer({
-      transfers: [{ recipient: address(user1, chainId), amount: someAmount }],
+      transfers: [{ recipient: this.accounts.user0.addr, amount: someAmount }],
       assetId: invalidAssetId,
       chainId,
     }, seed);
-    await api.transactions.broadcast(massTransferTxWX, {});
-    await waitForTx(massTransferTxWX.id, { apiBase });
+    await broadcastAndWait(massTransferTxWX);
   });
   it(
     'should reject lockRef',
@@ -56,7 +85,7 @@ describe('boosting: lockRefRejectIfInvalidAsset.mjs', /** @this {MochaSuiteModif
       const expectedRejectMessage = `invalid asset is in payment - ${wxAssetId} is expected`;
 
       const lockRefTx = invokeScript({
-        dApp: address(boosting, chainId),
+        dApp: boostingAddr,
         payment: [
           { assetId: invalidAssetId, amount: 1 },
         ],
@@ -69,12 +98,12 @@ describe('boosting: lockRefRejectIfInvalidAsset.mjs', /** @this {MochaSuiteModif
           ],
         },
         chainId,
-      }, user1);
+      }, user0);
 
       await expect(
         api.transactions.broadcast(lockRefTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        `Error while executing dApp: boosting.ride: ${expectedRejectMessage}`,
       );
     },
   );

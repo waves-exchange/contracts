@@ -1,10 +1,16 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import {
-  data, invokeScript, nodeInteraction as ni,
+  transfer,
+  reissue,
+  invokeScript,
+  libs,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+
+import { broadcastAndWait } from '../../utils/api.mjs';
+import { referral } from './contract/referral.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -14,33 +20,52 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSuiteModified} */() => {
+describe('boosting: lockRefIfRefferAndSignatureExist.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully lockRef if userIsExisting',
+    'should successfully lockRef',
     async function () {
       const duration = this.maxDuration - 1;
-      const referrer = '';
-      const signature = 'base64:';
+      const bytes = libs.crypto.stringToBytes('dummySignature');
+      const signature = libs.crypto.signBytes(this.accounts.user0.seed, bytes);
       const assetAmount = this.minLockAmount;
 
-      const { height: currentHeight } = await api.blocks.fetchHeight();
-      const emissionEndBlock = currentHeight - 1;
-      const setEmissionEndBlockTx = data({
+      const lpAssetAmount = 1e3 * 1e8;
+      const wxAmount = 1e3 * 1e8;
+
+      await referral.createProgram({
+        caller: this.accounts.referral.seed,
+        referralAddr: this.accounts.referral.addr,
+        programName: 'wxlock',
+        treasuryContract: '',
+        implementationContract: '',
+        wxAssetId: this.wxAssetId,
+      });
+
+      await broadcastAndWait(transfer({
+        recipient: this.accounts.user0.addr,
+        amount: wxAmount,
+        assetId: this.wxAssetId,
         additionalFee: 4e5,
-        data: [
-          {
-            key: '%s%s__emission__endBlock',
-            type: 'integer',
-            value: emissionEndBlock,
-          },
-        ],
+      }, this.accounts.emission.seed));
+
+      const lpAssetIssueTx = reissue({
+        assetId: this.lpAssetId,
+        quantity: lpAssetAmount * 10,
+        reissuable: true,
         chainId,
-      }, this.accounts.emission);
-      await api.transactions.broadcast(setEmissionEndBlockTx, {});
-      await ni.waitForTx(setEmissionEndBlockTx.id, { apiBase });
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetIssueTx);
+
+      const lpAssetTransferTx = transfer({
+        recipient: this.accounts.user0.addr,
+        amount: lpAssetAmount,
+        assetId: this.lpAssetId,
+        additionalFee: 4e5,
+      }, this.accounts.factory.seed);
+      await broadcastAndWait(lpAssetTransferTx);
 
       const lockRefTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [
           { assetId: this.wxAssetId, amount: assetAmount },
         ],
@@ -48,19 +73,18 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
           function: 'lockRef',
           args: [
             { type: 'integer', value: duration },
-            { type: 'string', value: referrer },
+            { type: 'string', value: this.accounts.referrer.addr },
             { type: 'string', value: signature },
           ],
         },
         chainId,
-      }, this.accounts.user1);
-      await api.transactions.broadcast(lockRefTx, {});
-      const { id, height, stateChanges } = await ni.waitForTx(lockRefTx.id, { apiBase });
+      }, this.accounts.user0.seed);
+      const { id, height, stateChanges } = await broadcastAndWait(lockRefTx);
 
       const expectedTimestamp = (await api.blocks.fetchHeadersAt(height)).timestamp;
-      const expectedUserNum = 0;
       const expectedNextUserNum = 1;
       const expectedUserNumStr = '0';
+      const expectedUserNum = 0;
       const expectedK = 0;
       const expectedB = 0;
       const expectedPeriod = 0;
@@ -72,20 +96,20 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
       const expectedLockStart = height;
       const expectedUserBoostEmissionLastIntegralKEY = 0;
       const expectedTotalCachedGwxKEY = 499999760;
-      const expectedInvokesCount = 2;
+      const expectedInvokesCount = 3;
 
       expect(stateChanges.data).to.eql([{
         key: '%s__nextUserNum',
         type: 'integer',
         value: expectedNextUserNum,
       }, {
-        key: `%s%s%s__mapping__user2num__${address(this.accounts.user1, chainId)}`,
+        key: `%s%s%s__mapping__user2num__${this.accounts.user0.addr}`,
         type: 'string',
         value: expectedUserNumStr,
       }, {
         key: `%s%s%s__mapping__num2user__${expectedUserNum}`,
         type: 'string',
-        value: address(this.accounts.user1, chainId),
+        value: this.accounts.user0.addr,
       }, {
         key: `%s%d%s__paramByUserNum__${expectedUserNum}__amount`,
         type: 'integer',
@@ -115,7 +139,7 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
         type: 'integer',
         value: expectedB,
       }, {
-        key: `%s%s__lock__${address(this.accounts.user1, chainId)}`,
+        key: `%s%s__lock__${this.accounts.user0.addr}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d%d__${expectedUserNum}__${assetAmount}__${height}__${duration}__${expectedK}__${expectedB}__${expectedTimestamp}__${expectedGwxAmount}`,
       }, {
@@ -135,7 +159,7 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
         type: 'integer',
         value: expectedActiveTotalLocked,
       }, {
-        key: `%s%s%s%s__history__lock__${address(this.accounts.user1, chainId)}__${id}`,
+        key: `%s%s%s%s__history__lock__${this.accounts.user0.addr}__${id}`,
         type: 'string',
         value: `%d%d%d%d%d%d%d__${height}__${expectedTimestamp}__${assetAmount}__${expectedLockStart}__${duration}__${expectedK}__${expectedB}`,
       }, {
@@ -151,9 +175,26 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
       const { invokes } = stateChanges;
       expect(invokes.length).to.eql(expectedInvokesCount);
 
-      expect(invokes[0].dApp).to.eql(address(this.accounts.mathContract, chainId));
-      expect(invokes[0].call.function).to.eql('calcGwxParamsREADONLY');
+      expect(invokes[0].dApp).to.eql(this.accounts.referral.addr);
+      expect(invokes[0].call.function).to.eql('createPair');
       expect(invokes[0].call.args).to.eql([
+        {
+          type: 'String',
+          value: 'wxlock',
+        }, {
+          type: 'String',
+          value: this.accounts.referrer.addr,
+        }, {
+          type: 'String',
+          value: this.accounts.user0.addr,
+        }, {
+          type: 'String',
+          value: signature,
+        }]);
+
+      expect(invokes[1].dApp).to.eql(this.accounts.mathContract.addr);
+      expect(invokes[1].call.function).to.eql('calcGwxParamsREADONLY');
+      expect(invokes[1].call.args).to.eql([
         {
           type: 'Int',
           value: expectedTotalCachedGwxKEY,
@@ -162,15 +203,15 @@ describe('boosting: lockRefIfHeightMoreThanEmissionEnd.mjs', /** @this {MochaSui
           value: height,
         }, {
           type: 'Int',
-          value: duration,
+          value: expectedLocksDurationSumInBlock,
         }]);
 
-      expect(invokes[1].dApp).to.eql(address(this.accounts.mathContract, chainId));
-      expect(invokes[1].call.function).to.eql('updateReferralActivity');
-      expect(invokes[1].call.args).to.eql([
+      expect(invokes[2].dApp).to.eql(this.accounts.mathContract.addr);
+      expect(invokes[2].call.function).to.eql('updateReferralActivity');
+      expect(invokes[2].call.args).to.eql([
         {
           type: 'String',
-          value: address(this.accounts.user1, chainId),
+          value: this.accounts.user0.addr,
         }, {
           type: 'Int',
           value: expectedTotalCachedGwxKEY,
