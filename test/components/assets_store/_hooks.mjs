@@ -2,7 +2,6 @@ import { address, randomSeed } from '@waves/ts-lib-crypto';
 import { massTransfer, nodeInteraction } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { format } from 'path';
-import ora from 'ora';
 import { setScriptFromFile } from '../../utils/utils.mjs';
 
 const { waitForTx } = nodeInteraction;
@@ -18,7 +17,6 @@ const userPoolsMockPath = format({ dir: testPath, base: 'user_pools.mock.ride' }
 
 export const mochaHooks = {
   async beforeAll() {
-    const spinner = ora('Initializing').start();
     // setup accounts
     const names = ['store', 'pools', 'user'];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
@@ -33,6 +31,5 @@ export const mochaHooks = {
     // set scripts
     await setScriptFromFile(assetsStorePath, this.accounts.store);
     await setScriptFromFile(userPoolsMockPath, this.accounts.pools);
-    spinner.succeed('Initialized');
   },
 };
