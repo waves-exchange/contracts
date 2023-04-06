@@ -1,16 +1,13 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { address } from '@waves/ts-lib-crypto';
+
 import { invokeScript } from '@waves/waves-transactions';
-import { create } from '@waves/node-api-js';
+
+import { api } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
-
-const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
-
-const api = create(apiBase);
 
 describe('boosting: claimWxBoostRejectIfCallerIsNotStakingContract.mjs', /** @this {MochaSuiteModified} */() => {
   it(
@@ -22,7 +19,7 @@ describe('boosting: claimWxBoostRejectIfCallerIsNotStakingContract.mjs', /** @th
       const expectedRejectMessage = 'permissions denied';
 
       const claimWxBoostTx = invokeScript({
-        dApp: address(this.accounts.boosting, chainId),
+        dApp: this.accounts.boosting.addr,
         payment: [],
         call: {
           function: 'claimWxBoost',
@@ -32,12 +29,12 @@ describe('boosting: claimWxBoostRejectIfCallerIsNotStakingContract.mjs', /** @th
           ],
         },
         chainId,
-      }, this.accounts.user1);
+      }, this.accounts.user0.seed);
 
       await expect(
         api.transactions.broadcast(claimWxBoostTx, {}),
       ).to.be.rejectedWith(
-        `Error while executing dApp: ${expectedRejectMessage}`,
+        `Error while executing dApp: boosting.ride: ${expectedRejectMessage}`,
       );
     },
   );
