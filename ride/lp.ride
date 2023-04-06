@@ -339,13 +339,8 @@ func rebalanceInternal(targetRatio: Int, assetId: String, stakingAssetId: String
   strict currentAdditionalBalance = getAdditionalBalanceOrZero(assetId)
   strict currentStakingAssetBalance = getStakingAssetBalanceOrZero(stakingAssetId)
 
-  strict availableBalance = match parseAssetId(assetId) {
-    case b:ByteVector => this.assetBalance(b)
-    case u:Unit => this.wavesBalance().available
-  }
-
-  let wholeBalance = max([0, availableBalance + currentAdditionalBalance - minBalance])
-  let targetAdditionalBalance = fraction(targetRatio, wholeBalance, 100)
+  let leasableTotalBalance = max([0, getAccBalance(assetId) - minBalance])
+  let targetAdditionalBalance = fraction(targetRatio, leasableTotalBalance, 100)
   let diff = currentAdditionalBalance - targetAdditionalBalance
      
   if (diff == 0) then { [] } 
@@ -372,8 +367,8 @@ func rebalanceAsset(assetId: String) = {
 func withdrawAndRebalanceAsset(assetId: String, getAmount: Int) = {
   let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = getLeaseProxyConfig(assetId)
   if (isLeasable) then {
-    strict newTotalCalcBalance = max([0, getAccBalance(assetId) - getAmount - minBalance])
-    strict newAdditionalBalance = fraction(leasedRatio, newTotalCalcBalance, 100)
+    strict newTotalLeasableBalance = max([0, getAccBalance(assetId) - getAmount - minBalance])
+    strict newAdditionalBalance = fraction(leasedRatio, newTotalLeasableBalance, 100)
     strict withdrawAmount = max([0, getAdditionalBalanceOrZero(assetId) - newAdditionalBalance])
 
     withdraw(assetId, withdrawAmount, proxyAssetId, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
