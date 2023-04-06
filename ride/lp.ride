@@ -380,6 +380,13 @@ func withdrawAndRebalanceAsset(assetId: String, getAmount: Int) = {
   } else { [] }
 }
 
+# Withdraw and rebalance Amount asset and Price asset
+func withdrawAndRebalanceAll(amountAssetOutAmount: Int, priceAssetOutAmount: Int) = {
+    let AmAmtWithdrawState = withdrawAndRebalanceAsset(getStringOrFail(this, aa()), amountAssetOutAmount)
+    let PrAmtWithdrawState = withdrawAndRebalanceAsset(getStringOrFail(this, pa()), priceAssetOutAmount)
+    AmAmtWithdrawState ++ PrAmtWithdrawState
+}
+
 # cast assets and calc price
 func privateCalcPrice(amAssetDcm: Int, prAssetDcm: Int, amAmt: Int, prAmt: Int) = {
     let amtAssetAmtX18 = amAmt.toX18(amAssetDcm)
@@ -446,13 +453,7 @@ func estimateGetOperation(txId58: String, pmtAssetId: String, pmtLpAmt: Int, use
   let outAmAmt = outAmAmtX18.fromX18Round(amAssetDcm, FLOOR)
   let outPrAmt = outPrAmtX18.fromX18Round(prAssetDcm, FLOOR)
 
-  # withdraw assets from proxy if needed
-  let AmAmtWithdrawState = withdrawAndRebalanceAsset(amAssetId, outAmAmt)
-  let PrAmtWithdrawState = withdrawAndRebalanceAsset(prAssetId, outPrAmt)
-
   let state = if (txId58 == "") then [] else
-  AmAmtWithdrawState ++
-  PrAmtWithdrawState ++
   [
     ScriptTransfer(userAddress, outAmAmt, if (amAssetId == "WAVES") then unit else amAssetId.fromBase58String()),
     ScriptTransfer(userAddress, outPrAmt, if (prAssetId == "WAVES") then unit else prAssetId.fromBase58String()),
@@ -1327,11 +1328,14 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
 @Callable(i)
 func get() = {
   let res = commonGet(i)
-  let outAmtAmt    = res._1
+  let outAmAmt    = res._1
   let outPrAmt     = res._2
   let pmtAmt       = res._3
   let pmtAssetId   = res._4
   let state        = res._5
+
+  # withdraw Amount and Price assets from proxy if its needed
+  let withdrawState = withdrawAndRebalanceAll(outAmAmt, outPrAmt)
 
   strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
@@ -1340,11 +1344,11 @@ func get() = {
                                   [pmtAmt],
                                   [AttachedPayment(pmtAssetId, pmtAmt)])
   
-  let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmtAmt, -outPrAmt, 0)
+  let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmAmt, -outPrAmt, 0)
 
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
-  state ++ refreshKLpActions
+  withdrawState ++ state ++ refreshKLpActions
 }
 
 @Callable(i)
@@ -1358,6 +1362,9 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
   if (outAmAmt < noLessThenAmtAsset) then throw("noLessThenAmtAsset failed:  " + outAmAmt.toString() + " < " + noLessThenAmtAsset.toString()) else
   if (outPrAmt < noLessThenPriceAsset) then throw("noLessThenPriceAsset failed: " + outPrAmt.toString() + " < " + noLessThenPriceAsset.toString()) else
 
+  # withdraw Amount and Price assets from proxy if its needed
+  let withdrawState = withdrawAndRebalanceAll(outAmAmt, outPrAmt)
+
   strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict burnLPAssetOnFactory = invoke(factoryContract,
@@ -1369,7 +1376,7 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
 
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
-  state ++ refreshKLpActions
+  withdrawState ++ state ++ refreshKLpActions
 }
 
 # Unstake LP tokens and exit from pool
@@ -1392,6 +1399,9 @@ func unstakeAndGet(amount: Int) = {
   let poolStatus = res._9.parseIntValue()
   let state = res._10
 
+  # withdraw Amount and Price assets from proxy if its needed
+  let withdrawState = withdrawAndRebalanceAll(outAmAmt, outPrAmt)
+
   strict checkPoolStatus = if (isGlobalShutdown() || poolStatus == PoolShutdown) then {
     throw("Get operation is blocked by admin. Status = " + poolStatus.toString())
   } else true
@@ -1402,7 +1412,7 @@ func unstakeAndGet(amount: Int) = {
   
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
-  state ++ refreshKLpActions
+  withdrawState ++ state ++ refreshKLpActions
 }
 
 @Callable(i)
@@ -1423,6 +1433,9 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
   let outPrAmt = res._2
   let state = res._10
 
+  # withdraw Amount and Price assets from proxy if its needed
+  let withdrawState = withdrawAndRebalanceAll(outAmAmt, outPrAmt)
+
   strict checkAmounts = [
     outAmAmt >= noLessThenAmountAsset || ["amount asset amount to receive is less than ", noLessThenAmountAsset.toString()].makeString("").throw(),
     outPrAmt >= noLessThenPriceAsset || ["price asset amount to receive is less than ", noLessThenPriceAsset.toString()].makeString("").throw()
@@ -1434,7 +1447,7 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
-  state ++ refreshKLpActions
+  withdrawState ++ state ++ refreshKLpActions
 }
 
 # purpose:
