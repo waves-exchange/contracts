@@ -94,7 +94,7 @@ describe('lp_stable: putOneTknAutoStake.mjs', /** @this {MochaSuiteModified} */(
     expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
       .to.deep.include.members([
         [address(this.accounts.factoryV2, chainId), 'emit'],
-        [address(this.accounts.staking, chainId), 'stake'],
+        [address(this.accounts.staking, chainId), 'stakeFor'],
       ]);
   });
 });
