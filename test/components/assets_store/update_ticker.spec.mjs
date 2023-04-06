@@ -11,6 +11,9 @@ const { expect } = chai;
 
 const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 
+const keyAssetIdToTicker = (assetId) => `%s%s__assetId2ticker__${assetId}`;
+const keyTickerToAssetId = (ticker) => `%s%s__ticker2assetId__${ticker}`;
+
 /** @typedef {Mocha.Suite & {accounts: Object.<string, number>}} MochaSuiteModified */
 describe('Assets store - update ticker', /** @this {MochaSuiteModified} */() => {
   /** @type {string} */
@@ -71,12 +74,12 @@ describe('Assets store - update ticker', /** @this {MochaSuiteModified} */() => 
 
     expect(stateChanges.data).to.eql([
       {
-        key: `%s%s__assetId2ticker__${assetId}`,
+        key: keyAssetIdToTicker(assetId),
         type: 'string',
         value: ticker1,
       },
       {
-        key: `%s%s__ticker2assetId__${ticker1}`,
+        key: keyTickerToAssetId(ticker1),
         type: 'string',
         value: assetId,
       },
@@ -99,14 +102,14 @@ describe('Assets store - update ticker', /** @this {MochaSuiteModified} */() => 
     const { stateChanges } = await broadcastAndWait(addLabelInvokeTx);
 
     expect(stateChanges.data).to.eql([
-      { key: `%s%s__ticker2assetId__${ticker1}`, value: null },
+      { key: keyTickerToAssetId(ticker1), value: null },
       {
-        key: `%s%s__assetId2ticker__${assetId}`,
+        key: keyAssetIdToTicker(assetId),
         type: 'string',
         value: ticker2,
       },
       {
-        key: `%s%s__ticker2assetId__${ticker2}`,
+        key: keyTickerToAssetId(ticker2),
         type: 'string',
         value: assetId,
       },
