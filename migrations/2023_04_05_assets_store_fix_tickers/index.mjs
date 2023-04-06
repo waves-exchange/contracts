@@ -4,8 +4,19 @@ import { join } from 'path'
 import { readdir, unlink, writeFile } from 'fs/promises'
 import { address } from '@waves/ts-lib-crypto'
 import config from './config.mjs'
+import prompts from 'prompts'
 
-const network = 'mainnet'
+const { network } = await prompts({
+  type: 'select',
+  name: 'network',
+  message: 'Network',
+  choices: [
+    { title: 'testnet', value: 'testnet' },
+    { title: 'mainnet', value: 'mainnet' },
+  ],
+  initial: 0,
+});
+
 const { nodeUrl, chainId, assetsStorePublicKey } = config[network]
 
 const separator = '__'
