@@ -12,6 +12,7 @@ let defaultLabels = [labelCommunityVerified, labelPoolsLp]
 
 func throwPD() = "Permission denied".throw()
 func throwNoAsset() = "Asset doesn't exists".throw()
+func throwInvalidTicker() = "Invalid ticker".throw()
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
@@ -136,18 +137,6 @@ func setVerifiedActions(assetId: String, verified: Boolean) = {
   [IntegerEntry(assetId.keyStatus(), verified.verifiedToStatus())] ++ labelCommunityVerifiedActions
 }
 
-func updateTickerActions(assetId: String, ticker: String) = {
-  strict checkTicker = {
-    let tickerIsValid = ticker != ""
-    tickerIsValid || "Invalid ticker".throw()
-  }
-
-  [
-    StringEntry(assetId.keyAssetIdToTicker(), ticker),
-    StringEntry(ticker.keyTickerToAssetId(), assetId)
-  ]
-}
-
 @Callable(i)
 func setAssetName(assetID: String, assetName: String) = {
   strict checkCaller = i.mustAdmin()
@@ -240,13 +229,38 @@ func deleteLabel(assetId: String, label: String) = {
   assetId.deleteLabelActions(label, true)
 }
 
-# нужна проверка на уникальность тикера
 @Callable(i)
 func updateTicker(assetId: String, ticker: String) = {
   strict checkCaller = i.mustAdmin()
   strict checkAsset = assetId.isCreated() || throwNoAsset()
+  strict checkTicker = ticker != "" || throwInvalidTicker()
+  
+  let deleteActions = {
+    match ticker.keyTickerToAssetId().getString() {
+      case assetIdOld: String => [
+        DeleteEntry(assetIdOld.keyAssetIdToTicker())
+      ]
+      case _: Unit => []
+    }
+  } ++ {
+    match assetId.keyAssetIdToTicker().getString() {
+      case tickerOld: String => [
+        DeleteEntry(tickerOld.keyTickerToAssetId())
+      ]
+      case _: Unit => []
+    }
+  }
 
-  assetId.updateTickerActions(ticker)
+  let updateActions = [
+    StringEntry(assetId.keyAssetIdToTicker(), ticker),
+    StringEntry(ticker.keyTickerToAssetId(), assetId)
+  ]
+
+  # The order of the elements matters
+  # Actions are executed in the same order as the elements in the list
+  # https://docs.waves.tech/en/ride/functions/callable-function#invocation-result
+  deleteActions
+  ++ updateActions
 }
 
 @Callable(i)
