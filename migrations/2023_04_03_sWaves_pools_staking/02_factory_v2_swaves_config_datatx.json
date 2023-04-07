@@ -8,7 +8,7 @@
         {
             "key": "%s__sWavesProxyAddress",
             "type": "string",
-            "value": ""
+            "value": "3P4dXbaBwREskBrTvx3UjvSCmJWcnqpnJVn"
         },
         {
             "key": "%s__sWavesAssetId",
@@ -18,7 +18,7 @@
         {
             "key": "%s__stakingProfitAddress",
             "type": "string",
-            "value": ""
+            "value": "3PCoDJZ4R95qFdiAwdhjf9y2jtTiskJ9STo"
         },
         {
             "key": "%s%s__leasedRatioDefault__WAVES",
