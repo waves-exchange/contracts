@@ -363,7 +363,7 @@ func rebalanceAsset(assetId: String) = {
 }
 
 # Calculate and withdraw from staked assets 
-# to reach targetRatio after getAmount is transfered to user
+# to reach targetRatio after getAmount is transfered from pool
 func withdrawAndRebalanceAsset(assetId: String, getAmount: Int) = {
   let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = getLeaseProxyConfig(assetId)
   if (isLeasable) then {
@@ -1227,7 +1227,8 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
 
   strict burnInv = factoryContract.invoke("burn", [paymentAmount], [AttachedPayment(paymentAssetId, paymentAmount)])
 
-  let withdrawState = withdrawAndRebalanceAsset(outAssetIdStr, amount)
+  # Calculate and rebalance after withdraw amount and fees is deducted
+  let withdrawState = withdrawAndRebalanceAsset(outAssetIdStr, amount + max([0, feeAmount]))
   let assetTransfer = [ScriptTransfer(userAddress, amount, outAssetId)]
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
@@ -1286,7 +1287,8 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
 
   strict burnInv = factoryContract.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
 
-  let withdrawState = withdrawAndRebalanceAsset(outAssetIdStr, amount)
+  # Calculate and rebalance after withdraw amount and fees is deducted
+  let withdrawState = withdrawAndRebalanceAsset(outAssetIdStr, amount + max([0, feeAmount]))
   let assetTransfer = [ScriptTransfer(i.caller, amount, outAssetId)]
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
