@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-341-pools-swaves-leasing**](https://github.com/waves-exchange/contracts/tree/wxdefi-341-pools-swaves-leasing) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **15:58 07.04.2023** (GMT+4)
+[**wxdefi-341-pools-swaves-leasing**](https://github.com/waves-exchange/contracts/tree/wxdefi-341-pools-swaves-leasing) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **14:49 11.04.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -19,6 +19,7 @@ BTC/ETH pool | [`3N8iNNRC4UfDK4aJctSvHajiZ81fzSumCeP`](https://wavesexplorer.com
 Mock ILO Token/USDC pool | [`3MsdLkCCcsf1niGwjyQCMi8aC4CkNbm2Wy9`](https://wavesexplorer.com/addresses/3MsdLkCCcsf1niGwjyQCMi8aC4CkNbm2Wy9?network=testnet) | `B4L9D9LnFwCPW8fFVc65SHyFNYjb1KJv6MUQXPGMPSTy` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-341-pools-swaves-leasing/ride/lp.ride) 
 WX/USDT pool | [`3MrULQRLc52GWrJF1tMcAm4M78fPe57o9Kt`](https://wavesexplorer.com/addresses/3MrULQRLc52GWrJF1tMcAm4M78fPe57o9Kt?network=testnet) | `Aig94J3pRT3J41eXw33rJrs67gTCECiMVRZrbtuoARit` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-341-pools-swaves-leasing/ride/lp.ride) 
 sWAVES/WAVES pool | [`3NAYgaLaVNNh5qw3Zx5PydFoE7mSoqYvP2H`](https://wavesexplorer.com/addresses/3NAYgaLaVNNh5qw3Zx5PydFoE7mSoqYvP2H?network=testnet) | `BNZJaZQpQutteRwUttAsDbWkozgmUAAjBrkxaaYMuV8` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-341-pools-swaves-leasing/ride/lp.ride) 
+URHere/WAVES pool | [`3MyhShghYtSMxRopenEtGdcsugm5RYRoqvZ`](https://wavesexplorer.com/addresses/3MyhShghYtSMxRopenEtGdcsugm5RYRoqvZ?network=testnet) | `DvyZieHyb6PvkwA6qQewKLDVGGmNqS6nc6DHo48yjQce` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-341-pools-swaves-leasing/ride/lp.ride) 
 USDT/USDN pool | [`3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT`](https://wavesexplorer.com/addresses/3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT?network=testnet) | `D1BL65meykxFZTCuq7jq9HSGLLnWvQamQPUNrguW5w39` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-341-pools-swaves-leasing/ride/lp_stable.ride) 
 USDC/USDT pool | [`3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA`](https://wavesexplorer.com/addresses/3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA?network=testnet) | `35yd3qw1gxKDxKwGAykHN9fANbXNWwseaUwbWDj24o3x` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-341-pools-swaves-leasing/ride/lp_stable.ride) 
 USDT/USDN pool addon | [`3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV`](https://wavesexplorer.com/addresses/3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV?network=testnet) | `8KXPjDuC8ffL9qjNuDBLnkvJKbMojhZYcnm2o75UCyun` | [lp_stable_addon.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-341-pools-swaves-leasing/ride/lp_stable_addon.ride) 
@@ -53,6 +54,7 @@ Mock ILO Token | [`3wBArqu1n1rhzBEzazBQRT7fAnP47rBScoBah9bvC4o4`](https://wavese
 sWAVES | [`FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm`](https://wavesexplorer.com/assets/FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm?network=testnet) | sWAVES is the tokenized form of staked WAVES powered by PepeTeam. See details at https://swaves.pepe.team 
 Tether USD | [`5Sh9KghfkZyhjwuodovDhB6PghDUGBHiAPZ4MkrPgKtX`](https://wavesexplorer.com/assets/5Sh9KghfkZyhjwuodovDhB6PghDUGBHiAPZ4MkrPgKtX?network=testnet) | — 
 TXW-DEVa4f6df | [`EMAMLxDnv3xiz8RXg8Btj33jcEw3wLczL3JKYYmuubpc`](https://wavesexplorer.com/assets/EMAMLxDnv3xiz8RXg8Btj33jcEw3wLczL3JKYYmuubpc?network=testnet) | TXW-DEVa4f6df Test Token 
+URHere | [`7JM4KF6VHz2CPHGQ6XKhudnvs1sJmqWGhH5UwWGVF65T`](https://wavesexplorer.com/assets/7JM4KF6VHz2CPHGQ6XKhudnvs1sJmqWGhH5UwWGVF65T?network=testnet) | URHere is global location based token for Web3 GIS 
 USD Coin | [`A7Ksh7fXyqm1KhKAiK3bAB2aiPSitQQF6v1pyu9SS3FR`](https://wavesexplorer.com/assets/A7Ksh7fXyqm1KhKAiK3bAB2aiPSitQQF6v1pyu9SS3FR?network=testnet) | USD Coin is an ERC-20 stablecoin brought to you by Circle and Coinbase. It is issued by regulated and licensed financial institutions that maintain full reserves of the equivalent fiat currency. 
 USD-Nea272c | [`25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT`](https://wavesexplorer.com/assets/25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT?network=testnet) | USD-Nea272c Test Token 
 
@@ -63,6 +65,7 @@ EASTUSDNLP | [`6tJ1PwMyq942TaFxmgid215YqDucmvg4bXrixNteYbQt`](https://wavesexplo
 KekengerUSDTLP | [`CPP3z7oYNNp4URYrmUVsxDXXjg7D7r4bAyAyK2Sh2Qmd`](https://wavesexplorer.com/assets/CPP3z7oYNNp4URYrmUVsxDXXjg7D7r4bAyAyK2Sh2Qmd?network=testnet) | Kekenger/USDT pool liquidity provider token 
 Mock ILO ~USDCLP | [`CcmYMD4QYfDMExV1nV4jKXjndcFAFv7Da8pNB8kVKUFa`](https://wavesexplorer.com/assets/CcmYMD4QYfDMExV1nV4jKXjndcFAFv7Da8pNB8kVKUFa?network=testnet) | Mock ILO ~/USDC pool liquidity provider token 
 sWAVESWAVESLP | [`6oXgVr7nAK1uCjfttUSonPxcyfM6NyV7tQ8nC4zFvcX3`](https://wavesexplorer.com/assets/6oXgVr7nAK1uCjfttUSonPxcyfM6NyV7tQ8nC4zFvcX3?network=testnet) | sWAVES/WAVES pool liquidity provider token 
+URHereWAVESLP | [`5mYFiSHQbcFS1s2eLM39D3rwgVizCUuCRdSHW8CAtqw5`](https://wavesexplorer.com/assets/5mYFiSHQbcFS1s2eLM39D3rwgVizCUuCRdSHW8CAtqw5?network=testnet) | URHere/WAVES pool liquidity provider token 
 USDCUSDTWXLP | [`47g1VsrcouxNYMZDdzCvtoJcnAvom8Fo9QQrCoMYx4Ed`](https://wavesexplorer.com/assets/47g1VsrcouxNYMZDdzCvtoJcnAvom8Fo9QQrCoMYx4Ed?network=testnet) | WX USDC/USDT pool liquidity provider token 
 USDTUSDNWXLP | [`Fm4qczu6Pepz8KUhh3Heb6LeTVfpSMX5vvNgw3x764CS`](https://wavesexplorer.com/assets/Fm4qczu6Pepz8KUhh3Heb6LeTVfpSMX5vvNgw3x764CS?network=testnet) | WX Usdt/Usdn pool liquidity provider token 
 WAVESUSDNWXLP | [`FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V`](https://wavesexplorer.com/assets/FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V?network=testnet) | WX Waves/Usdn pool liquidity provider token 
