@@ -53,6 +53,7 @@ func keyRatePerBlockMaxStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__rateP
 
 # call boosting.onBoostEmissionUpdate rate per block changes
 func keyRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
+func keyRatePerBlockNext() = "%s%s__ratePerBlock__next"
 func keyRatePerBlockStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__ratePerBlock__start", timestamp.toString(), block.toString()].makeString(SEP)
 
 func keyEmissionStartBlock() = "%s%s__emission__startBlock"
@@ -63,6 +64,10 @@ func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 func keyBoostCoeff() = "%s__boostCoeff"
 let boostCoeffDefault = 3
 let boostCoeff = this.getInteger(keyBoostCoeff()).valueOrElse(boostCoeffDefault)
+
+# share multiplied by 1e8
+func keyGwxHoldersPremiumCurrent() = "%s%s__gwxHoldersPremium__current"
+func keyGwxHoldersPremiumNext() = "%s%s__gwxHoldersPremium__next"
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
