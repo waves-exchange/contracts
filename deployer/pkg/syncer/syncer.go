@@ -248,6 +248,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		stageLpStableAddonHashEmpty[stage] = mainnetLpStableAddonHashEmpty
 	}
 
+	iTx := 0
 	for _, fl := range files {
 		_, er := s.doFile(
 			ctx,
@@ -258,6 +259,7 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 			stageLpStableAddonHashEmpty,
 			true,
 			stageToBranch,
+			&iTx,
 		)
 		if er != nil {
 			return fmt.Errorf("s.doFile: %w", er)
@@ -557,6 +559,7 @@ func (s *Syncer) doFile(
 	mainnetLpHashEmpty, mainnetLpStableHashEmpty, mainnetLpStableAddonHashEmpty map[uint32]bool,
 	logSkip bool,
 	stageToBranch map[uint32]string,
+	iTx *int,
 ) (
 	bool,
 	error,
@@ -590,7 +593,6 @@ func (s *Syncer) doFile(
 		return false, fmt.Errorf("io.ReadAll: %w", err)
 	}
 
-	iTx := 0
 	for _, cont := range contracts {
 		if fileName != cont.File {
 			continue
@@ -785,7 +787,7 @@ func (s *Syncer) doFile(
 				return false, fmt.Errorf("s.printDiff: %w", er)
 			}
 
-			iTx += 1
+			*iTx += 1
 			file, er := os.Create(
 				path.Join(
 					"..",
@@ -794,7 +796,7 @@ func (s *Syncer) doFile(
 					"txs",
 					fmt.Sprintf(
 						"%s_%s.json",
-						stringIndex(iTx),
+						stringIndex(*iTx),
 						strings.ReplaceAll(strings.ReplaceAll(cont.Tag, " ", "_"), "/", "_"),
 					),
 				))
