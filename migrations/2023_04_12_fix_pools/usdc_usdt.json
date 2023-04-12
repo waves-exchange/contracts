@@ -1,0 +1,11 @@
+{
+  "type": 12,
+  "data": [
+    { "key": "%s%s%s__status__HGgabTqUS8WtVFUJzfmrTDMgEccJuZLBPhFgQFxvnsoW__9wc3LXNA4TEBsXyKtoLE9mrbDD7WMHXvXrCjZvabLAsi", "type": "string", "value": "active" }
+  ],
+  "senderPublicKey": "52HVeUFDYgRVXrPNfdX4WinZBFdizmuf1vqmbd8ExAZS",
+  "chainId": 87,
+  "fee": 500000,
+  "proofs": [],
+  "version": 2
+}
