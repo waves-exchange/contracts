@@ -66,8 +66,8 @@ let boostCoeffDefault = 3
 let boostCoeff = this.getInteger(keyBoostCoeff()).valueOrElse(boostCoeffDefault)
 
 # share multiplied by 1e8
-func keyGwxHoldersPremiumCurrent() = "%s%s__gwxHoldersPremium__current"
-func keyGwxHoldersPremiumNext() = "%s%s__gwxHoldersPremium__next"
+func keyGwxHoldersRewardCurrent() = "%s%s__gwxHoldersReward__current"
+func keyGwxHoldersRewardNext() = "%s%s__gwxHoldersReward__next"
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
