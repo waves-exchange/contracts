@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 5 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -157,6 +157,23 @@ func burn() = {
     "%s%s%s__history__burn__" + i.transactionId.toBase58String(),
     ["%d%d%d", height.toString(), lastBlock.timestamp.toString(), pmtAmount.toString()].makeString(SEP))
   ]
+}
+
+@Callable(i)
+func gwxHoldersRewardUpdate() = {
+  let factoryContract = readFactoryAddressOrFail()
+  let factoryCfg = factoryContract.readFactoryCfgOrFail()
+  let gwxRewardsContract = factoryCfg.getGwxRewardAddressOrFail()
+  strict checkCaller = i.caller == gwxRewardsContract || i.mustManager()
+  let gwxHolderRewardCurrent = keyGwxHoldersRewardCurrent().getInteger().valueOrElse(0)
+  let gwxHolderRewardNext = keyGwxHoldersRewardNext().getInteger().valueOrElse(gwxHolderRewardCurrent)
+
+  let actions = if (gwxHolderRewardCurrent == gwxHolderRewardNext) then [] else [
+    IntegerEntry(keyGwxHoldersRewardCurrent(), gwxHolderRewardNext),
+    DeleteEntry(keyGwxHoldersRewardNext())
+  ]
+
+  (actions, unit)
 }
 
 @Callable(i)
