@@ -362,16 +362,19 @@ func rebalanceAsset(assetId: String) = {
   } else { [] }
 }
 
-# Calculate and withdraw from staked assets 
+# Calculate and withdraw/deposit from staked assets 
 # to reach targetRatio after getAmount is transfered from pool
 func withdrawAndRebalanceAsset(assetId: String, getAmount: Int) = {
   let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = getLeaseProxyConfig(assetId)
   if (isLeasable) then {
     strict newTotalLeasableBalance = max([0, getAccBalance(assetId) - getAmount - minBalance])
     strict newAdditionalBalance = fraction(leasedRatio, newTotalLeasableBalance, 100)
-    strict withdrawAmount = max([0, getAdditionalBalanceOrZero(assetId) - newAdditionalBalance])
-
-    withdraw(assetId, withdrawAmount, proxyAssetId, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
+    strict withdrawAmount = getAdditionalBalanceOrZero(assetId) - newAdditionalBalance
+    if (withdrawAmount < 0) then { 
+      deposit(assetId, -withdrawAmount, proxyAssetId, addressFromStringValue(proxyAddress))
+    } else {
+      withdraw(assetId, withdrawAmount, proxyAssetId, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
+    }
   } else { [] }
 }
 
