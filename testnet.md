@@ -1,5 +1,5 @@
 # Testnet environment
-[**lp-ride-skip-order-validation**](https://github.com/waves-exchange/contracts/tree/lp-ride-skip-order-validation) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **18:27 14.04.2023** (GMT+4)
+[**lp-ride-skip-order-validation**](https://github.com/waves-exchange/contracts/tree/lp-ride-skip-order-validation) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **18:38 14.04.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
