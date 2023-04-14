@@ -140,6 +140,7 @@ func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionA
 # Если токен не верифицирован, возвращает ошибку - "Asset is not verified"
 # Если юзер не issuer токена, возвращает ошибку - "You are not amountAsset issuer"
 # Если юзер прикрепил некорректный amount токенов или не прикрепил вовсе - "Invalid payment"
+
 @Callable(i)
 func create() = {
   let amountAssetPayment = i.payments[0].value()
@@ -162,19 +163,28 @@ func create() = {
     }
   }
 
+  let (poolAsset1Id, poolAsset2Id) = {
+    if (priceAssetsList.containsElement(amountAssetId) && priceAssetId.isVerified()) then {
+      (amountAssetId, priceAssetId)
+    } else if (priceAssetsList.containsElement(priceAssetId) && amountAssetId.isVerified()) then {
+      (priceAssetId, amountAssetId)
+    } else {
+      throw("Invalid asset pair")
+    }
+  }
+
   let lastIndex = keyLastIndex().getInteger().valueOrElse(0)
   let curIndex = lastIndex + 1
 
   let emissionContract = keyEmissionContract().getStringOrFail().addressFromStringValue()
   let poolExists = factoryContract.invoke("poolExistsREADONLY", [
-    amountAssetId,
-    priceAssetId
+    poolAsset1Id,
+    poolAsset2Id
   ], []).exactAs[Boolean]
 
   strict checks = [
-    !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
+    !isCreateCalled(poolAsset1Id, poolAsset2Id) || throwPoolExists(),
     !poolExists || throwPoolExists(),
-    i.isManager() || amountAssetId.isVerified() || throwAssetNotVerified(),
     keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
     i.isManager() || amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
     i.isManager() || priceAssetPayment.amount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
@@ -184,14 +194,14 @@ func create() = {
   strict burnEmissionInv = emissionContract.invoke("burn", [], [AttachedPayment(feeAssetId.fromBase58String(), feeAssetPayment.amount)])
 
   [
-    BooleanEntry(keyCreateCalled(amountAssetId, priceAssetId), true),
-    StringEntry(keyCreateCaller(amountAssetId, priceAssetId), i.caller.toString()),
+    BooleanEntry(keyCreateCalled(poolAsset1Id, poolAsset2Id), true),
+    StringEntry(keyCreateCaller(poolAsset1Id, poolAsset2Id), i.caller.toString()),
     IntegerEntry(keyLastIndex(), curIndex),
-    StringEntry(keySuffix(amountAssetId, priceAssetId), curIndex.toString()+indexSuffix),
-    IntegerEntry(keyHeight(amountAssetId, priceAssetId), height),
-    StringEntry(keyStatus(amountAssetId, priceAssetId), statusPending),
-    IntegerEntry(keyAmountAssetAmount(amountAssetId, priceAssetId), amountAssetPayment.amount),
-    IntegerEntry(keyPriceAssetAmount(amountAssetId, priceAssetId), priceAssetPayment.amount)
+    StringEntry(keySuffix(poolAsset1Id, poolAsset2Id), curIndex.toString()+indexSuffix),
+    IntegerEntry(keyHeight(poolAsset1Id, poolAsset2Id), height),
+    StringEntry(keyStatus(poolAsset1Id, poolAsset2Id), statusPending),
+    IntegerEntry(keyAmountAssetAmount(poolAsset1Id, poolAsset2Id), amountAssetPayment.amount),
+    IntegerEntry(keyPriceAssetAmount(poolAsset1Id, poolAsset2Id), priceAssetPayment.amount)
   ]
 }
 
