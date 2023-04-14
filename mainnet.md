@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **17:55 13.04.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **11:39 14.04.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -118,6 +118,7 @@ marketing | [`3PHpaXvHpdthSBwXzjJiNnAes6dqzgr9BcU`](https://wavesexplorer.com/ad
 otc | [`3P54B92RNzMrgqPmKhsqL413NjAGwf4q9ep`](https://wavesexplorer.com/addresses/3P54B92RNzMrgqPmKhsqL413NjAGwf4q9ep) | `MuJFxUBAQVpXXraxYbYJEzWYG8NukYhQEQFm7CaZLcT` | [otc.ride](https://github.com/waves-exchange/contracts/blob/main/ride/otc.ride) 
 otc multiasset | [`3P2K8CWUGqJU9mP147xnjWpSQn1q1zFX3GA`](https://wavesexplorer.com/addresses/3P2K8CWUGqJU9mP147xnjWpSQn1q1zFX3GA) | `DziAWik7v792pPHDeEqmkowKnGawQAGHvQVBRQx2s9gB` | [otc_multiasset.ride](https://github.com/waves-exchange/contracts/blob/main/ride/otc_multiasset.ride) 
 proposal | [`3P3p2zt2MhX73SkSQZrUn63UNZVmGJPLoJH`](https://wavesexplorer.com/addresses/3P3p2zt2MhX73SkSQZrUn63UNZVmGJPLoJH) | `2VkbtS8CodmbZqAounEpDSf4dAfLoCWfEEGHZK7qtbeD` | [proposal.ride](https://github.com/waves-exchange/contracts/blob/main/ride/proposal.ride) 
+proxy_pepe | [`3P4dXbaBwREskBrTvx3UjvSCmJWcnqpnJVn`](https://wavesexplorer.com/addresses/3P4dXbaBwREskBrTvx3UjvSCmJWcnqpnJVn) | `6qC1a8D9v3XNXiGG7BNEsYACXbBKYS1GLauonjnqZtWr` | [proxy_pepe.ride](https://github.com/waves-exchange/contracts/blob/main/ride/proxy_pepe.ride) 
 referral | [`3PJWdC3vouNYMUfzgcA4scj9gBbnyRqf8g3`](https://wavesexplorer.com/addresses/3PJWdC3vouNYMUfzgcA4scj9gBbnyRqf8g3) | `AEV7LzxNAcdrjC2NC4182iTxuyTyqfCLzqJ14TXnVSCm` | [referral.ride](https://github.com/waves-exchange/contracts/blob/main/ride/referral.ride) 
 rest | [`3P8MoPnsaurofk1VyhsdAFkeQ6ijpJYXCpW`](https://wavesexplorer.com/addresses/3P8MoPnsaurofk1VyhsdAFkeQ6ijpJYXCpW) | `6tusy8LfPEh2eoAsxHwZZn6cw8DBMGTHAce3gqLXwQxC` | [rest.ride](https://github.com/waves-exchange/contracts/blob/main/ride/rest.ride) 
 slippage | [`3PHmyHFaFTNh6Yh8vicJke9DnxcsUA56uWb`](https://wavesexplorer.com/addresses/3PHmyHFaFTNh6Yh8vicJke9DnxcsUA56uWb) | `9Ps647vMbFkxBfwxidninuYHYNazJGxBssESpf6Pya34` | [slippage.ride](https://github.com/waves-exchange/contracts/blob/main/ride/slippage.ride) 
