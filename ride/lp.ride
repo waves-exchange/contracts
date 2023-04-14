@@ -144,6 +144,8 @@ func keyAllowedLpScriptHash() = {"%s__allowedLpScriptHash"}
 
 let keyFeeCollectorAddress = "%s__feeCollectorAddress"
 
+func keySkipOrderValidation(poolAddress: String) = "%s%s__skipOrderValidation__" + poolAddress
+
 #------------------------
 # FAILURES
 #------------------------
@@ -637,6 +639,10 @@ func refreshKLpInternal(
   ]
   
   (actions, updatedKLp)
+}
+
+func skipOrderValidation() = {
+  factoryContract.getBoolean(keySkipOrderValidation(this.toString())).valueOrElse(false)
 }
 
 func validateUpdatedKLp(oldKLp: BigInt, updatedKLp: BigInt) = {
@@ -1754,7 +1760,7 @@ func verify() = {
   match tx {
     case order: Order =>
       let matcherPub    = getMatcherPubOrFail()
-      let (orderValid, orderValidInfo) = validateMatcherOrderAllowed(order)
+      let (orderValid, orderValidInfo) = if (skipOrderValidation()) then (true, "") else validateMatcherOrderAllowed(order)
       let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
       let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
 
