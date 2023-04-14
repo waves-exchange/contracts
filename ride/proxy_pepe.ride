@@ -1,0 +1,99 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let contractFile = "proxy_pepe.ride"
+let keysWavesContract = "%s__sWavesContract"
+let keysWavesAssetId = "%s__sWavesAssetId"
+
+func getStringOrFail(key: String) = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}
+
+func pepeContractAddress() = getStringOrFail(keysWavesContract)
+func sWavesIdString() = getStringOrFail(keysWavesAssetId)
+
+let pepeContract = addressFromStringValue(pepeContractAddress())
+let sWaves = sWavesIdString().fromBase58String()
+
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+
+func error(msg: String) = {
+    throw(contractFile + ": " + msg)
+}
+
+func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
+
+func mustManager(i: Invocation) = {
+  i.isManager() || "permission denied".throw()
+}
+
+@Callable(i)
+func getRate() = {
+    let results = invoke(pepeContract, "getRate", [], [])
+    match (results) {
+        case t:String => ([], t.parseIntValue())
+        case _ => error("getRate(): unexpected return")
+    }
+}
+
+@Callable(i)
+func deposit() = {
+    strict startBalance = assetBalance(this, sWaves)
+    strict results = invoke(pepeContract, "deposit", [], i.payments)
+    let newBalance = assetBalance(this, sWaves)
+    let sendAmount = newBalance - startBalance
+    ([ScriptTransfer(i.caller, sendAmount, sWaves)], sendAmount)
+}
+
+@Callable(i)
+func withdraw() = {
+    strict startBalance = wavesBalance(this).available
+    strict results = invoke(pepeContract, "withdraw", [], i.payments)
+    let newBalance = wavesBalance(this).available
+    let sendAmount = newBalance - startBalance
+    ([ScriptTransfer(i.caller, sendAmount, unit)], sendAmount)
+}
+
+@Callable(i)
+func setManager(pendingManagerPublicKey: String) = {
+  strict checkCaller = i.mustManager()
+  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
+
+  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
+}
+
+@Callable(i)
+func confirmManager() = {
+  let pm = pendingManagerPublicKeyOrUnit()
+  strict hasPM = pm.isDefined() || throw("no pending manager")
+  strict checkPM = i.callerPublicKey == pm.value() || throw("you are not pending manager")
+
+  [
+    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
+    DeleteEntry(keyPendingManagerPublicKey())
+  ]
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}

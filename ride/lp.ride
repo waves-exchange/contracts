@@ -122,6 +122,13 @@ let keyKLpRefreshDelay = ["%s", "refreshKLpDelay"].makeString(SEP)
 let kLpRefreshDelayDefault = 30
 let kLpRefreshDelay = this.getInteger(keyKLpRefreshDelay).valueOrElse(kLpRefreshDelayDefault)
 
+# Additional balances keys
+func keyAdditionalBalance(assetId: String) = makeString(["%s%s", "stakedBalance", assetId], SEP)
+func keyStakingAssetBalance(assetId: String) = makeString(["%s%s", "shareAssetBalance", assetId], SEP)
+# Additional balance value or zero
+func getAdditionalBalanceOrZero(assetId: String) = this.getInteger(keyAdditionalBalance(assetId)).valueOrElse(0)
+func getStakingAssetBalanceOrZero(assetId: String) = this.getInteger(keyStakingAssetBalance(assetId)).valueOrElse(0)
+
 #------------------------
 # KEYS ON OTHER CONTRACTS
 #------------------------
@@ -231,7 +238,13 @@ func dataGetActionInfo(outAmtAssetAmt: Int, outPriceAssetAmt: Int, inLpAmt: Int,
 }
 
 func getAccBalance(assetId: String) = {
-  if(assetId == "WAVES") then wavesBalance(this).available else assetBalance(this, fromBase58String(assetId))
+  let balanceOnPool = if (assetId == "WAVES") then {
+    wavesBalance(this).available
+  } else { 
+    assetBalance(this, fromBase58String(assetId))
+  }
+  let totalBalance = balanceOnPool + getAdditionalBalanceOrZero(assetId) - getStakingAssetBalanceOrZero(assetId)
+  max([0, totalBalance])
 }
 
 func calcPriceBigInt(prAmtX18: BigInt, amAmtX18: BigInt) = {
@@ -240,6 +253,136 @@ func calcPriceBigInt(prAmtX18: BigInt, amAmtX18: BigInt) = {
 
 func calcPriceBigIntRound(prAmtX18: BigInt, amAmtX18: BigInt, round: Ceiling|Floor) = {
   fraction(prAmtX18, scale18, amAmtX18, round)
+}
+
+#--------------------
+# Free assets staking
+#--------------------
+
+# Get current rate from proxy contract
+# returns Int
+func getRate(proxy: Address) = {
+  strict inv = proxy.invoke("getRate", [], [])
+  match (inv) {
+    case r:Int => r
+    case _ => "proxy.getRate() unexpected value".throwErr()
+  }
+}
+
+# Deposit amount of assetId to Leasing through Proxy
+# Write new additionalBalalnce and stakingAssetBalance
+func deposit(assetId: String, amount: Int, stakingAssetId: String, proxy: Address) = {
+  strict currentAdditionalBalance = getAdditionalBalanceOrZero(assetId)
+  strict currentStakingAssetBalance = getStakingAssetBalanceOrZero(stakingAssetId)
+  let asset = parseAssetId(assetId)
+
+  if (amount > 0) then {
+    strict depositInvoke = proxy.invoke("deposit", [], [AttachedPayment(asset, amount)])
+    match depositInvoke {
+      case receivedStakingAsset:Int => {
+        let newAdditionalBalance = currentAdditionalBalance + amount
+        let newStakingAssetBalance = currentStakingAssetBalance + receivedStakingAsset
+          [
+            IntegerEntry(keyAdditionalBalance(assetId), newAdditionalBalance),
+            IntegerEntry(keyStakingAssetBalance(stakingAssetId), newStakingAssetBalance)
+          ]
+      }
+      case _ => []
+    }
+  } else { [] }
+}
+
+# Withdraw requested amount of assetId from Leased assets through Proxy
+# Amount of attached stakingAsset is calculated from Proxy rate
+# Diff amount of sWaves from old Rate is sent to Profit Address
+func withdraw(assetId: String, amount: Int, stakingAssetId: String, proxy: Address, proxyRateMul: Int, profitAddress: Address) = {
+  strict currentAdditionalBalance = getAdditionalBalanceOrZero(assetId)
+  strict currentStakingAssetBalance = getStakingAssetBalanceOrZero(stakingAssetId)
+  strict currentProxyRate = getRate(proxy)
+  let oldRate = fraction(proxyRateMul, currentAdditionalBalance, currentStakingAssetBalance)
+  let stakingAsset = parseAssetId(stakingAssetId)
+
+  let oldSendStakingAmount = fraction(proxyRateMul, amount, oldRate)
+  let sendStakingAssetAmount = fraction(proxyRateMul, amount, currentProxyRate)
+  let profitAmount = max([0, oldSendStakingAmount - sendStakingAssetAmount])
+  if (sendStakingAssetAmount > 0) then {
+    strict withdrawInvoke = proxy.invoke("withdraw", [], [AttachedPayment(stakingAsset, sendStakingAssetAmount)])
+    match withdrawInvoke {
+      case receivedAssets:Int => {
+        let newAdditionalBalance = currentAdditionalBalance - receivedAssets
+        let newStakingAssetBalance = currentStakingAssetBalance - sendStakingAssetAmount - profitAmount
+        [
+          IntegerEntry(keyAdditionalBalance(assetId), newAdditionalBalance),
+          IntegerEntry(keyStakingAssetBalance(stakingAssetId), newStakingAssetBalance),
+          ScriptTransfer(profitAddress, profitAmount, parseAssetId(stakingAssetId))
+        ]
+      }
+      case _ => []
+    }
+    } else { [] }
+}
+
+# Returns lease proxy config from Factory
+# for this pool and assetId
+#
+# return tuple:
+# (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress)
+func getLeaseProxyConfig(assetId: String) = {
+  match factoryContract.invoke("getPoolLeaseConfigREADONLY", [this.toString(), assetId], []) {
+    case a: (Boolean, Int, Int, String, String, Int, String) => { a }
+    case _ => ("[" + assetId + "] getLeaseProxyConfig() error").throwErr()
+  }
+}
+
+# Rebalance assetId to targetRatio and minBalance through Proxy
+func rebalanceInternal(targetRatio: Int, assetId: String, stakingAssetId: String, minBalance: Int, proxy: Address, proxyRateMul: Int, profitAddress: Address) = {
+  strict currentAdditionalBalance = getAdditionalBalanceOrZero(assetId)
+  strict currentStakingAssetBalance = getStakingAssetBalanceOrZero(stakingAssetId)
+
+  let leasableTotalBalance = max([0, getAccBalance(assetId) - minBalance])
+  let targetAdditionalBalance = fraction(targetRatio, leasableTotalBalance, 100)
+  let diff = currentAdditionalBalance - targetAdditionalBalance
+     
+  if (diff == 0) then { [] } 
+  else if (diff < 0) then {
+      let sendAssetAmount = -diff
+      deposit(assetId, sendAssetAmount, stakingAssetId, proxy)
+  } else {
+      let getAssetAmount = diff
+      withdraw(assetId, getAssetAmount, stakingAssetId, proxy, proxyRateMul, profitAddress)
+  }
+}
+
+# Get lease proxy config from Factory for assetId
+# and call rebalanceInternal()
+func rebalanceAsset(assetId: String) = {
+  let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = getLeaseProxyConfig(assetId)
+  if (isLeasable) then {
+    rebalanceInternal(leasedRatio, assetId, proxyAssetId, minBalance, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
+  } else { [] }
+}
+
+# Calculate and withdraw/deposit from staked assets 
+# to reach targetRatio after getAmount is transfered from pool
+func withdrawAndRebalanceAsset(assetId: String, getAmount: Int) = {
+  let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = getLeaseProxyConfig(assetId)
+  if (isLeasable) then {
+    strict newTotalLeasableBalance = max([0, getAccBalance(assetId) - getAmount - minBalance])
+    strict newAdditionalBalance = fraction(leasedRatio, newTotalLeasableBalance, 100)
+    strict withdrawAmount = getAdditionalBalanceOrZero(assetId) - newAdditionalBalance
+    if (withdrawAmount < 0) then { 
+      deposit(assetId, -withdrawAmount, proxyAssetId, addressFromStringValue(proxyAddress))
+    } else {
+      withdraw(assetId, withdrawAmount, proxyAssetId, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
+    }
+  } else { [] }
+}
+
+# Withdraw and rebalance Amount asset and Price asset
+func withdrawAndRebalanceAll(amountAssetOutAmount: Int, priceAssetOutAmount: Int) = {
+    let AmAmtWithdrawState = withdrawAndRebalanceAsset(getStringOrFail(this, aa()), amountAssetOutAmount)
+    let PrAmtWithdrawState = withdrawAndRebalanceAsset(getStringOrFail(this, pa()), priceAssetOutAmount)
+    AmAmtWithdrawState ++ PrAmtWithdrawState
 }
 
 # cast assets and calc price
@@ -797,6 +940,12 @@ func mustManager(i: Invocation) = {
   }
 }
 
+# Rebalance AmountAsset and PriceAsset
+@Callable(i)
+func rebalance() = {
+  rebalanceAsset(getStringOrFail(this, aa())) ++ rebalanceAsset(getStringOrFail(this, pa()))
+}
+
 @Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int,  isReverse: Boolean, feePoolAmount: Int) = {
   let (assetOut, assetIn) = if (isReverse == false) then {
@@ -848,7 +997,11 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
 
   strict checkK = newK >= oldK || "new K is fewer error".throw()
   strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
-  (
+
+  strict rebalanceState = rebalanceAsset(assetIn)
+  strict withdrawState = withdrawAndRebalanceAsset(assetOut, amountOut)
+  ( withdrawState ++
+    rebalanceState ++
     [
       ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.parseAssetId())
     ],
@@ -944,6 +1097,7 @@ func put(slippageTolerance: Int, shouldAutoStake: Boolean) = {
     # ].makeString(" ").throwErr()
 
     strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
+    strict reb = this.invoke("rebalance", [], [])
 
     state
       ++ lpTransfer
@@ -1025,6 +1179,8 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
 
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
+  strict reb = this.invoke("rebalance", [], [])
+
   (
     commonState
     ++ lpTransfer
@@ -1074,6 +1230,8 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
 
   strict burnInv = factoryContract.invoke("burn", [paymentAmount], [AttachedPayment(paymentAssetId, paymentAmount)])
 
+  # Calculate and rebalance after withdraw amount and fees is deducted
+  let withdrawState = withdrawAndRebalanceAsset(outAssetIdStr, amount + max([0, feeAmount]))
   let assetTransfer = [ScriptTransfer(userAddress, amount, outAssetId)]
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
@@ -1088,6 +1246,7 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
 
   (
     commonState
+    ++ withdrawState
     ++ assetTransfer
     ++ sendFee
     ++ refreshKLpActions,
@@ -1131,6 +1290,8 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
 
   strict burnInv = factoryContract.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
 
+  # Calculate and rebalance after withdraw amount and fees is deducted
+  let withdrawState = withdrawAndRebalanceAsset(outAssetIdStr, amount + max([0, feeAmount]))
   let assetTransfer = [ScriptTransfer(i.caller, amount, outAssetId)]
 
   let sendFee = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetId)] else []
@@ -1145,6 +1306,7 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
 
   (
     commonState
+    ++ withdrawState
     ++ assetTransfer
     ++ sendFee
     ++ refreshKLpActions,
@@ -1166,11 +1328,14 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
 @Callable(i)
 func get() = {
   let res = commonGet(i)
-  let outAmtAmt    = res._1
+  let outAmAmt    = res._1
   let outPrAmt     = res._2
   let pmtAmt       = res._3
   let pmtAssetId   = res._4
   let state        = res._5
+
+  # withdraw Amount and Price assets from proxy if its needed
+  let withdrawState = withdrawAndRebalanceAll(outAmAmt, outPrAmt)
 
   strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
@@ -1179,11 +1344,11 @@ func get() = {
                                   [pmtAmt],
                                   [AttachedPayment(pmtAssetId, pmtAmt)])
   
-  let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmtAmt, -outPrAmt, 0)
+  let (refreshKLpActions, updatedKLp) = refreshKLpInternal(-outAmAmt, -outPrAmt, 0)
 
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
-  state ++ refreshKLpActions
+  withdrawState ++ state ++ refreshKLpActions
 }
 
 @Callable(i)
@@ -1197,6 +1362,9 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
   if (outAmAmt < noLessThenAmtAsset) then throw("noLessThenAmtAsset failed:  " + outAmAmt.toString() + " < " + noLessThenAmtAsset.toString()) else
   if (outPrAmt < noLessThenPriceAsset) then throw("noLessThenPriceAsset failed: " + outPrAmt.toString() + " < " + noLessThenPriceAsset.toString()) else
 
+  # withdraw Amount and Price assets from proxy if its needed
+  let withdrawState = withdrawAndRebalanceAll(outAmAmt, outPrAmt)
+
   strict currentKLp = calcCurrentKLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict burnLPAssetOnFactory = invoke(factoryContract,
@@ -1208,7 +1376,7 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
 
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
-  state ++ refreshKLpActions
+  withdrawState ++ state ++ refreshKLpActions
 }
 
 # Unstake LP tokens and exit from pool
@@ -1231,6 +1399,9 @@ func unstakeAndGet(amount: Int) = {
   let poolStatus = res._9.parseIntValue()
   let state = res._10
 
+  # withdraw Amount and Price assets from proxy if its needed
+  let withdrawState = withdrawAndRebalanceAll(outAmAmt, outPrAmt)
+
   strict checkPoolStatus = if (isGlobalShutdown() || poolStatus == PoolShutdown) then {
     throw("Get operation is blocked by admin. Status = " + poolStatus.toString())
   } else true
@@ -1241,7 +1412,7 @@ func unstakeAndGet(amount: Int) = {
   
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
-  state ++ refreshKLpActions
+  withdrawState ++ state ++ refreshKLpActions
 }
 
 @Callable(i)
@@ -1262,6 +1433,9 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
   let outPrAmt = res._2
   let state = res._10
 
+  # withdraw Amount and Price assets from proxy if its needed
+  let withdrawState = withdrawAndRebalanceAll(outAmAmt, outPrAmt)
+
   strict checkAmounts = [
     outAmAmt >= noLessThenAmountAsset || ["amount asset amount to receive is less than ", noLessThenAmountAsset.toString()].makeString("").throw(),
     outPrAmt >= noLessThenPriceAsset || ["price asset amount to receive is less than ", noLessThenPriceAsset.toString()].makeString("").throw()
@@ -1273,7 +1447,7 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
   strict isUpdatedKLpValid = validateUpdatedKLp(currentKLp, updatedKLp)
 
-  state ++ refreshKLpActions
+  withdrawState ++ state ++ refreshKLpActions
 }
 
 # purpose:

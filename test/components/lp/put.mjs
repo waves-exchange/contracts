@@ -22,7 +22,7 @@ describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
     const expectedLpAmount = 1e9;
     const expectedPriceLast = 1e8;
     const expectedPriceHistory = 1e8;
-    const expectedInvokesCount = 1;
+    const expectedInvokesCount = 2;
 
     const lp = address(this.accounts.lp, chainId);
 
@@ -48,7 +48,7 @@ describe('lp: put.mjs', /** @this {MochaSuiteModified} */() => {
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
     expect(
-      await checkStateChanges(stateChanges, 5, 1, 0, 0, 0, 0, 0, 0, 1),
+      await checkStateChanges(stateChanges, 5, 1, 0, 0, 0, 0, 0, 0, expectedInvokesCount),
     ).to.eql(true);
 
     expect(stateChanges.data).to.eql([{

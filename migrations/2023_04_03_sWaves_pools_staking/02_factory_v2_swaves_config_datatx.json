@@ -1,0 +1,34 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "feeAssetId": null,
+    "version": 2,
+    "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+    "data": [
+        {
+            "key": "%s__sWavesProxyAddress",
+            "type": "string",
+            "value": "3P4dXbaBwREskBrTvx3UjvSCmJWcnqpnJVn"
+        },
+        {
+            "key": "%s__sWavesAssetId",
+            "type": "string",
+            "value": "YiNbofFzC17jEHHCMwrRcpy9MrrjabMMLZxg8g5xmf7"
+        },
+        {
+            "key": "%s__stakingProfitAddress",
+            "type": "string",
+            "value": "3PCoDJZ4R95qFdiAwdhjf9y2jtTiskJ9STo"
+        },
+        {
+            "key": "%s%s__leasedRatioDefault__WAVES",
+            "type": "integer",
+            "value": 80
+        },
+        {
+            "key": "%s%s__minBalanceDefault__WAVES",
+            "type": "integer",
+            "value": 10000000000
+        }
+    ]
+}

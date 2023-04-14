@@ -22,7 +22,7 @@ describe('lp: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
     const expectedLpAmount = 1e9;
     const expectedPriceLast = 1e8;
     const expectedPriceHistory = 1e8;
-    const expectedInvokesCount = 2;
+    const expectedInvokesCount = 3;
 
     const lp = address(this.accounts.lp, chainId);
 
@@ -48,7 +48,7 @@ describe('lp: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
     expect(
-      await checkStateChanges(stateChanges, 5, 0, 0, 0, 0, 0, 0, 0, 2),
+      await checkStateChanges(stateChanges, 5, 0, 0, 0, 0, 0, 0, 0, expectedInvokesCount),
     ).to.eql(true);
 
     expect(stateChanges.data).to.eql([{
@@ -99,14 +99,14 @@ describe('lp: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
       quantity: expectedLpAmount,
     }]);
 
-    expect(invokes[1].dApp).to.eql(address(this.accounts.staking, chainId));
-    expect(invokes[1].call.function).to.eql('stake');
-    expect(invokes[1].call.args).to.eql([]);
+    expect(invokes[2].dApp).to.eql(address(this.accounts.staking, chainId));
+    expect(invokes[2].call.function).to.eql('stake');
+    expect(invokes[2].call.args).to.eql([]);
     expect(
-      await checkStateChanges(invokes[1].stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+      await checkStateChanges(invokes[2].stateChanges, 0, 0, 0, 0, 0, 0, 0, 0, 0),
     ).to.eql(true);
 
-    expect(invokes[1].payment).to.eql([
+    expect(invokes[2].payment).to.eql([
       {
         assetId: this.lpAssetId,
         amount: expectedLpAmount,
