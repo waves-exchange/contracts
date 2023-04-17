@@ -394,7 +394,8 @@ func deposit() = {
 
   strict gwxHoldersRewardUpdate = emissionContract.invoke("gwxHoldersRewardUpdate", [], [])
 
-  [
+  let totalReward = matcherPart + auxAmount
+  let actions = if (totalReward == 0) then [] else [
     IntegerEntry(keyLatestPeriod(), period),
     IntegerEntry(keyHeightForPeriod(period), height), # save period start height
     IntegerEntry(keyAuxEmissionRewardForPeriod(period), auxAmount), # amount to distribute between users (emission part)
@@ -404,6 +405,8 @@ func deposit() = {
     StringEntry(keyLastPayoutInfo(), payoutInfo),
     StringEntry(keyPayoutHistoryInfo(period), payoutInfo)
   ]
+
+  (actions, unit)
 }
 
 # Send all WX earned to caller
