@@ -143,15 +143,25 @@ func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionA
 
 @Callable(i)
 func create() = {
-  let amountAssetPayment = i.payments[0].value()
-  let priceAssetPayment = i.payments[1].value()
+  let asset1Payment = i.payments[0].value()
+  let asset2Payment = i.payments[1].value()
   let feeAssetPayment = i.payments[2].value()
 
-  let (amountAssetId, amountAssetInfo) = amountAssetPayment.getIdAndInfo()
-  let (priceAssetId, priceAssetInfo) = priceAssetPayment.getIdAndInfo()
+  let (asset1Id, asset1Info) = asset1Payment.getIdAndInfo()
+  let (asset2Id, asset2Info) = asset2Payment.getIdAndInfo()
   let (feeAssetId, feeAssetInfo) = feeAssetPayment.getIdAndInfo()
 
   let priceAssetsList = factoryContract.getString(keyPriceAssets()).stringOptionToList()
+
+  let (amountAssetId, amountAssetAmount, priceAssetId, priceAssetAmount) = {
+    if (priceAssetsList.containsElement(asset1Id) && asset2Id.isVerified()) then {
+      (asset2Id, asset2Payment.amount, asset1Id, asset1Payment.amount)
+    } else if (priceAssetsList.containsElement(asset2Id) && asset1Id.isVerified()) then {
+      (asset1Id, asset1Payment.amount, asset2Id, asset2Payment.amount)
+    } else {
+      throw("invalid asset pair")
+    }
+  }
 
   let managerPriceAssetMinAmount = 1
   let priceAssetMinAmount = {
@@ -163,45 +173,35 @@ func create() = {
     }
   }
 
-  let (poolAsset1Id, poolAsset2Id) = {
-    if (priceAssetsList.containsElement(amountAssetId) && priceAssetId.isVerified()) then {
-      (amountAssetId, priceAssetId)
-    } else if (priceAssetsList.containsElement(priceAssetId) && amountAssetId.isVerified()) then {
-      (priceAssetId, amountAssetId)
-    } else {
-      throw("Invalid asset pair")
-    }
-  }
-
   let lastIndex = keyLastIndex().getInteger().valueOrElse(0)
   let curIndex = lastIndex + 1
 
   let emissionContract = keyEmissionContract().getStringOrFail().addressFromStringValue()
   let poolExists = factoryContract.invoke("poolExistsREADONLY", [
-    poolAsset1Id,
-    poolAsset2Id
+    amountAssetId,
+    priceAssetId
   ], []).exactAs[Boolean]
 
   strict checks = [
-    !isCreateCalled(poolAsset1Id, poolAsset2Id) || throwPoolExists(),
+    !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
     !poolExists || throwPoolExists(),
     keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
-    i.isManager() || amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
-    i.isManager() || priceAssetPayment.amount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
+    i.isManager() || amountAssetAmount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
+    i.isManager() || priceAssetAmount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
     feeAssetPayment.amount == keyFeeAmount().getInteger() || throwInvalidFee()
   ]
 
   strict burnEmissionInv = emissionContract.invoke("burn", [], [AttachedPayment(feeAssetId.fromBase58String(), feeAssetPayment.amount)])
 
   [
-    BooleanEntry(keyCreateCalled(poolAsset1Id, poolAsset2Id), true),
-    StringEntry(keyCreateCaller(poolAsset1Id, poolAsset2Id), i.caller.toString()),
+    BooleanEntry(keyCreateCalled(amountAssetId, priceAssetId), true),
+    StringEntry(keyCreateCaller(amountAssetId, priceAssetId), i.caller.toString()),
     IntegerEntry(keyLastIndex(), curIndex),
-    StringEntry(keySuffix(poolAsset1Id, poolAsset2Id), curIndex.toString()+indexSuffix),
-    IntegerEntry(keyHeight(poolAsset1Id, poolAsset2Id), height),
-    StringEntry(keyStatus(poolAsset1Id, poolAsset2Id), statusPending),
-    IntegerEntry(keyAmountAssetAmount(poolAsset1Id, poolAsset2Id), amountAssetPayment.amount),
-    IntegerEntry(keyPriceAssetAmount(poolAsset1Id, poolAsset2Id), priceAssetPayment.amount)
+    StringEntry(keySuffix(amountAssetId, priceAssetId), curIndex.toString()+indexSuffix),
+    IntegerEntry(keyHeight(amountAssetId, priceAssetId), height),
+    StringEntry(keyStatus(amountAssetId, priceAssetId), statusPending),
+    IntegerEntry(keyAmountAssetAmount(amountAssetId, priceAssetId), amountAssetAmount),
+    IntegerEntry(keyPriceAssetAmount(amountAssetId, priceAssetId), priceAssetAmount)
   ]
 }
 
