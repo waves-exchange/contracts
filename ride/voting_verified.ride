@@ -303,7 +303,6 @@ func suggest(assetId: String, assetImage: String) = {
   let payment = i.payments[0].value()
   let isThis = i.caller == this
   strict checks = [
-    isThis || info.issuer == i.caller || "Asset can only be suggested by its issuer".throw(),
     isThis || payment.assetId.value() == wxAssetId || "Invalid fee asset".throw(),
     isThis || payment.amount == feeAmount || "Invalid fee amount".throw()
   ]
