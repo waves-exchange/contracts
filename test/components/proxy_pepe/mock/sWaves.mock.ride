@@ -1,0 +1,43 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let MULT12 = 1_0000_0000_0000
+let rate   = 1_5000_0000_0000
+let keyAssetId = "sWaves_assetId"
+
+func getAssetId() = {
+  this.getStringValue(keyAssetId).fromBase58String()
+}
+
+@Callable(i)
+func getRate() = {
+  ([], rate.toString())
+}
+
+@Callable(i)
+func deposit() = {
+  if (i.payments[0].assetId != unit) then {
+    throw("error")
+  } else {
+    let wavesAmount = i.payments[0].amount
+    let sendAmount = fraction(MULT12, wavesAmount, rate)
+    [
+      ScriptTransfer(i.caller, sendAmount, getAssetId())
+    ]
+  }
+}
+
+@Callable(i)
+func withdraw() = {
+  let sWavesAsset = getAssetId()
+  if (i.payments[0].assetId != sWavesAsset) then {
+    throw("error")
+  } else {
+    let amount = i.payments[0].amount
+    let sendWavesAmount = fraction(amount, rate, MULT12)
+    [
+      ScriptTransfer(i.caller, sendWavesAmount, unit)
+    ]
+  }
+}

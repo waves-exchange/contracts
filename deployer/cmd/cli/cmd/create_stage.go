@@ -85,6 +85,9 @@ var createStageCmd = &cobra.Command{
 			otcMultiassetMinAmountDeposit  = 1000000
 			otcMultiassetMinAmountWithdraw = 1000000
 			otcMultiassetPairStatus        = 0
+
+			sWavesContract = "3N4kXZHGke6yRq3Z57q7BTgCrT2SCvQCYER"
+			sWavesAssetId  = "FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm"
 		)
 
 		mongouriP := promptui.Prompt{
@@ -331,6 +334,16 @@ var createStageCmd = &cobra.Command{
 			printAndExit(err)
 		}
 
+		proxyPepeAcc, err := genAccData(seed, stage, 29)
+		if err != nil {
+			printAndExit(err)
+		}
+
+		stakingProfitAcc, err := genAccData(seed, stage, 30)
+		if err != nil {
+			printAndExit(err)
+		}
+
 		// New XTN, USDT, BTC asset issue txs
 		newXtnTx := proto.NewUnsignedIssueWithProofs(
 			2,
@@ -481,6 +494,26 @@ var createStageCmd = &cobra.Command{
 				&proto.StringDataEntry{
 					Key:   "%s__swapContract",
 					Value: swapAcc.address.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__sWavesProxyAddress",
+					Value: proxyPepeAcc.address.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__sWavesAssetId",
+					Value: sWavesAssetId,
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__stakingProfitAddress",
+					Value: stakingProfitAcc.address.String(),
+				},
+				&proto.IntegerDataEntry{
+					Key:   "%s%s__leasedRatioDefault__WAVES",
+					Value: 80,
+				},
+				&proto.IntegerDataEntry{
+					Key:   "%s%s__minBalanceDefault__WAVES",
+					Value: 10e8,
 				},
 			},
 			[]*proto.InvokeScriptWithProofs{
@@ -1759,6 +1792,39 @@ var createStageCmd = &cobra.Command{
 			printAndExit(fmt.Errorf("lp_staking_pools.Deploy: %w", err))
 		}
 
+		proxyPepe := cli_contract.New(
+			proto.TestNetScheme,
+			cl,
+			contractModel,
+			proxyPepeAcc.privateKey,
+			managerAcc.privateKey,
+			gazPrv,
+			"proxy_pepe",
+			"proxy_pepe.ride",
+			stage,
+			false,
+			[]proto.DataEntry{
+				&proto.StringDataEntry{
+					Key:   "%s__managerPublicKey",
+					Value: managerAcc.publicKey.String(),
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__sWavesContract",
+					Value: sWavesContract,
+				},
+				&proto.StringDataEntry{
+					Key:   "%s__sWavesAssetId",
+					Value: sWavesAssetId,
+				},
+			},
+			nil,
+		)
+
+		err = proxyPepe.Deploy(ctx)
+		if err != nil {
+			printAndExit(fmt.Errorf("proxyPepe.Deploy: %w", err))
+		}
+
 		// Save contracts to mongo
 		sess, err := db.Client().StartSession()
 		if err != nil {
@@ -1885,6 +1951,11 @@ var createStageCmd = &cobra.Command{
 			e = lpStakingPools.Save(sc)
 			if e != nil {
 				return nil, fmt.Errorf("lp_staking_pools.Save: %w", e)
+			}
+
+			e = proxyPepe.Save(sc)
+			if e != nil {
+				return nil, fmt.Errorf("proxyPepe.Save: %w", e)
 			}
 
 			return nil, nil

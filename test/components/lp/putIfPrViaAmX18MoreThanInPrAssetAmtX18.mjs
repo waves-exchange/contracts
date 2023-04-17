@@ -23,7 +23,7 @@ describe('lp: putIfPrViaAmX18MoreThanInPrAssetAmtX18.mjs', /** @this {MochaSuite
     const expectedLpAmount = 1e9;
     const expectedPriceLast = 1e8;
     const expectedPriceHistory = 1e8;
-    const expectedInvokesCount = 2;
+    const expectedInvokesCount = 3;
     const expectedSlippageToleranceReal = 5e7;
     const expectedSlippageAmtAssetAmt = 1e3;
 
@@ -69,7 +69,7 @@ describe('lp: putIfPrViaAmX18MoreThanInPrAssetAmtX18.mjs', /** @this {MochaSuite
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
     expect(
-      await checkStateChanges(stateChanges, 5, 1, 0, 0, 0, 0, 0, 0, 2),
+      await checkStateChanges(stateChanges, 5, 1, 0, 0, 0, 0, 0, 0, expectedInvokesCount),
     ).to.eql(true);
 
     expect(stateChanges.data).to.eql([{

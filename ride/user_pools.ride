@@ -22,6 +22,7 @@ func throwCanActivateOnlyPendingPool() = "Can activate pool only in 'pending' st
 func throwFactoryReturnedNotString() = "FactoryV2 returned not string".throwErr()
 func throwInvalidPriceAssetAmount() = "invalid price asset amount".throwErr()
 func throwInvalidFee() = "invalid fee".throwErr()
+func throwInvalidAssetPair() = "invalid asset pair".throwErr()
 
 func keyManagerPublicKey() = ["%s", "managerPublicKey"].makeString(SEP)
 func keyPendingManagerPublicKey() = ["%s", "pendingManagerPublicKey"].makeString(SEP)
@@ -140,17 +141,31 @@ func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionA
 # Если токен не верифицирован, возвращает ошибку - "Asset is not verified"
 # Если юзер не issuer токена, возвращает ошибку - "You are not amountAsset issuer"
 # Если юзер прикрепил некорректный amount токенов или не прикрепил вовсе - "Invalid payment"
+
 @Callable(i)
 func create() = {
-  let amountAssetPayment = i.payments[0].value()
-  let priceAssetPayment = i.payments[1].value()
+  # The order of the assets matters if both are in the price assets list
+  let asset1Payment = i.payments[0].value()
+  let asset2Payment = i.payments[1].value()
   let feeAssetPayment = i.payments[2].value()
 
-  let (amountAssetId, amountAssetInfo) = amountAssetPayment.getIdAndInfo()
-  let (priceAssetId, priceAssetInfo) = priceAssetPayment.getIdAndInfo()
+  let (asset1Id, asset1Info) = asset1Payment.getIdAndInfo()
+  let (asset2Id, asset2Info) = asset2Payment.getIdAndInfo()
   let (feeAssetId, feeAssetInfo) = feeAssetPayment.getIdAndInfo()
 
   let priceAssetsList = factoryContract.getString(keyPriceAssets()).stringOptionToList()
+
+  strict checkAssetsNotEqual = asset1Id != asset2Id || throwInvalidAssetPair()
+
+  let (amountAssetId, amountAssetAmount, priceAssetId, priceAssetAmount) = {
+    if (priceAssetsList.containsElement(asset2Id) && asset1Id.isVerified()) then {
+      (asset1Id, asset1Payment.amount, asset2Id, asset2Payment.amount)
+    } else if (priceAssetsList.containsElement(asset1Id) && asset2Id.isVerified()) then {
+      (asset2Id, asset2Payment.amount, asset1Id, asset1Payment.amount)
+    } else {
+      throwInvalidAssetPair()
+    }
+  }
 
   let managerPriceAssetMinAmount = 1
   let priceAssetMinAmount = {
@@ -174,10 +189,9 @@ func create() = {
   strict checks = [
     !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
     !poolExists || throwPoolExists(),
-    i.isManager() || amountAssetId.isVerified() || throwAssetNotVerified(),
     keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
-    i.isManager() || amountAssetPayment.amount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
-    i.isManager() || priceAssetPayment.amount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
+    i.isManager() || amountAssetAmount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
+    i.isManager() || priceAssetAmount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
     feeAssetPayment.amount == keyFeeAmount().getInteger() || throwInvalidFee()
   ]
 
@@ -190,8 +204,8 @@ func create() = {
     StringEntry(keySuffix(amountAssetId, priceAssetId), curIndex.toString()+indexSuffix),
     IntegerEntry(keyHeight(amountAssetId, priceAssetId), height),
     StringEntry(keyStatus(amountAssetId, priceAssetId), statusPending),
-    IntegerEntry(keyAmountAssetAmount(amountAssetId, priceAssetId), amountAssetPayment.amount),
-    IntegerEntry(keyPriceAssetAmount(amountAssetId, priceAssetId), priceAssetPayment.amount)
+    IntegerEntry(keyAmountAssetAmount(amountAssetId, priceAssetId), amountAssetAmount),
+    IntegerEntry(keyPriceAssetAmount(amountAssetId, priceAssetId), priceAssetAmount)
   ]
 }
 
