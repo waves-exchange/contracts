@@ -22,6 +22,7 @@ func throwCanActivateOnlyPendingPool() = "Can activate pool only in 'pending' st
 func throwFactoryReturnedNotString() = "FactoryV2 returned not string".throwErr()
 func throwInvalidPriceAssetAmount() = "invalid price asset amount".throwErr()
 func throwInvalidFee() = "invalid fee".throwErr()
+func throwInvalidAssetPair() = "invalid asset pair".throwErr()
 
 func keyManagerPublicKey() = ["%s", "managerPublicKey"].makeString(SEP)
 func keyPendingManagerPublicKey() = ["%s", "pendingManagerPublicKey"].makeString(SEP)
@@ -143,6 +144,7 @@ func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionA
 
 @Callable(i)
 func create() = {
+  # The order of the assets matters if both are in the price assets list
   let asset1Payment = i.payments[0].value()
   let asset2Payment = i.payments[1].value()
   let feeAssetPayment = i.payments[2].value()
@@ -153,13 +155,15 @@ func create() = {
 
   let priceAssetsList = factoryContract.getString(keyPriceAssets()).stringOptionToList()
 
+  strict checkAssetsNotEqual = asset1Id != asset2Id || throwInvalidAssetPair()
+
   let (amountAssetId, amountAssetAmount, priceAssetId, priceAssetAmount) = {
-    if (priceAssetsList.containsElement(asset1Id) && asset2Id.isVerified()) then {
-      (asset2Id, asset2Payment.amount, asset1Id, asset1Payment.amount)
-    } else if (priceAssetsList.containsElement(asset2Id) && asset1Id.isVerified()) then {
+    if (priceAssetsList.containsElement(asset2Id) && asset1Id.isVerified()) then {
       (asset1Id, asset1Payment.amount, asset2Id, asset2Payment.amount)
+    } else if (priceAssetsList.containsElement(asset1Id) && asset2Id.isVerified()) then {
+      (asset2Id, asset2Payment.amount, asset1Id, asset1Payment.amount)
     } else {
-      throw("invalid asset pair")
+      throwInvalidAssetPair()
     }
   }
 
