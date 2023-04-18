@@ -387,7 +387,7 @@ func deposit() = {
   let gwxHoldersRewardCurrent = emissionContract.getInteger(keyGwxHoldersRewardCurrent())
     .valueOrElse(0)
   let auxAmount = fraction(deltaH * gwxHoldersRewardCurrent, emissionRate, MULT8)
-  strict em = emissionContract.invoke("emit", [auxAmount], []) # request auxAmount WX from emission contract
+  strict em = if (auxAmount > 0) then emissionContract.invoke("emit", [auxAmount], []) else unit # request auxAmount WX from emission contract
 
   let matcherPart = 0
   let payoutInfo = PeriodPayoutInfo(period, matcherPart, auxAmount)
