@@ -168,12 +168,14 @@ func gwxHoldersRewardUpdate() = {
   let gwxHolderRewardCurrent = keyGwxHoldersRewardCurrent().getInteger().valueOrElse(0)
   let gwxHolderRewardNext = keyGwxHoldersRewardNext().getInteger().valueOrElse(gwxHolderRewardCurrent)
 
-  let actions = if (gwxHolderRewardCurrent == gwxHolderRewardNext) then [] else [
+  let shouldBeUpdated = gwxHolderRewardCurrent != gwxHolderRewardNext
+
+  let actions = if (shouldBeUpdated) then [
     IntegerEntry(keyGwxHoldersRewardCurrent(), gwxHolderRewardNext),
     DeleteEntry(keyGwxHoldersRewardNext())
-  ]
+  ] else []
 
-  (actions, unit)
+  (actions, shouldBeUpdated)
 }
 
 @Callable(i)

@@ -384,7 +384,7 @@ func deposit() = {
   let deltaH = height - keyGwxRewardEmissionStartHeight().getNumberOrFail()
   let emissionRate = emissionContract.getInteger(keyRatePerBlockCurrent())
     .valueOrErrorMessage("mandatory emission_contract." + keyRatePerBlockCurrent() + " is not defined")
-  let gwxHoldersRewardCurrent = emissionContract.getInteger(keyGwxHoldersRewardCurrent())
+  strict gwxHoldersRewardCurrent = emissionContract.getInteger(keyGwxHoldersRewardCurrent())
     .valueOrElse(0)
   let auxAmount = fraction(deltaH * gwxHoldersRewardCurrent, emissionRate, MULT8)
   strict em = if (auxAmount > 0) then emissionContract.invoke("emit", [auxAmount], []) else unit # request auxAmount WX from emission contract
@@ -392,10 +392,10 @@ func deposit() = {
   let matcherPart = 0
   let payoutInfo = PeriodPayoutInfo(period, matcherPart, auxAmount)
 
-  strict gwxHoldersRewardUpdate = emissionContract.invoke("gwxHoldersRewardUpdate", [], [])
+  strict gwxHoldersRewardUpdated = emissionContract.invoke("gwxHoldersRewardUpdate", [], []).exactAs[Boolean]
 
   let totalReward = matcherPart + auxAmount
-  let actions = if (totalReward == 0) then [] else [
+  let actions = if (totalReward == 0 && !gwxHoldersRewardUpdated) then [] else [
     IntegerEntry(keyLatestPeriod(), period),
     IntegerEntry(keyHeightForPeriod(period), height), # save period start height
     IntegerEntry(keyAuxEmissionRewardForPeriod(period), auxAmount), # amount to distribute between users (emission part)
