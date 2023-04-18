@@ -1,5 +1,5 @@
 # Testnet environment
-[**WXDEFI-340-gwx-rewards**](https://github.com/waves-exchange/contracts/tree/WXDEFI-340-gwx-rewards) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:31 17.04.2023** (GMT+4)
+[**WXDEFI-340-gwx-rewards**](https://github.com/waves-exchange/contracts/tree/WXDEFI-340-gwx-rewards) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **11:13 18.04.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
