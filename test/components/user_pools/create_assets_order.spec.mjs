@@ -83,7 +83,7 @@ describe('User Pools - Create', /** @this {MochaSuiteModified} */() => {
       ],
     });
 
-    expect(broadcastAndWait(createInvokeTxPromise)).to.be.rejectedWith('invalid asset pair');
+    expect(createInvokeTxPromise).to.be.rejectedWith('invalid asset pair');
   });
 
   it('should successfully create with reversed assets', async function () {
