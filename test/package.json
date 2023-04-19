@@ -10,7 +10,7 @@
     "explorer": "docker run -d -e API_NODE_URL=http://localhost:6869 -e NODE_LIST=http://localhost:6869 -p 3000:8080 wavesplatform/explorer",
     "test-voting-verified": "node_modules/.bin/mocha --parallel --bail --require components/voting_verified/_hooks.mjs components/voting_verified",
     "test-assets-store": "mocha -r dotenv/config --parallel --bail --require components/assets_store/_hooks.mjs components/assets_store",
-    "test-user-pools": "node_modules/.bin/mocha --parallel --bail --require components/user_pools/_hooks.mjs components/user_pools",
+    "test-user-pools": "mocha -r dotenv/config --parallel --bail --require components/user_pools/_hooks.mjs components/user_pools",
     "test-factory-v2": "node_modules/.bin/mocha --parallel --bail --require components/factory_v2/_hooks.mjs components/factory_v2",
     "test-vesting": "node_modules/.bin/mocha --parallel --require components/vesting/_hooks.mjs components/vesting --timeout 999999",
     "test-vesting-multiasset": "node_modules/.bin/mocha --parallel --require components/vesting_multiasset/_hooks.mjs components/vesting_multiasset --timeout 999999",
