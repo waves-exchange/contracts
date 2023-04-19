@@ -16,10 +16,22 @@ let zeroBigInt = 0.toBigInt()
 let processingStageTotal = 0
 let processingStageShares = 1
 
+let wavesString = "WAVES"
+
 func getNumberByKey(key: String) = this.getInteger(key).valueOrElse(0)
 func getNumberOrFail(key: String) = this.getInteger(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
 func getStringByKey(key: String) = this.getString(key).valueOrElse("")
 func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func wrapErr(msg: String) = ["gwx_reward.ride:", msg].makeString(" ")
+func throwErr(msg: String) = msg.wrapErr().throw()
+
+func keyWxAssetId() = ["%s", "wxAssetId"].makeString(SEP)
+let wxAssetId = this.getStringValue(keyWxAssetId()).parseAssetId()
 
 func abs(val: Int) = if (val < 0) then -val else val
 func absBigInt(val: BigInt) = if (val < zeroBigInt) then -val else val
@@ -188,6 +200,12 @@ func keyUserWeightForPeriod(period: Int, userIndex: Int) =
 func keyReferralsContractAddress()  = ["%s%s", "config", "referralsContractAddress"].makeString(SEP)
 let referralsContractAddressOrFail = keyReferralsContractAddress().getStringOrFail().addressFromStringValue()
 
+func keyTradingRewardHistory(user: String, i: Invocation) = {
+  makeString(["%s%s%s%s", "tradingReward", "history", user, i.transactionId.toBase58String()], SEP)
+}
+
+func keyMaxRecipients() = ["%s%s", "config", "maxRecipients"].makeString(SEP)
+
 func HistoryEntry(type: String, user: String, amount: Int, i: Invocation) = {
   let historyKEY = makeString(["%s%s%s%s__history", type, user, i.transactionId.toBase58String()], SEP)
   let historyDATA = makeString([
@@ -275,6 +293,41 @@ func commonClaimReward(userAddress: String) = {
       IntegerEntry(userIdx.keyUserUnclaimed(), 0)
     ])
   }
+}
+
+@Callable(i)
+func tradeRewardInternal(
+  paymentAmountLeftOver: Int,
+  userAddresses: List[String],
+  rewards: List[Int],
+  currentIter: Int
+) = {
+  if (currentIter == userAddresses.size()) then ([]) else
+  strict insufficientFundsCheck = paymentAmountLeftOver >= rewards[currentIter] || 
+    "insufficient payment assetId".throwErr()
+
+  strict tradeRewardInternal = this.invoke(
+    "tradeRewardInternal",
+    [ 
+      paymentAmountLeftOver - rewards[currentIter],
+      userAddresses,
+      rewards,
+      currentIter+1
+    ],
+    []
+  )
+
+  let tradingRewardHistoryKey = keyTradingRewardHistory(
+    userAddresses[currentIter],
+    i
+  )
+
+  let userAddress = addressFromStringValue(userAddresses[currentIter])
+
+  ([
+    IntegerEntry(tradingRewardHistoryKey, rewards[currentIter]),
+    ScriptTransfer(userAddress, rewards[currentIter], wxAssetId)
+  ], tradeRewardInternal)
 }
 
 @Callable(i)
@@ -532,6 +585,34 @@ func calcD(
       { "D calculation error, dDiff = " + dDiff.toString() }.throw()
     }
   }
+}
+
+@Callable(i)
+func tradeReward(userAddresses: List[String], rewards: List[Int]) = {
+  let argsComparison = userAddresses.size() == rewards.size()
+  let maxRecipients = keyMaxRecipients().getInteger().valueOrElse(0)
+  let payment = i.payments[0]
+  let paymentAssetId = payment.assetId
+  let paymentAmount = payment.amount
+
+  strict checks = [
+    userAddresses.size() > maxRecipients || "Too many recipients".throwErr(),
+    argsComparison || "Arguments size mismatch".throwErr(),
+    paymentAssetId == wxAssetId || "Wrong asset payment".throwErr()
+  ]
+
+  strict tradeRewardInternal = this.invoke(
+    "tradeRewardInternal",
+    [
+      paymentAmount,
+      userAddresses,
+      rewards,
+      0
+    ],
+    []
+  )
+
+  (nil, tradeRewardInternal)
 }
 
 @Callable(i)
