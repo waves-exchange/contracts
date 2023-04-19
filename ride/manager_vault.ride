@@ -5,6 +5,7 @@
 let SEP = "__"
 let contractFilename = "manager_vault.ride"
 let MAX_ADMIN_COUNT = 10
+let ADDRESS_BYTES_LENGTH = 26
 
 func throwErr(s: String) = {
   throw(contractFilename + ": " + s)
@@ -87,20 +88,19 @@ func voteINTERNAL(
   ) = {
   let voteKey = makeString([keyPrefix, callerAddressString], SEP)
   let adminCurrentVote = getAdminVote(keyPrefix, callerAddressString)
-  if (isInAdminList(callerAddressString)) then {
-    if (adminCurrentVote == 1) then {
-      throwErr(voteKey + " you already voted")
-    } else {
-      let votes = countVotes(keyPrefix)
-      if (votes + 1 >= minVotes) then {
-        let clearVoteEntries = getClearVoteEntries(keyPrefix)
-        clearVoteEntries ++ voteResult
-      } else {
-        [ IntegerEntry(voteKey, 1)]
-      }
-    }
-  } else { 
+
+  strict err = if (!isInAdminList(callerAddressString)) then {
     throwErr("Address: " + callerAddressString + " not in Admin list")
+  } else if (adminCurrentVote == 1) then {
+    throwErr(voteKey + " you already voted")
+  } else { unit }
+
+  let votes = countVotes(keyPrefix)
+  if (votes + 1 >= minVotes) then {
+    let clearVoteEntries = getClearVoteEntries(keyPrefix)
+    clearVoteEntries ++ voteResult
+  } else {
+    [ IntegerEntry(voteKey, 1)]
   }
 }
 
@@ -111,7 +111,11 @@ func confirmManager() = {
   strict hasPM    = pm.isDefined() || "no pending manager".throwErr()
   strict checkPM  = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
 
-  [ StringEntry(keyCurrentManagerPublicKey(), pm.value().toBase58String()) ]
+  [ 
+    StringEntry(keyCurrentManagerPublicKey(), pm.value().toBase58String()),
+    StringEntry(keyActiveManagerPublicKey(), pm.value().toBase58String()),
+    DeleteEntry(keyPendingManagerPublicKey())
+  ]
 }
 
 # Vote for new Manager (quorum: 2 votes)
@@ -161,17 +165,19 @@ func addNewAdmin(newAdminAddress: String) = {
   let quorum = 2
   let currentAdminList = getAdminsList()
 
-  if (currentAdminList.size() >= MAX_ADMIN_COUNT) then {
+  strict err = if (currentAdminList.size() >= MAX_ADMIN_COUNT) then {
     throwErr("MAX_ADMIN_COUNT (" + MAX_ADMIN_COUNT.toString() + ") is exceeded")
-  } else {
-    match currentAdminList.indexOf(newAdminAddress) {
-      case a:Int => throwErr(newAdminAddress + " already in Admin List")
-      case _ => {
-        let newAdminList = currentAdminList :+ newAdminAddress
-        let result = [ StringEntry(keyAdminAddressList(), makeString(newAdminList, SEP)) ]
-  
-        voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
-      }
+  } else if (newAdminAddress.fromBase58String().size() != ADDRESS_BYTES_LENGTH ) then {
+    throwErr(newAdminAddress + " is not valid Address")
+  } else { unit }
+
+  match currentAdminList.indexOf(newAdminAddress) {
+    case a:Int => throwErr(newAdminAddress + " already in Admin List")
+    case _ => {
+      let newAdminList = currentAdminList :+ newAdminAddress
+      let result = [ StringEntry(keyAdminAddressList(), makeString(newAdminList, SEP)) ]
+
+      voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
     }
   }
 }
@@ -204,6 +210,12 @@ func voteForTxId(txId: String) = {
   let quorum = 2
   let result = [ StringEntry(keyAllowedTxId(), txId) ]
   
+  strict err = if (txId.fromBase58String().size() != 32) then {
+    throwErr(txId + " not valid txId")
+  } else {
+    unit 
+  }
+
   voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
 }
 
