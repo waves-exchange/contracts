@@ -4,8 +4,10 @@
 
 let SEP = "__"
 let contractFilename = "manager_vault.ride"
-let MAX_ADMIN_COUNT = 10
+let MAX_ADMIN_LIST_SIZE = 10
+let MIN_ADMIN_LIST_SIZE = 3
 let ADDRESS_BYTES_LENGTH = 26
+let TXID_BYTES_LENGTH = 32
 
 func throwErr(s: String) = {
   throw(contractFilename + ": " + s)
@@ -46,9 +48,9 @@ func getAdminsList() = {
 
 func isInAdminList(address: String) = {
   match (getAdminsList().indexOf(address)) {
-      case t:Int => true
-      case _ => false
-    }
+    case t:Int => true
+    case _ => false
+  }
 }
 
 # Generate List of keys with same prefix for all admins
@@ -165,8 +167,8 @@ func addNewAdmin(newAdminAddress: String) = {
   let quorum = 2
   let currentAdminList = getAdminsList()
 
-  strict err = if (currentAdminList.size() >= MAX_ADMIN_COUNT) then {
-    throwErr("MAX_ADMIN_COUNT (" + MAX_ADMIN_COUNT.toString() + ") is exceeded")
+  strict err = if (currentAdminList.size() >= MAX_ADMIN_LIST_SIZE) then {
+    throwErr("MAX_ADMIN_LIST_SIZE (" + MAX_ADMIN_LIST_SIZE.toString() + ") is exceeded")
   } else if (newAdminAddress.fromBase58String().size() != ADDRESS_BYTES_LENGTH ) then {
     throwErr(newAdminAddress + " is not valid Address")
   } else { unit }
@@ -210,7 +212,7 @@ func voteForTxId(txId: String) = {
   let quorum = 2
   let result = [ StringEntry(keyAllowedTxId(), txId) ]
   
-  strict err = if (txId.fromBase58String().size() != 32) then {
+  strict err = if (txId.fromBase58String().size() != TXID_BYTES_LENGTH) then {
     throwErr(txId + " not valid txId")
   } else {
     unit 
@@ -224,18 +226,18 @@ func verify() = {
   let allowedTxId = getStringValue(keyAllowedTxId()).fromBase58String()
 
   match (tx) {
-      # =========
-      # For debug
-      case t:SetScriptTransaction => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
-      case t:DataTransaction => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
-      # =========
-      case _ => {
-        let currentAdminList = getAdminsList()
-        if (currentAdminList.size() >= 3) then {
-          (tx.id == allowedTxId)
-        } else {
-          sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
-        }
+    # =========
+    # For debug
+    case t:SetScriptTransaction => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+    case t:DataTransaction => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+    # =========
+    case _ => {
+      let currentAdminList = getAdminsList()
+      if (currentAdminList.size() >= MIN_ADMIN_LIST_SIZE) then {
+        (tx.id == allowedTxId)
+      } else {
+        sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
       }
     }
+  }
 }
