@@ -4,6 +4,7 @@
 
 let SEP = "__"
 let contractFilename = "manager_vault.ride"
+let MAX_ADMIN_COUNT = 10
 
 func throwErr(s: String) = {
   throw(contractFilename + ": " + s)
@@ -56,7 +57,7 @@ func genVotesKeysHelper(a: (List[String], String), adminAddress: String) = {
 }
 func genVotesKeys(keyPrefix: String) = {
   let adminList = keyAdminAddressList()
-  FOLD<10>(getAdminsList(), ([], keyPrefix), genVotesKeysHelper)
+  FOLD<20>(getAdminsList(), ([], keyPrefix), genVotesKeysHelper)
 }
 
 # Count all votes for Prefix
@@ -65,16 +66,16 @@ func countVotesHelper(result: Int, voteKey: String) = {
 }
 func countVotes(prefix: String) = {
   let votes = genVotesKeys(prefix)._1
-  FOLD<10>(votes, 0, countVotesHelper)
+  FOLD<20>(votes, 0, countVotesHelper)
 }
 
 # Generate DeleteEntry for all votes with Prefix
 func clearVotesHelper(result: List[DeleteEntry], key: String) = {
   result :+ DeleteEntry(key) 
 }
-func getClearVotesEntries(prefix: String) = {
+func getClearVoteEntries(prefix: String) = {
   let votes = genVotesKeys(prefix)._1
-  FOLD<10>(votes, [], clearVotesHelper)
+  FOLD<20>(votes, [], clearVotesHelper)
 }
 
 func voteINTERNAL(
@@ -92,8 +93,8 @@ func voteINTERNAL(
     } else {
       let votes = countVotes(keyPrefix)
       if (votes + 1 >= minVotes) then {
-        let clearVotesEntries = getClearVotesEntries(keyPrefix)
-        clearVotesEntries ++ voteResult
+        let clearVoteEntries = getClearVoteEntries(keyPrefix)
+        clearVoteEntries ++ voteResult
       } else {
         [ IntegerEntry(voteKey, 1)]
       }
@@ -160,13 +161,17 @@ func addNewAdmin(newAdminAddress: String) = {
   let quorum = 2
   let currentAdminList = getAdminsList()
 
-  match currentAdminList.indexOf(newAdminAddress) {
-    case a:Int => throwErr(newAdminAddress + " already in Admin List")
-    case _ => {
-      let newAdminList = currentAdminList :+ newAdminAddress
-      let result = [ StringEntry(keyAdminAddressList(), makeString(newAdminList, SEP)) ]
+  if (currentAdminList.size() >= MAX_ADMIN_COUNT) then {
+    throwErr("MAX_ADMIN_COUNT (" + MAX_ADMIN_COUNT.toString() + ") is exceeded")
+  } else {
+    match currentAdminList.indexOf(newAdminAddress) {
+      case a:Int => throwErr(newAdminAddress + " already in Admin List")
+      case _ => {
+        let newAdminList = currentAdminList :+ newAdminAddress
+        let result = [ StringEntry(keyAdminAddressList(), makeString(newAdminList, SEP)) ]
   
-      voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
+        voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
+      }
     }
   }
 }
@@ -207,8 +212,11 @@ func verify() = {
   let allowedTxId = getStringValue(keyAllowedTxId()).fromBase58String()
 
   match (tx) {
-      # Open setScript for debug
+      # =========
+      # For debug
       case t:SetScriptTransaction => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+      case t:DataTransaction => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+      # =========
       case _ => {
         (tx.id == allowedTxId)
       }
