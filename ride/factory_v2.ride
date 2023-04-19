@@ -814,7 +814,7 @@ func onVerificationLoss(assetId: String) = {
     unit
     
   }
-  strict actions = FOLD<2>(priceAssets, unit, cb)
+  strict actions = FOLD<10>(priceAssets, unit, cb)
 
   (nil, unit)
 }
