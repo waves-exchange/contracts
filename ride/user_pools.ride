@@ -30,6 +30,8 @@ func keyAdminPubKeys() = ["%s", "adminPubKeys"].makeString(SEP)
 
 func keyStatus(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "status", amountAssetId, priceAssetId].makeString(SEP)
 
+func keyStatusStable(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "statusStable", amountAssetId, priceAssetId].makeString(SEP)
+
 func keyFactoryContract() = ["%s", "factoryContract"].makeString(SEP)
 func keyAssetsStoreContract() = ["%s", "assetsStoreContract"].makeString(SEP)
 func keyEmissionContract() = ["%s", "emissionContract"].makeString(SEP)
@@ -48,6 +50,15 @@ func keyAmountAssetAmount(amountAssetId: String, priceAssetId: String) = ["%s%s%
 func keyPriceAssetAmount(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "priceAssetAmount", amountAssetId, priceAssetId].makeString(SEP)
 func keyHeight(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "height", amountAssetId, priceAssetId].makeString(SEP)
 
+func keySuffixStable(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "suffixStable", amountAssetId, priceAssetId].makeString(SEP)
+func keyLastIndexStable() = ["%s", "lastIndexStable"].makeString(SEP)
+
+func keyCreateCalledStable(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "createCalledStable", amountAssetId, priceAssetId].makeString(SEP)
+func keyCreateCallerStable(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "createCallerStable", amountAssetId, priceAssetId].makeString(SEP)
+func keyAmountAssetAmountStable(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "amountAssetAmountStable", amountAssetId, priceAssetId].makeString(SEP)
+func keyPriceAssetAmountStable(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "priceAssetAmountStable", amountAssetId, priceAssetId].makeString(SEP)
+func keyHeightStable(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "heightStable", amountAssetId, priceAssetId].makeString(SEP)
+
 func keyFeeAssetId() = ["%s", "feeAssetId"].makeString(SEP)
 func keyFeeAmount() = ["%s", "feeAmount"].makeString(SEP)
 func keyAmountAssetMinAmount() = ["%s", "amountAssetMinAmount"].makeString(SEP)
@@ -64,6 +75,10 @@ let factoryContract = keyFactoryContract().getStringOrFail().addressFromStringVa
 
 func isCreateCalled(amountAssetId: String, priceAssetId: String) = {
   keyCreateCalled(amountAssetId, priceAssetId).getBoolean().valueOrElse(false)
+}
+
+func isCreateCalledStable(amountAssetId: String, priceAssetId: String) = {
+  keyCreateCalledStable(amountAssetId, priceAssetId).getBoolean().valueOrElse(false)
 }
 
 func mustCreateCalled(amountAssetId: String, priceAssetId: String) = {
@@ -254,6 +269,122 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
   ]
 }
 
+
+@Callable(i)
+func createStable() = {
+  strict checkAmin = [
+    i.mustAdmin()  
+  ]
+
+  # The order of the assets matters if both are in the price assets list
+  let asset1Payment = i.payments[0].value()
+  let asset2Payment = i.payments[1].value()
+  let feeAssetPayment = i.payments[2].value()
+
+  let (asset1Id, asset1Info) = asset1Payment.getIdAndInfo()
+  let (asset2Id, asset2Info) = asset2Payment.getIdAndInfo()
+  let (feeAssetId, feeAssetInfo) = feeAssetPayment.getIdAndInfo()
+
+  let priceAssetsList = factoryContract.getString(keyPriceAssets()).stringOptionToList()
+
+  strict checkAssetsNotEqual = asset1Id != asset2Id || throwInvalidAssetPair()
+
+  let (amountAssetId, amountAssetAmount, priceAssetId, priceAssetAmount) = {
+    if (priceAssetsList.containsElement(asset2Id) && asset1Id.isVerified()) then {
+      (asset1Id, asset1Payment.amount, asset2Id, asset2Payment.amount)
+    } else if (priceAssetsList.containsElement(asset1Id) && asset2Id.isVerified()) then {
+      (asset2Id, asset2Payment.amount, asset1Id, asset1Payment.amount)
+    } else {
+      throwInvalidAssetPair()
+    }
+  }
+
+  let managerPriceAssetMinAmount = 1
+  let priceAssetMinAmount = {
+    if (i.isManager()) then {
+      managerPriceAssetMinAmount
+    } else {
+      let priceAssetsIndex = priceAssetsList.indexOf(priceAssetId).valueOrErrorMessage(invalidPriceAsset)
+      keyPriceAssetsMinAmount().getString().stringOptionToList()[priceAssetsIndex].parseInt().value()
+    }
+  }
+
+  let lastIndex = keyLastIndexStable().getInteger().valueOrElse(0)
+  let curIndex = lastIndex + 1
+
+  let emissionContract = keyEmissionContract().getStringOrFail().addressFromStringValue()
+  let poolExists = factoryContract.invoke("poolExistsREADONLY", [
+    amountAssetId,
+    priceAssetId
+  ], []).exactAs[Boolean]
+
+  strict checks = [
+    !isCreateCalledStable(amountAssetId, priceAssetId) || throwPoolExists(),
+    !poolExists || throwPoolExists(),
+    keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
+    i.isManager() || amountAssetAmount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
+    i.isManager() || priceAssetAmount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
+    feeAssetPayment.amount == keyFeeAmount().getInteger() || throwInvalidFee()
+  ]
+
+  strict burnEmissionInv = emissionContract.invoke("burn", [], [AttachedPayment(feeAssetId.fromBase58String(), feeAssetPayment.amount)])
+
+  [
+    BooleanEntry(keyCreateCalledStable(amountAssetId, priceAssetId), true),
+    StringEntry(keyCreateCallerStable(amountAssetId, priceAssetId), i.caller.toString()),
+    IntegerEntry(keyLastIndexStable(), curIndex),
+    StringEntry(keySuffixStable(amountAssetId, priceAssetId), curIndex.toString()+indexSuffix),
+    IntegerEntry(keyHeightStable(amountAssetId, priceAssetId), height),
+    StringEntry(keyStatusStable(amountAssetId, priceAssetId), statusPending),
+    IntegerEntry(keyAmountAssetAmountStable(amountAssetId, priceAssetId), amountAssetAmount),
+    IntegerEntry(keyPriceAssetAmountStable(amountAssetId, priceAssetId), priceAssetAmount)
+  ]
+}
+
+@Callable(i)
+func activateStable(poolAddress: String, amountAssetId: String, amountAssetTicker: String, priceAssetId: String, priceAssetTicker: String, logo: String) = {
+  strict checks = [
+    i.mustAdmin(),
+    isCreateCalledStable(amountAssetId, priceAssetId) || throwCreateNotCalled(),
+    keyStatusStable(amountAssetId, priceAssetId).getString().value() == statusPending || throwCanActivateOnlyPendingPool()
+  ]
+   strict activateNewPoolInv = factoryContract.invoke(
+    "activateNewPool", [
+      poolAddress,
+      amountAssetId,
+      priceAssetId,
+      amountAssetTicker+priceAssetTicker+"LP",
+      amountAssetTicker+"/"+priceAssetTicker+" pool liquidity provider token",
+      0,
+      "STBLPOOL",
+      logo
+    ], []
+  )
+  strict lpAssetId = match (activateNewPoolInv) {
+    case id: String => id
+    case _ => throwFactoryReturnedNotString()
+  }
+
+  strict beforePut = this.assetBalance(lpAssetId.fromBase58String())
+  strict put = poolAddress.addressFromStringValue().invoke(
+    "put", [
+      0,
+      false
+    ], [
+      AttachedPayment(if (amountAssetId == "WAVES") then unit else amountAssetId.fromBase58String(), keyAmountAssetAmountStable(amountAssetId, priceAssetId).getInteger().value()),
+      AttachedPayment(if (priceAssetId == "WAVES") then unit else priceAssetId.fromBase58String(), keyPriceAssetAmountStable(amountAssetId, priceAssetId).getInteger().value())
+    ]
+  )
+  strict afterPut = this.assetBalance(lpAssetId.fromBase58String())
+
+  let user = keyCreateCallerStable(amountAssetId, priceAssetId).getString().value().addressFromString().value()
+
+  [
+    StringEntry(keyStatusStable(amountAssetId, priceAssetId), statusActive),
+    ScriptTransfer(user, afterPut-beforePut, lpAssetId.fromBase58String())
+  ]
+}
+
 @Callable(i)
 func setAdmins(adminPubKeys: List[String]) = {
   strict checkCaller = i.mustManager()
@@ -288,6 +419,16 @@ func priceAssetsREADONLY() = {
 @Callable(i)
 func statusREADONLY(amountAssetId: String, priceAssetId: String) = {
   let status = match keyStatus(amountAssetId, priceAssetId).getString() {
+    case s: String => s
+    case _ => unit
+  }
+
+  (nil, status)
+}
+
+@Callable(i)
+func statusStableREADONLY(amountAssetId: String, priceAssetId: String) = {
+  let status = match keyStatusStable(amountAssetId, priceAssetId).getString() {
     case s: String => s
     case _ => unit
   }
