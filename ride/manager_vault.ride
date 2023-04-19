@@ -12,34 +12,26 @@ func throwErr(s: String) = {
 # Manager Public Key
 func keyActiveManagerPublicKey()  = makeString(["%s", "managerPublicKey"], SEP)
 func keyPendingManagerPublicKey() = makeString(["%s", "pendingManagerPublicKey"], SEP)
+func keyCurrentManagerPublicKey() = makeString(["%s", "currentManagerPublicKey"], SEP)
 
-# Set New Manager vote keys
-func keySetNewManagerVotePrefix(managerPublicKey: String)          = makeString(["%s%s%s", "setManager", managerPublicKey], SEP)
-func keySetNewManagerVote(managerPublicKey: String, admin: String) = makeString([keySetNewManagerVotePrefix(managerPublicKey), admin], SEP)
-func getSetNewManagerVote(managerPublicKey: String, admin: String) = getInteger(keySetNewManagerVote(managerPublicKey, admin)).valueOrElse(0)
-
-# Deactivate Manager vote keys
-func keyDeactivateManagerVotePrefix()        = makeString(["%s%s", "deactivateManager"], SEP)
-func keyDeactivateManagerVote(admin: String) = makeString([keyDeactivateManagerVotePrefix(), admin], SEP)
-func getDeactivateManagerVote(admin: String) = getInteger(keyDeactivateManagerVote(admin)).valueOrElse(0)
-
-# Activate Manager vote keys
-func keyActivateManagerVotePrefix()        = makeString(["%s%s", "activateManager"], SEP)
-func keyActivateManagerVote(admin: String) = makeString([keyActivateManagerVotePrefix(), admin], SEP)
-func getActivateManagerVote(admin: String) = getInteger(keyActivateManagerVote(admin)).valueOrElse(0)
-
-# Add New Admin vote keys
-func keyAddNewAdminVotePrefix(adminCandidate: String)          = makeString(["%s%s%s", "addAdmin", adminCandidate], SEP)
-func keyAddNewAdminVote(adminCandidate: String, admin: String) = makeString([keyAddNewAdminVotePrefix(adminCandidate), admin], SEP)
-func getAddNewAdminVote(adminCandidate: String, admin: String) = getInteger(keyAddNewAdminVote(adminCandidate, admin)).valueOrElse(0)
-
-# Remove Admin vote keys
-func keyRemoveAdminVotePrefix(removeCandidate: String)          = makeString(["%s%s%s", "removeAdmin", removeCandidate], SEP)
-func keyRemoveAdminVote(removeCandidate: String, admin: String) = makeString([keyRemoveAdminVotePrefix(removeCandidate), admin], SEP)
-func getRemoveAdminVote(removeCandidate: String, admin: String) = getInteger(keyRemoveAdminVote(removeCandidate, admin)).valueOrElse(0)
+# Voting prefixes
+func keySetNewManagerVotePrefix(managerPublicKey: String) = makeString(["%s%s%s", "setManager", managerPublicKey], SEP)
+func keyDeactivateManagerVotePrefix()                     = makeString(["%s%s", "deactivateManager"], SEP)
+func keyActivateManagerVotePrefix()                       = makeString(["%s%s", "activateManager"], SEP)
+func keyAddNewAdminVotePrefix(adminCandidate: String)     = makeString(["%s%s%s", "addAdmin", adminCandidate], SEP)
+func keyRemoveAdminVotePrefix(removeCandidate: String)    = makeString(["%s%s%s", "removeAdmin", removeCandidate], SEP)
+func keyAllowedTxIdVotePrefix(txId: String)               = makeString(["%s%s%s", "allowTxId", txId], SEP)
 
 # Admin List key
 func keyAdminAddressList() = makeString(["%s", "adminAddressList"], SEP)
+
+# Allowed TXID key
+func keyAllowedTxId() = makeString(["%s", "TXID"], SEP)
+
+func getAdminVote(prefix: String, admin: String) = {
+  let voteKey = makeString([prefix, admin], SEP)
+  getInteger(voteKey).valueOrElse(0)
+}
 
 func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
   case s: String => s.fromBase58String()
@@ -87,13 +79,13 @@ func getClearVotesEntries(prefix: String) = {
 
 func voteINTERNAL(
     callerAddressString: String, 
-    adminCurrentVote: Int, 
     keyPrefix: String, 
     minVotes: Int, 
     voteResult: 
     List[StringEntry|IntegerEntry|DeleteEntry]
   ) = {
   let voteKey = makeString([keyPrefix, callerAddressString], SEP)
+  let adminCurrentVote = getAdminVote(keyPrefix, callerAddressString)
   if (isInAdminList(callerAddressString)) then {
     if (adminCurrentVote == 1) then {
       throwErr(voteKey + " you already voted")
@@ -118,58 +110,54 @@ func confirmManager() = {
   strict hasPM    = pm.isDefined() || "no pending manager".throwErr()
   strict checkPM  = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
 
-  [ StringEntry(keyActiveManagerPublicKey(), pm.value().toBase58String()) ]
+  [ StringEntry(keyCurrentManagerPublicKey(), pm.value().toBase58String()) ]
 }
 
-# Vote for new Manager (min: 2 votes)
+# Vote for new Manager (quorum: 2 votes)
 # Set pendingManagerPublicKey
 # Manager should confirm or activate by vote
 @Callable(i)
 func voteForNewManger(newManagerPublicKey: String) = {
   let callerAddressString = toBase58String(i.caller.bytes)
   let keyPrefix = keySetNewManagerVotePrefix(newManagerPublicKey)
-  let adminCurrentVote = getSetNewManagerVote(newManagerPublicKey, callerAddressString)
-  let minVotes = 2
+  let quorum = 2
   let result = [ StringEntry(keyPendingManagerPublicKey(), newManagerPublicKey) ]
   
-  voteINTERNAL(callerAddressString, adminCurrentVote, keyPrefix, minVotes, result)
+  voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
 }
 
-# Vote to Deactivate Manager (min: 1 vote)
+# Vote to Deactivate Manager (quorum: 1 vote)
 # Clears managerPublicKey value
 @Callable(i)
 func deactivateManager() = {
   let callerAddressString = toBase58String(i.caller.bytes)
   let keyPrefix = keyDeactivateManagerVotePrefix()
-  let adminCurrentVote = getDeactivateManagerVote(callerAddressString)
-  let minVotes = 1
-  let result = [ DeleteEntry(keyActiveManagerPublicKey()) ]
+  let quorum = 1
+  let result = [ StringEntry(keyActiveManagerPublicKey(), "disabled") ]
   
-  voteINTERNAL(callerAddressString, adminCurrentVote, keyPrefix, minVotes, result)
+  voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
 }
 
-# Vote to Activate Pending Manager (min: 2 vote)
+# Vote to Activate Current Manager (quorum: 2 vote)
 # Copies pendingManagerPublicKey to managerPublicKey
 @Callable(i)
 func activateManager() = {
   let callerAddressString = toBase58String(i.caller.bytes)
   let keyPrefix = keyActivateManagerVotePrefix()
-  let adminCurrentVote = getActivateManagerVote(callerAddressString)
-  let minVotes = 2
-  let pendingManagerString = getStringValue(keyPendingManagerPublicKey())
-  let result = [ StringEntry(keyActiveManagerPublicKey(), pendingManagerString) ]
+  let quorum = 2
+  let currentManagerString = getStringValue(keyCurrentManagerPublicKey())
+  let result = [ StringEntry(keyActiveManagerPublicKey(), currentManagerString) ]
   
-  voteINTERNAL(callerAddressString, adminCurrentVote, keyPrefix, minVotes, result)
+  voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
 }
 
-# Vote to Add new Admin address to Admin List (min: 2 vote)
+# Vote to Add new Admin address to Admin List (quorum: 2 vote)
 # Appends new address to adminAddressList
 @Callable(i)
 func addNewAdmin(newAdminAddress: String) = {
   let callerAddressString = toBase58String(i.caller.bytes)
   let keyPrefix = keyAddNewAdminVotePrefix(newAdminAddress)
-  let adminCurrentVote = getAddNewAdminVote(newAdminAddress, callerAddressString)
-  let minVotes = 2
+  let quorum = 2
   let currentAdminList = getAdminsList()
 
   match currentAdminList.indexOf(newAdminAddress) {
@@ -178,19 +166,18 @@ func addNewAdmin(newAdminAddress: String) = {
       let newAdminList = currentAdminList :+ newAdminAddress
       let result = [ StringEntry(keyAdminAddressList(), makeString(newAdminList, SEP)) ]
   
-      voteINTERNAL(callerAddressString, adminCurrentVote, keyPrefix, minVotes, result)
+      voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
     }
   }
 }
 
-# Vote to remove Admin address to Admin List (min: 2 vote)
+# Vote to remove Admin address to Admin List (quorum: 2 vote)
 # Removes Admin address from adminAddressList
 @Callable(i)
 func removeAdmin(removeCandidate: String) = {
   let callerAddressString = toBase58String(i.caller.bytes)
   let keyPrefix = keyRemoveAdminVotePrefix(removeCandidate)
-  let adminCurrentVote = getRemoveAdminVote(removeCandidate, callerAddressString)
-  let minVotes = 2
+  let quorum = 2
   let currentAdminList = getAdminsList()
 
   match currentAdminList.indexOf(removeCandidate) {
@@ -198,8 +185,32 @@ func removeAdmin(removeCandidate: String) = {
       let newAdminList = currentAdminList.removeByIndex(index)
       let result = [ StringEntry(keyAdminAddressList(), makeString(newAdminList, SEP)) ]
   
-      voteINTERNAL(callerAddressString, adminCurrentVote, keyPrefix, minVotes, result)
+      voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
     }
     case _ => throwErr(removeCandidate + " not found in Admin List")
   }
+}
+
+# Vote for txId that is allowed in Verifier (quorum: 2 vote)
+@Callable(i)
+func voteForTxId(txId: String) = {
+  let callerAddressString = toBase58String(i.caller.bytes)
+  let keyPrefix = keyAllowedTxIdVotePrefix(txId)
+  let quorum = 2
+  let result = [ StringEntry(keyAllowedTxId(), txId) ]
+  
+  voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
+}
+
+@Verifier(tx)
+func verify() = {
+  let allowedTxId = getStringValue(keyAllowedTxId()).fromBase58String()
+
+  match (tx) {
+      # Open setScript for debug
+      case t:SetScriptTransaction => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+      case _ => {
+        (tx.id == allowedTxId)
+      }
+    }
 }
