@@ -218,7 +218,12 @@ func verify() = {
       case t:DataTransaction => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
       # =========
       case _ => {
-        (tx.id == allowedTxId)
+        let currentAdminList = getAdminsList()
+        if (currentAdminList.size() >= 3) then {
+          (tx.id == allowedTxId)
+        } else {
+          sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+        }
       }
     }
 }
