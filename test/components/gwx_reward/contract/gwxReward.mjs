@@ -4,11 +4,15 @@ import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 export const gwxReward = {
   init: async ({
     caller,
+    emissionAddress,
     wxAssetId,
+    maxRecipients,
   }) => {
     const dataTx = data({
       data: [
+        { key: '%s%s__config__emissionAddress', type: 'string', value: emissionAddress },
         { key: '%s__wxAssetId', type: 'string', value: wxAssetId },
+        { key: '%s__maxRecipients', type: 'integer', value: maxRecipients },
       ],
       additionalFee: 4e5,
       chainId,

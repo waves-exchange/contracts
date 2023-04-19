@@ -7,10 +7,10 @@ import {
 import { table, getBorderCharacters } from 'table';
 import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
-import { broadcastAndWait } from '../../utils/api.mjs';
+import { broadcastAndWait, chainId, baseSeed } from '../../utils/api.mjs';
 import { gwxReward } from './contract/gwxReward.mjs';
+import { emission } from './contract/emission.mjs';
 
-const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 const nonceLength = 3;
 
 const ridePath = '../ride';
@@ -64,9 +64,18 @@ export const mochaHooks = {
     await setScriptFromFile(gwxPath, this.accounts.gwxReward.seed);
     await setScriptFromFile(emissionPath, this.accounts.emission.seed);
 
+    const emissionConfig = `%s__${this.wxAssetId}`;
+
+    await emission.init({
+      caller: this.accounts.emission.seed,
+      config: emissionConfig,
+    });
+
     await gwxReward.init({
       caller: this.accounts.gwxReward.seed,
+      emissionAddress: this.accounts.emission.addr,
       wxAssetId: this.wxAssetId,
+      maxRecipients: 90,
     });
 
     const accountsInfo = Object.entries(this.accounts)

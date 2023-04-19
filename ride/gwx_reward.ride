@@ -30,9 +30,6 @@ func parseAssetId(input: String) = {
 func wrapErr(msg: String) = ["gwx_reward.ride:", msg].makeString(" ")
 func throwErr(msg: String) = msg.wrapErr().throw()
 
-func keyWxAssetId() = ["%s", "wxAssetId"].makeString(SEP)
-let wxAssetId = this.getStringValue(keyWxAssetId()).parseAssetId()
-
 func abs(val: Int) = if (val < 0) then -val else val
 func absBigInt(val: BigInt) = if (val < zeroBigInt) then -val else val
 
@@ -100,6 +97,17 @@ let IdxCfgBoostingContract    = 3
 let IdxCfgMaxDepth            = 4
 
 func keyConfig() = "%s__config"
+
+func getEmissionAddress() = this.getString(
+  keyEmissionAddress()
+).valueOrErrorMessage(
+  "mandatory this." + keyEmissionAddress() + " is not defined"
+).addressFromStringValue()
+
+
+let emissionAddress = getEmissionAddress()
+let wxAssetIdStr = emissionAddress.getString(keyConfig()).value().split(SEP)[1]
+let wxAssetId = wxAssetIdStr.fromBase58String()
 
 func readConfigArrayOrFail() = getStringOrFail(keyConfig()).split(SEP)
 
@@ -204,7 +212,7 @@ func keyTradingRewardHistory(user: String, i: Invocation) = {
   makeString(["%s%s%s%s", "tradingReward", "history", user, i.transactionId.toBase58String()], SEP)
 }
 
-func keyMaxRecipients() = ["%s%s", "config", "maxRecipients"].makeString(SEP)
+func keyMaxRecipients() = ["%s", "maxRecipients"].makeString(SEP)
 
 func HistoryEntry(type: String, user: String, amount: Int, i: Invocation) = {
   let historyKEY = makeString(["%s%s%s%s__history", type, user, i.transactionId.toBase58String()], SEP)
@@ -303,8 +311,11 @@ func tradeRewardInternal(
   currentIter: Int
 ) = {
   if (currentIter == userAddresses.size()) then ([]) else
-  strict insufficientFundsCheck = paymentAmountLeftOver >= rewards[currentIter] || 
-    "insufficient payment assetId".throwErr()
+
+  strict checks = [
+    i.caller == this || "Permission denied".throwErr(),
+    paymentAmountLeftOver >= rewards[currentIter] || "insufficient payment assetId".throwErr()
+  ]
 
   strict tradeRewardInternal = this.invoke(
     "tradeRewardInternal",
@@ -596,7 +607,7 @@ func tradeReward(userAddresses: List[String], rewards: List[Int]) = {
   let paymentAmount = payment.amount
 
   strict checks = [
-    userAddresses.size() > maxRecipients || "Too many recipients".throwErr(),
+    userAddresses.size() <= maxRecipients || "Too many recipients".throwErr(),
     argsComparison || "Arguments size mismatch".throwErr(),
     paymentAssetId == wxAssetId || "Wrong asset payment".throwErr()
   ]
