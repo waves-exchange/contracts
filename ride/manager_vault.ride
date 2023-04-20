@@ -26,6 +26,9 @@ func keyAddNewAdminVotePrefix(adminCandidate: String)     = makeString(["%s%s%s"
 func keyRemoveAdminVotePrefix(removeCandidate: String)    = makeString(["%s%s%s", "removeAdmin", removeCandidate], SEP)
 func keyAllowedTxIdVotePrefix(txId: String)               = makeString(["%s%s%s", "allowTxId", txId], SEP)
 
+# Make Admin vote key 
+func keyFullAdminVote(prefix: String, adminAddress: String) = makeString([prefix, adminAddress], SEP)
+
 # Admin List key
 func keyAdminAddressList() = makeString(["%s", "adminAddressList"], SEP)
 
@@ -33,7 +36,7 @@ func keyAdminAddressList() = makeString(["%s", "adminAddressList"], SEP)
 func keyAllowedTxId() = makeString(["%s", "TXID"], SEP)
 
 func getAdminVote(prefix: String, admin: String) = {
-  let voteKey = makeString([prefix, admin], SEP)
+  let voteKey = keyFullAdminVote(prefix, admin)
   getInteger(voteKey).valueOrElse(0)
 }
 
@@ -47,16 +50,13 @@ func getAdminsList() = {
 }
 
 func isInAdminList(address: String) = {
-  match (getAdminsList().indexOf(address)) {
-    case t:Int => true
-    case _ => false
-  }
+  getAdminsList().containsElement(address)
 }
 
 # Generate List of keys with same prefix for all admins
 func genVotesKeysHelper(a: (List[String], String), adminAddress: String) = {
   let (result, prefix) = a
-  (result :+ makeString([prefix, adminAddress], SEP), prefix)
+  (result :+ keyFullAdminVote(prefix, adminAddress), prefix)
 }
 func genVotesKeys(keyPrefix: String) = {
   let adminList = keyAdminAddressList()
@@ -85,10 +85,9 @@ func voteINTERNAL(
     callerAddressString: String, 
     keyPrefix: String, 
     minVotes: Int, 
-    voteResult: 
-    List[StringEntry|IntegerEntry|DeleteEntry]
+    voteResult: List[StringEntry|IntegerEntry|DeleteEntry]
   ) = {
-  let voteKey = makeString([keyPrefix, callerAddressString], SEP)
+  let voteKey = keyFullAdminVote(keyPrefix, callerAddressString)
   let adminCurrentVote = getAdminVote(keyPrefix, callerAddressString)
 
   strict err = if (!isInAdminList(callerAddressString)) then {
@@ -102,7 +101,7 @@ func voteINTERNAL(
     let clearVoteEntries = getClearVoteEntries(keyPrefix)
     clearVoteEntries ++ voteResult
   } else {
-    [ IntegerEntry(voteKey, 1)]
+    [ IntegerEntry(voteKey, 1) ]
   }
 }
 
@@ -124,7 +123,7 @@ func confirmManager() = {
 # Set pendingManagerPublicKey
 # Manager should confirm or activate by vote
 @Callable(i)
-func voteForNewManger(newManagerPublicKey: String) = {
+func voteForNewManager(newManagerPublicKey: String) = {
   let callerAddressString = toBase58String(i.caller.bytes)
   let keyPrefix = keySetNewManagerVotePrefix(newManagerPublicKey)
   let quorum = 2
@@ -145,7 +144,7 @@ func deactivateManager() = {
   voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
 }
 
-# Vote to Activate Current Manager (quorum: 2 vote)
+# Vote to Activate Current Manager (quorum: 2 votes)
 # Copies pendingManagerPublicKey to managerPublicKey
 @Callable(i)
 func activateManager() = {
@@ -158,7 +157,7 @@ func activateManager() = {
   voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
 }
 
-# Vote to Add new Admin address to Admin List (quorum: 2 vote)
+# Vote to Add new Admin address to Admin List (quorum: 2 votes)
 # Appends new address to adminAddressList
 @Callable(i)
 func addNewAdmin(newAdminAddress: String) = {
@@ -184,7 +183,7 @@ func addNewAdmin(newAdminAddress: String) = {
   }
 }
 
-# Vote to remove Admin address to Admin List (quorum: 2 vote)
+# Vote to remove Admin address to Admin List (quorum: 2 votes)
 # Removes Admin address from adminAddressList
 @Callable(i)
 func removeAdmin(removeCandidate: String) = {
@@ -204,7 +203,7 @@ func removeAdmin(removeCandidate: String) = {
   }
 }
 
-# Vote for txId that is allowed in Verifier (quorum: 2 vote)
+# Vote for txId that is allowed in Verifier (quorum: 2 votes)
 @Callable(i)
 func voteForTxId(txId: String) = {
   let callerAddressString = toBase58String(i.caller.bytes)
@@ -224,20 +223,10 @@ func voteForTxId(txId: String) = {
 @Verifier(tx)
 func verify() = {
   let allowedTxId = getStringValue(keyAllowedTxId()).fromBase58String()
-
-  match (tx) {
-    # =========
-    # For debug
-    case t:SetScriptTransaction => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
-    case t:DataTransaction => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
-    # =========
-    case _ => {
-      let currentAdminList = getAdminsList()
-      if (currentAdminList.size() >= MIN_ADMIN_LIST_SIZE) then {
-        (tx.id == allowedTxId)
-      } else {
-        sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
-      }
-    }
+  let currentAdminList = getAdminsList()
+  if (currentAdminList.size() >= MIN_ADMIN_LIST_SIZE) then {
+    (tx.id == allowedTxId)
+  } else {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
   }
 }
