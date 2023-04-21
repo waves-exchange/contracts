@@ -5,7 +5,7 @@
 let SEP = "__"
 let contractFilename = "manager_vault.ride"
 let MAX_ADMIN_LIST_SIZE = 10
-let MIN_ADMIN_LIST_SIZE = 3
+let MIN_ADMIN_LIST_SIZE = 2
 let ADDRESS_BYTES_LENGTH = 26
 let TXID_BYTES_LENGTH = 32
 
