@@ -17,6 +17,8 @@ describe('manager_vault: new manager', /** @this {MochaSuiteModified} */() => {
     'vote for new manager, confirm manager, deactivate and reactivate',
     async function () {
       const managerVault = address(this.accounts.managerVault, chainId);
+
+      // Admin1 vote for new Manager1 (quorum: 2 votes)
       const vote1tx = invokeScript({
         dApp: managerVault,
         call: {
@@ -34,6 +36,9 @@ describe('manager_vault: new manager', /** @this {MochaSuiteModified} */() => {
         value: 1,
       }]);
 
+      // Admin3 votes for new Manager1
+      // Manager1 is set as Pending Manager
+      // All votes for Manger1 is cleared
       const vote2tx = invokeScript({
         dApp: managerVault,
         call: {
@@ -63,6 +68,21 @@ describe('manager_vault: new manager', /** @this {MochaSuiteModified} */() => {
         value: publicKey(this.accounts.manager1),
       }]);
 
+      // Manager2 cannot confirm pending manager
+      const confirmByDifferentManagerTx = invokeScript({
+        dApp: managerVault,
+        call: {
+          function: 'confirmManager',
+          args: [],
+        },
+        chainId,
+      }, this.accounts.manager2);
+      await expect(api.transactions.broadcast(confirmByDifferentManagerTx))
+        .to.be.rejectedWith('you are not pending manager');
+
+      // Manager1 confirms his Public Key
+      // Public Key is set as current and active
+      // Pending key is cleared
       const confirmManagerTx = invokeScript({
         dApp: managerVault,
         call: {
@@ -89,6 +109,9 @@ describe('manager_vault: new manager', /** @this {MochaSuiteModified} */() => {
         value: null,
       }]);
 
+      // Admin2 deactivates manager
+      // manager key is set to value 'disabled'
+      // All votes to deactivate is cleared (quorum: 1 vote)
       const deactivateManagerTx = invokeScript({
         dApp: managerVault,
         call: {
@@ -118,6 +141,7 @@ describe('manager_vault: new manager', /** @this {MochaSuiteModified} */() => {
         value: 'disabled',
       }]);
 
+      // Admin2 votes to activate manager (quorum: 2 votes)
       const activateVote1tx = invokeScript({
         dApp: managerVault,
         call: {
@@ -135,6 +159,9 @@ describe('manager_vault: new manager', /** @this {MochaSuiteModified} */() => {
         value: 1,
       }]);
 
+      // Admin3 votes to activate manager
+      // manger key is set to current manager
+      // All votes are cleared
       const activateVote2tx = invokeScript({
         dApp: managerVault,
         call: {
