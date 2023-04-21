@@ -422,7 +422,11 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
     ScriptTransfer(userAddress, baseAssetAmount, baseAssetId),
     StringEntry(
       baseAssetId.keyHistoryEntry("claimBaseAsset", period, userAddress, i.transactionId),
-      [baseAssetAmount.toString(), lastBlock.timestamp.toString()].makeString(separator)
+      [
+        baseAssetAmount.toString(), 
+        lastBlock.timestamp.toString(),
+        price.toString
+      ].makeString(separator)
     )
     
   ], unit)
