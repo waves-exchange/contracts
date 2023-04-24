@@ -9,6 +9,7 @@ import { create } from '@waves/node-api-js';
 import { format, join } from 'path';
 import ora from 'ora';
 import { setScriptFromFile } from '../../utils/utils.mjs';
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 const { waitForTx } = nodeInteraction;
 const apiBase = process.env.API_NODE_URL;
@@ -24,12 +25,13 @@ const emissionMockPath = format({ dir: testPath, base: 'emission.mock.ride' });
 const lpMockPath = format({ dir: testPath, base: 'lp.mock.ride' });
 const mockPath = join('components', 'user_pools', 'mocks');
 const factoryV2MockPath = format({ dir: mockPath, base: 'factory_v2.mock.ride' });
+const votingEmissionCandidateMockPath = format({ dir: mockPath, base: 'voting_emission_candidate.mock.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
     const spinner = ora('Initializing').start();
     // setup accounts
-    const names = ['pools', 'store', 'factory', 'emission', 'lp', 'user'];
+    const names = ['pools', 'store', 'factory', 'emission', 'lp', 'user', 'votingEmission', 'votingEmissionCandidate'];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
@@ -43,6 +45,7 @@ export const mochaHooks = {
     await setScriptFromFile(userPoolsPath, this.accounts.pools);
     await setScriptFromFile(assetsStoreMockPath, this.accounts.store);
     await setScriptFromFile(factoryV2MockPath, this.accounts.factory);
+    await setScriptFromFile(votingEmissionCandidateMockPath, this.accounts.votingEmissionCandidate);
     await setScriptFromFile(lpMockPath, this.accounts.lp);
     await setScriptFromFile(emissionMockPath, this.accounts.emission);
 
@@ -71,7 +74,6 @@ export const mochaHooks = {
     this.usdnAssetId = usdnIssueTx.id;
 
     const setPriceAssetsTx = data({
-      dApp: address(this.accounts.factory, chainId),
       additionalFee: 4e5,
       data: [{
         key: '%s__priceAssets',
@@ -82,6 +84,28 @@ export const mochaHooks = {
     }, this.accounts.factory);
     await api.transactions.broadcast(setPriceAssetsTx, {});
     await waitForTx(setPriceAssetsTx.id, { apiBase });
+
+    const setVotingEmissionContractTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__votingEmissionContract',
+        type: 'string',
+        value: address(this.accounts.votingEmission, chainId),
+      }],
+      chainId,
+    }, this.accounts.factory);
+    await broadcastAndWait(setVotingEmissionContractTx);
+
+    const setVotingEmissionCandidateContractTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__votingEmissionCandidateContract',
+        type: 'string',
+        value: address(this.accounts.votingEmissionCandidate, chainId),
+      }],
+      chainId,
+    }, this.accounts.votingEmission);
+    await broadcastAndWait(setVotingEmissionCandidateContractTx);
 
     spinner.succeed('Initialized');
   },
