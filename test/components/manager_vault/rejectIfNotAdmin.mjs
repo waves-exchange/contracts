@@ -12,9 +12,9 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('manager_vault: not admin', /** @this {MochaSuiteModified} */() => {
+describe('manager_vault: not an admin', /** @this {MochaSuiteModified} */() => {
   it(
-    'tx should be rejected if not admin',
+    'tx should be rejected if user is not an admin',
     async function () {
       const managerVault = address(this.accounts.managerVault, chainId);
       const dataTx = data({
