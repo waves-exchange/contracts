@@ -40,7 +40,11 @@ export const mochaHooks = {
 
     await setScriptFromFile(managerVaultPath, this.accounts.managerVault);
 
-    const adminsListString = `${address(this.accounts.admin1, chainId)}__${address(this.accounts.admin2, chainId)}__${address(this.accounts.admin3, chainId)}`;
+    const adminsListString = [
+      address(this.accounts.admin1, chainId),
+      address(this.accounts.admin2, chainId),
+      address(this.accounts.admin3, chainId),
+    ].join('__');
     const setAdminsTx = data({
       additionalFee: 4e5,
       data: [
