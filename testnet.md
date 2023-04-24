@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-375-user-pools-fix**](https://github.com/waves-exchange/contracts/tree/wxdefi-375-user-pools-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:14 24.04.2023** (GMT+4)
+[**wxdefi-375-user-pools-fix**](https://github.com/waves-exchange/contracts/tree/wxdefi-375-user-pools-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:26 24.04.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
