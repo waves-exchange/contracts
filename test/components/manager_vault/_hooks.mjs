@@ -2,17 +2,15 @@ import { address, randomSeed } from '@waves/ts-lib-crypto';
 import {
   data,
   massTransfer,
-  nodeInteraction,
 } from '@waves/waves-transactions';
-import { create } from '@waves/node-api-js';
 import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
 
-const { waitForTx } = nodeInteraction;
-const apiBase = process.env.API_NODE_URL;
+import {
+  api, apiBase, waitForTx, chainId,
+} from '../../utils/api.mjs';
+
 const seed = 'waves private node seed with waves tokens';
-const chainId = 'R';
-const api = create(apiBase);
 const seedWordsCount = 5;
 const ridePath = '../ride';
 const managerVaultPath = format({ dir: ridePath, base: 'manager_vault.ride' });

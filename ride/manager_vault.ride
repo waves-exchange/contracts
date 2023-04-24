@@ -46,7 +46,10 @@ func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getStr
 }
 
 func getAdminsList() = {
-  this.getString(keyAdminAddressList()).valueOrElse("").split(SEP)
+  match (this.getString(keyAdminAddressList())) {
+      case s:String => s.split(SEP)
+      case _ => []
+    }
 }
 
 func isInAdminList(address: String) = {

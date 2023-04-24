@@ -2,15 +2,10 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript } from '@waves/waves-transactions';
-import { create } from '@waves/node-api-js';
+import { api, chainId } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
-
-const apiBase = process.env.API_NODE_URL;
-const chainId = 'R';
-
-const api = create(apiBase);
 
 describe('manager_vault: removeAdmin() validation', /** @this {MochaSuiteModified} */() => {
   it(

@@ -3,7 +3,7 @@
     "fee": 500000,
     "feeAssetId": null,
     "version": 2,
-    "senderPublicKey": "8FkC1gHej3uofJ24ba24sYfbsmUvoZsrwKpf67v3chYM",
+    "senderPublicKey": "9LFA81VdbMx4PkgVkqY7mAZt9NqkKxPLH1qdzQbASaC6",
     "data": [
         {
             "key": "%s__adminAddressList",
