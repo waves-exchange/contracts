@@ -1,13 +1,16 @@
-{-# STDLIB_VERSION 5 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
+
+let contractFilename = "user_pools.ride"
 
 let SEP = "__"
 let wavesAssetId = "WAVES"
 
 let invalidPriceAsset = "Invalid price asset"
 
-func throwErr(msg: String) = ["user_pools.ride:", msg].makeString(" ").throw()
+func wrapErr(msg: String) = [contractFilename, ": ", msg].makeString("")
+func throwErr(msg: String) = msg.wrapErr().throw()
 
 func throwPD() = "Permission denied".throwErr()
 func throwCreateNotCalled() = "Create is not called for assets pair".throwErr()
@@ -61,6 +64,16 @@ func stringOptionToList(stringOrUnit: String|Unit) = match stringOrUnit {
 }
 
 let factoryContract = keyFactoryContract().getStringOrFail().addressFromStringValue()
+let keyVotingEmissionContract = ["%s", "votingEmissionContract"].makeString(SEP)
+let votingEmissionContract = factoryContract
+  .getString(keyVotingEmissionContract)
+  .valueOrErrorMessage("voting emission contract address is required".wrapErr())
+  .addressFromStringValue()
+let keyVotingEmissionCandidateContract = ["%s", "votingEmissionCandidateContract"].makeString(SEP)
+let votingEmissionCandidateContract = votingEmissionContract
+  .getString(keyVotingEmissionCandidateContract)
+  .valueOrErrorMessage("voting emission candidate contract address is required".wrapErr())
+  .addressFromStringValue()
 
 func isCreateCalled(amountAssetId: String, priceAssetId: String) = {
   keyCreateCalled(amountAssetId, priceAssetId).getBoolean().valueOrElse(false)
@@ -247,6 +260,9 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
   strict afterPut = this.assetBalance(lpAssetId.fromBase58String())
 
   let user = keyCreateCaller(amountAssetId, priceAssetId).getString().value().addressFromString().value()
+
+  # skip voting_emission_candidate
+  strict res = votingEmissionCandidateContract.invoke("approve", [amountAssetId, priceAssetId], [])
 
   [
     StringEntry(keyStatus(amountAssetId, priceAssetId), statusActive),

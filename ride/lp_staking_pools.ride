@@ -388,7 +388,7 @@ func get() = {
         pmt.amount.toString(), 
         lastBlock.timestamp.toString(),
         # lp change
-        userShareAssetAmountToConvert.toString(),
+        userShareAssetAmountToConvert.toString()
       ].makeString(separator)
     )
   ], unit)
