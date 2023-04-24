@@ -300,7 +300,11 @@ func put() = {
     IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress), period),
     StringEntry(
       baseAssetId.keyHistoryEntry("put", period, userAddress, i.transactionId),
-      [pmt.amount.toString(), lastBlock.timestamp.toString()].makeString(separator)
+      [
+        pmt.amount.toString(), 
+        lastBlock.timestamp.toString(),
+        userBaseAssetAmountToConvert.toString()
+        ].makeString(separator)
     )
   ], unit)
 }
@@ -339,8 +343,10 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
       [
         shareAssetAmount.toString(), 
         lastBlock.timestamp.toString(),
+        # price
+        price.toString(),
         # lp change
-        userBaseAssetAmountToConvertPeriod.toString()
+        userBaseAssetAmountToConvert.toString()
       ].makeString(separator)
     )
   ], unit)
@@ -378,7 +384,12 @@ func get() = {
     IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress), period),
     StringEntry(
       baseAssetId.keyHistoryEntry("get", period, userAddress, i.transactionId),
-      [pmt.amount.toString(), lastBlock.timestamp.toString()].makeString(separator)
+      [
+        pmt.amount.toString(), 
+        lastBlock.timestamp.toString(),
+        # lp change
+        userShareAssetAmountToConvert.toString(),
+      ].makeString(separator)
     )
   ], unit)
 }
@@ -415,7 +426,12 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
     ScriptTransfer(userAddress, baseAssetAmount, baseAssetId),
     StringEntry(
       baseAssetId.keyHistoryEntry("claimBaseAsset", period, userAddress, i.transactionId),
-      [baseAssetAmount.toString(), lastBlock.timestamp.toString()].makeString(separator)
+      [
+        baseAssetAmount.toString(), 
+        lastBlock.timestamp.toString(),
+        price.toString(),
+        userShareAssetAmountToConvertPeriod.toString()
+      ].makeString(separator)
     )
     
   ], unit)
