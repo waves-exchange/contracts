@@ -102,7 +102,7 @@ func keyPriceGetHistory(baseAssetId: ByteVector|Unit) = {
   ["%s%s%s%s%d%d", baseAssetId.assetIdToString(), "price", "history", "get", lastBlock.height.toString(), lastBlock.timestamp.toString()].makeString(separator)
 }
 func keyHistoryEntry(baseAssetId: ByteVector|Unit, operation: String, period: Int, userAddress: Address, txId: ByteVector) = {
-  ["%s%s%s%s", "history", operation, userAddress.toString(), txId.toBase58String(), height.toString()].makeString(separator)
+  ["%s%s%s%s", "history", baseAssetId.value().toUtf8String(), operation, userAddress.toString(), txId.toBase58String(), height.toString()].makeString(separator)
 }
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
@@ -342,7 +342,7 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
     StringEntry(
       baseAssetId.keyHistoryEntry("claimShareAsset", period, userAddress, i.transactionId),
       [
-        "%d%d%d%d"
+        "%d%d%d%d",
         shareAssetAmount.toString(), 
         lastBlock.timestamp.toString(),
         # price
