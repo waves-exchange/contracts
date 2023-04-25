@@ -1,0 +1,22 @@
+{
+  "type": 12,
+  "data": [
+    {
+      "key": "%s%s%s__inList__3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13__9wc3LXNA4TEBsXyKtoLE9mrbDD7WMHXvXrCjZvabLAsi"
+    },
+    {
+      "key": "%s%s%s__inList__At8D6NFFpheCbvKVnjVoeLL84Eo8NZn6ovManxfLaFWL__34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ"
+    },
+    {
+      "key": "%s%s%s__inList__HGgabTqUS8WtVFUJzfmrTDMgEccJuZLBPhFgQFxvnsoW__9wc3LXNA4TEBsXyKtoLE9mrbDD7WMHXvXrCjZvabLAsi"
+    },
+    {
+      "key": "%s%s%s__inList__WAVES__9wc3LXNA4TEBsXyKtoLE9mrbDD7WMHXvXrCjZvabLAsi"
+    }
+  ],
+  "senderPublicKey": "DQtGXvog3Y6B9bxto8pajLFKjsTX8tBjkDi6RRhtP8X5",
+  "chainId": 87,
+  "fee": 500000,
+  "proofs": [],
+  "version": 2
+}
