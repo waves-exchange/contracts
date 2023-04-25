@@ -171,7 +171,7 @@ func create() = {
   strict checkAssetsNotEqual = asset1Id != asset2Id || throwInvalidAssetPair()
 
   let (amountAssetId, amountAssetAmount, priceAssetId, priceAssetAmount) = {
-    if (priceAssetsList.containsElement(asset2Id) && asset1Id.isVerified()) then {
+    if (i.isManager() || (priceAssetsList.containsElement(asset2Id) && asset1Id.isVerified())) then {
       (asset1Id, asset1Payment.amount, asset2Id, asset2Payment.amount)
     } else if (priceAssetsList.containsElement(asset1Id) && asset2Id.isVerified()) then {
       (asset2Id, asset2Payment.amount, asset1Id, asset1Payment.amount)
@@ -202,13 +202,16 @@ func create() = {
   strict checks = [
     !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
     !poolExists || throwPoolExists(),
-    keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
+    i.isManager() || keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
     i.isManager() || amountAssetAmount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
     i.isManager() || priceAssetAmount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
-    feeAssetPayment.amount == keyFeeAmount().getInteger() || throwInvalidFee()
+    i.isManager() || feeAssetPayment.amount == keyFeeAmount().getInteger() || throwInvalidFee()
   ]
 
-  strict burnEmissionInv = emissionContract.invoke("burn", [], [AttachedPayment(feeAssetId.fromBase58String(), feeAssetPayment.amount)])
+  let paymentsWithFeeSize = 3
+  strict burnEmissionInv = if (i.payments.size() >= paymentsWithFeeSize) then {
+    emissionContract.invoke("burn", [], [AttachedPayment(feeAssetId.fromBase58String(), feeAssetPayment.amount)])
+  } else unit
 
   [
     BooleanEntry(keyCreateCalled(amountAssetId, priceAssetId), true),
