@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 5 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -345,6 +345,18 @@ func finalize(amountAssetId: String, priceAssetId: String) = {
   }
 
   actions
+}
+
+@Callable(i)
+func approve(amountAssetId: String, priceAssetId: String) = {
+  strict checkCaller = i.caller == userPoolContract || i.mustManager()
+
+  strict res = [
+    factoryContract.invoke("setWxEmissionPoolLabel", [amountAssetId, priceAssetId], []),
+    votingEmissionContract.invoke("create", [amountAssetId, priceAssetId], [])
+  ]
+
+  ([], unit)
 }
 
 @Callable(i)
