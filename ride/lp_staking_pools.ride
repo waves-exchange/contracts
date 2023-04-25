@@ -104,7 +104,6 @@ func keyPriceGetHistory(baseAssetId: ByteVector|Unit) = {
 func keyHistoryEntry(baseAssetId: ByteVector|Unit, operation: String, period: Int, userAddress: Address, txId: ByteVector) = {
   ["%s%s%s%s", "history", baseAssetId.value().toUtf8String(), operation, userAddress.toString(), txId.toBase58String(), height.toString()].makeString(separator)
 }
-
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 
@@ -293,7 +292,6 @@ func put() = {
   }
   let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
   let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getString().value().split(separator)[1].parseInt().valueOrElse(0)
-
   ([
     IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), baseAssetAmountToConvert + pmt.amount),
     StringEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), ["%d%d", (userBaseAssetAmountToConvert + pmt.amount).toString(), lastBlock.timestamp.toString()].makeString(separator)),
