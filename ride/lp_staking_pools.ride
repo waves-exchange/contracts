@@ -291,7 +291,7 @@ func put() = {
     }
   }
   let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
-  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getString().value().split(separator)[1].parseInt().valueOrElse(0)
+  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getString().valueOrElse("%d%d%d__0__0").split(separator)[1].parseInt().value()
   ([
     IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), baseAssetAmountToConvert + pmt.amount),
     StringEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), ["%d%d%d", (userBaseAssetAmountToConvert + pmt.amount).toString(), lastBlock.timestamp.toString(), period.toString()].makeString(separator)),
@@ -324,7 +324,7 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
   strict shareAssetId = baseAssetId.keyShareAssetId()
     .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
   strict period = baseAssetId.keyPeriod().getInteger().valueOrErrorMessage("invalid period".wrapErr())
-  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getString().value().split(separator)[1].parseInt().valueOrElse(0)
+  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getString().valueOrElse("%d%d%d__0__0").split(separator)[1].parseInt().value()
   strict checkAmountToConvert = userBaseAssetAmountToConvert > 0 || "nothing to claim".throwErr()
   let userBaseAssetAmountToConvertPeriod = baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
   # current period should be > userBaseAssetAmountToConvertPeriod
@@ -376,7 +376,7 @@ func get() = {
     }
   }
   let shareAssetAmountToConvert = baseAssetId.keyShareAssetAmountToConvert().getInteger().valueOrElse(0)
-  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getString().value().split(separator)[1].parseInt().valueOrElse(0)
+  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getString().valueOrElse("%d%d%d__0__0").split(separator)[1].parseInt().value()
 
   ([
     IntegerEntry(baseAssetId.keyShareAssetAmountToConvert(), shareAssetAmountToConvert + pmt.amount),
@@ -409,8 +409,8 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
   strict shareAssetId = baseAssetId.keyShareAssetId()
     .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
   strict period = baseAssetId.keyPeriod().getInteger().valueOrErrorMessage("invalid period".wrapErr())
-  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getString().value().split(separator)[1].parseInt().valueOrElse(0)
-
+  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getString().valueOrElse("%d%d%d__0__0").split(separator)[1].parseInt().value()
+  
   # strict checkAmountToConvert = userShareAssetAmountToConvert > 0 || "nothing to claim".throwErr()
   let userShareAssetAmountToConvertPeriod = baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
   strict checkPeriod = period > userShareAssetAmountToConvertPeriod || "invalid period".throwErr()
