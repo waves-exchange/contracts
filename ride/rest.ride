@@ -186,13 +186,15 @@ func managerPublicKeyOrUnit() = {
   }
 }
 
-func mustManager(i: Invocation) = {
-  let pd = "permission denied".throw()
-
+func isManager(i: Invocation) = {
   match managerPublicKeyOrUnit() {
-    case pk: ByteVector => i.callerPublicKey == pk || pd
-    case _: Unit => i.caller == this || pd
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
   }
+}
+
+func mustManager(i: Invocation) = {
+  i.isManager() || "permission denied".throw()
 }
 
 @Callable(i)
