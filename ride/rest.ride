@@ -68,6 +68,9 @@ func keyFactoryLpList()   = "%s__lpTokensList" # not used anymore
 func keyFactoryLpAssetToPoolContractAddress(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
 func keyFactoryPoolWeight(contractAddress: String) = { ["%s%s", "poolWeight", contractAddress].makeString(SEP) }
 
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
+func keyManagerPublicKey() = "%s__managerPublicKey"
+
 func readFactoryAddressOrFail() = getStringOrFail(keyFactoryAddress()).addressFromStringValue()
 func readLpList()               = readFactoryAddressOrFail().getString(keyFactoryLpList()).valueOrElse("").split(SEP)
 func readFactoryCfgOrFail(factory: Address)     = factory.getStringByAddressOrFail(keyFactoryCfg()).split(SEP)
@@ -75,6 +78,8 @@ func getBoostingAddressOrFail(fCfg: List[String]) = fCfg[IdxFactoryCfgBoostingDa
 func getEmissionAddressOrFail(fCfg: List[String]) = fCfg[IdxFactoryCfgEmissionDapp].addressFromStringValue()
 func getStakingAddressOrFail(fCfg: List[String])  = fCfg[IdxFactoryCfgStakingDapp].addressFromStringValue()
 func getGwxRewardAddressOrFail(fCfg: List[String])  = fCfg[IdxFactoryCfgGwxRewardDapp].addressFromStringValue()
+
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
 # BOOSTING API
 func keyBoostCfg() = "%s__config"
@@ -174,11 +179,8 @@ func getKey(addr: Address, key: String, type: String) = {
 }
 
 func managerPublicKeyOrUnit() = {
-  let keyManagerVaultAddress = "%s__managerVaultAddress"
-  let keyManagerPublicKey = "%s__managerPublicKey"
-  let managerVaultAddress = keyManagerVaultAddress.getStringValue().addressFromStringValue()
-
-  match managerVaultAddress.getString(keyManagerPublicKey) {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit
   }
