@@ -15,8 +15,11 @@ func keyCurrentIndex() = ["%s", "currentIndex"].makeString(SEP)
 func keyProposalInfo(number: Int) = ["%s%d", "proposalInfo", number.toString()].makeString(SEP)
 func keyUserVoteOnProposal(number: Int, user: String) = ["%s%d%s", "userVoteOnProposal", number.toString(), user].makeString(SEP)
 
-func getCurrentIndex() = this.getIntegerValue(keyCurrentIndex())
+let keyManagerPublicKey = "%s__managerPublicKey"
+let keyManagerVaultAddress = "%s__managerVaultAddress"
 
+func getCurrentIndex() = this.getIntegerValue(keyCurrentIndex())
+func getManagerAddressOrFail() = keyManagerVaultAddress.getStringValue().addressFromStringValue()
 func formatProposalInfo(name: String, description: String, end: String, quorumNumber: String, positiveVotes: String, negativeVotes: String) = {
   makeString([
       "%d%d%d%d%d%d",       # 0
@@ -39,7 +42,6 @@ func formatUserVoteOnProposal(vote: String, gwxNumber: String) = {
   SEP)
 }
 
-
 func asInt(val: Any) = {
   match val {
     case valInt: Int => valInt
@@ -48,9 +50,7 @@ func asInt(val: Any) = {
 }
 
 func managerPublicKeyOrUnit() = {
-  let keyManagerPublicKey = "%s__managerPublicKey"
-  let keyManagerVaultAddress = "%s__managerVaultAddress"
-  let managerVaultAddress = keyManagerVaultAddress.getStringValue().addressFromStringValue()
+  let managerVaultAddress = getManagerAddressOrFail()
   match managerVaultAddress.getString(keyManagerPublicKey) {
     case s: String => s.fromBase58String()
     case _: Unit => unit
