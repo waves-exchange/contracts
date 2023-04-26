@@ -53,9 +53,6 @@ func asString(val: Any) = {
 # own factory address key
 func keyFactoryAddress()  = "%s%s__config__factoryAddress"
 
-func keyManagerVaultAddress() = "%s__managerVaultAddress"
-func keyManagerPublicKey() = "%s__managerPublicKey"
-
 let IdxFactoryCfgStakingDapp    = 1
 let IdxFactoryCfgBoostingDapp   = 2
 let IdxFactoryCfgIdoDapp        = 3
@@ -131,7 +128,6 @@ let emissionDapp  = factoryCfg.getEmissionAddressOrFail()
 let stakingDapp   = factoryCfg.getStakingAddressOrFail()
 let gwxRewardDapp = factoryCfg.getGwxRewardAddressOrFail()
 let boostingDapp  = factoryCfg.getBoostingAddressOrFail()
-let managerVaultAddress = this.getStringByAddressOrFail(keyManagerVaultAddress()).addressFromStringValue()
 
 func getPoolInFee(poolAddress: Address) = {
   factoryDapp.invoke("getInFeeREADONLY", [poolAddress.toString()], []).exactAs[Int]
@@ -177,13 +173,19 @@ func getKey(addr: Address, key: String, type: String) = {
   }
 }
 
-func managerPublicKeyOrUnit() = match managerVaultAddress.getString(keyManagerPublicKey()) {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let keyManagerVaultAddress = "%s__managerVaultAddress"
+  let keyManagerPublicKey = "%s__managerPublicKey"
+  let managerVaultAddress = keyManagerVaultAddress.getStringValue().addressFromStringValue()
+
+  match managerVaultAddress.getString(keyManagerPublicKey) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func mustManager(i: Invocation) = {
-  let pd = "Permission denied".throw()
+  let pd = "permission denied".throw()
 
   match managerPublicKeyOrUnit() {
     case pk: ByteVector => i.callerPublicKey == pk || pd
