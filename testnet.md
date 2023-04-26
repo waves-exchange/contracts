@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-372-lpstakingpools-addfix**](https://github.com/waves-exchange/contracts/tree/wxdefi-372-lpstakingpools-addfix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **19:14 25.04.2023** (GMT+4)
+[**wxdefi-372-lpstakingpools-addfix**](https://github.com/waves-exchange/contracts/tree/wxdefi-372-lpstakingpools-addfix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **12:13 26.04.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
