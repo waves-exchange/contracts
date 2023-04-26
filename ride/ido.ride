@@ -148,7 +148,7 @@ func keyInvestorRemainingAmount(address: String) = ["%s%s", "investorRemainingAm
 func keyTotalRemainingAmount() = ["%s", "totalRemainingAmount"].makeString(SEP)
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
 # State Reading Functions
 func readConfigArray() = {
@@ -167,6 +167,9 @@ func readInvestorArrayOrDefault(userAddress: String) = {
 }
 func readInvestorArrayOrFail(userAddress: String) = {
   getStringOrFail(keyInvestor(userAddress)).split(SEP)
+}
+func getStringByAddressOrFail(address: Address, key: String) = {
+  address.getString(key).valueOrErrorMessage("mandatory " + address.toString() + "." + key + " is not defined")
 }
 
 # Custom Data Entries
@@ -413,14 +416,14 @@ func internalClaimV2(priceAssetId58: String, userAddress58: String, outAmount: I
   )
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = addressFromStringValue(getStringByAddressOrFail(this, keyManagerVaultAddress()))
 
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+  let managerPublicKey = managerVaultAddress.getString(keyManagerPublicKey())
+  match managerPublicKey {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func mustManager(i: Invocation) = {
@@ -873,26 +876,6 @@ func claimV2READONLY(claimedAssetId58: String, userAddress58: String) = {
   }
 
   ([], resultString)
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)
