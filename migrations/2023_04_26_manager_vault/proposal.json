@@ -1,0 +1,16 @@
+{
+    "type": 12,
+    "data": [
+      {
+        "key": "%s__managerVaultAddress",
+        "type": "string",
+        "value": "3P4QKaU3NfbfxwF9aB5Kz4rvxFnLc4mBqYN"
+      }
+    ],
+    "senderPublicKey": "2VkbtS8CodmbZqAounEpDSf4dAfLoCWfEEGHZK7qtbeD",
+    "chainId": 87,
+    "fee": 500000,
+    "proofs": [],
+    "version": 2
+  }
+  

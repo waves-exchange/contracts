@@ -4,9 +4,6 @@
 
 let SEP = "__"
 
-func keyManagerPublicKey() = "%s__managerPublicpKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
-
 func blockHeightError() = "The block's height is too big for this proposal".throw()
 func alreadyVoteError() = "You have already voted".throw()
 func noVoteError() = "You have not already voted".throw()
@@ -50,14 +47,14 @@ func asInt(val: Any) = {
   }
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let keyManagerPublicKey = "%s__managerPublicKey"
+  let keyManagerVaultAddress = "%s__managerVaultAddress"
+  let managerVaultAddress = keyManagerVaultAddress.getStringValue().addressFromStringValue()
+  match managerVaultAddress.getString(keyManagerPublicKey) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func isManager(i: Invocation) = {
@@ -288,26 +285,6 @@ func getResultREADONLY(proposalIndex: Int) = {
   let quorumNumber = voteInfoArray[4]
 
   ([], [positiveVotes, negativeVotes, quorumNumber])
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("no pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("you are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)
