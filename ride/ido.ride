@@ -168,9 +168,7 @@ func readInvestorArrayOrDefault(userAddress: String) = {
 func readInvestorArrayOrFail(userAddress: String) = {
   getStringOrFail(keyInvestor(userAddress)).split(SEP)
 }
-func getStringByAddressOrFail(address: Address, key: String) = {
-  address.getString(key).valueOrErrorMessage("mandatory " + address.toString() + "." + key + " is not defined")
-}
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
 # Custom Data Entries
 
@@ -417,10 +415,8 @@ func internalClaimV2(priceAssetId58: String, userAddress58: String, outAmount: I
 }
 
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = addressFromStringValue(getStringByAddressOrFail(this, keyManagerVaultAddress()))
-
-  let managerPublicKey = managerVaultAddress.getString(keyManagerPublicKey())
-  match managerPublicKey {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit
   }
