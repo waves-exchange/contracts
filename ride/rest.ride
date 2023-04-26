@@ -53,8 +53,8 @@ func asString(val: Any) = {
 # own factory address key
 func keyFactoryAddress()  = "%s%s__config__factoryAddress"
 
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
 
 let IdxFactoryCfgStakingDapp    = 1
 let IdxFactoryCfgBoostingDapp   = 2
@@ -131,6 +131,7 @@ let emissionDapp  = factoryCfg.getEmissionAddressOrFail()
 let stakingDapp   = factoryCfg.getStakingAddressOrFail()
 let gwxRewardDapp = factoryCfg.getGwxRewardAddressOrFail()
 let boostingDapp  = factoryCfg.getBoostingAddressOrFail()
+let managerVaultAddress = this.getStringByAddressOrFail(keyManagerVaultAddress()).addressFromStringValue()
 
 func getPoolInFee(poolAddress: Address) = {
   factoryDapp.invoke("getInFeeREADONLY", [poolAddress.toString()], []).exactAs[Int]
@@ -176,12 +177,7 @@ func getKey(addr: Address, key: String, type: String) = {
   }
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
+func managerPublicKeyOrUnit() = match managerVaultAddress.getString(keyManagerPublicKey()) {
   case s: String => s.fromBase58String()
   case _: Unit => unit
 }
@@ -643,26 +639,6 @@ func getKeysBulkInternal(currentIter: Int, keys: List[String], resAcc: List[Stri
 func getKeysBulk(keys: List[String]) = {
   let res = this.invoke("getKeysBulkInternal", [0, keys, []], [])
   ([], res)
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)
