@@ -63,7 +63,9 @@ func keyImplementationContract(programName: String) = {
 func keyAllReferralPrograms(address: String) = ["%s%s", "allReferralPrograms", address].makeString(separator)
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
+
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
 func keyClaimHistory(
   programName: String,
@@ -75,14 +77,12 @@ func formatClaimHistory(amount: Int) = ["%d%d%d", lastBlock.height.toString(), l
 
 func throwErr(msg: String) = ["referral.ride:", msg].makeString(" ").throw()
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func mustManager(i: Invocation) = {
@@ -483,26 +483,6 @@ func setTotalKeys(programName: String, address: String) = {
     IntegerEntry(address.keyClaimedTotalAddress(), claimedTotalAddress),
     IntegerEntry(address.keyUnclaimedTotalAddress(), unclaimedTotalAddress)
   ], unit)
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller            = i.mustManager()
-  strict checkManagerPublicKey  = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM    = pm.isDefined() || "no pending manager".throwErr()
-  strict checkPM  = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)

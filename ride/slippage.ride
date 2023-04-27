@@ -40,7 +40,7 @@ func keyAllPoolsShutdown() = {"%s__shutdown"}
 func keyPoolWeight(contractAddress: String) = {"%s%s__poolWeight__"+contractAddress}
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
 #------------------------
 # GLOBAL FUNCTIONS
@@ -70,14 +70,14 @@ func toScale(amt: Int, resScale: Int, curScale: Int) = {
       fraction(amt, resScale, curScale)
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func mustManager(i: Invocation) = {
@@ -150,26 +150,6 @@ func invest(poolAddressStr: String) = {
   [StringEntry(keyRegisterInvest(poolAddressStr, i.transactionId.toBase58String()), dataInvestActionInfo(amAmt, prAmt, height, lastBlock.timestamp)),
    IntegerEntry(keyPoolTotalAmtByAsset(poolAddressStr, amId), amBalance - amAmt),
    IntegerEntry(keyPoolTotalAmtByAsset(poolAddressStr, prId), prBalance - prAmt)]
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)
