@@ -14,8 +14,6 @@ func throwPD() = "Permission denied".throw()
 func throwNoAsset() = "Asset doesn't exists".throw()
 func throwInvalidTicker() = "Invalid ticker".throw()
 
-func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 func keyAdminPubKeys() = "%s__adminPubKeys"
 func keyUserPoolsContract() = "%s__userPoolsContract"
 func keyFactoryContract() = "%s__factoryContract"
@@ -32,6 +30,9 @@ func keyLpAssetToAmountAndPriceAssets(lpAsset: String) = ["%s%s", "lpAssetToAmou
 func keyAssetLabels(assetId: String) = ["%s%s", "labels", assetId].makeString(SEP)
 func keyLabels() = ["%s", "labels"].makeString(SEP)
 func keyAssetName(assetId: String) = ["%s%s", "assetName", assetId].makeString(SEP)
+
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
+func keyManagerPublicKey() = "%s__managerPublicKey"
 
 func keyAssetDescription(assetId: String) = ["%s%s", "assetDescription", assetId].makeString(SEP) 
 
@@ -67,31 +68,30 @@ func getAssetLabels(assetId: String) = {
   }
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
 }
 
 func mustManager(i: Invocation) = {
-  match managerPublicKeyOrUnit() {
-    case pk: ByteVector => i.callerPublicKey == pk || throwPD()
-    case _: Unit => i.caller == this || throwPD()
-  }
+  i.isManager() || "permission denied".throw()
 }
 
 func mustAdmin(i: Invocation) = {
   let adminPKs = keyAdminPubKeys().getString().valueOrElse(EMPTY).split(SEP)
-  if (adminPKs.containsElement(i.callerPublicKey.toBase58String())) then {
-    true
-  } else {
-    strict isManager = i.mustManager()
-    true
-  }
+  adminPKs.containsElement(i.callerPublicKey.toBase58String()) || i.mustManager()
 }
 
 func isCreated(assetId: String) = {
@@ -330,26 +330,6 @@ func onEliminate(assetId: String) = {
 func setAdmins(adminPubKeys: List[String]) = {
   strict checkCaller = i.mustManager()
   [StringEntry(keyAdminPubKeys(), adminPubKeys.makeString(SEP))]
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || "No pending manager".throw()
-  strict checkPM = i.callerPublicKey == pm.value() || "You are not pending manager".throw()
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Callable(i)
