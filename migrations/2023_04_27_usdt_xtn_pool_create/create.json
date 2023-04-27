@@ -1,0 +1,24 @@
+{
+  "chainId": 87,
+  "dApp": "3PKSksWtuhAjKe878KVfTP4TEGf9hFSV2LM",
+  "fee": 500000,
+  "proofs": [],
+  "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+  "timestamp": 0,
+  "type": 16,
+  "version": 1,
+  "payment": [
+    {
+      "assetId": "9wc3LXNA4TEBsXyKtoLE9mrbDD7WMHXvXrCjZvabLAsi",
+      "amount": 1
+    },
+    {
+      "assetId": "DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p",
+      "amount": 1
+    }
+  ],
+  "call": {
+    "function": "create",
+    "args": []
+  }
+}
