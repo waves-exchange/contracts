@@ -1,0 +1,29 @@
+{
+    "type": 16,
+    "fee": 900000,
+    "version": 1,
+    "senderPublicKey": "2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq",
+    "dApp": "3P3p2zt2MhX73SkSQZrUn63UNZVmGJPLoJH",
+    "payment": [],
+    "call": {
+        "function": "startNewVote",
+        "args": [
+            {
+                "type": "string",
+                "value": "WXP-004 Change the mechanics of token verification voting."
+            },
+            {
+                "type": "string",
+                "value": "It is proposed to expand the functionality of the current token verification voting by implementing the following changes: \nAllow users to suggest any unverified tokens for voting (not only their own tokens). \nAllow users to choose the voting period themselves when suggesting a token for voting. After receiving the 'Community Verified' status, the token no longer needs to participate in the voting to maintain that status. \nAdd the ability for users to offer a bonus (reward) to those who voted for the verification of their proposed token. \nAdd the ability for the users who have at least 1000 gWX on their balance to complain about a verified token. Such a complaint initiates voting (that cannot be prolonged) to remove the token's verified status."
+            },
+            {
+                "type": "integer",
+                "value": 30240
+            },
+            {
+                "type": "integer",
+                "value": 500000000000000
+            }
+        ]
+    }
+}
