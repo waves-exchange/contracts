@@ -1,0 +1,15 @@
+{
+  "type": 12,
+  "data": [
+    {
+      "key": "%s__priceAssetsMinAmount",
+      "type": "string",
+      "value": "10000000000000__50000000000__1000000000__1000000000"
+    }
+  ],
+  "senderPublicKey": "52HVeUFDYgRVXrPNfdX4WinZBFdizmuf1vqmbd8ExAZS",
+  "chainId": 87,
+  "fee": 500000,
+  "proofs": [],
+  "version": 2
+}
