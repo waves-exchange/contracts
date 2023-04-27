@@ -20,7 +20,7 @@ let keyReferral = ["%s", "referral"].makeString(SEP)
 let keyWxAssetId = ["%s", "wxAssetId"].makeString(SEP)
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
 # State Data Formatting Functions
 let IdxCfgClaimStartBlock        = 1
@@ -97,6 +97,8 @@ func readTotalsArray() = {
   getStringOrFail(keyTotals()).split(SEP)
 }
 
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+
 # Custom Data Entries
 func TotalsEntry(key: String, origArray: List[String], claimedAmt: Int, newLastClaimedHeight: Int) = {
   let totalClaimedAmount          = origArray[IdxTotalsTotalClaimedAmount].parseIntValue()
@@ -119,14 +121,12 @@ func ClaimOperationHistoryEntry(userAddress: String, claimedAssetAmount: Int,  c
       formatHistoryRecord(claimedAssetAmount, claimingBlocks, firstCalculationBlock, lastCalculationBlock))
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func mustManager(i: Invocation) = {
@@ -216,26 +216,6 @@ func withdrawReferralReward(wxAmount: Int) = {
     ScriptTransfer(i.caller, wxAmount, wxAssetId),
     ClaimOperationHistoryEntry(referralContractAddress, wxAmount, 0, 0, 0, i.transactionId)
   ], unit)
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller            = i.mustManager()
-  strict checkManagerPublicKey  = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM    = pm.isDefined() || "no pending manager".throwErr()
-  strict checkPM  = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)
