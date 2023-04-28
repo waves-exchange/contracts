@@ -5,7 +5,7 @@
 let SEP = "__"
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
 func keyUser(address: String) = ["%s", address].makeString(SEP)
 func keyRevoked(address: String) = ["%s%s", "revoked", address].makeString(SEP)
@@ -16,16 +16,16 @@ func keyUserAmountPerBlock(address: String) = ["%s%s", "amountPerBlock", address
 
 func keyWxAssetId() = ["%s", "wxAssetId"].makeString(SEP)
 
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+
 func throwErr(msg: String) = ["vesting.ride:", msg].makeString(" ").throw()
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func mustManager(i: Invocation) = {
@@ -249,26 +249,6 @@ func stats(address: String) = {
     getUserRemainingAmount(address),
     availableToClaimNow(address)
   ])
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || "no pending manager".throwErr()
-  strict checkPM = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)

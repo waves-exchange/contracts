@@ -6,7 +6,7 @@ let SEP = "__"
 let EMPTY = ""
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
 # Value format: publicKey1__publicKey2
 func keyAdminPubKeys() = "%s__adminPubKeys"
@@ -22,14 +22,14 @@ func keyClaimDenied(assetId: String) = ["%s%s", "claimDenied", assetId].makeStri
 
 func throwErr(msg: String) = ["vesting_multiasset.ride:", msg].makeString(" ").throw()
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func mustManager(i: Invocation) = {
@@ -355,26 +355,6 @@ func stats(assetId: String, address: String) = {
     getUserRemainingAmount(assetId, address),
     availableToClaimNow(assetId, address)
   ])
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || "no pending manager".throwErr()
-  strict checkPM = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)

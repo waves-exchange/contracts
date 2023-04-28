@@ -18,7 +18,7 @@ let poolNotExist = "Pool is not exist".throw()
 let slippageTooBig = "Slippage is too big".throw()
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
 func fc() = {"%s__factoryContract"}
 let factoryContract = addressFromStringValue(getStringOrFail(fc()))
@@ -31,9 +31,7 @@ func getStringOrFailFromAddress(address: Address, key: String) = address.getStri
 let keyFeeCollectorAddress = "%s__feeCollectorAddress"
 let feeCollectorAddress = factoryContract.getStringOrFailFromAddress(keyFeeCollectorAddress).addressFromStringValue()
 
-
-
-
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
 func asInt(val: Any) = {
   match val {
@@ -50,14 +48,12 @@ func dataMappingPoolAssets(internalAmountAssetStr: Int, internalPriceAssetStr: I
     SEP)
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func isManager(i: Invocation) = {
@@ -204,27 +200,6 @@ func swap(
   ([ScriptTransfer(feeCollectorAddress, feeProtocolAmount.toInt(), assetInAttachedPayment),
   ScriptTransfer(poolAdr, feePoolAmount.toInt(), assetInAttachedPayment)],
   totalGetRaw)
-}
-
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("no pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("you are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)
