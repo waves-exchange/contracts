@@ -9,7 +9,9 @@ func getStringOrFail(key: String) = {this.getString(key).valueOrErrorMessage("No
 func getBooleanOrFail(key: String) = {this.getBoolean(key).valueOrErrorMessage("No data for this.key=" + key)}
 
 func keyManagerPublicKey() = ["%s", "managerPublicKey"].makeString(SEP)
-func keyPendingManagerPublicKey() = ["%s", "pendingManagerPublicKey"].makeString(SEP)
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
+
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
 func failExecuteGet(msg: String, baseAssetStr: String, userAddressStr: String, getTxIdStr: String) = {
   throw(msg + ": baseAssetStr=" + baseAssetStr + " userAddressStr=" + userAddressStr + " getTxIdStr=" + getTxIdStr)
@@ -154,14 +156,12 @@ func decrementTotalLocked(key: String, shareAssetAmount: Int, baseAssetAmount: I
         dataArray[IdxTotalLockedBase] - baseAssetAmount))
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func balanceOrZero(assetId: String) = {
@@ -464,26 +464,6 @@ func currentSysParamsREST(baseAssetStr: String)= {
   SEP)
 
   throw(restData)
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || "no pending manager".throw()
-  strict checkPM = i.callerPublicKey == pm.value() || "you are not pending manager".throw()
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)
