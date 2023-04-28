@@ -7,13 +7,12 @@
     "version": 1,
     "payment": [],
     "call": {
-      "function": "setEpochLength",
-      "args": [
-        {
-          "type": "integer",
-          "value": 43200
-        }
-      ]
+        "function": "setEpochLength",
+        "args": [
+            {
+                "type": "integer",
+                "value": 43200
+            }
+        ]
     }
-  }
-  
+}
