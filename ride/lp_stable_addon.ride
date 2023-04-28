@@ -17,7 +17,7 @@ let idxFactStakCntr      = 1
 #-------------------------
 func keyFactCntr() = {"%s__factoryContract"}
 func keyManagerPublicKey() = {"%s__managerPublicKey"}
-func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
+func keyManagerVaultAddress() = {"%s__managerVaultAddress"}
 func keyPoolAddr() = {"%s__poolAddress"}
 func keyAmtAsset() = {"%s__amountAsset"}
 func keyPriceAsset() = {"%s__priceAsset"}
@@ -44,6 +44,7 @@ func getIntOrFail(addr: Address, key: String) = addr.getInteger(key).valueOrErro
 let poolContract = addressFromStringValue(getStringOrFail(this, keyPoolAddr()))
 let factoryContract = addressFromStringValue(getStringOrFail(poolContract, keyFactCntr()))
 
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 # function used to gather all pool data from factory
 func getPoolConfig() = {
   let amtAs = getStringOrFail(poolContract, keyAmtAsset())
@@ -57,14 +58,12 @@ func getFactoryConfig() = {
   getStringOrFail(factoryContract, keyFactoryConfig()).split(SEP)
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func mustManager(i: Invocation) = {
@@ -96,26 +95,6 @@ func constructor(poolAddress: String) = {
   strict checkCaller = i.mustManager()
 
   [StringEntry(keyPoolAddr(), poolAddress)]
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Callable(i)

@@ -81,7 +81,7 @@ func getStakingAddressOrFail(factoryCfg: List[String])  = factoryCfg[IdxFactoryC
 func getGwxRewardAddressOrFail(factoryCfg: List[String])  = factoryCfg[IdxFactoryCfgGwxRewardDapp].addressFromStringValue()
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
 # EMISSION API
 func keyEmissionRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
@@ -129,14 +129,14 @@ func formatConfig(assetId: String, minLockAmount: Int, minLockDuration: Int, max
   )
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func mustManager(i: Invocation) = {
@@ -874,26 +874,6 @@ func getUserVoteFinalizedREADONLY(lpAssetIdStr: String, userAddressStr: String) 
 @Callable(i)
 func getUserVoteStakedIntegralREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
   ([], lpAssetIdStr.getUserVoteStakedIntegral(userAddressStr))
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throwErr("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throwErr("You are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)

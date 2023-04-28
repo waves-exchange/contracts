@@ -74,8 +74,7 @@ func keyLegacyPools()
       = "%s__legacyPools"
 func keyManagerPublicKey()
       = "%s__managerPublicKey"
-func keyPendingManagerPublicKey()
-      = {"%s__pendingManagerPublicKey"}
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 func keyAdminPubKeys() = "%s__adminPubKeys"
 func keyAssetsStoreContract() = "%s__assetsStoreContract"
 func keyVotingEmissionContract() = "%s__votingEmissionContract"
@@ -170,6 +169,7 @@ func getIntOrFail(key: String)      = {this.getInteger(key).valueOrErrorMessage(
 func parseAssetId(input: String) = {
   if (input == wavesString) then unit else input.fromBase58String()
 }
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 #------------------------
 # CONTRACT FUNCTIONS
 #------------------------
@@ -198,14 +198,12 @@ func getPriceAssets() = {
   }
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 let permissionDeniedError = "Permission denied".throw()
@@ -495,26 +493,6 @@ func constructorV6(votingEmissionContract: String, priceAssets: List[String]) = 
   [
     StringEntry(keyVotingEmissionContract(), votingEmissionContract),
     StringEntry(keyPriceAssets(), priceAssets.makeString(SEP))
-  ]
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
   ]
 }
 
