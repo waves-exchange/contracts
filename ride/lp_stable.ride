@@ -99,8 +99,10 @@ func absBigInt(val: BigInt) = if (val < zeroBigInt) then -val else val
 # KEYS ON CURRENT CONTRACT
 #-------------------------
 func fc() = {"%s__factoryContract"}
-func mpk() = {"%s__managerPublicKey"}
-func pmpk() = {"%s__pendingManagerPublicKey"}
+# keyManagerPublicKey
+func keyManagerPublicKey() = "%s__managerPublicKey"
+# keyManagerVaultAddress
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 func pl() = {"%s%s__price__last"}
 func ph(h: Int, t: Int) = {makeString(["%s%s%d%d__price__history", h.toString(), t.toString()], SEP)}
 # keyPutActionByUser
@@ -157,6 +159,7 @@ func throwOrderError(
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
 # getStringOrFail
 func strf(addr: Address, key: String) = addr.getString(key).valueOrErrorMessage(makeString(["mandatory ", addr.toString(), ".", key, " not defined"], ""))
@@ -894,29 +897,26 @@ func getOneTknV2Internal(
 }
 
 # managerPublicKeyOrUnit
-func m() = match mpk().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-# pendingManagerPublicKeyOrUnit
-func pm() = match pmpk().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 let pd = "Permission denied".throw()
 
 func isManager(i: Invocation) = {
-  match m() {
+  match managerPublicKeyOrUnit() {
     case pk: ByteVector => i.callerPublicKey == pk
     case _: Unit => i.caller == this
   }
 }
 
 # mustManager
-func mm(i: Invocation) = {
-  match m() {
+func mustManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
     case pk: ByteVector => i.callerPublicKey == pk || pd
     case _: Unit => i.caller == this || pd
   }
@@ -1063,29 +1063,9 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
 # ido, team, emission, staking, locking (boosting), rest
 # fc - factoryContract
 func constructor(fc: String) = {
-  strict c = i.mm()
+  strict c = i.mustManager()
 
   [StringEntry(fc(), fc)]
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict c = i.mm()
-  strict cm = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(pmpk(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let p = pm()
-  strict hpm = p.isDefined() || throw("No pending manager")
-  strict cpm = i.callerPublicKey == p.value() || throw("You are not pending manager")
-
-  [
-    StringEntry(mpk(), p.value().toBase58String()),
-    DeleteEntry(pmpk())
-  ]
 }
 
 # called by: LP
@@ -1757,7 +1737,7 @@ func changeAmp() = {
 
 @Verifier(tx)
 func verify() = {
-  let targetPublicKey = match m() {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
     case pk: ByteVector => pk
     case _: Unit => tx.senderPublicKey
   }
