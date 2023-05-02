@@ -1,5 +1,5 @@
 # Testnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **12:54 02.05.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **15:31 02.05.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -26,8 +26,6 @@ Kekenger/WAVES pool | [`3N7saV8fdobqv3pihDzmMPni3uetdv4nZDG`](https://wavesexplo
 motoken5/WX pool | [`3N9tTbtGnWHjxFq9FSfV4skFikcpEhZrURQ`](https://wavesexplorer.com/addresses/3N9tTbtGnWHjxFq9FSfV4skFikcpEhZrURQ?network=testnet) | `9Er8a8onTt64CtNRT4YFLkQFxF4g2rQTWB3QRUvQfhLM` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT`](https://wavesexplorer.com/addresses/3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT?network=testnet) | `D1BL65meykxFZTCuq7jq9HSGLLnWvQamQPUNrguW5w39` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDT pool | [`3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA`](https://wavesexplorer.com/addresses/3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA?network=testnet) | `35yd3qw1gxKDxKwGAykHN9fANbXNWwseaUwbWDj24o3x` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
-USDT/USDN pool addon | [`3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV`](https://wavesexplorer.com/addresses/3N8bnD2caKnxdcTqvrJUEkDe3XebgfwWjSV?network=testnet) | `8KXPjDuC8ffL9qjNuDBLnkvJKbMojhZYcnm2o75UCyun` | [lp_stable_addon.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable_addon.ride) 
-USDC/USDT pool addon | [`3MxuKn3ZoWnX58Q4ooAraNxabpcdaAtpufk`](https://wavesexplorer.com/addresses/3MxuKn3ZoWnX58Q4ooAraNxabpcdaAtpufk?network=testnet) | `3GJt6j9wqqWrm9ontm1mnLfeW2wgWZYSqzVb9ueSKL1E` | [lp_stable_addon.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable_addon.ride) 
 lp_staking | [`3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL`](https://wavesexplorer.com/addresses/3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL?network=testnet) | `ER6eHxtBYJ4JakpeheRtGgvT5AeP1S4g44VxoNJo14kd` | [lp_staking.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_staking.ride) 
 lp_staking_pools | [`3N98Ngyaszw66EakvWRCiZ771ja2RDgNaxV`](https://wavesexplorer.com/addresses/3N98Ngyaszw66EakvWRCiZ771ja2RDgNaxV?network=testnet) | `F4oaTkX67vt2MEsXLJJ8a7gaURGjW7x8fkvGfdEiH5oy` | [lp_staking_pools.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_staking_pools.ride) 
 lp_staking_v2 | [`3NCroKxpCWCYijwjiVBg6hc2T7DaajrHuBr`](https://wavesexplorer.com/addresses/3NCroKxpCWCYijwjiVBg6hc2T7DaajrHuBr?network=testnet) | `4j5ighurrUZ2WcdBTRGqBfXs5fz9YDA76D4gtpZ9basj` | [lp_staking_v2.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_staking_v2.ride) 
