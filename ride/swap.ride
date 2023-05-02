@@ -31,7 +31,12 @@ func getStringOrFailFromAddress(address: Address, key: String) = address.getStri
 let keyFeeCollectorAddress = "%s__feeCollectorAddress"
 let feeCollectorAddress = factoryContract.getStringOrFailFromAddress(keyFeeCollectorAddress).addressFromStringValue()
 
-func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
 
 func asInt(val: Any) = {
   match val {
@@ -49,7 +54,7 @@ func dataMappingPoolAssets(internalAmountAssetStr: Int, internalPriceAssetStr: I
 }
 
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = getManagerAddressOrFail()
+  let managerVaultAddress = getManagerVaultAddressOrThis()
   match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit

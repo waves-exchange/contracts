@@ -79,7 +79,12 @@ func getEmissionAddressOrFail(fCfg: List[String]) = fCfg[IdxFactoryCfgEmissionDa
 func getStakingAddressOrFail(fCfg: List[String])  = fCfg[IdxFactoryCfgStakingDapp].addressFromStringValue()
 func getGwxRewardAddressOrFail(fCfg: List[String])  = fCfg[IdxFactoryCfgGwxRewardDapp].addressFromStringValue()
 
-func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
 
 # BOOSTING API
 func keyBoostCfg() = "%s__config"
@@ -179,7 +184,7 @@ func getKey(addr: Address, key: String, type: String) = {
 }
 
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = getManagerAddressOrFail()
+  let managerVaultAddress = getManagerVaultAddressOrThis()
   match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit

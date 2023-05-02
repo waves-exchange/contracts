@@ -69,7 +69,12 @@ func keyInList(pool: (String, String)) = {
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
-func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
 
 let assetsStoreContract = keyAssetsStoreContract.getStringOrFail().addressFromStringValue()
 let boostingContract = keyBoostingContract.getStringOrFail().addressFromStringValue()
@@ -79,7 +84,7 @@ let userPoolContract = keyUserPoolContract.getStringOrFail().addressFromStringVa
 let votingEmissionContract = keyVotingEmissionContract.getStringOrFail().addressFromStringValue()
 
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = getManagerAddressOrFail()
+  let managerVaultAddress = getManagerVaultAddressOrThis()
   match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit

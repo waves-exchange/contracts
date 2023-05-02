@@ -57,7 +57,12 @@ func keyAmountAssetMinAmount() = ["%s", "amountAssetMinAmount"].makeString(SEP)
 func keyPriceAssetsMinAmount() = ["%s", "priceAssetsMinAmount"].makeString(SEP)
 func keyPriceAssets() = ["%s", "priceAssets"].makeString(SEP)
 
-func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
 
 func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage(key + " is not defined")
 func stringOptionToList(stringOrUnit: String|Unit) = match stringOrUnit {
@@ -86,7 +91,7 @@ func mustCreateCalled(amountAssetId: String, priceAssetId: String) = {
 }
 
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = getManagerAddressOrFail()
+  let managerVaultAddress = getManagerVaultAddressOrThis()
   match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit

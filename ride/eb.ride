@@ -39,7 +39,12 @@ func checkIfDataIsReady() = {
   if (isDataReady) then true else throw("Data is not ready")
 }
 
-func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
 
 func getUserRewards(address: Address) = {
   let start = this.getInteger(keyStart).valueOrErrorMessage("Start block is not specified")
@@ -68,7 +73,7 @@ func getUserRewards(address: Address) = {
 }
 
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = getManagerAddressOrFail()
+  let managerVaultAddress = getManagerVaultAddressOrThis()
   match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit

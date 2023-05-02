@@ -159,7 +159,12 @@ func throwOrderError(
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------
-func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
 
 # getStringOrFail
 func strf(addr: Address, key: String) = addr.getString(key).valueOrErrorMessage(makeString(["mandatory ", addr.toString(), ".", key, " not defined"], ""))
@@ -898,7 +903,7 @@ func getOneTknV2Internal(
 
 # managerPublicKeyOrUnit
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = getManagerAddressOrFail()
+  let managerVaultAddress = getManagerVaultAddressOrThis()
   match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit

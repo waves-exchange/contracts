@@ -11,7 +11,12 @@ func getBooleanOrFail(key: String) = {this.getBoolean(key).valueOrErrorMessage("
 func keyManagerPublicKey() = ["%s", "managerPublicKey"].makeString(SEP)
 func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
-func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
 
 func failExecuteGet(msg: String, baseAssetStr: String, userAddressStr: String, getTxIdStr: String) = {
   throw(msg + ": baseAssetStr=" + baseAssetStr + " userAddressStr=" + userAddressStr + " getTxIdStr=" + getTxIdStr)
@@ -157,7 +162,7 @@ func decrementTotalLocked(key: String, shareAssetAmount: Int, baseAssetAmount: I
 }
 
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = getManagerAddressOrFail()
+  let managerVaultAddress = getManagerVaultAddressOrThis()
   match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit

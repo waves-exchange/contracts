@@ -94,7 +94,12 @@ func getBoostingAddressOrFail(factoryCfg: List[String]) = factoryCfg[IdxFactoryC
 func getEmissionAddressOrFail(factoryCfg: List[String]) = factoryCfg[IdxFactoryCfgEmissionDapp].addressFromStringValue()
 func getStakingAddressOrFail(factoryCfg: List[String])  = factoryCfg[IdxFactoryCfgStakingDapp].addressFromStringValue()
 
-func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
 
 # EMISSION API
 func keyEmissionRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
@@ -356,7 +361,7 @@ func refreshINTEGRALS(lpAssetIdStr: String, userAddressStr: String, poolAddressS
 }
 
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = getManagerAddressOrFail()
+  let managerVaultAddress = getManagerVaultAddressOrThis()
   match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit

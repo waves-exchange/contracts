@@ -16,12 +16,17 @@ func keyUserAmountPerBlock(address: String) = ["%s%s", "amountPerBlock", address
 
 func keyWxAssetId() = ["%s", "wxAssetId"].makeString(SEP)
 
-func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
 
 func throwErr(msg: String) = ["vesting.ride:", msg].makeString(" ").throw()
 
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = getManagerAddressOrFail()
+  let managerVaultAddress = getManagerVaultAddressOrThis()
   match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit

@@ -169,7 +169,13 @@ func getIntOrFail(key: String)      = {this.getInteger(key).valueOrErrorMessage(
 func parseAssetId(input: String) = {
   if (input == wavesString) then unit else input.fromBase58String()
 }
-func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
+
 #------------------------
 # CONTRACT FUNCTIONS
 #------------------------
@@ -199,7 +205,7 @@ func getPriceAssets() = {
 }
 
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = getManagerAddressOrFail()
+  let managerVaultAddress = getManagerVaultAddressOrThis()
   match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit
