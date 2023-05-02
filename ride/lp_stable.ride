@@ -36,7 +36,6 @@
 #-----------------
 # GLOBAL VARIABLES
 #-----------------
-let test = true
 let scale8 = 100_000_000
 let scale8BigInt = 100_000_000.toBigInt()
 let scale18 = 1_000_000_000_000_000_000.toBigInt()
