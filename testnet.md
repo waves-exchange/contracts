@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-386-lp-stable-addon-remove**](https://github.com/waves-exchange/contracts/tree/wxdefi-386-lp-stable-addon-remove) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **10:51 02.05.2023** (GMT+4)
+[**wxdefi-386-lp-stable-addon-remove**](https://github.com/waves-exchange/contracts/tree/wxdefi-386-lp-stable-addon-remove) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **10:58 02.05.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
