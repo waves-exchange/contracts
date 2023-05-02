@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+
 	"github.com/waves-exchange/contracts/deployer/pkg/branch"
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
 	"github.com/waves-exchange/contracts/deployer/pkg/contract"
@@ -68,7 +69,6 @@ func main() {
 		branch.NewModel(contextDB.Collection(cfg.MongoCollectionBranches)),
 		cfg.CompareLpScriptAddress,
 		cfg.CompareLpStableScriptAddress,
-		cfg.CompareLpStableAddonScriptAddress,
 		cfg.FeeSeed,
 	)
 	if err != nil {

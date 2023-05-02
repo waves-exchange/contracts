@@ -35,28 +35,26 @@ type compileCacheMap = map[string]func() (
 )
 
 type Syncer struct {
-	logger                            zerolog.Logger
-	network                           config.Network
-	networkByte                       proto.Scheme
-	rawClient                         *client.Client // TODO: make gowaves client with ratelimit as separate package
-	clientMutex                       *sync.Mutex
-	contractsFolder                   string
-	contractModel                     contract.Model
-	branch                            string
-	branchModel                       branch.Model
-	compareLpScriptAddress            proto.WavesAddress
-	compareLpStableScriptAddress      proto.WavesAddress
-	compareLpStableAddonScriptAddress proto.WavesAddress
-	compileCache                      compileCacheMap
-	mined                             *errgroup.Group
-	feePrv                            crypto.SecretKey
-	feePub                            crypto.PublicKey
+	logger                       zerolog.Logger
+	network                      config.Network
+	networkByte                  proto.Scheme
+	rawClient                    *client.Client // TODO: make gowaves client with ratelimit as separate package
+	clientMutex                  *sync.Mutex
+	contractsFolder              string
+	contractModel                contract.Model
+	branch                       string
+	branchModel                  branch.Model
+	compareLpScriptAddress       proto.WavesAddress
+	compareLpStableScriptAddress proto.WavesAddress
+	compileCache                 compileCacheMap
+	mined                        *errgroup.Group
+	feePrv                       crypto.SecretKey
+	feePub                       crypto.PublicKey
 }
 
 const (
-	lpRide            = "lp.ride"
-	lpStableRide      = "lp_stable.ride"
-	lpStableAddonRide = "lp_stable_addon.ride"
+	lpRide       = "lp.ride"
+	lpStableRide = "lp_stable.ride"
 )
 
 func NewSyncer(
@@ -66,7 +64,7 @@ func NewSyncer(
 	branch string,
 	contractModel contract.Model,
 	branchModel branch.Model,
-	compareLpScriptAddress, compareLpStableScriptAddress, compareLpStableAddonScriptAddress string,
+	compareLpScriptAddress, compareLpStableScriptAddress string,
 	feeSeed string,
 ) (*Syncer, error) {
 	cl, err := client.NewClient(
@@ -81,10 +79,6 @@ func NewSyncer(
 		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
 	}
 	compareLpStableScriptAddr, err := proto.NewAddressFromString(compareLpStableScriptAddress)
-	if err != nil {
-		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
-	}
-	compareLpStableAddonScriptAddr, err := proto.NewAddressFromString(compareLpStableAddonScriptAddress)
 	if err != nil {
 		return nil, fmt.Errorf("proto.NewAddressFromString: %w", err)
 	}
@@ -105,22 +99,21 @@ func NewSyncer(
 	}
 
 	return &Syncer{
-		logger:                            logger.With().Str("pkg", "syncer").Logger(),
-		network:                           network,
-		networkByte:                       networkByte,
-		rawClient:                         cl,
-		clientMutex:                       &sync.Mutex{},
-		contractsFolder:                   path.Join("..", "ride"),
-		contractModel:                     contractModel,
-		branch:                            branch,
-		branchModel:                       branchModel,
-		compareLpScriptAddress:            compareLpScriptAddr,
-		compareLpStableScriptAddress:      compareLpStableScriptAddr,
-		compareLpStableAddonScriptAddress: compareLpStableAddonScriptAddr,
-		compileCache:                      make(compileCacheMap),
-		mined:                             &errgroup.Group{},
-		feePrv:                            feePrv,
-		feePub:                            feePub,
+		logger:                       logger.With().Str("pkg", "syncer").Logger(),
+		network:                      network,
+		networkByte:                  networkByte,
+		rawClient:                    cl,
+		clientMutex:                  &sync.Mutex{},
+		contractsFolder:              path.Join("..", "ride"),
+		contractModel:                contractModel,
+		branch:                       branch,
+		branchModel:                  branchModel,
+		compareLpScriptAddress:       compareLpScriptAddr,
+		compareLpStableScriptAddress: compareLpStableScriptAddr,
+		compileCache:                 make(compileCacheMap),
+		mined:                        &errgroup.Group{},
+		feePrv:                       feePrv,
+		feePub:                       feePub,
 	}, nil
 }
 
@@ -202,14 +195,12 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 	}
 
 	const (
-		keyAllowedLpScriptHash            = "%s__allowedLpScriptHash"
-		keyAllowedLpStableScriptHash      = "%s__allowedLpStableScriptHash"
-		keyAllowedLpStableAddonScriptHash = "%s__allowedLpStableAddonScriptHash"
+		keyAllowedLpScriptHash       = "%s__allowedLpScriptHash"
+		keyAllowedLpStableScriptHash = "%s__allowedLpStableScriptHash"
 	)
 
 	var stageLpHashEmpty = map[uint32]bool{}
 	var stageLpStableHashEmpty = map[uint32]bool{}
-	var stageLpStableAddonHashEmpty = map[uint32]bool{}
 
 	for stage, factory := range stagesFactory {
 		mainnetLpHashEmpty, e := s.doHash(
@@ -232,20 +223,9 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		if e != nil {
 			return fmt.Errorf("s.doHash: %w", e)
 		}
-		mainnetLpStableAddonHashEmpty, e := s.doHash(
-			ctx,
-			factory,
-			lpStableAddonRide,
-			keyAllowedLpStableAddonScriptHash,
-			s.compareLpStableAddonScriptAddress,
-		)
-		if e != nil {
-			return fmt.Errorf("s.doHash: %w", e)
-		}
 
 		stageLpHashEmpty[stage] = mainnetLpHashEmpty
 		stageLpStableHashEmpty[stage] = mainnetLpStableHashEmpty
-		stageLpStableAddonHashEmpty[stage] = mainnetLpStableAddonHashEmpty
 	}
 
 	iTx := 0
@@ -256,7 +236,6 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 			contracts,
 			stageLpHashEmpty,
 			stageLpStableHashEmpty,
-			stageLpStableAddonHashEmpty,
 			true,
 			stageToBranch,
 			&iTx,
@@ -556,7 +535,7 @@ func (s *Syncer) doFile(
 	ctx context.Context,
 	fileName string,
 	contracts []contract.Contract,
-	mainnetLpHashEmpty, mainnetLpStableHashEmpty, mainnetLpStableAddonHashEmpty map[uint32]bool,
+	mainnetLpHashEmpty, mainnetLpStableHashEmpty map[uint32]bool,
 	logSkip bool,
 	stageToBranch map[uint32]string,
 	iTx *int,
@@ -753,8 +732,7 @@ func (s *Syncer) doFile(
 			)
 			//doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
 			//doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
-			//doLpStableAddonRide := cont.File == lpStableAddonRide && !mainnetLpStableAddonHashEmpty
-			//if doLpRide || doLpStableRide || doLpStableAddonRide {
+			//if doLpRide || doLpStableRide {
 			//	er := s.sendTx(
 			//		ctx,
 			//		unsignedSetScriptTx,

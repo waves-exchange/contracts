@@ -127,9 +127,6 @@ func keyEmissionStartBlock() = "%s%s__emission__startBlock"
 func keyEmissionDurationInBlocks() = "%s%s__emission__duration"
 func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 
-# STABLE POOL API
-func keyAddonAddr() = "%s__addonAddr"
-
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
 let factoryDapp   = readFactoryAddressOrFail()
