@@ -25,6 +25,7 @@ export const mochaHooks = {
     const names = [
       'referral',
       'manager',
+      'managerVault',
       'backend',
       'referrerAccount',
       'referralAccount',
@@ -69,6 +70,18 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTxWX, {});
     await waitForTx(massTransferTxWX.id, { apiBase });
 
+    const setManagerPubKeyTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__managerPublicKey',
+        type: 'string',
+        value: publicKey(this.accounts.manager),
+      }],
+      chainId,
+    }, this.accounts.managerVault);
+    await api.transactions.broadcast(setManagerPubKeyTx, {});
+    await waitForTx(setManagerPubKeyTx.id, { apiBase });
+
     const setWxAssetIdOnTreasuryTx = data({
       additionalFee: 4e5,
       data: [{
@@ -102,22 +115,15 @@ export const mochaHooks = {
           type: 'string',
           value: this.backendPublicKey,
         },
+        {
+          key: '%s__managerVaultAddress',
+          type: 'string',
+          value: address(this.accounts.managerVault, chainId),
+        },
       ],
       chainId,
     }, this.accounts.referral);
     await api.transactions.broadcast(setBackendPublicKeyTx, {});
     await waitForTx(setBackendPublicKeyTx.id, { apiBase });
-
-    const setManagerReferralTx = data({
-      additionalFee: 4e5,
-      data: [{
-        key: '%s__managerPublicKey',
-        type: 'string',
-        value: publicKey(this.accounts.manager),
-      }],
-      chainId,
-    }, this.accounts.referral);
-    await api.transactions.broadcast(setManagerReferralTx, {});
-    await waitForTx(setManagerReferralTx.id, { apiBase });
   },
 };
