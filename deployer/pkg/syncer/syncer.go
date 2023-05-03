@@ -135,13 +135,9 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		return fmt.Errorf("s.contractModel.GetAll: %w", err)
 	}
 
-	stagesFactory := map[uint32]contract.Contract{}
-	for _, brn := range branchesTestnetRaw {
-		factory, e := s.contractModel.GetFactory(ctx, intPtr(int(brn.Stage)))
-		if e != nil {
-			return fmt.Errorf("findFactory: %w", e)
-		}
-		stagesFactory[brn.Stage] = factory
+	factory, err := s.contractModel.GetFactory(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("findFactory: %w", err)
 	}
 
 	var branchesTestnet []string
@@ -199,33 +195,25 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 		keyAllowedLpStableScriptHash = "%s__allowedLpStableScriptHash"
 	)
 
-	var stageLpHashEmpty = map[uint32]bool{}
-	var stageLpStableHashEmpty = map[uint32]bool{}
-
-	for stage, factory := range stagesFactory {
-		mainnetLpHashEmpty, e := s.doHash(
-			ctx,
-			factory,
-			lpRide,
-			keyAllowedLpScriptHash,
-			s.compareLpScriptAddress,
-		)
-		if e != nil {
-			return fmt.Errorf("s.doHash: %w", e)
-		}
-		mainnetLpStableHashEmpty, e := s.doHash(
-			ctx,
-			factory,
-			lpStableRide,
-			keyAllowedLpStableScriptHash,
-			s.compareLpStableScriptAddress,
-		)
-		if e != nil {
-			return fmt.Errorf("s.doHash: %w", e)
-		}
-
-		stageLpHashEmpty[stage] = mainnetLpHashEmpty
-		stageLpStableHashEmpty[stage] = mainnetLpStableHashEmpty
+	mainnetLpHashEmpty, e := s.doHash(
+		ctx,
+		factory,
+		lpRide,
+		keyAllowedLpScriptHash,
+		s.compareLpScriptAddress,
+	)
+	if e != nil {
+		return fmt.Errorf("s.doHash: %w", e)
+	}
+	mainnetLpStableHashEmpty, e := s.doHash(
+		ctx,
+		factory,
+		lpStableRide,
+		keyAllowedLpStableScriptHash,
+		s.compareLpStableScriptAddress,
+	)
+	if e != nil {
+		return fmt.Errorf("s.doHash: %w", e)
 	}
 
 	iTx := 0
@@ -234,8 +222,8 @@ func (s *Syncer) ApplyChanges(c context.Context) error {
 			ctx,
 			fl.Name(),
 			contracts,
-			stageLpHashEmpty,
-			stageLpStableHashEmpty,
+			mainnetLpHashEmpty,
+			mainnetLpStableHashEmpty,
 			true,
 			stageToBranch,
 			&iTx,
@@ -535,7 +523,7 @@ func (s *Syncer) doFile(
 	ctx context.Context,
 	fileName string,
 	contracts []contract.Contract,
-	mainnetLpHashEmpty, mainnetLpStableHashEmpty map[uint32]bool,
+	mainnetLpHashEmpty, mainnetLpStableHashEmpty bool,
 	logSkip bool,
 	stageToBranch map[uint32]string,
 	iTx *int,
@@ -730,63 +718,63 @@ func (s *Syncer) doFile(
 				setScriptFee,
 				tools.Timestamp(),
 			)
-			//doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
-			//doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
-			//if doLpRide || doLpStableRide {
-			//	er := s.sendTx(
-			//		ctx,
-			//		unsignedSetScriptTx,
-			//		crypto.SecretKey{},
-			//		true,
-			//		true,
-			//		fileName,
-			//	)
-			//	if er != nil {
-			//		return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
-			//	}
-			//
-			//	isChanged = true
-			//	log().Str(action, deployed).Msg(changed)
-			//} else {
-			setScriptTx, er := json.Marshal(unsignedSetScriptTx)
-			if er != nil {
-				return false, fmt.Errorf("s.sendTx: %w", er)
-			}
+			doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
+			doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
+			if doLpRide || doLpStableRide {
+				er := s.sendTx(
+					ctx,
+					unsignedSetScriptTx,
+					crypto.SecretKey{},
+					true,
+					true,
+					fileName,
+				)
+				if er != nil {
+					return false, fmt.Errorf("s.sendTx %s: %w", cont.File, er)
+				}
 
-			er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
-			if er != nil {
-				return false, fmt.Errorf("s.ensureHasFee: %w", er)
-			}
+				isChanged = true
+				log().Str(action, deployed).Msg(changed)
+			} else {
+				setScriptTx, er := json.Marshal(unsignedSetScriptTx)
+				if er != nil {
+					return false, fmt.Errorf("s.sendTx: %w", er)
+				}
 
-			isChanged = true
-			log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
-			er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
-			if er != nil {
-				return false, fmt.Errorf("s.printDiff: %w", er)
-			}
+				er = s.ensureHasFee(ctx, addr, setScriptFee, fileName)
+				if er != nil {
+					return false, fmt.Errorf("s.ensureHasFee: %w", er)
+				}
 
-			*iTx += 1
-			file, er := os.Create(
-				path.Join(
-					"..",
-					".github",
-					"artifacts",
-					"txs",
-					fmt.Sprintf(
-						"%s_%s.json",
-						stringIndex(*iTx),
-						strings.ReplaceAll(strings.ReplaceAll(cont.Tag, " ", "_"), "/", "_"),
-					),
-				))
-			if er != nil {
-				return false, fmt.Errorf("os.Create: %w", er)
-			}
+				isChanged = true
+				log().Str(action, sign).RawJSON("tx", setScriptTx).Msg(changed)
+				er = s.printDiff(ctx, fileName, fromBlockchainScript, base64Script)
+				if er != nil {
+					return false, fmt.Errorf("s.printDiff: %w", er)
+				}
 
-			_, er = file.Write(setScriptTx)
-			if er != nil {
-				return false, fmt.Errorf("file.Write: %w", er)
+				*iTx += 1
+				file, er := os.Create(
+					path.Join(
+						"..",
+						".github",
+						"artifacts",
+						"txs",
+						fmt.Sprintf(
+							"%s_%s.json",
+							stringIndex(*iTx),
+							strings.ReplaceAll(strings.ReplaceAll(cont.Tag, " ", "_"), "/", "_"),
+						),
+					))
+				if er != nil {
+					return false, fmt.Errorf("os.Create: %w", er)
+				}
+
+				_, er = file.Write(setScriptTx)
+				if er != nil {
+					return false, fmt.Errorf("file.Write: %w", er)
+				}
 			}
-			//}
 
 			continue
 		}
