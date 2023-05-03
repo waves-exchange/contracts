@@ -214,50 +214,32 @@ func deleteNodeActions(listName: String, id: String) = {
 # <-
 
 # Manager keys and functions ->
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-let permissionDeniedError = "Permission denied".throwErr()
-
-func mustThis(i: Invocation) = {
-  i.caller == this || permissionDeniedError
-}
-
-func mustManager(i: Invocation) = {
-  match managerPublicKeyOrUnit() {
-    case pk: ByteVector => i.callerPublicKey == pk || permissionDeniedError
-    case _: Unit => i.mustThis()
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
   }
 }
 
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
 }
 
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throwErr("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throwErr("You are not pending manager")
+func mustManager(i: Invocation) = {
+  i.isManager() || "permission denied".throw()
+}
 
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
+func mustThis(i: Invocation) = {
+  i.caller == this || "permission denied".throw()
 }
 # <-
 
