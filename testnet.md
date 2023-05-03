@@ -1,5 +1,5 @@
 # Testnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **11:33 03.05.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:57 03.05.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
