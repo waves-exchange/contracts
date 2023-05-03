@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **13:57 03.05.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **14:51 03.05.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -95,6 +95,7 @@ ETH/USDT pool | [`3PATKQATPmnxLd5DjXg8FmbXXbKpA1BVAvS`](https://wavesexplorer.co
 WBTC/WAVES pool | [`3P3wRwqS2PdG4AuDo7hRjwyPurCHsAAF8bZ`](https://wavesexplorer.com/addresses/3P3wRwqS2PdG4AuDo7hRjwyPurCHsAAF8bZ) | `5UrvbribRqCTPeLu8M2AbuazACmuuRe3HvLq17j9pfif` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 BNB/WAVES pool | [`3PErdCQg2f8WYGG7DzSiH5FBosdnPHE6cND`](https://wavesexplorer.com/addresses/3PErdCQg2f8WYGG7DzSiH5FBosdnPHE6cND) | `HCM5ars2ibfQdrcd9xkfeZMPJ3xbVVGL6pAgGHoLAY9Q` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/XTN pool | [`3P5kfoYW7jPa9zYoTkN6Z6z8xtw8JGhymYB`](https://wavesexplorer.com/addresses/3P5kfoYW7jPa9zYoTkN6Z6z8xtw8JGhymYB) | `5rhEtspFAgdbhgPaiv2VBPa7qDWucgxkgdTfm1Uk3ehW` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+PCBT/WAVES pool | [`3PNxLv6DyvN9nQAAQmisD9wDrFMzZBKDyKN`](https://wavesexplorer.com/addresses/3PNxLv6DyvN9nQAAQmisD9wDrFMzZBKDyKN) | `BBW7ffGBR62mAE1GEsFvMJPUYzGLtGespUaqvJc4axFx` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -152,6 +153,7 @@ Neutrino RUB | [`eWeMD5KNeuRaALCAb4uuJKtAvon2JcTyXQyoBMhuN2X`](https://wavesexpl
 Neutrino TRY | [`DGbqkzM6Ds5NAF2B3GHYfyZRmWKt7xLYRYcwpMm7D6V4`](https://wavesexplorer.com/assets/DGbqkzM6Ds5NAF2B3GHYfyZRmWKt7xLYRYcwpMm7D6V4) | Neutrino protocol based algorithmic Turkish Lira 
 Neutrino UAH | [`8zKqZF6asB6yiK8rv9nMUkJ7wAVBJndSmkC7SXJhRrM3`](https://wavesexplorer.com/assets/8zKqZF6asB6yiK8rv9nMUkJ7wAVBJndSmkC7SXJhRrM3) | Neutrino protocol based algorithmic Ukrainian Hryvnia 
 NSBT | [`6nSpVyNH7yM69eg446wrQR94ipbbcmZMU1ENPwanC97g`](https://wavesexplorer.com/assets/6nSpVyNH7yM69eg446wrQR94ipbbcmZMU1ENPwanC97g) | Neutrino System Base Token (NSBT) 
+PCBT | [`24WUa12Uq7HtpzKDcxgHt9KJMdMpz1sNU1q8QcUCy3Cu`](https://wavesexplorer.com/assets/24WUa12Uq7HtpzKDcxgHt9KJMdMpz1sNU1q8QcUCy3Cu) | PepeTeam Crosschain Bridge Token 
 PLUTO | [`Ajso6nTTjptu2UHLx6hfSXVtHFtRBJCkKYd5SAyj7zf5`](https://wavesexplorer.com/assets/Ajso6nTTjptu2UHLx6hfSXVtHFtRBJCkKYd5SAyj7zf5) | Reserve currency built on top of the Waves Blockchain. 
 POWER | [`2thsACuHmzDMuNezPM32wg9a3BwUzBWDeSKakgz3cw21`](https://wavesexplorer.com/assets/2thsACuHmzDMuNezPM32wg9a3BwUzBWDeSKakgz3cw21) | Take the Power back! https://power.tech 
 Puzzle | [`HEB8Qaw9xrWpWs8tHsiATYGBWDBtP2S7kcPALrMu43AS`](https://wavesexplorer.com/assets/HEB8Qaw9xrWpWs8tHsiATYGBWDBtP2S7kcPALrMu43AS) | DeFi 2.0 is here. 
@@ -238,6 +240,7 @@ MATICXTNLP | [`CPdRfmhbBTTZtjEz3FZeNNjCSimn66dfHnyKA4Y8biar`](https://wavesexplo
 MKRXTNLP | [`2X9uZByRQAcpzXXpHv9rLwN3xvkXC7WTKPRkQyFQmFXE`](https://wavesexplorer.com/assets/2X9uZByRQAcpzXXpHv9rLwN3xvkXC7WTKPRkQyFQmFXE) | WX MKR/XTN pool liquidity provider token 
 NSBTWAVESLP | [`DZeA7RbVab98r61hVH5zcFZXwNALPJGgq1eyHandsKKW`](https://wavesexplorer.com/assets/DZeA7RbVab98r61hVH5zcFZXwNALPJGgq1eyHandsKKW) | NSBT/WAVES pool liquidity provider token 
 NSBTXTNLP | [`AGo49HCtQUghfxHSpUXub3KBaMXyunJmTxQ4azgU5Ax5`](https://wavesexplorer.com/assets/AGo49HCtQUghfxHSpUXub3KBaMXyunJmTxQ4azgU5Ax5) | WX NSBT/XTN pool liquidity provider token 
+PCBTWAVESLP | [`4oLuufBogbf294QTsmXobvoMHSMzoNtPMqQMJs5L55FR`](https://wavesexplorer.com/assets/4oLuufBogbf294QTsmXobvoMHSMzoNtPMqQMJs5L55FR) | PCBT/WAVES pool liquidity provider token 
 PLUTOWAVESLP | [`EMsZpqcT8NuMYZCEPHzvrhQCQKhfXjdeekZvcWpHsNvh`](https://wavesexplorer.com/assets/EMsZpqcT8NuMYZCEPHzvrhQCQKhfXjdeekZvcWpHsNvh) | PLUTO/WAVES pool liquidity provider token 
 PLUTOXTNLP | [`GE4HyaWSTCU75Vns78WUu8JnTBEP9ioSCmTRPKoHnj93`](https://wavesexplorer.com/assets/GE4HyaWSTCU75Vns78WUu8JnTBEP9ioSCmTRPKoHnj93) | WX PLUTO/XTN pool liquidity provider token 
 POWERWAVESLP | [`AKQsEQoeinKRFtdx6rhKWcpkAMu6cbDLdtSWnR8tpBCq`](https://wavesexplorer.com/assets/AKQsEQoeinKRFtdx6rhKWcpkAMu6cbDLdtSWnR8tpBCq) | POWER/WAVES pool liquidity provider token 
