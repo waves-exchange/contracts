@@ -53,9 +53,6 @@ func asString(val: Any) = {
 # own factory address key
 func keyFactoryAddress()  = "%s%s__config__factoryAddress"
 
-func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
-
 let IdxFactoryCfgStakingDapp    = 1
 let IdxFactoryCfgBoostingDapp   = 2
 let IdxFactoryCfgIdoDapp        = 3
@@ -71,6 +68,9 @@ func keyFactoryLpList()   = "%s__lpTokensList" # not used anymore
 func keyFactoryLpAssetToPoolContractAddress(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
 func keyFactoryPoolWeight(contractAddress: String) = { ["%s%s", "poolWeight", contractAddress].makeString(SEP) }
 
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
+func keyManagerPublicKey() = "%s__managerPublicKey"
+
 func readFactoryAddressOrFail() = getStringOrFail(keyFactoryAddress()).addressFromStringValue()
 func readLpList()               = readFactoryAddressOrFail().getString(keyFactoryLpList()).valueOrElse("").split(SEP)
 func readFactoryCfgOrFail(factory: Address)     = factory.getStringByAddressOrFail(keyFactoryCfg()).split(SEP)
@@ -78,6 +78,8 @@ func getBoostingAddressOrFail(fCfg: List[String]) = fCfg[IdxFactoryCfgBoostingDa
 func getEmissionAddressOrFail(fCfg: List[String]) = fCfg[IdxFactoryCfgEmissionDapp].addressFromStringValue()
 func getStakingAddressOrFail(fCfg: List[String])  = fCfg[IdxFactoryCfgStakingDapp].addressFromStringValue()
 func getGwxRewardAddressOrFail(fCfg: List[String])  = fCfg[IdxFactoryCfgGwxRewardDapp].addressFromStringValue()
+
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
 # BOOSTING API
 func keyBoostCfg() = "%s__config"
@@ -119,9 +121,6 @@ func keyEmissionRatePerBlockMaxCurrent() = "%s%s__ratePerBlockMax__current"
 func keyEmissionStartBlock() = "%s%s__emission__startBlock"
 func keyEmissionDurationInBlocks() = "%s%s__emission__duration"
 func keyEmissionEndBlock() = "%s%s__emission__endBlock"
-
-# STABLE POOL API
-func keyAddonAddr() = "%s__addonAddr"
 
 # GLOBAL VARIABLES
 # CONSTRUCTOR IS NOT FAILED BECAUSE GLOBAL VARIABLES ARE NOT USED
@@ -176,23 +175,23 @@ func getKey(addr: Address, key: String, type: String) = {
   }
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
 }
 
 func mustManager(i: Invocation) = {
-  let pd = "Permission denied".throw()
-
-  match managerPublicKeyOrUnit() {
-    case pk: ByteVector => i.callerPublicKey == pk || pd
-    case _: Unit => i.caller == this || pd
-  }
+  i.isManager() || "permission denied".throw()
 }
 
 @Callable(i)
@@ -643,26 +642,6 @@ func getKeysBulkInternal(currentIter: Int, keys: List[String], resAcc: List[Stri
 func getKeysBulk(keys: List[String]) = {
   let res = this.invoke("getKeysBulkInternal", [0, keys, []], [])
   ([], res)
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)

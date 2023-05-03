@@ -4,9 +4,6 @@
 
 let SEP = "__"
 
-func keyManagerPublicKey() = "%s__managerPublicpKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
-
 func blockHeightError() = "The block's height is too big for this proposal".throw()
 func alreadyVoteError() = "You have already voted".throw()
 func noVoteError() = "You have not already voted".throw()
@@ -18,8 +15,11 @@ func keyCurrentIndex() = ["%s", "currentIndex"].makeString(SEP)
 func keyProposalInfo(number: Int) = ["%s%d", "proposalInfo", number.toString()].makeString(SEP)
 func keyUserVoteOnProposal(number: Int, user: String) = ["%s%d%s", "userVoteOnProposal", number.toString(), user].makeString(SEP)
 
-func getCurrentIndex() = this.getIntegerValue(keyCurrentIndex())
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
+func getCurrentIndex() = this.getIntegerValue(keyCurrentIndex())
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 func formatProposalInfo(name: String, description: String, end: String, quorumNumber: String, positiveVotes: String, negativeVotes: String) = {
   makeString([
       "%d%d%d%d%d%d",       # 0
@@ -42,7 +42,6 @@ func formatUserVoteOnProposal(vote: String, gwxNumber: String) = {
   SEP)
 }
 
-
 func asInt(val: Any) = {
   match val {
     case valInt: Int => valInt
@@ -50,14 +49,12 @@ func asInt(val: Any) = {
   }
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func isManager(i: Invocation) = {
@@ -288,26 +285,6 @@ func getResultREADONLY(proposalIndex: Int) = {
   let quorumNumber = voteInfoArray[4]
 
   ([], [positiveVotes, negativeVotes, quorumNumber])
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("no pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("you are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)

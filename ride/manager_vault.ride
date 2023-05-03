@@ -1,0 +1,235 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let SEP = "__"
+let contractFilename = "manager_vault.ride"
+let MAX_ADMIN_LIST_SIZE = 10
+let MIN_ADMIN_LIST_SIZE = 2
+let ADDRESS_BYTES_LENGTH = 26
+let TXID_BYTES_LENGTH = 32
+
+func throwErr(s: String) = {
+  throw(contractFilename + ": " + s)
+}
+
+# Manager Public Key
+func keyActiveManagerPublicKey()  = makeString(["%s", "managerPublicKey"], SEP)
+func keyPendingManagerPublicKey() = makeString(["%s", "pendingManagerPublicKey"], SEP)
+func keyCurrentManagerPublicKey() = makeString(["%s", "currentManagerPublicKey"], SEP)
+
+# Voting prefixes
+func keySetNewManagerVotePrefix(managerPublicKey: String) = makeString(["%s%s%s", "setManager", managerPublicKey], SEP)
+func keyDeactivateManagerVotePrefix()                     = makeString(["%s%s", "deactivateManager"], SEP)
+func keyActivateManagerVotePrefix()                       = makeString(["%s%s", "activateManager"], SEP)
+func keyAddNewAdminVotePrefix(adminCandidate: String)     = makeString(["%s%s%s", "addAdmin", adminCandidate], SEP)
+func keyRemoveAdminVotePrefix(removeCandidate: String)    = makeString(["%s%s%s", "removeAdmin", removeCandidate], SEP)
+func keyAllowedTxIdVotePrefix(txId: String)               = makeString(["%s%s%s", "allowTxId", txId], SEP)
+
+# Make Admin vote key 
+func keyFullAdminVote(prefix: String, adminAddress: String) = makeString([prefix, adminAddress], SEP)
+
+# Admin List key
+func keyAdminAddressList() = makeString(["%s", "adminAddressList"], SEP)
+
+# Allowed TXID key
+func keyAllowedTxId() = makeString(["%s", "TXID"], SEP)
+
+func getAdminVote(prefix: String, admin: String) = {
+  let voteKey = keyFullAdminVote(prefix, admin)
+  getInteger(voteKey).valueOrElse(0)
+}
+
+func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+
+func getAdminsList() = {
+  match (this.getString(keyAdminAddressList())) {
+      case s:String => s.split(SEP)
+      case _ => []
+    }
+}
+
+func isInAdminList(address: String) = {
+  getAdminsList().containsElement(address)
+}
+
+# Generate List of keys with same prefix for all admins
+func genVotesKeysHelper(a: (List[String], String), adminAddress: String) = {
+  let (result, prefix) = a
+  (result :+ keyFullAdminVote(prefix, adminAddress), prefix)
+}
+func genVotesKeys(keyPrefix: String) = {
+  let adminList = keyAdminAddressList()
+  FOLD<20>(getAdminsList(), ([], keyPrefix), genVotesKeysHelper)
+}
+
+# Count all votes for Prefix
+func countVotesHelper(result: Int, voteKey: String) = {
+  result + getInteger(voteKey).valueOrElse(0)
+}
+func countVotes(prefix: String) = {
+  let votes = genVotesKeys(prefix)._1
+  FOLD<20>(votes, 0, countVotesHelper)
+}
+
+# Generate DeleteEntry for all votes with Prefix
+func clearVotesHelper(result: List[DeleteEntry], key: String) = {
+  result :+ DeleteEntry(key) 
+}
+func getClearVoteEntries(prefix: String) = {
+  let votes = genVotesKeys(prefix)._1
+  FOLD<20>(votes, [], clearVotesHelper)
+}
+
+func voteINTERNAL(
+    callerAddressString: String, 
+    keyPrefix: String, 
+    minVotes: Int, 
+    voteResult: List[StringEntry|IntegerEntry|DeleteEntry]
+  ) = {
+  let voteKey = keyFullAdminVote(keyPrefix, callerAddressString)
+  let adminCurrentVote = getAdminVote(keyPrefix, callerAddressString)
+
+  strict err = if (!isInAdminList(callerAddressString)) then {
+    throwErr("Address: " + callerAddressString + " not in Admin list")
+  } else if (adminCurrentVote == 1) then {
+    throwErr(voteKey + " you already voted")
+  } else { unit }
+
+  let votes = countVotes(keyPrefix)
+  if (votes + 1 >= minVotes) then {
+    let clearVoteEntries = getClearVoteEntries(keyPrefix)
+    clearVoteEntries ++ voteResult
+  } else {
+    [ IntegerEntry(voteKey, 1) ]
+  }
+}
+
+# Manager should confirm themself
+@Callable(i)
+func confirmManager() = {
+  let pm = pendingManagerPublicKeyOrUnit()
+  strict hasPM    = pm.isDefined() || "no pending manager".throwErr()
+  strict checkPM  = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
+
+  [ 
+    StringEntry(keyCurrentManagerPublicKey(), pm.value().toBase58String()),
+    StringEntry(keyActiveManagerPublicKey(), pm.value().toBase58String()),
+    DeleteEntry(keyPendingManagerPublicKey())
+  ]
+}
+
+# Vote for new Manager (quorum: 2 votes)
+# Set pendingManagerPublicKey
+# Manager should confirm or activate by vote
+@Callable(i)
+func voteForNewManager(newManagerPublicKey: String) = {
+  let callerAddressString = toBase58String(i.caller.bytes)
+  let keyPrefix = keySetNewManagerVotePrefix(newManagerPublicKey)
+  let quorum = 2
+  let result = [ StringEntry(keyPendingManagerPublicKey(), newManagerPublicKey) ]
+  
+  voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
+}
+
+# Vote to Deactivate Manager (quorum: 1 vote)
+# Clears managerPublicKey value
+@Callable(i)
+func deactivateManager() = {
+  let callerAddressString = toBase58String(i.caller.bytes)
+  let keyPrefix = keyDeactivateManagerVotePrefix()
+  let quorum = 1
+  let result = [ StringEntry(keyActiveManagerPublicKey(), "disabled") ]
+  
+  voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
+}
+
+# Vote to Activate Current Manager (quorum: 2 votes)
+# Copies pendingManagerPublicKey to managerPublicKey
+@Callable(i)
+func activateManager() = {
+  let callerAddressString = toBase58String(i.caller.bytes)
+  let keyPrefix = keyActivateManagerVotePrefix()
+  let quorum = 2
+  let currentManagerString = getStringValue(keyCurrentManagerPublicKey())
+  let result = [ StringEntry(keyActiveManagerPublicKey(), currentManagerString) ]
+  
+  voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
+}
+
+# Vote to Add new Admin address to Admin List (quorum: 2 votes)
+# Appends new address to adminAddressList
+@Callable(i)
+func addNewAdmin(newAdminAddress: String) = {
+  let callerAddressString = toBase58String(i.caller.bytes)
+  let keyPrefix = keyAddNewAdminVotePrefix(newAdminAddress)
+  let quorum = 2
+  let currentAdminList = getAdminsList()
+
+  strict err = if (currentAdminList.size() >= MAX_ADMIN_LIST_SIZE) then {
+    throwErr("MAX_ADMIN_LIST_SIZE (" + MAX_ADMIN_LIST_SIZE.toString() + ") is exceeded")
+  } else if (newAdminAddress.fromBase58String().size() != ADDRESS_BYTES_LENGTH ) then {
+    throwErr(newAdminAddress + " is not valid Address")
+  } else { unit }
+
+  match currentAdminList.indexOf(newAdminAddress) {
+    case a:Int => throwErr(newAdminAddress + " already in Admin List")
+    case _ => {
+      let newAdminList = currentAdminList :+ newAdminAddress
+      let result = [ StringEntry(keyAdminAddressList(), makeString(newAdminList, SEP)) ]
+
+      voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
+    }
+  }
+}
+
+# Vote to remove Admin address to Admin List (quorum: 2 votes)
+# Removes Admin address from adminAddressList
+@Callable(i)
+func removeAdmin(removeCandidate: String) = {
+  let callerAddressString = toBase58String(i.caller.bytes)
+  let keyPrefix = keyRemoveAdminVotePrefix(removeCandidate)
+  let quorum = 2
+  let currentAdminList = getAdminsList()
+
+  match currentAdminList.indexOf(removeCandidate) {
+    case index:Int => {
+      let newAdminList = currentAdminList.removeByIndex(index)
+      let result = [ StringEntry(keyAdminAddressList(), makeString(newAdminList, SEP)) ]
+  
+      voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
+    }
+    case _ => throwErr(removeCandidate + " not found in Admin List")
+  }
+}
+
+# Vote for txId that is allowed in Verifier (quorum: 2 votes)
+@Callable(i)
+func voteForTxId(txId: String) = {
+  let callerAddressString = toBase58String(i.caller.bytes)
+  let keyPrefix = keyAllowedTxIdVotePrefix(txId)
+  let quorum = 2
+  let result = [ StringEntry(keyAllowedTxId(), txId) ]
+  
+  strict err = if (txId.fromBase58String().size() != TXID_BYTES_LENGTH) then {
+    throwErr(txId + " not valid txId")
+  } else {
+    unit 
+  }
+
+  voteINTERNAL(callerAddressString, keyPrefix, quorum, result)
+}
+
+@Verifier(tx)
+func verify() = {
+  let allowedTxId = getStringValue(keyAllowedTxId()).fromBase58String()
+  let currentAdminList = getAdminsList()
+  if (currentAdminList.size() >= MIN_ADMIN_LIST_SIZE) then {
+    (tx.id == allowedTxId)
+  } else {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+  }
+}

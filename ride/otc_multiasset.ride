@@ -5,7 +5,9 @@
 let SEP = "__"
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
+
+func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
 
 #collecting keys
 func keyWithdrawDelay(assetA: String, assetB: String) = {
@@ -49,14 +51,12 @@ func keyProcessDone(userAddress: String, assetA: String, assetB: String, heightI
 }
 
 #converting a manager's public key to a ByteVector
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerAddressOrFail()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 #checking on the manager
@@ -190,26 +190,6 @@ func withdrawFee(assetA: String, assetB: String) = {
         IntegerEntry(keyTotalFeeCollectedDeposit(assetA, assetB), 0),
         ScriptTransfer(i.caller, toWithdrawA, withdrawAssetA)
     ]
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller            = i.mustManager()
-  strict checkManagerPublicKey  = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM    = pm.isDefined() || "No pending manager.".throwErr()
-  strict checkPM  = i.callerPublicKey == pm.value() || "You are not pending manager.".throwErr()
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Verifier(tx)

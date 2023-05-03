@@ -112,7 +112,6 @@ func pa() = {"%s__priceAsset"}
 # keyAmplificator
 func amp() = {"%s__amp"}
 func keyAmpHistory(heightBlocks: Int) = "%s%d__amp__" + heightBlocks.toString()
-func ada() = "%s__addonAddr"
 func keyChangeAmpLastCall() = "%s__changeAmpLastCall"
 
 let keyFee = "%s__fee"
@@ -1599,26 +1598,6 @@ func activate(amtAsStr: String, prAsStr: String) = {
             ],
         "success")
     }
-}
-
-# Set string from addon
-@Callable(i)
-func setS(k: String, v: String) = {
-  if (i.caller.toString() != this.strf(ada())) then pd else
-
-  [
-    StringEntry(k, v)
-  ]
-}
-
-# Set integer from addon
-@Callable(i)
-func setI(k: String, v: Int) = {
-  if (i.caller.toString() != this.strf(ada())) then pd else
-
-  [
-    IntegerEntry(k, v)
-  ]
 }
 
 # API wrappers
