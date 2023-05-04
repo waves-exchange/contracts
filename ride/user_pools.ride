@@ -226,6 +226,8 @@ func create() = {
 
 @Callable(i)
 func createStable() = {
+  strict checkCaller = i.mustManager()
+
   _create(i, STBLPOOL)
 }
 
