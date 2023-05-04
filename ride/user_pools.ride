@@ -6,6 +6,8 @@ let contractFilename = "user_pools.ride"
 
 let SEP = "__"
 let wavesAssetId = "WAVES"
+let VLTPOOL = "VLTPOOL"
+let STBLPOOL = "STBLPOOL"
 
 let invalidPriceAsset = "Invalid price asset"
 
@@ -50,6 +52,7 @@ func keyCreateCaller(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "
 func keyAmountAssetAmount(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "amountAssetAmount", amountAssetId, priceAssetId].makeString(SEP)
 func keyPriceAssetAmount(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "priceAssetAmount", amountAssetId, priceAssetId].makeString(SEP)
 func keyHeight(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "height", amountAssetId, priceAssetId].makeString(SEP)
+func keyPoolType(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "poolType", amountAssetId, priceAssetId].makeString(SEP)
 
 func keyFeeAssetId() = ["%s", "feeAssetId"].makeString(SEP)
 func keyFeeAmount() = ["%s", "feeAmount"].makeString(SEP)
@@ -131,32 +134,7 @@ func validStatus(status: String) = {
   statuses.containsElement(status)
 }
 
-@Callable(i)
-func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionAddress: String, priceAssetsMinAmount: List[String], amountAssetMinAmount: Int, feeAssetId: String, feeAmount: Int) = {
-  strict checkCaller = i.mustManager()
-
-  [
-    StringEntry(keyFactoryContract(), factoryV2Address),
-    StringEntry(keyAssetsStoreContract(), assetsStoreAddress),
-    StringEntry(keyEmissionContract(), emissionAddress),
-    StringEntry(keyPriceAssetsMinAmount(), priceAssetsMinAmount.makeString(SEP)),
-    IntegerEntry(keyAmountAssetMinAmount(), amountAssetMinAmount),
-    StringEntry(keyFeeAssetId(), feeAssetId),
-    IntegerEntry(keyFeeAmount(), feeAmount)
-  ]
-}
-
-# Принимает три payment 1) Токен юзера; 2) >= minAmount of priceAsset; 3)feeAmount of feeAsset;
-# Токен обязан быть верифицированным (инвок на контракт assets_store)
-# Создает заявку на пул в статусе pending
-# Вызвать может любой
-# Если уже создан пул на такой ассет, возвращает ошибку - "Pool with such assets already exists"
-# Если токен не верифицирован, возвращает ошибку - "Asset is not verified"
-# Если юзер не issuer токена, возвращает ошибку - "You are not amountAsset issuer"
-# Если юзер прикрепил некорректный amount токенов или не прикрепил вовсе - "Invalid payment"
-
-@Callable(i)
-func create() = {
+func _create(i: Invocation, poolType: String) = {
   # The order of the assets matters if both are in the price assets list
   let asset1Payment = i.payments[0].value()
   let asset2Payment = i.payments[1].value()
@@ -221,8 +199,34 @@ func create() = {
     IntegerEntry(keyHeight(amountAssetId, priceAssetId), height),
     StringEntry(keyStatus(amountAssetId, priceAssetId), statusPending),
     IntegerEntry(keyAmountAssetAmount(amountAssetId, priceAssetId), amountAssetAmount),
-    IntegerEntry(keyPriceAssetAmount(amountAssetId, priceAssetId), priceAssetAmount)
+    IntegerEntry(keyPriceAssetAmount(amountAssetId, priceAssetId), priceAssetAmount),
+    StringEntry(keyPoolType(amountAssetId, priceAssetId), poolType)
   ]
+}
+
+@Callable(i)
+func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionAddress: String, priceAssetsMinAmount: List[String], amountAssetMinAmount: Int, feeAssetId: String, feeAmount: Int) = {
+  strict checkCaller = i.mustManager()
+
+  [
+    StringEntry(keyFactoryContract(), factoryV2Address),
+    StringEntry(keyAssetsStoreContract(), assetsStoreAddress),
+    StringEntry(keyEmissionContract(), emissionAddress),
+    StringEntry(keyPriceAssetsMinAmount(), priceAssetsMinAmount.makeString(SEP)),
+    IntegerEntry(keyAmountAssetMinAmount(), amountAssetMinAmount),
+    StringEntry(keyFeeAssetId(), feeAssetId),
+    IntegerEntry(keyFeeAmount(), feeAmount)
+  ]
+}
+
+@Callable(i)
+func create() = {
+  _create(i, VLTPOOL)
+}
+
+@Callable(i)
+func createStable() = {
+  _create(i, STBLPOOL)
 }
 
 @Callable(i)
@@ -233,6 +237,8 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
     keyStatus(amountAssetId, priceAssetId).getString().value() == statusPending || throwCanActivateOnlyPendingPool()
   ]
 
+  let poolTypeOption = this.getString(keyPoolType(amountAssetId, priceAssetId))
+
   strict activateNewPoolInv = factoryContract.invoke(
     "activateNewPool", [
       poolAddress,
@@ -241,7 +247,7 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
       amountAssetTicker+priceAssetTicker+"LP",
       amountAssetTicker+"/"+priceAssetTicker+" pool liquidity provider token",
       0,
-      "VLTPOOL",
+      if (poolTypeOption == unit) then "VLTPOOL" else poolTypeOption.value(),
       logo
     ], []
   )
