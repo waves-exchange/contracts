@@ -213,9 +213,7 @@ func parsePoolConfig(poolConfig: List[String]) = {
     poolConfig[idxAmAsId].parseAssetId(),
     poolConfig[idxPrAsId].parseAssetId(),
     poolConfig[idxAmtAsDcm].parseIntValue(),
-    poolConfig[idxPriceAsDcm].parseIntValue(),
-    poolConfig[idxIAmtAsId].fromBase58String(),
-    poolConfig[idxIPriceAsId].fromBase58String()
+    poolConfig[idxPriceAsDcm].parseIntValue()
   )
 }
 
@@ -227,9 +225,7 @@ let (
   cfgAmountAssetId,
   cfgPriceAssetId,
   cfgAmountAssetDecimals,
-  cfgPriceAssetDecimals,
-  cfgInAmountAssedId,
-  cfgInPriceAssetId
+  cfgPriceAssetDecimals
 ) = poolConfigParsed
 
 # getFactoryConfig
@@ -437,8 +433,6 @@ func epo(txId58: String,
     let lpId      = cfgLpAssetId
     let amIdStr   = cfgAmountAssetId.value().toBase58String()
     let prIdStr   = cfgPriceAssetId.value().toBase58String()
-    let inAmIdStr = cfgInAmountAssedId
-    let inPrIdStr = cfgInPriceAssetId
     let amtDcm    = cfgAmountAssetDecimals
     let priceDcm  = cfgPriceAssetDecimals
     let sts       = cfgPoolStatus.toString()
