@@ -47,6 +47,7 @@ let big3 = 3.toBigInt()
 let big4 = 4.toBigInt()
 let slippage4D = (scale8 - scale8 * 1 / scale8).toBigInt() # 9999999 or error of 0.0000001
 let wavesString = "WAVES"
+let ampInitial = 50
 
 let Amult = "100"
 let Dconv = "1" # D convergence
@@ -1594,7 +1595,8 @@ func activate(amtAsStr: String, prAsStr: String) = {
     if (i.caller.toString() != fca.toString()) then throw("denied") else {
         ([
             StringEntry(aa(),amtAsStr),
-            StringEntry(pa(),prAsStr)
+            StringEntry(pa(),prAsStr),
+            StringEntry(amp(), ampInitial.toString())
             ],
         "success")
     }
