@@ -172,15 +172,18 @@ func create() = {
 
   let priceAssetsList = factoryContract.getString(keyPriceAssets()).stringOptionToList()
 
-  let managerPriceAssetMinAmount = 1
-  let priceAssetMinAmount = {
-    if (i.isManager()) then {
-      managerPriceAssetMinAmount
-    } else {
-      let priceAssetsIndex = priceAssetsList.indexOf(priceAssetId).valueOrErrorMessage(invalidPriceAsset)
-      keyPriceAssetsMinAmount().getString().stringOptionToList()[priceAssetsIndex].parseInt().value()
-    }
-  }
+  let assetMinAmountDefault = keyAmountAssetMinAmount().getIntegerValue()
+  let allowedAssetsMinAmounts = keyPriceAssetsMinAmount().getString().stringOptionToList()
+
+  let amountAssetMinAmount = if (priceAssetsList.containsElement(amountAssetId)) then {
+    let priceAssetsIndex = priceAssetsList.indexOf(amountAssetId).valueOrErrorMessage(invalidPriceAsset)
+    allowedAssetsMinAmounts[priceAssetsIndex].parseInt().value()
+  } else assetMinAmountDefault
+
+  let priceAssetMinAmount = if (priceAssetsList.containsElement(priceAssetId)) then {
+    let priceAssetsIndex = priceAssetsList.indexOf(priceAssetId).valueOrErrorMessage(invalidPriceAsset)
+    allowedAssetsMinAmounts[priceAssetsIndex].parseInt().value()
+  } else assetMinAmountDefault
 
   let lastIndex = keyLastIndex().getInteger().valueOrElse(0)
   let curIndex = lastIndex + 1
