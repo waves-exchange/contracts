@@ -108,6 +108,7 @@ export const mochaHooks = {
         { key: '%s__wxAssetId', type: 'string', value: this.wxAssetId },
         { key: '%s__usdtAssetId', type: 'string', value: this.usdtAssetId },
       ],
+      additionalFee: 4e5,
       chainId,
     }, this.accounts.lpStakingPools.seed);
     await broadcastAndWait(setRequiredStateTx);

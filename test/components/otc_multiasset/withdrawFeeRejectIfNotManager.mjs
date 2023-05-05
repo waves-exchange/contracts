@@ -26,6 +26,7 @@ describe('otc_multiasset: withdrawFeeRejectIfNotManager.mjs', /** @this {MochaSu
           { type: 'string', value: this.assetBId },
         ],
       },
+      additionalFee: 4e5,
       chainId,
     }, someAccount);
 

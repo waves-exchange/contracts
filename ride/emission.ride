@@ -70,16 +70,21 @@ func keyGwxHoldersRewardCurrent() = "%s%s__gwxHoldersReward__current"
 func keyGwxHoldersRewardNext() = "%s%s__gwxHoldersReward__next"
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
 }
 
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func mustManager(i: Invocation) = {
@@ -176,26 +181,6 @@ func gwxHoldersRewardUpdate() = {
   ] else []
 
   (actions, shouldBeUpdated)
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throwErr("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throwErr("You are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Callable(i)
