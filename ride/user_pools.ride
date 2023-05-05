@@ -158,27 +158,19 @@ func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionA
 @Callable(i)
 func create() = {
   # The order of the assets matters if both are in the price assets list
-  let asset1Payment = i.payments[0].value()
-  let asset2Payment = i.payments[1].value()
+  let amountAssetPayment = i.payments[0].value()
+  let priceAssetPayment = i.payments[1].value()
   let feeAssetPayment = i.payments[2].value()
 
-  let (asset1Id, asset1Info) = asset1Payment.getIdAndInfo()
-  let (asset2Id, asset2Info) = asset2Payment.getIdAndInfo()
+  let (amountAssetId, amountAssetInfo) = amountAssetPayment.getIdAndInfo()
+  let (priceAssetId, priceAssetInfo) = priceAssetPayment.getIdAndInfo()
   let (feeAssetId, feeAssetInfo) = feeAssetPayment.getIdAndInfo()
 
+  let amountAssetAmount = amountAssetPayment.amount
+  let priceAssetAmount = priceAssetPayment.amount
+  let feeAssetAmount = feeAssetPayment.amount
+
   let priceAssetsList = factoryContract.getString(keyPriceAssets()).stringOptionToList()
-
-  strict checkAssetsNotEqual = asset1Id != asset2Id || throwInvalidAssetPair()
-
-  let (amountAssetId, amountAssetAmount, priceAssetId, priceAssetAmount) = {
-    if (i.isManager() || (priceAssetsList.containsElement(asset2Id) && asset1Id.isVerified())) then {
-      (asset1Id, asset1Payment.amount, asset2Id, asset2Payment.amount)
-    } else if (priceAssetsList.containsElement(asset1Id) && asset2Id.isVerified()) then {
-      (asset2Id, asset2Payment.amount, asset1Id, asset1Payment.amount)
-    } else {
-      throwInvalidAssetPair()
-    }
-  }
 
   let managerPriceAssetMinAmount = 1
   let priceAssetMinAmount = {
@@ -202,15 +194,18 @@ func create() = {
   strict checks = [
     !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
     !poolExists || throwPoolExists(),
+    amountAssetId != priceAssetId || throwInvalidAssetPair(),
+    (amountAssetId.isVerified() && priceAssetId.isVerified()) || throwInvalidAssetPair(),
+    priceAssetsList.containsElement(amountAssetId) || priceAssetsList.containsElement(priceAssetId) || throwInvalidAssetPair(),
     i.isManager() || keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
     i.isManager() || amountAssetAmount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
     i.isManager() || priceAssetAmount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
-    i.isManager() || feeAssetPayment.amount == keyFeeAmount().getInteger() || throwInvalidFee()
+    i.isManager() || feeAssetAmount == keyFeeAmount().getInteger() || throwInvalidFee()
   ]
 
   let paymentsWithFeeSize = 3
   strict burnEmissionInv = if (i.payments.size() >= paymentsWithFeeSize) then {
-    emissionContract.invoke("burn", [], [AttachedPayment(feeAssetId.fromBase58String(), feeAssetPayment.amount)])
+    emissionContract.invoke("burn", [], [AttachedPayment(feeAssetId.fromBase58String(), feeAssetAmount)])
   } else unit
 
   [
