@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-393-user-pools-fix**](https://github.com/waves-exchange/contracts/tree/wxdefi-393-user-pools-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:20 05.05.2023** (GMT+4)
+[**wxdefi-393-user-pools-fix**](https://github.com/waves-exchange/contracts/tree/wxdefi-393-user-pools-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:52 05.05.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -42,6 +42,7 @@ APPLE/WX pool | [`3Muz1whCRnmtUPChB4fmCXQaVgKqyXpuub3`](https://wavesexplorer.co
 ETH/WX pool | [`3MtQw51ChuPVJckfoZkuvqn73UiXDZSRmvi`](https://wavesexplorer.com/addresses/3MtQw51ChuPVJckfoZkuvqn73UiXDZSRmvi?network=testnet) | `DW6wmKbzcE2fCwMjuV8anYx2tWHumv6MPCvzbxXtFPYF` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
 WavesCommunity/WX pool | [`3MuQGoeYZ9hxoazLfCtzkZoo2GghdyjdCbv`](https://wavesexplorer.com/addresses/3MuQGoeYZ9hxoazLfCtzkZoo2GghdyjdCbv?network=testnet) | `4SVJJoqo22KTtyoXP49Bm6Dd3ioHw7Y21SMhsEEXnX9o` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
 Primalbase Token/WX pool | [`3Mr5FsCmX86hEpfSbDwsaZq37QEFJ2E73FQ`](https://wavesexplorer.com/addresses/3Mr5FsCmX86hEpfSbDwsaZq37QEFJ2E73FQ?network=testnet) | `9ySxCzgBRf7Lr4KURnZA1TUenkwF4pH97euaFBJhNaSu` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
+WX/PCBT pool | [`3NCLvCBTu7LDtZufyn6PDNcj13MYfghyg7b`](https://wavesexplorer.com/addresses/3NCLvCBTu7LDtZufyn6PDNcj13MYfghyg7b?network=testnet) | `DQrzSjsRSeT2CkKoPfZghTysdzJzPiMVeHktApm2Jrcb` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
 USDT/USDN pool | [`3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT`](https://wavesexplorer.com/addresses/3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT?network=testnet) | `D1BL65meykxFZTCuq7jq9HSGLLnWvQamQPUNrguW5w39` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp_stable.ride) 
 USDC/USDT pool | [`3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA`](https://wavesexplorer.com/addresses/3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA?network=testnet) | `35yd3qw1gxKDxKwGAykHN9fANbXNWwseaUwbWDj24o3x` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp_stable.ride) 
 lp_staking | [`3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL`](https://wavesexplorer.com/addresses/3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL?network=testnet) | `ER6eHxtBYJ4JakpeheRtGgvT5AeP1S4g44VxoNJo14kd` | [lp_staking.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp_staking.ride) 
@@ -129,5 +130,6 @@ USDTUSDNWXLP | [`Fm4qczu6Pepz8KUhh3Heb6LeTVfpSMX5vvNgw3x764CS`](https://wavesexp
 WavesCommun~WXLP | [`6eD2obqGYcZK4TAYd83HFJXCMu4yxcFVqrmH4Bjt5X6E`](https://wavesexplorer.com/assets/6eD2obqGYcZK4TAYd83HFJXCMu4yxcFVqrmH4Bjt5X6E?network=testnet) | WavesCommun~/WX pool liquidity provider token 
 WAVESUSDNWXLP | [`FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V`](https://wavesexplorer.com/assets/FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V?network=testnet) | WX Waves/Usdn pool liquidity provider token 
 WBTCWETHWXLP | [`BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT`](https://wavesexplorer.com/assets/BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT?network=testnet) | WX WBTC/WETH pool liquidity provider token 
+WXPCBTLP | [`6ADzGwRRWgerfFMfjkAfJPayWzLPMUFACE2uKE1pn9Ju`](https://wavesexplorer.com/assets/6ADzGwRRWgerfFMfjkAfJPayWzLPMUFACE2uKE1pn9Ju?network=testnet) | WX/PCBT pool liquidity provider token 
 WXUSDNWXLP | [`2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib`](https://wavesexplorer.com/assets/2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib?network=testnet) | WX WX/Usdn pool liquidity provider token 
 WXUSDTLP | [`7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8`](https://wavesexplorer.com/assets/7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8?network=testnet) | WX/USDT pool liquidity provider token 
