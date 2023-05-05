@@ -41,16 +41,21 @@ let IdxCfgDecimalsMultPrice                   = 4
 let IdxCfgGetDelayBlocks                      = 5
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
 }
 
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 let permissionDeniedError = "Permission denied".throw()
@@ -427,28 +432,6 @@ func currentSysParamsREST(baseAssetStr: String)= {
   throw(restData)
 }
 
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [
-    StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)
-  ]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || "no pending manager".throwErr()
-  strict checkPM = i.callerPublicKey == pm.value() || "you are not pending manager".throwErr()
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
-}
-
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
@@ -457,4 +440,3 @@ func verify() = {
   }
   sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
 }
-

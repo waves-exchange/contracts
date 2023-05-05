@@ -47,6 +47,7 @@ describe('otc_multiasset: withdrawDelayChange.mjs', /** @this {MochaSuiteModifie
         type: 'integer',
         value: 100,
       }],
+      additionalFee: 4e5,
       chainId,
       senderPublicKey: publicKey(this.accounts.otcMultiasset),
     }, this.accounts.manager);
@@ -78,6 +79,7 @@ describe('otc_multiasset: withdrawDelayChange.mjs', /** @this {MochaSuiteModifie
         type: 'integer',
         value: this.withdrawDelay,
       }],
+      additionalFee: 4e5,
       chainId,
       senderPublicKey: publicKey(this.accounts.otcMultiasset),
     }, this.accounts.manager);
