@@ -212,6 +212,10 @@ func keyTradingRewardHistory(user: String, i: Invocation) = {
   makeString(["%s%s%s%s", "tradingReward", "history", user, i.transactionId.toBase58String()], SEP)
 }
 
+func keyTradingReward(userAddress: String) = {
+  makeString(["%s%s", "tradingReward", userAddress], SEP)
+}
+
 func keyMaxRecipients() = ["%s", "maxRecipients"].makeString(SEP)
 
 func HistoryEntry(type: String, user: String, amount: Int, i: Invocation) = {
@@ -308,6 +312,10 @@ func commonClaimReward(userAddress: String) = {
   }
 }
 
+func getTradingReward(userAddress: String) = {
+  this.getInteger(userAddress.keyTradingReward()).valueOrElse(0)
+}
+
 @Callable(i)
 func tradeRewardInternal(
   paymentAmountLeftOver: Int,
@@ -342,7 +350,7 @@ func tradeRewardInternal(
 
   ([
     IntegerEntry(tradingRewardHistoryKey, rewards[currentIter]),
-    ScriptTransfer(userAddress, rewards[currentIter], wxAssetId)
+    IntegerEntry(userAddresses[currentIter].keyTradingReward(), rewards[currentIter])
   ], tradeRewardInternal)
 }
 
@@ -629,6 +637,22 @@ func tradeReward(userAddresses: List[String], rewards: List[Int]) = {
   )
 
   (nil, tradeRewardInternal)
+}
+
+@Callable(i)
+func claimTradingReward() = {
+  let userAddress = i.caller
+  let reward = userAddress.toString().getTradingReward()
+  if (reward > 0) then {
+    ([
+      ScriptTransfer(userAddress, reward, wxAssetId)
+    ], reward)
+  } else "nothing to claim".throwErr()
+}
+
+@Callable(i)
+func claimTradingRewardREADONLY(userAddress: String) = {
+  (nil, userAddress.getTradingReward())
 }
 
 @Verifier(tx)
