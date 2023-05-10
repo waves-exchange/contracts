@@ -1459,16 +1459,29 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 #    1. issue new LP token and save data in state
 #    2. burn LP token
 #    3. write initial price, that is used for first deposit
+#    4. Init "%s%s__stakedBalance__" for aa() and pa() with 0
 # arguments:
 # attach:
 # return:
 @Callable(i)
 func activate(amtAssetStr: String, priceAssetStr: String) = {
     if (i.caller.toString() != factoryContract.toString()) then throw("permissions denied") else {
+      let amtAssetInitStakedBalance = match(this.getInteger(keyAdditionalBalance(amtAssetStr))) {
+        case n:Int => []
+        case _ => [IntegerEntry(keyAdditionalBalance(amtAssetStr), 0)]
+      }
+
+      let priceAssetInitStakedBalance = match(this.getInteger(keyAdditionalBalance(priceAssetStr))) {
+        case n:Int => []
+        case _ => [IntegerEntry(keyAdditionalBalance(priceAssetStr), 0)]
+      }
+
         ([
-            StringEntry(aa(),amtAssetStr),
-            StringEntry(pa(),priceAssetStr)
-            ],
+          StringEntry(aa(),amtAssetStr),
+          StringEntry(pa(),priceAssetStr)
+        ] 
+          ++ amtAssetInitStakedBalance
+          ++ priceAssetInitStakedBalance,
         "success")
     }
 }
