@@ -19,7 +19,6 @@ const seedWordsCount = 5;
 const ridePath = '../ride';
 const mockRidePath = 'components/lp_stable/mock';
 const lpStablePath = format({ dir: ridePath, base: 'lp_stable.ride' });
-const lpStableAddonPath = format({ dir: ridePath, base: 'lp_stable_addon.ride' });
 const factoryV2Path = format({ dir: ridePath, base: 'factory_v2.ride' });
 const stakingPath = format({ dir: mockRidePath, base: 'staking.mock.ride' });
 const slippagePath = format({ dir: mockRidePath, base: 'slippage.mock.ride' });
@@ -29,7 +28,7 @@ const restPath = format({ dir: ridePath, base: 'rest.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
-    const names = ['lpStable', 'lpStableAddon', 'factoryV2', 'staking', 'slippage', 'gwxReward', 'manager', 'store', 'feeCollector', 'rest', 'user1'];
+    const names = ['lpStable', 'factoryV2', 'staking', 'slippage', 'gwxReward', 'manager', 'store', 'feeCollector', 'rest', 'user1'];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
@@ -41,7 +40,6 @@ export const mochaHooks = {
     await waitForTx(massTransferTx.id, { apiBase });
 
     await setScriptFromFile(lpStablePath, this.accounts.lpStable);
-    await setScriptFromFile(lpStableAddonPath, this.accounts.lpStableAddon);
     await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
     await setScriptFromFile(stakingPath, this.accounts.staking);
     await setScriptFromFile(slippagePath, this.accounts.slippage);
@@ -263,30 +261,6 @@ export const mochaHooks = {
     await api.transactions.broadcast(activateNewPoolTx, {});
     const { stateChanges } = await waitForTx(activateNewPoolTx.id, { apiBase });
     this.lpStableAssetId = stateChanges.issues[0].assetId;
-
-    const setLpStableAddonTx = data({
-      additionalFee: 4e5,
-      data: [{
-        key: '%s__addonAddr',
-        type: 'string',
-        value: address(this.accounts.lpStableAddon, chainId),
-      }],
-      chainId,
-    }, this.accounts.lpStable);
-    await api.transactions.broadcast(setLpStableAddonTx, {});
-    await waitForTx(setLpStableAddonTx.id, { apiBase });
-
-    const setLpStableTx = data({
-      additionalFee: 4e5,
-      data: [{
-        key: '%s__poolAddress',
-        type: 'string',
-        value: address(this.accounts.lpStable, chainId),
-      }],
-      chainId,
-    }, this.accounts.lpStableAddon);
-    await api.transactions.broadcast(setLpStableTx, {});
-    await waitForTx(setLpStableTx.id, { apiBase });
 
     const setDelayTx = data({
       additionalFee: 4e5,

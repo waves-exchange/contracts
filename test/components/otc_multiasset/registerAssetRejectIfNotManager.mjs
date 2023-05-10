@@ -32,6 +32,7 @@ describe('otc_multiasset: registerAssetRejectIfNotManager.mjs', /** @this {Mocha
           { type: 'integer', value: this.pairStatus },
         ],
       },
+      additionalFee: 4e5,
       chainId,
     }, someAccount);
 

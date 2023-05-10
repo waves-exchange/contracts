@@ -28,7 +28,7 @@ func throwInvalidFee() = "invalid fee".throwErr()
 func throwInvalidAssetPair() = "invalid asset pair".throwErr()
 
 func keyManagerPublicKey() = ["%s", "managerPublicKey"].makeString(SEP)
-func keyPendingManagerPublicKey() = ["%s", "pendingManagerPublicKey"].makeString(SEP)
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 func keyAdminPubKeys() = ["%s", "adminPubKeys"].makeString(SEP)
 
 func keyStatus(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "status", amountAssetId, priceAssetId].makeString(SEP)
@@ -57,6 +57,13 @@ func keyAmountAssetMinAmount() = ["%s", "amountAssetMinAmount"].makeString(SEP)
 func keyPriceAssetsMinAmount() = ["%s", "priceAssetsMinAmount"].makeString(SEP)
 func keyPriceAssets() = ["%s", "priceAssets"].makeString(SEP)
 
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
+
 func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage(key + " is not defined")
 func stringOptionToList(stringOrUnit: String|Unit) = match stringOrUnit {
   case s: String => if (s.size() == 0) then nil else s.split(SEP)
@@ -83,14 +90,12 @@ func mustCreateCalled(amountAssetId: String, priceAssetId: String) = {
   isCreateCalled(amountAssetId, priceAssetId) || throwCreateNotCalled()
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func isManager(i: Invocation) = {
@@ -275,26 +280,6 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
 func setAdmins(adminPubKeys: List[String]) = {
   strict checkCaller = i.mustManager()
   [StringEntry(keyAdminPubKeys(), adminPubKeys.makeString(SEP))]
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || "No pending manager".throw()
-  strict checkPM = i.callerPublicKey == pm.value() || "You are not pending manager".throw()
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
 }
 
 @Callable(i)

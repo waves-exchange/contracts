@@ -70,6 +70,7 @@ describe('boosting: claimWxBoostRejectIfUnsupportedLpAssetEmpty.mjs', /** @this 
             { type: 'string', value: this.accounts.user0.addr },
           ],
         },
+        additionalFee: 4e5,
         chainId,
       }, this.accounts.staking.seed);
 
