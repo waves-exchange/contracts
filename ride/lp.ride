@@ -161,9 +161,21 @@ func throwOrderError(
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------
+func addressFromStringOrThis(addressString: String) = {
+  match(addressString.addressFromString()) {
+    case a:Address => a
+    case _ => this
+  }
+}
+
 func getManagerVaultAddressOrThis() = {
-  match keyManagerVaultAddress().getString() {
-    case s:String => s.addressFromStringValue()
+  let factoryAddress = match fc().addressFromStringOrThis() {
+    case fca:Address => fca
+    case _ => this
+  }
+
+  match factoryAddress.getString(keyManagerVaultAddress()) {
+    case s:String => addressFromStringOrThis(s)
     case _=> this
   }
 }
