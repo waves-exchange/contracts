@@ -169,8 +169,8 @@ func addressFromStringOrThis(addressString: String) = {
 }
 
 func getManagerVaultAddressOrThis() = {
-  let factoryAddress = match fc().addressFromStringOrThis() {
-    case fca:Address => fca
+  let factoryAddress = match fc().getString() {
+    case fca:String => addressFromStringOrThis(fca)
     case _ => this
   }
 
