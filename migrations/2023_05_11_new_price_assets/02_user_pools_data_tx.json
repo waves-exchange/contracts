@@ -1,0 +1,13 @@
+{
+    "type": 12,
+    "version": 2,
+    "senderPublicKey": "52HVeUFDYgRVXrPNfdX4WinZBFdizmuf1vqmbd8ExAZS",
+    "fee": 500000,
+    "data": [
+        {
+            "key": "%s__priceAssetsMinAmount",
+            "type": "string",
+            "value": "10000000000000__50000000000__1000000000__1000000000__4000000__1000000000__1000000000__20000000000__320000000"
+        }
+    ]
+}
