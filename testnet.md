@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-393-user-pools-fix**](https://github.com/waves-exchange/contracts/tree/wxdefi-393-user-pools-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **18:17 10.05.2023** (GMT+4)
+[**wxdefi-393-user-pools-fix**](https://github.com/waves-exchange/contracts/tree/wxdefi-393-user-pools-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **14:03 11.05.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -51,6 +51,13 @@ testtoken5/WAVES pool | [`3MqqRn3AV2SneCaHZFDzKtSv8SXkB6qQMXz`](https://wavesexp
 testi1/WX pool | [`3My4mzHC39tR2eT6oA16jWcEHYyUCqdS49Z`](https://wavesexplorer.com/addresses/3My4mzHC39tR2eT6oA16jWcEHYyUCqdS49Z?network=testnet) | `5kYWQrbVEidSxynWUTtWau7suPGUbcxjeqYURbW2d4Vt` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
 testi1/WAVES pool | [`3N49PqfjAGWWLZxmCs54wzLwJtACKfy9ByT`](https://wavesexplorer.com/addresses/3N49PqfjAGWWLZxmCs54wzLwJtACKfy9ByT?network=testnet) | `A4Got3qM1HPycx5y42fjg27C7rQ6eyXh2q13w1NqQTY7` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
 testi2/WX pool | [`3N8ZXTDzcAfh2woPrDGhUqVbtcn7b7NTmuC`](https://wavesexplorer.com/addresses/3N8ZXTDzcAfh2woPrDGhUqVbtcn7b7NTmuC?network=testnet) | `7w1MCeuikcNZ5v4SprUYExeW3TnqGC3zzud8fHgkYb7C` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
+Nigga Hope/WX pool | [`3N3pYKaFQwSzvUN196NURserVDKtvLYoarn`](https://wavesexplorer.com/addresses/3N3pYKaFQwSzvUN196NURserVDKtvLYoarn?network=testnet) | `E5gx4oD8CYjjFnwYB9xz87WJz4LV7TjKoQBJfTmrHRwS` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
+Hope new again/WX pool | [`3N7kG219HXBcKa99jYSesKMbPmMMxDhRrGG`](https://wavesexplorer.com/addresses/3N7kG219HXBcKa99jYSesKMbPmMMxDhRrGG?network=testnet) | `AtJBRdmdt8B3Z9XEo2ewH6ZtzRyECcEZaRKgQhkgJoQf` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
+New Hope/WX pool | [`3MvkNyWnwcRGm5ohSR92912ut6MiEnwUAcx`](https://wavesexplorer.com/addresses/3MvkNyWnwcRGm5ohSR92912ut6MiEnwUAcx?network=testnet) | `RC5ms4rzvQ6x9JrJKEPdb8jDc35wc5Lkg3W4QaTVn9K` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
+WX/Hope_s pool | [`3N9YGptFazvyfL1PQuyAach9RNACCvDFye2`](https://wavesexplorer.com/addresses/3N9YGptFazvyfL1PQuyAach9RNACCvDFye2?network=testnet) | `GEaL8JnZDCGgvBuVZkjzyeai6cgB6aEAG6nDd3mAUgh7` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
+10_05_token1/WAVES pool | [`3MtvonaUrsvwk2Zc6FFDQ9zCDvEBWeYFpZX`](https://wavesexplorer.com/addresses/3MtvonaUrsvwk2Zc6FFDQ9zCDvEBWeYFpZX?network=testnet) | `H4VxuBj8GJ3rMt1VxGuoxQkWF4nYPnWYNMYPParjqCji` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
+WX/10_05_token1 pool | [`3MwWUz7cpzhdjZfooADgkqqssj3kLQ9wfYk`](https://wavesexplorer.com/addresses/3MwWUz7cpzhdjZfooADgkqqssj3kLQ9wfYk?network=testnet) | `3atTecFPmsYBR4HN3CyTEqLgDru3c5iTzs4h29qHjWnh` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
+0505Token3/WAVES pool | [`3N3L2456bPgEXeSbnPif3Mn3v3HUX4opJpW`](https://wavesexplorer.com/addresses/3N3L2456bPgEXeSbnPif3Mn3v3HUX4opJpW?network=testnet) | `EJxSU9hbDuvh93vWF2kjyNWb4ije1MDn68Q6i6BzuC17` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp.ride) 
 USDT/USDN pool | [`3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT`](https://wavesexplorer.com/addresses/3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT?network=testnet) | `D1BL65meykxFZTCuq7jq9HSGLLnWvQamQPUNrguW5w39` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp_stable.ride) 
 USDC/USDT pool | [`3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA`](https://wavesexplorer.com/addresses/3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA?network=testnet) | `35yd3qw1gxKDxKwGAykHN9fANbXNWwseaUwbWDj24o3x` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp_stable.ride) 
 lp_staking | [`3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL`](https://wavesexplorer.com/addresses/3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL?network=testnet) | `ER6eHxtBYJ4JakpeheRtGgvT5AeP1S4g44VxoNJo14kd` | [lp_staking.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-393-user-pools-fix/ride/lp_staking.ride) 
@@ -78,17 +85,23 @@ voting_verified | [`3N9yMmmL5cJ7LJxr8o6GFbKFUbGz4XcAjeg`](https://wavesexplorer.
 |------|---------|-------------|
 0505Token1 | [`3xF5KF5KcDKwgZ7LHSVDfTJTETsVJuUY5xPiNkNaHY4d`](https://wavesexplorer.com/assets/3xF5KF5KcDKwgZ7LHSVDfTJTETsVJuUY5xPiNkNaHY4d?network=testnet) | — 
 0505Token2 | [`FjpPK9XcpArphRGCVChfeM3BYqx6Fd86HwdLAPxVW8Mn`](https://wavesexplorer.com/assets/FjpPK9XcpArphRGCVChfeM3BYqx6Fd86HwdLAPxVW8Mn?network=testnet) | — 
+0505Token3 | [`HMMa2Jr2dEChKkSnMHVr3EDV1gBQT9dXHmWxnCh4SDtk`](https://wavesexplorer.com/assets/HMMa2Jr2dEChKkSnMHVr3EDV1gBQT9dXHmWxnCh4SDtk?network=testnet) | — 
+10_05_token1 | [`2Rcb84WmRGVB3dFp99PQQBCoJ4Yqy6NW61HFdHniuUsT`](https://wavesexplorer.com/assets/2Rcb84WmRGVB3dFp99PQQBCoJ4Yqy6NW61HFdHniuUsT?network=testnet) | — 
 Apple Coin | [`2CjLFYkp4W4sEAxCjFG9oD3smfhvV6yQnNmiJyexbLdu`](https://wavesexplorer.com/assets/2CjLFYkp4W4sEAxCjFG9oD3smfhvV6yQnNmiJyexbLdu?network=testnet) | Apple coin 
 Bitcoin | [`DWgwcZTMhSvnyYCoWLRUXXSH1RSkzThXLJhww9gwkqdn`](https://wavesexplorer.com/assets/DWgwcZTMhSvnyYCoWLRUXXSH1RSkzThXLJhww9gwkqdn?network=testnet) | Bitcoin Token 
 EAST | [`6dtQJDYyQxjngoY5QKVMQxkxeNeExdetWugQMfrfFk47`](https://wavesexplorer.com/assets/6dtQJDYyQxjngoY5QKVMQxkxeNeExdetWugQMfrfFk47?network=testnet) | Enterprise Algorithmic Stable Token 
 ETH-Ethereum-PPT | [`EGo1BQqGxHsc4nFCi5uzpd8eSbH22xGR8hiw9P44Uviw`](https://wavesexplorer.com/assets/EGo1BQqGxHsc4nFCi5uzpd8eSbH22xGR8hiw9P44Uviw?network=testnet) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
 Ethereum | [`BrmjyAWT5jjr3Wpsiyivyvg5vDuzoX2s93WgiexXetB3`](https://wavesexplorer.com/assets/BrmjyAWT5jjr3Wpsiyivyvg5vDuzoX2s93WgiexXetB3?network=testnet) | Ethereum Token 
 GG99GG | [`DdWWHgHLwzVJcTyY2kKqV9aQ5nDJQZmgfXieadRPJA83`](https://wavesexplorer.com/assets/DdWWHgHLwzVJcTyY2kKqV9aQ5nDJQZmgfXieadRPJA83?network=testnet) | — 
+Hope new again | [`BWbKfXdEEHPLquQBTcS5LSvadf9Y21W9XdFM2mCKptLX`](https://wavesexplorer.com/assets/BWbKfXdEEHPLquQBTcS5LSvadf9Y21W9XdFM2mCKptLX?network=testnet) | — 
+Hope_s | [`DAimjDKFxVrLKBCPPF8cUHf8FRc2j64XaXxEiBo7JUwV`](https://wavesexplorer.com/assets/DAimjDKFxVrLKBCPPF8cUHf8FRc2j64XaXxEiBo7JUwV?network=testnet) | — 
 iloToken | [`49uXLuXqT9D9SmA4zcJgczqtZm6H8dEnfEeDb9TDE9Ms`](https://wavesexplorer.com/assets/49uXLuXqT9D9SmA4zcJgczqtZm6H8dEnfEeDb9TDE9Ms?network=testnet) | — 
 Kekenger | [`EutPdKtshH6mBBJBSbu8RJKC1pe87cJeG3AZybKiymG1`](https://wavesexplorer.com/assets/EutPdKtshH6mBBJBSbu8RJKC1pe87cJeG3AZybKiymG1?network=testnet) | — 
 MinersReward | [`BQRMku6uKKd6wBVGy6PuejKDmJLHoDzanhrnYJihHF7`](https://wavesexplorer.com/assets/BQRMku6uKKd6wBVGy6PuejKDmJLHoDzanhrnYJihHF7?network=testnet) | Waves Miner Reward token 
 Mock ILO Token | [`3wBArqu1n1rhzBEzazBQRT7fAnP47rBScoBah9bvC4o4`](https://wavesexplorer.com/assets/3wBArqu1n1rhzBEzazBQRT7fAnP47rBScoBah9bvC4o4?network=testnet) | This is the test token for ILO 
 motoken5 | [`7E7SX82ihnq5C1woaJ8BSTPZjoeGGFzRMDbpiJMG3KmN`](https://wavesexplorer.com/assets/7E7SX82ihnq5C1woaJ8BSTPZjoeGGFzRMDbpiJMG3KmN?network=testnet) | — 
+New Hope | [`8JJXgeSkjJ6sqpWdVaTMMBR5f5mTrTcGHKovEDH3W1CZ`](https://wavesexplorer.com/assets/8JJXgeSkjJ6sqpWdVaTMMBR5f5mTrTcGHKovEDH3W1CZ?network=testnet) | — 
+Nigga Hope | [`9457rs52YU52oEYySuFYztNBaFkEMyXuknZF4kDx79qC`](https://wavesexplorer.com/assets/9457rs52YU52oEYySuFYztNBaFkEMyXuknZF4kDx79qC?network=testnet) | — 
 PCBT | [`AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8`](https://wavesexplorer.com/assets/AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8?network=testnet) | PepeTeam Crosschain Bridge Token 
 Primalbase Token | [`5fmYjWQPnE7aGJNZmgJLUcWMMPAdMdxWjNeQBFVQhhqU`](https://wavesexplorer.com/assets/5fmYjWQPnE7aGJNZmgJLUcWMMPAdMdxWjNeQBFVQhhqU?network=testnet) | https://www.primalbase.com Shared workspaces on crypto tokens. One PBT token provides full access to the co-working or shared workspace with all the necessary services at any Primalbase location for one person. The possession of 4 tokens allows you to use a separate office, if it is free. 
 SupaLong TokenNa | [`AQSnz2tZHfoT94MusMV8BZDEs9Vre7F3XTm3fX4giqhF`](https://wavesexplorer.com/assets/AQSnz2tZHfoT94MusMV8BZDEs9Vre7F3XTm3fX4giqhF?network=testnet) | — 
@@ -114,12 +127,15 @@ WavesCommunity | [`EmcmfM27TPaemhuREZGD8WLvsuLCdqx8WovMrDQKbXS1`](https://wavese
 |------|---------|-------------|
 0505Token2WXLP | [`AJkU11137VguYaCzhRikEFqWEWLtRJmgteYxJSKZtZTr`](https://wavesexplorer.com/assets/AJkU11137VguYaCzhRikEFqWEWLtRJmgteYxJSKZtZTr?network=testnet) | 0505Token2/WX pool liquidity provider token 
 0505Toke~WAVESLP | [`DLfSumdQ6Ug7DbuTNeasUNXwrBygThJm93XyVtCc3Hxt`](https://wavesexplorer.com/assets/DLfSumdQ6Ug7DbuTNeasUNXwrBygThJm93XyVtCc3Hxt?network=testnet) | 0505Toke~/WAVES pool liquidity provider token 
+0505Toke~WAVESLP | [`42MXa7ukJMLAJVkr1KTPvXHcWCmLdRo8H5R5xpF9xph4`](https://wavesexplorer.com/assets/42MXa7ukJMLAJVkr1KTPvXHcWCmLdRo8H5R5xpF9xph4?network=testnet) | 0505Toke~/WAVES pool liquidity provider token 
+10_05_to~WAVESLP | [`9cdfM1YonUW4boASohG4ivBFbAyBweLxHppp56x7mhqs`](https://wavesexplorer.com/assets/9cdfM1YonUW4boASohG4ivBFbAyBweLxHppp56x7mhqs?network=testnet) | 10_05_to~/WAVES pool liquidity provider token 
 APPLEWXLP | [`9RVKpzRF45vbwuTqtwdUsjEC6TpJwTKZyaU4K2thVT5K`](https://wavesexplorer.com/assets/9RVKpzRF45vbwuTqtwdUsjEC6TpJwTKZyaU4K2thVT5K?network=testnet) | APPLE/WX pool liquidity provider token 
 EASTUSDNLP | [`6tJ1PwMyq942TaFxmgid215YqDucmvg4bXrixNteYbQt`](https://wavesexplorer.com/assets/6tJ1PwMyq942TaFxmgid215YqDucmvg4bXrixNteYbQt?network=testnet) | WX EAST/USDN pool liquidity provider token 
 ETHWAVESLP | [`5u5YKfNXUuefZSjKncQgvLWkMsMYkPN5HFXMQR3sH7ZS`](https://wavesexplorer.com/assets/5u5YKfNXUuefZSjKncQgvLWkMsMYkPN5HFXMQR3sH7ZS?network=testnet) | ETH/WAVES pool liquidity provider token 
 ETHWXLP | [`D7qTknoXn5iQMiUeQvx33kFGiR6zmjTsuAmwB8KxgCz2`](https://wavesexplorer.com/assets/D7qTknoXn5iQMiUeQvx33kFGiR6zmjTsuAmwB8KxgCz2?network=testnet) | ETH/WX pool liquidity provider token 
 GG99GGWAVESLP | [`DvdYSHNMfYNa9xBtYBr3SxzXYntnk4NeUuR8d13yKp5v`](https://wavesexplorer.com/assets/DvdYSHNMfYNa9xBtYBr3SxzXYntnk4NeUuR8d13yKp5v?network=testnet) | GG99GG/WAVES pool liquidity provider token 
 GG99GGWXLP | [`3hjnL7y9yX6xbkZdygU8zZjcd27WENWautzZWFUbP7Mw`](https://wavesexplorer.com/assets/3hjnL7y9yX6xbkZdygU8zZjcd27WENWautzZWFUbP7Mw?network=testnet) | GG99GG/WX pool liquidity provider token 
+Hope new ag~WXLP | [`DtHFi2ggKz1ExoRyoLHmEnhprBjnWV5LYnJrXJsnbgud`](https://wavesexplorer.com/assets/DtHFi2ggKz1ExoRyoLHmEnhprBjnWV5LYnJrXJsnbgud?network=testnet) | Hope new ag~/WX pool liquidity provider token 
 iloTokenWAVESLP | [`AinBEt7guLU9T5PjrZ75WBUd4D51DAgxdfPar51t7iP3`](https://wavesexplorer.com/assets/AinBEt7guLU9T5PjrZ75WBUd4D51DAgxdfPar51t7iP3?network=testnet) | iloToken/WAVES pool liquidity provider token 
 iloTokenWXLP | [`HUtpG89YihuzuLDu1xECYCLYPuBEiQyeVPxrqNCWtzHG`](https://wavesexplorer.com/assets/HUtpG89YihuzuLDu1xECYCLYPuBEiQyeVPxrqNCWtzHG?network=testnet) | iloToken/WX pool liquidity provider token 
 KekengerUSDTLP | [`CPP3z7oYNNp4URYrmUVsxDXXjg7D7r4bAyAyK2Sh2Qmd`](https://wavesexplorer.com/assets/CPP3z7oYNNp4URYrmUVsxDXXjg7D7r4bAyAyK2Sh2Qmd?network=testnet) | Kekenger/USDT pool liquidity provider token 
@@ -128,6 +144,8 @@ MinersRe~WAVESLP | [`7CZbfN1aXvaphpsigXLrmx3e1zRAi9kGF3gV3QSBXsi8`](https://wave
 Mock ILO ~USDCLP | [`CcmYMD4QYfDMExV1nV4jKXjndcFAFv7Da8pNB8kVKUFa`](https://wavesexplorer.com/assets/CcmYMD4QYfDMExV1nV4jKXjndcFAFv7Da8pNB8kVKUFa?network=testnet) | Mock ILO ~/USDC pool liquidity provider token 
 motoken5WAVESLP | [`FczCzPEs6XtwjvYFzMhKy6xqTYmbft8UBNDcFWikSUBv`](https://wavesexplorer.com/assets/FczCzPEs6XtwjvYFzMhKy6xqTYmbft8UBNDcFWikSUBv?network=testnet) | motoken5/WAVES pool liquidity provider token 
 motoken5WXLP | [`4TB5GL7355innbxBBy9GPfxqAicFCjmKUizVeb1vpnBP`](https://wavesexplorer.com/assets/4TB5GL7355innbxBBy9GPfxqAicFCjmKUizVeb1vpnBP?network=testnet) | motoken5/WX pool liquidity provider token 
+New HopeWXLP | [`Ge475Ytohw5qMrmCsJeasJUx7bDhDw3gXsmjwQTpTXP9`](https://wavesexplorer.com/assets/Ge475Ytohw5qMrmCsJeasJUx7bDhDw3gXsmjwQTpTXP9?network=testnet) | New Hope/WX pool liquidity provider token 
+Nigga HopeWXLP | [`7fg54jKSZmP3rP5NFpQQfLx6XaA2VDRJgNubnZM8h23Q`](https://wavesexplorer.com/assets/7fg54jKSZmP3rP5NFpQQfLx6XaA2VDRJgNubnZM8h23Q?network=testnet) | Nigga Hope/WX pool liquidity provider token 
 PCBTWAVESLP | [`5SHBveQyZVVMvL7jaDqtkT6bH1gpPPJaiMgMnZjp724s`](https://wavesexplorer.com/assets/5SHBveQyZVVMvL7jaDqtkT6bH1gpPPJaiMgMnZjp724s?network=testnet) | PCBT/WAVES pool liquidity provider token 
 Primalbase ~WXLP | [`33xcQUjzdg5HCfLftbcCrJjNQ1NpucCKhNoq9ddm5dCw`](https://wavesexplorer.com/assets/33xcQUjzdg5HCfLftbcCrJjNQ1NpucCKhNoq9ddm5dCw?network=testnet) | Primalbase ~/WX pool liquidity provider token 
 SupaLong To~WXLP | [`CLjm2N8M9EB18dXWoDhBZcZ2uSq3cbjz4Tb721RGMexC`](https://wavesexplorer.com/assets/CLjm2N8M9EB18dXWoDhBZcZ2uSq3cbjz4Tb721RGMexC?network=testnet) | SupaLong To~/WX pool liquidity provider token 
@@ -150,7 +168,9 @@ WavesCommun~WXLP | [`6eD2obqGYcZK4TAYd83HFJXCMu4yxcFVqrmH4Bjt5X6E`](https://wave
 WAVESUSDNWXLP | [`FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V`](https://wavesexplorer.com/assets/FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V?network=testnet) | WX Waves/Usdn pool liquidity provider token 
 WBTCWETHWXLP | [`BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT`](https://wavesexplorer.com/assets/BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT?network=testnet) | WX WBTC/WETH pool liquidity provider token 
 WX0505Token1LP | [`3mhGM8jLaFv2bwRAsfMTbXQzTBuH45KgpcBmW3R8d6uZ`](https://wavesexplorer.com/assets/3mhGM8jLaFv2bwRAsfMTbXQzTBuH45KgpcBmW3R8d6uZ?network=testnet) | WX/0505Token1 pool liquidity provider token 
+WXHope_sLP | [`AxyKVfvNh6sTotVUbj17QSdbLhcqTCofn6CFgRyKJQBR`](https://wavesexplorer.com/assets/AxyKVfvNh6sTotVUbj17QSdbLhcqTCofn6CFgRyKJQBR?network=testnet) | WX/Hope_s pool liquidity provider token 
 WXPCBTLP | [`6ADzGwRRWgerfFMfjkAfJPayWzLPMUFACE2uKE1pn9Ju`](https://wavesexplorer.com/assets/6ADzGwRRWgerfFMfjkAfJPayWzLPMUFACE2uKE1pn9Ju?network=testnet) | WX/PCBT pool liquidity provider token 
 WXtesttoken5LP | [`AFASa8sDNPtKye29GusrBb3DTAMGQayRkFPnKHTbGX7P`](https://wavesexplorer.com/assets/AFASa8sDNPtKye29GusrBb3DTAMGQayRkFPnKHTbGX7P?network=testnet) | WX/testtoken5 pool liquidity provider token 
 WXUSDNWXLP | [`2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib`](https://wavesexplorer.com/assets/2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib?network=testnet) | WX WX/Usdn pool liquidity provider token 
 WXUSDTLP | [`7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8`](https://wavesexplorer.com/assets/7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8?network=testnet) | WX/USDT pool liquidity provider token 
+W~10_05_token1LP | [`CnZSHABrApUxvth5FUSbv7KJTzPyc5Dv25SXSga4enzs`](https://wavesexplorer.com/assets/CnZSHABrApUxvth5FUSbv7KJTzPyc5Dv25SXSga4enzs?network=testnet) | W~/10_05_token1 pool liquidity provider token 
