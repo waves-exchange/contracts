@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **19:17 11.05.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **11:06 12.05.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -96,6 +96,7 @@ WBTC/WAVES pool | [`3P3wRwqS2PdG4AuDo7hRjwyPurCHsAAF8bZ`](https://wavesexplorer.
 BNB/WAVES pool | [`3PErdCQg2f8WYGG7DzSiH5FBosdnPHE6cND`](https://wavesexplorer.com/addresses/3PErdCQg2f8WYGG7DzSiH5FBosdnPHE6cND) | `HCM5ars2ibfQdrcd9xkfeZMPJ3xbVVGL6pAgGHoLAY9Q` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/XTN pool | [`3P5kfoYW7jPa9zYoTkN6Z6z8xtw8JGhymYB`](https://wavesexplorer.com/addresses/3P5kfoYW7jPa9zYoTkN6Z6z8xtw8JGhymYB) | `5rhEtspFAgdbhgPaiv2VBPa7qDWucgxkgdTfm1Uk3ehW` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 PCBT/WAVES pool | [`3PNxLv6DyvN9nQAAQmisD9wDrFMzZBKDyKN`](https://wavesexplorer.com/addresses/3PNxLv6DyvN9nQAAQmisD9wDrFMzZBKDyKN) | `BBW7ffGBR62mAE1GEsFvMJPUYzGLtGespUaqvJc4axFx` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+WAVES/USDT-BEP20 pool | [`3P35xHmfsndQYQ6UWmppkejkymFc8tCbFon`](https://wavesexplorer.com/addresses/3P35xHmfsndQYQ6UWmppkejkymFc8tCbFon) | `DG9Mcs8yAiDrJ1xTtz9oq7Kt47PtkajjSQhxnFh9UaDE` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -169,6 +170,7 @@ Tsunami Token | [`8t4DPWTwPzpatHA9AkTxWAB47THnYzBsDnoY7fQqbG91`](https://wavesex
 USD Coin | [`6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ`](https://wavesexplorer.com/assets/6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ) | USDC token 
 USDC-ERC20-PPT | [`HGgabTqUS8WtVFUJzfmrTDMgEccJuZLBPhFgQFxvnsoW`](https://wavesexplorer.com/assets/HGgabTqUS8WtVFUJzfmrTDMgEccJuZLBPhFgQFxvnsoW) | USDC ERC20 Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/USDC-ERC20-PPT 
 USDT | [`34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ`](https://wavesexplorer.com/assets/34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ) | Tether USD token 
+USDT-BSC-PPT | [`A81p1LTRyoq2rDR2TNxB2dWYxsiNwCSSi8sXef2SEkwb`](https://wavesexplorer.com/assets/A81p1LTRyoq2rDR2TNxB2dWYxsiNwCSSi8sXef2SEkwb) | USDT Token from Binance Smart Chain network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/USDT-BSC-PPT 
 USDT-ERC20-PPT | [`9wc3LXNA4TEBsXyKtoLE9mrbDD7WMHXvXrCjZvabLAsi`](https://wavesexplorer.com/assets/9wc3LXNA4TEBsXyKtoLE9mrbDD7WMHXvXrCjZvabLAsi) | USDT ERC20 Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/USDT-ERC20-PPT 
 VIRES | [`DSbbhLsSTeDg5Lsiufk2Aneh3DjVqJuPr2M9uU1gwy5p`](https://wavesexplorer.com/assets/DSbbhLsSTeDg5Lsiufk2Aneh3DjVqJuPr2M9uU1gwy5p) | Vires.Finance Protocol Governance Token 
 VVUSDNLP | [`8KEtor9aSsSj38MknyAE7k1uRThHY9prAXgiE4D7WpyL`](https://wavesexplorer.com/assets/8KEtor9aSsSj38MknyAE7k1uRThHY9prAXgiE4D7WpyL) | Vires Vested USDN LP 
@@ -279,6 +281,7 @@ WAVESUSDCLP | [`BoXuf9ewJSE1UMrKibZmigzC6tBzv8RFTeZmofEos2ZJ`](https://wavesexpl
 WAVESUSDNWXLP | [`7KZbJrVopwJhkdwbe1eFDBbex4dkY63MxjTNjqXtrzj1`](https://wavesexplorer.com/assets/7KZbJrVopwJhkdwbe1eFDBbex4dkY63MxjTNjqXtrzj1) | WX Waves/Usdn pool liquidity provider token 
 WAVESUSDTLP | [`ByJtVuYi58CtdjtasDuTqtgev8qWkdJybF7rY1xosmhE`](https://wavesexplorer.com/assets/ByJtVuYi58CtdjtasDuTqtgev8qWkdJybF7rY1xosmhE) | WAVES/USDT pool liquidity provider token 
 WAVESUSDTLP | [`6KWpnpLk6GNh5HG9ct9pNDCYFWJBoAAshZsp4D8jcFpV`](https://wavesexplorer.com/assets/6KWpnpLk6GNh5HG9ct9pNDCYFWJBoAAshZsp4D8jcFpV) | WAVES/USDT pool liquidity provider token 
+WAV~USDT-BEP20LP | [`798rGEtmpZ3GedfpQ3o5UgWvVaFsb9yYPAU9Ce1AicKT`](https://wavesexplorer.com/assets/798rGEtmpZ3GedfpQ3o5UgWvVaFsb9yYPAU9Ce1AicKT) | WAV~/USDT-BEP20 pool liquidity provider token 
 WBTCWAVESLP | [`3HM7DMPFQ42UWSTm4EcGAZi4Wi1Z2VgRxXRBkHjxgTuk`](https://wavesexplorer.com/assets/3HM7DMPFQ42UWSTm4EcGAZi4Wi1Z2VgRxXRBkHjxgTuk) | WBTC/WAVES pool liquidity provider token 
 WBTCXTNLP | [`7uHiRfCzGzhY1h9b7N6b1WtKPraq1Jy83cpr4yGisQKv`](https://wavesexplorer.com/assets/7uHiRfCzGzhY1h9b7N6b1WtKPraq1Jy83cpr4yGisQKv) | WX WBTC/XTN pool liquidity provider token 
 WCTXTNLP | [`FMaZ4eEEpAmg8qMuEnVPYYSTFgVkE21KCL96PK57AJRX`](https://wavesexplorer.com/assets/FMaZ4eEEpAmg8qMuEnVPYYSTFgVkE21KCL96PK57AJRX) | WX WCT/XTN pool liquidity provider token 
