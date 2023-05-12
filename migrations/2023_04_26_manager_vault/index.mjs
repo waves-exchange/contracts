@@ -20,7 +20,7 @@ const {
 const client = new MongoClient(dbUrl)
 await client.connect()
 
-const cursor = client.db().collection(dbCollection).find({})
+const cursor = client.db().collection(dbCollection).find({ file: { $nin: ['lp.ride', 'lp_stable.ride'] } })
 
 const exclude = ['.gitkeep']
 const files = await readdir(txsPath)
@@ -40,6 +40,9 @@ for await (const contract of cursor) {
     data: [{ key, type, value }],
     chainId
   })
+  delete(dataTx.id)
+  delete(dataTx.timestamp)
+  delete(dataTx.proofs)
   await writeFile(
     join(txsPath, `${contract.tag.replace(/\s|\//g, '_').toLowerCase()}.json`),
     JSON.stringify(dataTx, null, 2)

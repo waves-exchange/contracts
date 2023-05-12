@@ -98,7 +98,7 @@ describe('User Pools - Create', /** @this {MochaSuiteModified} */() => {
     });
 
     expect(stateChanges.data).to.deep.include({
-      key: `%s%s%s__createCalled__${userTokenId}__${this.usdnAssetId}`,
+      key: `%s%s%s__createCalled__${this.usdnAssetId}__${userTokenId}`,
       type: 'boolean',
       value: true,
     });

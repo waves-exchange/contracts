@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 5 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -92,6 +92,9 @@ func parseUserVote(input: String) = {
 # types: vote | cancelVote
 func keyUserVoteHistory(type: String, userAddress: String, assetId: String, txId: String, period: Int) = ["%s%s%s%s%s%d", "history", type, assetId, userAddress, txId, period.toString()].makeString(separator)
 
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
+func keyManagerPublicKey() = "%s__managerPublicKey"
+
 func thisOnly(i: Invocation) = {
   i.caller == this || "Permission denied".throw()
 }
@@ -114,6 +117,32 @@ let assetsStoreContract = keyAssetsStoreContract.getStringOrFail().addressFromSt
 let maxDepth = keyMaxDepth.getInteger().valueOrElse(maxDepthDefault)
 
 let endHeight = startHeight + votingDuration
+
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
+
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
+}
+
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
+
+func mustManager(i: Invocation) = {
+  i.isManager() || "permission denied".throw()
+}
 
 func getUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
   let gwxAmount = boostingContract.invoke("getUserGwxAmountAtHeightREADONLY", [userAddress, targetHeight], [])
@@ -267,7 +296,7 @@ func constructor(
 ) = {
 
   strict checks = [
-    i.thisOnly(),
+    i.mustManager(),
     boostingContractPrm.addressFromString().isDefined() || throw("Invalid boosting contract address"),
     emissionContractPrm.addressFromString().isDefined() || throw("Invalid emission contract address"),
     assetsStoreContractPrm.addressFromString().isDefined() || throw("Invalid asset_store contract address"),
@@ -414,7 +443,7 @@ func finalizeAssetINTERNAL(assetId: String, period: Int) = {
 
 @Callable(i)
 func deleteUserNodeINTERNAL(assetId: String, userAddress: String, latestProcessedUserRemoveKey: String) = {
-  strict checkCaller = i.thisOnly()
+  strict checkCaller = i.mustManager()
 
   (
     assetId.getVotesListName().deleteNode(userAddress) :+ DeleteEntry(latestProcessedUserRemoveKey),
@@ -607,7 +636,7 @@ func transferVotes() = {
 
 @Callable(i)
 func setVotingThreshold(newThreshold: Int) = {
-  strict checkCaller = i.thisOnly()
+  strict checkCaller = i.mustManager()
 
   (
     [
@@ -619,7 +648,7 @@ func setVotingThreshold(newThreshold: Int) = {
 
 @Callable(i)
 func setFee(newFee: Int) = {
-  strict checkCaller = i.thisOnly()
+  strict checkCaller = i.mustManager()
 
   (
     [
@@ -639,4 +668,13 @@ func gwxAvailableForVoteREADONLY(userAddress: String) = {
     [],
     gwxAmountAtEnd
   )
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
 }

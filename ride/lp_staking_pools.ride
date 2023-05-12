@@ -102,9 +102,8 @@ func keyPriceGetHistory(baseAssetId: ByteVector|Unit) = {
   ["%s%s%s%s%d%d", baseAssetId.assetIdToString(), "price", "history", "get", lastBlock.height.toString(), lastBlock.timestamp.toString()].makeString(separator)
 }
 func keyHistoryEntry(baseAssetId: ByteVector|Unit, operation: String, period: Int, userAddress: Address, txId: ByteVector) = {
-  ["%s%s%s%s", "history", operation, userAddress.toString(), txId.toBase58String(), height.toString()].makeString(separator)
+  ["%s%s%s%s", "history", baseAssetId.value().toBase58String(), operation, userAddress.toString(), txId.toBase58String(), height.toString()].makeString(separator)
 }
-
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
@@ -275,15 +274,15 @@ func put() = {
     }
   }
   let baseAssetAmountToConvert = baseAssetId.keyBaseAssetAmountToConvert().getInteger().valueOrElse(0)
-  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
-
+  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getString().valueOrElse("%d%d%d__0__0").split(separator)[1].parseInt().value()
   ([
     IntegerEntry(baseAssetId.keyBaseAssetAmountToConvert(), baseAssetAmountToConvert + pmt.amount),
-    IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), userBaseAssetAmountToConvert + pmt.amount),
+    StringEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), ["%d%d%d", (userBaseAssetAmountToConvert + pmt.amount).toString(), lastBlock.timestamp.toString(), period.toString()].makeString(separator)),
     IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress), period),
     StringEntry(
       baseAssetId.keyHistoryEntry("put", period, userAddress, i.transactionId),
       [
+        "%d%d%d",
         pmt.amount.toString(), 
         lastBlock.timestamp.toString(),
         userBaseAssetAmountToConvert.toString()
@@ -308,7 +307,7 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
   strict shareAssetId = baseAssetId.keyShareAssetId()
     .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
   strict period = baseAssetId.keyPeriod().getInteger().valueOrErrorMessage("invalid period".wrapErr())
-  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
+  let userBaseAssetAmountToConvert = baseAssetId.keyUserBaseAssetAmountToConvert(userAddress).getString().valueOrElse("%d%d%d__0__0").split(separator)[1].parseInt().value()
   strict checkAmountToConvert = userBaseAssetAmountToConvert > 0 || "nothing to claim".throwErr()
   let userBaseAssetAmountToConvertPeriod = baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
   # current period should be > userBaseAssetAmountToConvertPeriod
@@ -318,12 +317,13 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
   let shareAssetAmount = fraction(userBaseAssetAmountToConvert.toBigInt(), scale18BigInt, price).toInt()
 
   ([
-    IntegerEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), 0),
+    StringEntry(baseAssetId.keyUserBaseAssetAmountToConvert(userAddress), ["%d%d%d", (0).toString(), lastBlock.timestamp.toString(), period.toString()].makeString(separator)),
     DeleteEntry(baseAssetId.keyUserBaseAssetAmountToConvertPeriod(userAddress)),
     ScriptTransfer(userAddress, shareAssetAmount, shareAssetId),
     StringEntry(
       baseAssetId.keyHistoryEntry("claimShareAsset", period, userAddress, i.transactionId),
       [
+        "%d%d%d%d",
         shareAssetAmount.toString(), 
         lastBlock.timestamp.toString(),
         # price
@@ -359,15 +359,16 @@ func get() = {
     }
   }
   let shareAssetAmountToConvert = baseAssetId.keyShareAssetAmountToConvert().getInteger().valueOrElse(0)
-  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
+  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getString().valueOrElse("%d%d%d__0__0").split(separator)[1].parseInt().value()
 
   ([
     IntegerEntry(baseAssetId.keyShareAssetAmountToConvert(), shareAssetAmountToConvert + pmt.amount),
-    IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), userShareAssetAmountToConvert + pmt.amount),
+    StringEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), ["%d%d%d", (userShareAssetAmountToConvert + pmt.amount).toString(), lastBlock.timestamp.toString(), period.toString()].makeString(separator)),
     IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress), period),
     StringEntry(
       baseAssetId.keyHistoryEntry("get", period, userAddress, i.transactionId),
       [
+        "%d%d%d",
         pmt.amount.toString(), 
         lastBlock.timestamp.toString(),
         # lp change
@@ -391,7 +392,8 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
   strict shareAssetId = baseAssetId.keyShareAssetId()
     .getString().valueOrErrorMessage("invalid base asset id".wrapErr()).parseAssetId().value()
   strict period = baseAssetId.keyPeriod().getInteger().valueOrErrorMessage("invalid period".wrapErr())
-  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getInteger().valueOrElse(0)
+  let userShareAssetAmountToConvert = baseAssetId.keyUserShareAssetAmountToConvert(userAddress).getString().valueOrElse("%d%d%d__0__0").split(separator)[1].parseInt().value()
+  
   # strict checkAmountToConvert = userShareAssetAmountToConvert > 0 || "nothing to claim".throwErr()
   let userShareAssetAmountToConvertPeriod = baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress).getInteger().valueOrErrorMessage("failed to get period".wrapErr())
   strict checkPeriod = period > userShareAssetAmountToConvertPeriod || "invalid period".throwErr()
@@ -404,12 +406,13 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
   # write throw with all params 
   # strict checkParams = ("baseAssetAmount = " + baseAssetAmount.toString() + " price =  " + price.toString() + "  userShareAssetAmountToConvertPeriod  = " + userShareAssetAmountToConvertPeriod.toString() + "  userShareAssetAmountToConvert = " + userShareAssetAmountToConvert.toString()).throwErr()
   ([
-    IntegerEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), 0),
+    StringEntry(baseAssetId.keyUserShareAssetAmountToConvert(userAddress), ["%d%d%d", (0).toString(), lastBlock.timestamp.toString(), period.toString()].makeString(separator)),
     DeleteEntry(baseAssetId.keyUserShareAssetAmountToConvertPeriod(userAddress)),
     ScriptTransfer(userAddress, baseAssetAmount, baseAssetId),
     StringEntry(
       baseAssetId.keyHistoryEntry("claimBaseAsset", period, userAddress, i.transactionId),
       [
+        "%d%d%d%d",
         baseAssetAmount.toString(), 
         lastBlock.timestamp.toString(),
         price.toString(),
