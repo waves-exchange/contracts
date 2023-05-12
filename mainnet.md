@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **11:08 12.05.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **12:36 12.05.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
