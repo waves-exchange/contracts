@@ -43,6 +43,7 @@ describe('Voting Verified - Transfer Votes', /** @this {MochaSuiteModified} */()
           { type: 'integer', value: 10 }, // maxDepthPrm
         ],
       },
+      additionalFee: 4e5,
       chainId,
     }, this.accounts.voting);
     await api.transactions.broadcast(invokeTx, {});
@@ -209,6 +210,7 @@ describe('Voting Verified - Transfer Votes', /** @this {MochaSuiteModified} */()
       data: [
         { key: '%s__votesTransferFinished__1' },
       ],
+      additionalFee: 4e5,
       chainId,
     }, this.accounts.voting);
     await api.transactions.broadcast(resetTransferDataTx, {});

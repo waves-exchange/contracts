@@ -27,6 +27,7 @@ export const setScriptFromFile = async (
   if (fee < min) {
     fee = min;
   }
+  fee += 4e5;
   const ssTx = setScript({
     script: base64,
     chainId,

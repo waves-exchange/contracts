@@ -96,9 +96,9 @@ func swapContract() = {"%s__swapContract"}
 # keyFactoryContract
 func fc() = {"%s__factoryContract"}
 # keyManagerPublicKey
-func mpk() = {"%s__managerPublicKey"}
-# keyPendingManagerPublicKey
-func pmpk() = {"%s__pendingManagerPublicKey"}
+func keyManagerPublicKey() = "%s__managerPublicKey"
+# keyManagerVaultAddress
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 # keyPriceLast
 func pl() = {"%s%s__price__last"}
 # keyPriceHistory
@@ -161,6 +161,25 @@ func throwOrderError(
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------
+func addressFromStringOrThis(addressString: String) = {
+  match(addressString.addressFromString()) {
+    case a:Address => a
+    case _ => this
+  }
+}
+
+func getManagerVaultAddressOrThis() = {
+  let factoryAddress = match fc().getString() {
+    case fca:String => addressFromStringOrThis(fca)
+    case _ => this
+  }
+
+  match factoryAddress.getString(keyManagerVaultAddress()) {
+    case s:String => addressFromStringOrThis(s)
+    case _=> this
+  }
+}
+
 func getStringOrFail(address: Address, key: String) = address.getString(key).valueOrErrorMessage(makeString(["mandatory ", address.toString(), ".", key, " is not defined"], ""))
 func getIntOrFail(address: Address, key: String) = address.getInteger(key).valueOrErrorMessage(makeString(["mandatory ", address.toString(), ".", key, " is not defined"], ""))
 
@@ -920,14 +939,12 @@ func calcGetOneToken(
   (totalAmount, commonState, feeAmount, loss, outInAmountAsset)
 }
 
-func managerPublicKeyOrUnit() = match mpk().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match pmpk().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func isManager(i: Invocation) = {
@@ -1013,26 +1030,6 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
     ],
     amountOut
   )
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(pmpk(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
-
-  [
-    StringEntry(mpk(), pm.value().toBase58String()),
-    DeleteEntry(pmpk())
-  ]
 }
 
 # called by: LP
