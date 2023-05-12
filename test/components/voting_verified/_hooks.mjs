@@ -35,13 +35,7 @@ export const mochaHooks = {
     }, seed);
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
-    // set scripts
-    // await setScriptFromFile(votingVerifiedPath, this.accounts.voting, (content) => content
-    // .replace('assetId.eliminationCheck()', 'true'));
-    await setScriptFromFile(votingVerifiedPath, this.accounts.voting);
-    await setScriptFromFile(assetsStoreMockPath, this.accounts.store);
-    await setScriptFromFile(boostingMockPath, this.accounts.boosting);
-    await setScriptFromFile(emissionMockPath, this.accounts.emission);
+
     // issue WX asset
     const issueTx = issue({
       name: 'WX Token',
@@ -65,5 +59,13 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTxWx, {});
     await waitForTx(massTransferTxWx.id, { apiBase });
     spinner.succeed('Initialized');
+
+    // set scripts
+    // await setScriptFromFile(votingVerifiedPath, this.accounts.voting, (content) => content
+    // .replace('assetId.eliminationCheck()', 'true'));
+    await setScriptFromFile(votingVerifiedPath, this.accounts.voting);
+    await setScriptFromFile(assetsStoreMockPath, this.accounts.store);
+    await setScriptFromFile(boostingMockPath, this.accounts.boosting);
+    await setScriptFromFile(emissionMockPath, this.accounts.emission);
   },
 };
