@@ -443,7 +443,7 @@ func finalizeAssetINTERNAL(assetId: String, period: Int) = {
 
 @Callable(i)
 func deleteUserNodeINTERNAL(assetId: String, userAddress: String, latestProcessedUserRemoveKey: String) = {
-  strict checkCaller = i.mustManager()
+  strict checkCaller = i.caller == this || i.mustManager()
 
   (
     assetId.getVotesListName().deleteNode(userAddress) :+ DeleteEntry(latestProcessedUserRemoveKey),
