@@ -1,0 +1,19 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "feeAssetId": null,
+    "version": 2,
+    "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+    "data": [
+        {
+            "key": "%s%s__spread__3PQ4BZAPz3A8xApagrKHHAaBCipyXyMZfBD",
+            "type": "integer",
+            "value": 400000
+        },
+        {
+            "key": "%s%s__spread__3PBxqamajfw2cHR2wmv5usiWxBncKLdXVdu",
+            "type": "integer",
+            "value": 400000
+        }
+    ]
+}
