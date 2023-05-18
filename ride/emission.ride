@@ -17,10 +17,12 @@ func keyFactoryAddress()  = "%s%s__config__factoryAddress"
 let keyVotingVerifiedContract  = "%s%s__config__votingVerifiedContract"
 let keyVotingEmissionCandidateContract  = "%s%s__config__votingEmissionCandidateContract"
 let keyUserPoolsContract  = "%s%s__config__userPoolsContract"
+let keyVotingEmissionRateContract  = "%s%s__config__votingEmissionRateContract"
 
 let votingVerifiedContract = this.getStringOrFail(keyVotingVerifiedContract).addressFromStringValue()
 let votingEmissionCandidateContract = this.getStringOrFail(keyVotingEmissionCandidateContract).addressFromStringValue()
 let userPoolsContract = this.getStringOrFail(keyUserPoolsContract).addressFromStringValue()
+let votingEmissionRateContract = this.getStringOrFail(keyVotingEmissionRateContract).addressFromStringValue()
 
 let IdxFactoryCfgStakingDapp    = 1
 let IdxFactoryCfgBoostingDapp   = 2
@@ -53,7 +55,6 @@ func keyRatePerBlockMaxStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__rateP
 
 # call boosting.onBoostEmissionUpdate rate per block changes
 func keyRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
-func keyRatePerBlockNext() = "%s%s__ratePerBlock__next"
 func keyRatePerBlockStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__ratePerBlock__start", timestamp.toString(), block.toString()].makeString(SEP)
 
 func keyEmissionStartBlock() = "%s%s__emission__startBlock"
@@ -186,6 +187,34 @@ func gwxHoldersRewardUpdate() = {
 @Callable(i)
 func getBoostCoeffREADONLY() = {
   ([], boostCoeff)
+}
+
+@Callable(i)
+func changeRatePerBlockINTERNAL(newRatePerBlock: Int) = {
+  strict check = i.caller == this || throwErr("should be invoked internally")
+
+  let blockTimestamp = match(blockInfoByHeight(height)) {
+      case bi:BlockInfo => bi.timestamp
+      case _ => throwErr("BlockInfo.timestamp error")
+  }
+
+  [
+    IntegerEntry(keyRatePerBlockStartFrom(blockTimestamp, height), newRatePerBlock),
+    IntegerEntry(keyRatePerBlockCurrent(), newRatePerBlock)
+  ]
+}
+
+@Callable(i)
+func changeRatePerBlock(newRatePerBlock: Int) = {
+  strict check = i.caller == votingEmissionRateContract || i.mustManager()
+
+  let factoryContract = readFactoryAddressOrFail()
+  let factoryCfg = factoryContract.readFactoryCfgOrFail()
+  let boostingContract = factoryCfg.getBoostingAddressOrFail()
+
+  strict changeRate = this.invoke("changeRatePerBlockINTERNAL", [newRatePerBlock], [])
+  strict boostinEmissionUpdate = boostingContract.invoke("onBoostEmissionUpdate", [], [])
+  []
 }
 
 @Verifier(tx)

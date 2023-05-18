@@ -256,30 +256,23 @@ func finalize() = {
   let (increasedRate, currentRate, decreasedRate) = getRateChangeAmountsINTERNAL()
   let votesList = [votesToIncrease, votesToNone, votesToDecrease]
 
-  let actions = if (allVotes < threshold) then {
-    []
-  } else if (votesToNone == max(votesList)) then {
-    [
-      StringEntry("foo", "NONE"),
-      IntegerEntry("bar", currentRate)
-    ]
+  let newRate = if (allVotes < threshold || votesToNone == max(votesList)) then {
+    unit
   } else if (votesToIncrease == max(votesList)) then {
-    [
-      StringEntry("foo", "INC"),
-      IntegerEntry("bar", increasedRate)
-    ]
+    increasedRate
   } else {
-    [
-      StringEntry("foo", "DEC"),
-      IntegerEntry("bar", decreasedRate)
-    ]
+    decreasedRate
   }
-  let defaultActions = [
+
+  strict changeRateInvoke = match (newRate) {
+    case rate:Int => emissionContract.invoke("changeRatePerBlock", [rate], [])
+    case _ => unit
+  }
+
+  [
     IntegerEntry(keyStartHeight(), height),
     StringEntry(keyVotingResult(), totalVotes("0","0","0"))
   ]
-
-  actions ++ defaultActions
 }
 
 @Verifier(tx)
