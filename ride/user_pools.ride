@@ -181,7 +181,7 @@ func _create(i: Invocation, poolType: String) = {
     !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
     !poolExists || throwPoolExists(),
     amountAssetId != priceAssetId || throwInvalidAssetPair(),
-    (amountAssetId.isVerified() && priceAssetId.isVerified()) || throwInvalidAssetPair(),
+    i.isManager() || (amountAssetId.isVerified() && priceAssetId.isVerified()) || throwInvalidAssetPair(),
     priceAssetsList.containsElement(amountAssetId) || priceAssetsList.containsElement(priceAssetId) || throwInvalidAssetPair(),
     i.isManager() || keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
     i.isManager() || amountAssetAmount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
