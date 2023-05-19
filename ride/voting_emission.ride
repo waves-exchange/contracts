@@ -747,6 +747,14 @@ func deleteNode(listName: String, id: String) = {
   (listName.deleteNodeActions(id), unit)
 }
 
+@Callable(i)
+func isFinalizationInProgress() = {
+  let finalizationStageOrUnit = this.getInteger(keyFinalizationStage)
+  let finalizationInProgress = finalizationStageOrUnit != unit
+
+  (nil, finalizationInProgress)
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
