@@ -260,8 +260,12 @@ func finalize() = {
     decreasedRate
   }
 
-  strict changeRateInvoke = match (newRate) {
-    case rate:Int => emissionContract.invoke("changeRatePerBlock", [rate], [])
+  strict changeRateInvokes = match (newRate) {
+    case r:Int => {
+      strict emissionChangeRate    = emissionContract.invoke("changeRatePerBlock", [r], [])
+      strict boostinEmissionUpdate = boostingContract.invoke("onBoostEmissionUpdate", [], [])
+      (emissionChangeRate, boostinEmissionUpdate)
+    }
     case _ => unit
   }
 

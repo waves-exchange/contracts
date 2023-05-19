@@ -190,8 +190,8 @@ func getBoostCoeffREADONLY() = {
 }
 
 @Callable(i)
-func changeRatePerBlockINTERNAL(newRatePerBlock: Int) = {
-  strict check = i.caller == this || throwErr("should be invoked internally")
+func changeRatePerBlock(newRatePerBlock: Int) = {
+  strict check = i.caller == votingEmissionRateContract || throwErr("should be invoked internally")
 
   let blockTimestamp = match(blockInfoByHeight(height)) {
       case bi:BlockInfo => bi.timestamp
@@ -202,19 +202,6 @@ func changeRatePerBlockINTERNAL(newRatePerBlock: Int) = {
     IntegerEntry(keyRatePerBlockStartFrom(blockTimestamp, height), newRatePerBlock),
     IntegerEntry(keyRatePerBlockCurrent(), newRatePerBlock)
   ]
-}
-
-@Callable(i)
-func changeRatePerBlock(newRatePerBlock: Int) = {
-  strict check = i.caller == votingEmissionRateContract || i.mustManager()
-
-  let factoryContract = readFactoryAddressOrFail()
-  let factoryCfg = factoryContract.readFactoryCfgOrFail()
-  let boostingContract = factoryCfg.getBoostingAddressOrFail()
-
-  strict changeRate = this.invoke("changeRatePerBlockINTERNAL", [newRatePerBlock], [])
-  strict boostinEmissionUpdate = boostingContract.invoke("onBoostEmissionUpdate", [], [])
-  []
 }
 
 @Verifier(tx)
