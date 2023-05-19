@@ -5,13 +5,15 @@
 let separator = "__"
 let contractFilename = "voting_emission_rate.ride"
 
-let keyEpochLength = ["%s", "epochLength"].makeString(separator)
+let keyEpochLength      = ["%s", "epochLength"].makeString(separator)
 let keyEmissionContract = ["%s", "emissionContract"].makeString(separator)
 let keyBoostingContract = ["%s", "boostingContract"].makeString(separator)
-let keyThreshold = ["%s", "votingThreshold"].makeString(separator)
-let keyRatePerBlock = ["%s%s", "ratePerBlock", "current"].makeString(separator)
-let keyRatePerBlockMax = ["%s%s", "ratePerBlockMax", "current"].makeString(separator)
-let keyRateChangeStep = ["%s", "rateChangeStep"].makeString(separator)
+let keyThreshold        = ["%s", "votingThreshold"].makeString(separator)
+let keyRatePerBlock     = ["%s%s", "ratePerBlock", "current"].makeString(separator)
+let keyRatePerBlockMax  = ["%s%s", "ratePerBlockMax", "current"].makeString(separator)
+let keyRateChangeStep   = ["%s", "rateChangeStep"].makeString(separator)
+let keyStartHeight      = ["%s", "startHeight"].makeString(separator)
+let keyVotingResult     = ["%s", "votingResult"].makeString(separator)
 
 func throwErr(s: String) = {
   throw(contractFilename + ": " + s)
@@ -19,26 +21,23 @@ func throwErr(s: String) = {
 func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage(key + " is not defined")
 func getIntOrFail(key: String) = this.getInteger(key).valueOrErrorMessage(key + " is not defined")
 
-func keyStartHeight(
-) = ["%s", "startHeight"].makeString(separator)
-func keyVotingResult(
-) = ["%s", "votingResult"].makeString(separator)
 func totalVotes(
   totalIncrease: String,
-  totalNone: String,
+  totalCurrent: String,
   totalDecrease: String
-) = ["%d%d%d", totalIncrease,totalNone, totalDecrease].makeString(separator)
+) = ["%d%d%d", totalIncrease, totalCurrent, totalDecrease].makeString(separator)
 
 func keyVote(
-  voterAddress: String
-) = ["%s%s", "vote", voterAddress].makeString(separator)
+  voterAddress: String,
+  startHeight: Int
+) = ["%s%s%d", "vote", voterAddress, startHeight.toString()].makeString(separator)
 func keyVoteValue(gwxAmount: String, vote: Int) = {
   let key = if (vote == 1) then {
     ["%d%s", gwxAmount, "increase"].makeString(separator)
   } else if (vote == -1) then {
     ["%d%s", gwxAmount, "decrease"].makeString(separator)
   } else {
-    ["%d%s", gwxAmount, "none"].makeString(separator)
+    ["%d%s", gwxAmount, "current"].makeString(separator)
   }
   key
 }
@@ -121,8 +120,8 @@ func constructor(
       IntegerEntry(keyEpochLength, votingDurationPrm),
       IntegerEntry(keyThreshold, threshold),
       IntegerEntry(keyRateChangeStep, rateChangeStep),
-      IntegerEntry(keyStartHeight(), height),
-      StringEntry(keyVotingResult(), totalVotes("0", "0", "0"))
+      IntegerEntry(keyStartHeight, height),
+      StringEntry(keyVotingResult, totalVotes("0", "0", "0"))
     ], unit)
 }
 
@@ -134,7 +133,8 @@ func getRateChangeAmountsREADONLY() = {
 
 @Callable(i)
 func vote(inFavor: Int) = {
-  let votingFinishHeight = keyStartHeight().getInteger().value() + keyEpochLength.getInteger().value()
+  let startHeight = keyStartHeight.getIntegerValue()
+  let votingFinishHeight = startHeight + keyEpochLength.getIntegerValue()
   strict checks = [
     votingFinishHeight > height || "too late to vote".throwErr(),
     [1, 0 , -1].containsElement(inFavor) || "not valid argument".throwErr()
@@ -142,13 +142,12 @@ func vote(inFavor: Int) = {
 
   let gwxAmount = boostingContract.invoke("getUserGwxAmountAtHeightREADONLY", [i.caller.toString(), votingFinishHeight], [])
   strict notZero = gwxAmount.asInt() > 0 || "you don't have gwx".throwErr()
-
-  strict vote = match keyVote(i.caller.toString()).getString() {
+  strict vote = match keyVote(i.caller.toString(), startHeight).getString() {
     case s: String => {
       let vote = s.split(separator)
       let voteValue = vote[1]
-      let voteType = vote[2]
-      let isVoteTypeSimilar = voteType == "increase" && inFavor == 1 || voteType == "decrease" && inFavor == -1 || voteType == "none" && inFavor == 0
+      let voteType  = vote[2]
+      let isVoteTypeSimilar = voteType == "increase" && inFavor == 1 || voteType == "decrease" && inFavor == -1 || voteType == "current" && inFavor == 0
       let isVoteValueSimilar = isVoteTypeSimilar && gwxAmount.asInt() == parseIntValue(voteValue)
       let isNewVoteSimilar = if isVoteTypeSimilar && isVoteValueSimilar then {
         "you already voted".throwErr()
@@ -161,28 +160,28 @@ func vote(inFavor: Int) = {
     case u: Unit => u
   }
 
-  let votingResult = keyVotingResult().getString().value().split(separator)
-  let votesToIncrease = votingResult[1]
-  let votesToNone     = votingResult[2]
-  let votesToDecrease = votingResult[3]
+  let votingResult = keyVotingResult.getStringValue().split(separator)
+  let votesForIncrease = votingResult[1]
+  let votesForCurrent  = votingResult[2]
+  let votesForDecrease = votingResult[3]
 
   let newPositiveAndNegativeVotes = if (inFavor == 1) then {
-    let newPositiveVotes = parseIntValue(votesToIncrease) + gwxAmount.asInt()
-    [newPositiveVotes.toString(), votesToNone, votesToDecrease]
+    let newPositiveVotes = parseIntValue(votesForIncrease) + gwxAmount.asInt()
+    [ newPositiveVotes.toString(), votesForCurrent, votesForDecrease ]
   }
   else if (inFavor == -1) then {
-    let newNegativeVotes = parseIntValue(votesToNone) + gwxAmount.asInt()
-    [votesToIncrease, votesToNone, newNegativeVotes.toString()]
+    let newNegativeVotes = parseIntValue(votesForCurrent) + gwxAmount.asInt()
+    [ votesForIncrease, votesForCurrent, newNegativeVotes.toString() ]
   } else {
-    let newNoneVotes = parseIntValue(votesToNone) + gwxAmount.asInt()
-    [votesToIncrease, newNoneVotes.toString(), votesToDecrease]
+    let newCurrentVotes = parseIntValue(votesForCurrent) + gwxAmount.asInt()
+    [ votesForIncrease, newCurrentVotes.toString(), votesForDecrease ]
   }
 
-  let voteKey = keyVote(i.caller.toString())
+  let voteKey = keyVote(i.caller.toString(), startHeight)
   let voteValue = keyVoteValue(gwxAmount.asInt().toString(), inFavor)
 
   ([
-    StringEntry(keyVotingResult(),
+    StringEntry(keyVotingResult,
       totalVotes(newPositiveAndNegativeVotes[0], newPositiveAndNegativeVotes[1], newPositiveAndNegativeVotes[2])),
     StringEntry(voteKey, voteValue)
   ], unit)
@@ -190,41 +189,38 @@ func vote(inFavor: Int) = {
 
 @Callable(i)
 func cancelVote() = {
+  let startHeight = keyStartHeight.getIntegerValue()
+  let votingFinishHeight = startHeight + keyEpochLength.getIntegerValue()
   let userAddress = if (i.caller == this) then i.originCaller.toString() else i.caller.toString()
   strict checks = [
-    keyVotingResult().getString().isDefined() || "no vote".throwErr()
+    votingFinishHeight > height || "too late to cancel vote".throwErr(),
+    keyVotingResult.getString().isDefined() || "no vote".throwErr(),
+    keyVote(userAddress, startHeight).getString().isDefined() || "no user vote".throwErr()
   ]
 
-  let vote = keyVote(userAddress).getString().value().split(separator)
+  let vote = keyVote(userAddress, startHeight).getStringValue().split(separator)
   let voteValue = vote[1]
-  let voteType = vote[2]
+  let voteType  = vote[2]
 
-  let votingResult = keyVotingResult().getString().value().split(separator)
-  let votesToIncrease = votingResult[1]
-  let votesToNone     = votingResult[2]
-  let votesToDecrease = votingResult[3]
+  let votingResult = keyVotingResult.getStringValue().split(separator)
+  let votesForIncrease = votingResult[1]
+  let votesForCurrent  = votingResult[2]
+  let votesForDecrease = votingResult[3]
 
   let actions = if (voteType == "increase") then {
-    let newIncreaseVotes = parseIntValue(votesToIncrease) - parseIntValue(voteValue)
-    ([
-      StringEntry(keyVotingResult(), totalVotes(newIncreaseVotes.toString(), votesToNone, votesToDecrease)),
-      DeleteEntry(keyVote(userAddress))
-    ], unit)
+    let newIncreaseVotes = parseIntValue(votesForIncrease) - parseIntValue(voteValue)
+    [ StringEntry(keyVotingResult, totalVotes(newIncreaseVotes.toString(), votesForCurrent, votesForDecrease)) ]
   } else if (voteType == "decrease") then {
-    let newDecreaseVotes = parseIntValue(votesToDecrease) - parseIntValue(voteValue)
-    ([
-      StringEntry(keyVotingResult(), totalVotes(votesToIncrease, votesToNone, newDecreaseVotes.toString())),
-      DeleteEntry(keyVote(userAddress))
-    ], unit)
+    let newDecreaseVotes = parseIntValue(votesForDecrease) - parseIntValue(voteValue)
+    [ StringEntry(keyVotingResult, totalVotes(votesForIncrease, votesForCurrent, newDecreaseVotes.toString())) ]
   } else {
-    let newNoneVotes = parseIntValue(votesToNone) - parseIntValue(voteValue)
-    ([
-      StringEntry(keyVotingResult(), totalVotes(votesToIncrease, newNoneVotes.toString(), votesToDecrease)),
-      DeleteEntry(keyVote(userAddress))
-    ], unit)
+    let newCurrentVotes = parseIntValue(votesForCurrent) - parseIntValue(voteValue)
+    [ StringEntry(keyVotingResult, totalVotes(votesForIncrease, newCurrentVotes.toString(), votesForDecrease)) ]
   }
 
-  actions
+  let defaultActions = [ DeleteEntry(keyVote(userAddress, startHeight)) ]
+
+  actions ++ defaultActions
 }
 
 @Callable(i)
@@ -241,24 +237,24 @@ func setThreshold(newThreshold: Int) = {
 
 @Callable(i)
 func finalize() = {
-  let votingFinishHeight = keyStartHeight().getInteger().value() + keyEpochLength.getInteger().value()
+  let votingFinishHeight = keyStartHeight.getIntegerValue() + keyEpochLength.getInteger().value()
   strict checks = [
     votingFinishHeight <= height || "insufficient height for completion".throwErr()
   ]
 
-  let votingResult = keyVotingResult().getString().value().split(separator)
-  let votesToIncrease = parseIntValue(votingResult[1])
-  let votesToNone     = parseIntValue(votingResult[2])
-  let votesToDecrease = parseIntValue(votingResult[3])
-  let allVotes = votesToIncrease + votesToNone + votesToDecrease
+  let votingResult = keyVotingResult.getString().value().split(separator)
+  let votesForIncrease = parseIntValue(votingResult[1])
+  let votesForCurrent  = parseIntValue(votingResult[2])
+  let votesForDecrease = parseIntValue(votingResult[3])
+  let allVotes = votesForIncrease + votesForCurrent + votesForDecrease
   let threshold = keyThreshold.getIntOrFail()
 
   let (increasedRate, currentRate, decreasedRate) = getRateChangeAmountsINTERNAL()
-  let votesList = [votesToIncrease, votesToNone, votesToDecrease]
+  let votesList = [votesForIncrease, votesForCurrent, votesForDecrease]
 
-  let newRate = if (allVotes < threshold || votesToNone == max(votesList)) then {
+  let newRate = if (allVotes < threshold || votesForCurrent == max(votesList)) then {
     unit
-  } else if (votesToIncrease == max(votesList)) then {
+  } else if (votesForIncrease == max(votesList)) then {
     increasedRate
   } else {
     decreasedRate
@@ -270,8 +266,8 @@ func finalize() = {
   }
 
   [
-    IntegerEntry(keyStartHeight(), height),
-    StringEntry(keyVotingResult(), totalVotes("0","0","0"))
+    IntegerEntry(keyStartHeight, height),
+    StringEntry(keyVotingResult, totalVotes("0","0","0"))
   ]
 }
 
