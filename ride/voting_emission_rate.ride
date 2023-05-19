@@ -106,7 +106,7 @@ func constructor(
   rateChangeStep: Int
 ) = {
   strict checks = [
-    # i.mustManager(),
+    i.mustManager(),
     boostingContractPrm.addressFromString().isDefined() || "Invalid boosting contract address".throwErr(),
     emissionContractPrm.addressFromString().isDefined() || "Invalid emission contract address".throwErr(),
     votingDurationPrm > 0                               || "Invalid voting duration".throwErr(),
