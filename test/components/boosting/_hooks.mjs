@@ -16,6 +16,7 @@ import { factory } from './contract/factory.mjs';
 import { assetsStore } from './contract/assetsStore.mjs';
 import { gwx } from './contract/gwx.mjs';
 import { votingEmission } from './contract/votingEmission.mjs';
+import { managerVault } from './contract/managerVault.mjs';
 
 const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 const nonceLength = 3;
@@ -51,6 +52,7 @@ export const mochaHooks = {
       'referral',
       'votingEmissionCandidate',
       'manager',
+      'managerVault',
       'referral',
       'referrer',
       'lpStakingPools',
@@ -97,6 +99,11 @@ export const mochaHooks = {
     this.minDuration = 2;
     this.maxDuration = 2102400;
 
+    await managerVault.init({
+      caller: this.accounts.managerVault.seed,
+      managerPublicKey: this.accounts.manager.publicKey,
+    });
+
     await staking.init({
       caller: this.accounts.staking.seed,
       factoryAddress: this.accounts.factory.addr,
@@ -110,6 +117,7 @@ export const mochaHooks = {
       referralsAddress: this.accounts.referral.addr,
       votingEmissionAddress: this.accounts.votingEmission.addr,
       lpStakingPoolsAddress: this.accounts.lpStakingPools.addr,
+      managerVaultAddress: this.accounts.managerVault.addr,
       lockAssetId: this.wxAssetId,
       minLockAmount: this.minLockAmount,
       minLockDuration: this.minDuration,

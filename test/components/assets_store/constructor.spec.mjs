@@ -30,7 +30,7 @@ describe('Assets Store - Constructor', /** @this {MochaSuiteModified} */() => {
       fee: 9e5,
       chainId,
     }, this.accounts.user);
-    return expect(api.transactions.broadcast(invokeTx, {})).to.be.rejectedWith('Permission denied');
+    return expect(api.transactions.broadcast(invokeTx, {})).to.be.rejectedWith('permission denied');
   });
 
   it('Invalid user_pools address', async function () {

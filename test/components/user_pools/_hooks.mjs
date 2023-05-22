@@ -107,6 +107,14 @@ export const mochaHooks = {
     }, this.accounts.votingEmission);
     await broadcastAndWait(setVotingEmissionCandidateContractTx);
 
+    const verifyTokenDataTx = data({
+      data: [
+        { key: `status_<${this.usdnAssetId}>`, type: 'integer', value: 2 },
+      ],
+      chainId,
+    }, this.accounts.store);
+    await broadcastAndWait(verifyTokenDataTx);
+
     spinner.succeed('Initialized');
   },
 };

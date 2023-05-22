@@ -80,7 +80,7 @@ let IdxFactoryCfgSlippageDapp   = 7
 
 func keyFactoryCfg() = "%s__factoryConfig"
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = "%s__pendingManagerPublicKey"
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 func keyFactoryLp2AssetsMapping(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
 func keyFactoryLpList()   = "%s__lpTokensList" # not used anymore
 func keyFactoryLpAssetToPoolContractAddress(lpAssetStr: String) = makeString(["%s%s%s", lpAssetStr, "mappings__lpAsset2PoolContract"], SEP)
@@ -91,6 +91,13 @@ func readFactoryCfgOrFail(factory: Address)             = factory.getStringByAdd
 func getBoostingAddressOrFail(factoryCfg: List[String]) = factoryCfg[IdxFactoryCfgBoostingDapp].addressFromStringValue()
 func getEmissionAddressOrFail(factoryCfg: List[String]) = factoryCfg[IdxFactoryCfgEmissionDapp].addressFromStringValue()
 func getStakingAddressOrFail(factoryCfg: List[String])  = factoryCfg[IdxFactoryCfgStakingDapp].addressFromStringValue()
+
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
 
 # EMISSION API
 func keyEmissionRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
@@ -351,14 +358,12 @@ func refreshINTEGRALS(lpAssetIdStr: String, userAddressStr: String, poolAddressS
   debug)
 }
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
-}
-
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 let permissionDeniedError = "Permission denied".throwErr()
@@ -374,6 +379,12 @@ func mustManager(i: Invocation) = {
   }
 }
 
+func ensureVotingEmissionIsFinalized() = {
+  let votingEmissionContract = this.getStringValue(keyVotingEmissionContract()).addressFromStringValue()
+  let votingEmissionFinalizationInProgress = votingEmissionContract.invoke("isFinalizationInProgress", [], []).exactAs[Boolean]
+  !votingEmissionFinalizationInProgress || "voting emission should be finalized".throwErr()
+}
+
 func stakeActions(
   i: Invocation,
   lpAssetId: ByteVector,
@@ -381,6 +392,7 @@ func stakeActions(
   userAddress: Address,
   amount: Int
 ) = {
+  strict checkVotingEmissionFinalization = ensureVotingEmissionIsFinalized()
   let userAddressStr = userAddress.toString()
   let lpAssetIdStr = lpAssetId.toBase58String()
   let poolAddressStr = poolAddress.toString()
@@ -417,6 +429,7 @@ func unstakeActions(
   lpAssetRecipientAddress: Address,
   amount: Int
 ) = {
+  strict checkVotingEmissionFinalization = ensureVotingEmissionIsFinalized()
   let userAddressStr = userAddress.toString()
   let lpAssetIdStr = lpAssetId.toBase58String()
   let poolAddressStr = poolAddress.toString()
@@ -472,26 +485,6 @@ func constructorV2(votingEmissionContract: String) = {
 
   [
     StringEntry(keyVotingEmissionContract(), votingEmissionContract)
-  ]
-}
-
-@Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
-
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
-}
-
-@Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throwErr("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throwErr("You are not pending manager")
-
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
   ]
 }
 

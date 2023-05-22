@@ -22,6 +22,7 @@ export const mochaHooks = {
   async beforeAll() {
     const names = [
       'manager',
+      'managerVault',
       'otcMultiasset',
       'user1',
       'user2',
@@ -107,6 +108,7 @@ export const mochaHooks = {
           { type: 'integer', value: this.pairStatus },
         ],
       },
+      additionalFee: 4e5,
       chainId,
     }, this.accounts.otcMultiasset);
     await api.transactions.broadcast(registerAssetTx, {});
@@ -120,8 +122,20 @@ export const mochaHooks = {
         value: publicKey(this.accounts.manager),
       }],
       chainId,
-    }, this.accounts.otcMultiasset);
+    }, this.accounts.managerVault);
     await api.transactions.broadcast(setManagerTx, {});
     await waitForTx(setManagerTx.id, { apiBase });
+
+    const setManagerVaultTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__managerVaultAddress',
+        type: 'string',
+        value: address(this.accounts.managerVault, chainId),
+      }],
+      chainId,
+    }, this.accounts.otcMultiasset);
+    await api.transactions.broadcast(setManagerVaultTx, {});
+    await waitForTx(setManagerVaultTx.id, { apiBase });
   },
 };
