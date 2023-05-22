@@ -166,12 +166,12 @@ func vote(inFavor: Int) = {
   let votesForDecrease = votingResult[3]
 
   let newPositiveAndNegativeVotes = if (inFavor == 1) then {
-    let newPositiveVotes = parseIntValue(votesForIncrease) + gwxAmount.asInt()
-    [ newPositiveVotes.toString(), votesForCurrent, votesForDecrease ]
+    let newIncreaseVotes = parseIntValue(votesForIncrease) + gwxAmount.asInt()
+    [ newIncreaseVotes.toString(), votesForCurrent, votesForDecrease ]
   }
   else if (inFavor == -1) then {
-    let newNegativeVotes = parseIntValue(votesForCurrent) + gwxAmount.asInt()
-    [ votesForIncrease, votesForCurrent, newNegativeVotes.toString() ]
+    let newDecreaseVotes = parseIntValue(votesForDecrease) + gwxAmount.asInt()
+    [ votesForIncrease, votesForCurrent, newDecreaseVotes.toString() ]
   } else {
     let newCurrentVotes = parseIntValue(votesForCurrent) + gwxAmount.asInt()
     [ votesForIncrease, newCurrentVotes.toString(), votesForDecrease ]
