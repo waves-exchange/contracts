@@ -9,6 +9,10 @@ import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
 import { api, broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
 
+import { boosting } from './contract/boosting.mjs';
+import { emission } from './contract/emission.mjs';
+import { assetsStore } from './contract/assetsStore.mjs';
+
 const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 const nonceLength = 3;
 
@@ -17,6 +21,10 @@ const votingVerifiedV2Path = format({ dir: ridePath, base: 'voting_verified_v2.r
 const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
 const emissionPath = format({ dir: ridePath, base: 'emission.ride' });
 const assetsStorePath = format({ dir: ridePath, base: 'assets_store.ride' });
+const factoryV2 = format({ dir: ridePath, base: 'factory_v2.ride' });
+const referralPath = format({ dir: ridePath, base: 'referral.ride' });
+const gwxRewardPath = format({ dir: ridePath, base: 'gwx_reward.ride' });
+const votingEmissionPath = format({ dir: ridePath, base: 'voting_emission.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -27,6 +35,10 @@ export const mochaHooks = {
       'boosting',
       'emission',
       'store',
+      'factory',
+      'referral',
+      'gwx',
+      'votingEmission',
     ];
     const userNames = Array.from({ length: 3 }, (_, k) => `user${k}`);
     const names = [...contractNames, ...userNames, 'pacemaker'];
@@ -58,6 +70,10 @@ export const mochaHooks = {
     await setScriptFromFile(boostingPath, this.accounts.boosting.seed);
     await setScriptFromFile(emissionPath, this.accounts.emission.seed);
     await setScriptFromFile(assetsStorePath, this.accounts.store.seed);
+    await setScriptFromFile(factoryV2, this.accounts.factory.seed);
+    await setScriptFromFile(referralPath, this.accounts.referral.seed);
+    await setScriptFromFile(gwxRewardPath, this.accounts.gwx.seed);
+    await setScriptFromFile(votingEmissionPath, this.accounts.votingEmission.seed);
 
     this.maxLockDuration = 1440;
     await boosting.init({

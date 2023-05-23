@@ -4,6 +4,7 @@ import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 export const votingVerifiedV2 = {
   suggestAdd: async ({
     caller,
+    dApp,
     assetId,
     periodLength,
     assetImage,
@@ -12,7 +13,7 @@ export const votingVerifiedV2 = {
   }) => {
     const invokeTx = invokeScript(
       {
-        dApp: caller,
+        dApp,
         call: {
           function: 'suggestAdd',
           args: [
