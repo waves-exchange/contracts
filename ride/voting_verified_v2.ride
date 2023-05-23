@@ -46,7 +46,6 @@ let feePerBlock = this.getIntegerOrFail(keyFeePerBlock)
 
 let keyVotingThresholdAdd = ["%s%s", "votingThreshold", "add"].makeString(separator)
 let keyVotingThresholdRemove = ["%s%s", "votingThreshold", "remove"].makeString(separator)
-func keyVotingCaller(caller: Address) = ["%s%s", "votingCaller", caller.toString()].makeString(separator)
 
 func keyPeriodLengthAdd(
   assetId: String,
@@ -74,7 +73,7 @@ let keyMinPeriodLength = ["%s", "minPeriodLength"].makeString(separator)
 func keyVotingRewardAssetId(
   assetId: String,
   index: Int
-) = ["%s%s%s%s", "votingRewardAssetId", assetId, index.toString()].makeString(separator)
+) = ["%s%s%s", "votingRewardAssetId", assetId, index.toString()].makeString(separator)
 func keyTotalVotingReward(assetId: String, index: Int) = {
   ["%s%s%s", "votingReward", assetId, index.toString()].makeString(separator)
 }
@@ -118,9 +117,13 @@ func keyClaimHistory(
   index: Int
 ) = ["%s%s%s%s", "history", userAddress.toString(), assetId, index.toString()].makeString(separator)
 func claimHistoryValue(
-  gwxAmount: Int,
-  transactionId: ByteVector
-) = ["%d%s", gwxAmount.toString(), transactionId.toBase58String()].makeString(separator)
+  gwxAmount: Int
+) = ["%d%s", gwxAmount.toString()].makeString(separator)
+
+func keyVotingEndHeight(
+  assetId: String,
+  index: Int
+) = ["%s%s%s", "votingEndHeight", assetId, index.toString()].makeString(separator)
 
 func getUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
   let gwxAmount = boostingContract.invoke("getUserGwxAmountAtHeightREADONLY", [userAddress, targetHeight], [])
@@ -167,9 +170,9 @@ func calculateReward(voter: Address, assetId: String, index: Int) = {
   let lastVote = voteKey.getString().valueOrErrorMessage(wrapErr("you have not voted"))
 
   let lastVoteParts = lastVote.split(separator)
-  let inFavor = lastVoteParts[0]
+  let inFavor = lastVoteParts[1]
   let rewardAmount = if inFavor == "true" then {
-    let gwxAmount = lastVoteParts[1].parseIntValue()
+    let gwxAmount = lastVoteParts[2].parseIntValue()
 
     let lastVotingValue = keyVotingResult(assetId, index).getString().valueOrErrorMessage(
       wrapErr("voting does not exist")
@@ -192,9 +195,9 @@ func calculateReward(voter: Address, assetId: String, index: Int) = {
 @Callable(i)
 func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
   strict info = assetId.fromBase58String().assetInfo().valueOrErrorMessage("Invalid asset ID")
-  let payment = i.payments[0].value()
-  let paymentAssetId = payment.assetId.value().toUtf8String()
-  let paymentAmount = payment.amount
+  let payment = i.payments[0]
+  let paymentAssetId = payment.assetId.value().toBase58String()
+  let paymentAmount = payment.amount.value()
 
   let minPeriodLength = keyMinPeriodLength.getIntegerValue()
   let maxPeriodLength = keyMaxPeriodLength.getIntegerValue()
@@ -207,18 +210,24 @@ func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
   strict assetsStoreCreateOrUpdateInv = assetsStoreContract.invoke("createOrUpdate", [assetId, assetImage, false], [])
 
   let currentIndexKey = keyCurrentIndex(assetId)
-  let currentIndex = currentIndexKey.getInteger().valueOrElse(0)
-  let newIndex = currentIndex + 1
+  let currentIndex = currentIndexKey.getInteger()
+  let newIndex = if currentIndex.isDefined() then {
+    currentIndex.value() + 1
+  } else {
+    0
+  }
+
+  let votingEndHeight = height + periodLength
 
   [
     IntegerEntry(currentIndexKey, newIndex),
     BooleanEntry(keyVerificationInProgress(assetId), true),
-    StringEntry(keyVotingRewardAssetId(assetId, currentIndex), paymentAssetId),
+    StringEntry(keyVotingRewardAssetId(assetId, newIndex), paymentAssetId),
     IntegerEntry(keyTotalVotingReward(assetId, newIndex), paymentAmount),
-    IntegerEntry(keyCurrentVotingHeightStart(assetId, currentIndex), height),
-    IntegerEntry(keyPeriodLengthAdd(assetId, currentIndex), periodLength),
-    StringEntry(keyVotingCaller(i.caller), assetId),
-    StringEntry(keySuggestIssuer(assetId, currentIndex), i.caller.toString())
+    IntegerEntry(keyCurrentVotingHeightStart(assetId, newIndex), height),
+    IntegerEntry(keyPeriodLengthAdd(assetId, newIndex), periodLength),
+    StringEntry(keySuggestIssuer(assetId, newIndex), i.caller.toString()),
+    IntegerEntry(keyVotingEndHeight(assetId, newIndex), votingEndHeight)
   ]
 }
 
@@ -235,15 +244,24 @@ func suggestRemove(assetId: String) = {
   ]
 
   let currentIndexKey = keyCurrentIndex(assetId)
-  let currentIndex = currentIndexKey.getInteger().valueOrElse(0)
-  let newIndex = currentIndex + 1
+  let currentIndex = currentIndexKey.getInteger()
+  let newIndex = if currentIndex.isDefined() then {
+    currentIndex.value() + 1
+  } else {
+    0
+  }
+
+  let periodLength = keyPeriodLengthRemove.getInteger().valueOrErrorMessage(
+    wrapErr("periodLengthRemove not set")
+  )
+  let votingEndHeight = height + periodLength
 
   [ 
     IntegerEntry(currentIndexKey, newIndex),
     BooleanEntry(keyDeverificationInProgress(assetId), true),
-    IntegerEntry(keyCurrentVotingHeightStart(assetId, currentIndex), height),
-    StringEntry(keyVotingCaller(i.caller), assetId),
-    StringEntry(keySuggestIssuer(assetId, currentIndex), i.caller.toString())
+    IntegerEntry(keyCurrentVotingHeightStart(assetId, newIndex), height),
+    StringEntry(keySuggestIssuer(assetId, newIndex), i.caller.toString()),
+    IntegerEntry(keyVotingEndHeight(assetId, newIndex), votingEndHeight)
   ]
 }
 
@@ -297,8 +315,8 @@ func cancelVote(assetId: String) = {
 
   let lastVote = voteKey.getString().valueOrErrorMessage(wrapErr("you have not voted"))
   let lastVoteParts = lastVote.split(separator)
-  let inFavor = lastVoteParts[0]
-  let gwxAmount = lastVoteParts[1].parseIntValue()
+  let inFavor = lastVoteParts[1]
+  let gwxAmount = lastVoteParts[2].parseIntValue()
 
   strict votingInfo = votingExistChecks(assetId, currentIndex)
   strict checks = [
@@ -341,10 +359,24 @@ func finalize(assetId: String) = {
     wrapErr("votingThresholdRemove not set")
   )
 
-  let (finalizeVotingAction, verified, threshold) = if verificationInProgress then {
-    (DeleteEntry(keyVerificationInProgress(assetId)), true, votingThresholdAdd)
+  let (finalizeVotingActions, verified, threshold) = if verificationInProgress then {
+    (
+      [
+        DeleteEntry(keyVerificationInProgress(assetId)),
+        BooleanEntry(keyVerified(assetId),true)
+      ],
+      true,
+      votingThresholdAdd
+    )
   } else {
-    (DeleteEntry(keyDeverificationInProgress(assetId)), false, votingThresholdRemove)
+    (
+      [
+        DeleteEntry(keyDeverificationInProgress(assetId)),
+        DeleteEntry(keyVerified(assetId))
+      ],
+      true,
+      votingThresholdRemove
+    )
   }
 
   let lastVotingValue = keyVotingResult(assetId, currentIndex).getString().valueOrElse(defaultVotingValue)
@@ -353,8 +385,13 @@ func finalize(assetId: String) = {
   let votesAgainst = lastVotingValueParts[2].parseIntValue()
   let votesTotal = votesFor + votesAgainst
 
+  let votingEndHeight = keyVotingEndHeight(assetId, currentIndex).getInteger().valueOrErrorMessage(
+    wrapErr("voting end height not found")
+  )
+
   strict checks = [
     verificationInProgress || deverificationInProgress || "nothing to finalize".throwErr(),
+    votingEndHeight <= height || "voting not finished".throwErr(),
     votesTotal >= threshold || "not enough votes".throwErr()
   ]
 
@@ -364,9 +401,7 @@ func finalize(assetId: String) = {
   let finilizeCallReward = keyFinilizeCallReward.getInteger().valueOrElse(0)
   let finilizeCallRewardAction = [ScriptTransfer(i.caller, finilizeCallReward, wxAssetId)]
 
-  [
-    finalizeVotingAction
-  ] ++ finilizeCallRewardAction
+  finalizeVotingActions ++ finilizeCallRewardAction
 }
 
 @Callable(i)
@@ -383,7 +418,7 @@ func claim(assetId: String, index: Int) = {
 
   let votingRewardAssetId = keyVotingRewardAssetId(assetId, index).getString().valueOrErrorMessage(
     wrapErr("votingRewardAssetId not set")
-  ).toBytes()
+  ).fromBase58String()
 
   let claimHistoryKey = keyClaimHistory(callerAddress, assetId, index)
   let claimHistory = claimHistoryKey.getString()
@@ -396,6 +431,6 @@ func claim(assetId: String, index: Int) = {
 
   [
     ScriptTransfer(callerAddress, rewardAmount, votingRewardAssetId),
-    StringEntry(claimHistoryKey, claimHistoryValue(rewardAmount, i.transactionId))
+    StringEntry(claimHistoryKey, claimHistoryValue(rewardAmount))
   ]
 }
