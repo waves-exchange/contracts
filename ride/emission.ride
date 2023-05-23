@@ -206,7 +206,7 @@ func changeRatePerBlockINTERNAL(newRatePerBlock: Int) = {
 
 @Callable(i)
 func changeRatePerBlock(newRatePerBlock: Int) = {
-  strict check = i.caller == votingEmissionRateContract || throwErr("should be invoked by votingEmissionRateContract")
+  strict check = i.caller == votingEmissionRateContract || i.mustManager() || throwErr("should be invoked by votingEmissionRateContract")
 
   let factoryContract = readFactoryAddressOrFail()
   let factoryCfg = factoryContract.readFactoryCfgOrFail()
