@@ -135,30 +135,15 @@ func getRateChangeAmountsREADONLY() = {
 func vote(inFavor: Int) = {
   let startHeight = keyStartHeight.getIntegerValue()
   let votingFinishHeight = startHeight + keyEpochLength.getIntegerValue()
+  let userAddress = i.caller.toString()
   strict checks = [
     votingFinishHeight > height || "too late to vote".throwErr(),
-    [1, 0 , -1].containsElement(inFavor) || "not valid argument".throwErr()
+    [1, 0 , -1].containsElement(inFavor) || "not valid argument".throwErr(),
+    !keyVote(userAddress, startHeight).getString().isDefined() || "you already voted".throwErr()
   ]
 
-  let gwxAmount = boostingContract.invoke("getUserGwxAmountAtHeightREADONLY", [i.caller.toString(), votingFinishHeight], [])
+  let gwxAmount = boostingContract.invoke("getUserGwxAmountAtHeightREADONLY", [userAddress, votingFinishHeight], [])
   strict notZero = gwxAmount.asInt() > 0 || "you don't have gwx".throwErr()
-  strict vote = match keyVote(i.caller.toString(), startHeight).getString() {
-    case s: String => {
-      let vote = s.split(separator)
-      let voteValue = vote[1]
-      let voteType  = vote[2]
-      let isVoteTypeSimilar = voteType == "increase" && inFavor == 1 || voteType == "decrease" && inFavor == -1 || voteType == "current" && inFavor == 0
-      let isVoteValueSimilar = isVoteTypeSimilar && gwxAmount.asInt() == parseIntValue(voteValue)
-      let isNewVoteSimilar = if isVoteTypeSimilar && isVoteValueSimilar then {
-        "you already voted".throwErr()
-      } else {
-        this.invoke("cancelVote", [], [])
-      }
-
-      isNewVoteSimilar
-    }
-    case u: Unit => u
-  }
 
   let votingResult = keyVotingResult.getStringValue().split(separator)
   let votesForIncrease = votingResult[1]
