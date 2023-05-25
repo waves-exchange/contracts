@@ -1,5 +1,5 @@
 # Testnet environment
-[**WXDEFI-374**](https://github.com/waves-exchange/contracts/tree/WXDEFI-374) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **17:03 25.05.2023** (GMT+4)
+[**WXDEFI-374**](https://github.com/waves-exchange/contracts/tree/WXDEFI-374) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **18:01 25.05.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -85,6 +85,7 @@ voting_emission | [`3N9Zi6AcWcGbM23jQJ4fnzFsoHoTsxYDznr`](https://wavesexplorer.
 voting_emission_candidate | [`3N1Epwa6GQuTQr2K9WzeUcqSFCdERwuvL5T`](https://wavesexplorer.com/addresses/3N1Epwa6GQuTQr2K9WzeUcqSFCdERwuvL5T?network=testnet) | `7iXEgsFNsnbLZ3ca4tmz8jffnyxMu9keuBV6CuQPJLuA` | [voting_emission_candidate.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-374/ride/voting_emission_candidate.ride) 
 voting_emission_rate | [`3MuqubsQAq9mrsN65SePHeThcN3JVAbgZ9d`](https://wavesexplorer.com/addresses/3MuqubsQAq9mrsN65SePHeThcN3JVAbgZ9d?network=testnet) | `GWTozVWP9MvUxrEuz1BPrNAbtLYAec9LrT4U82jWG6KX` | [voting_emission_rate.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-374/ride/voting_emission_rate.ride) 
 voting_verified | [`3N9yMmmL5cJ7LJxr8o6GFbKFUbGz4XcAjeg`](https://wavesexplorer.com/addresses/3N9yMmmL5cJ7LJxr8o6GFbKFUbGz4XcAjeg?network=testnet) | `C2aAS9D6FqfbrkCuCQCtPWAiopjyagvitFLjRuLcRPYt` | [voting_verified.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-374/ride/voting_verified.ride) 
+voting_verified_v2 | [`3N1BEXuoepNEwqkbeZYKviaLQfvBQV3ibYE`](https://wavesexplorer.com/addresses/3N1BEXuoepNEwqkbeZYKviaLQfvBQV3ibYE?network=testnet) | `6t3vrhP1jCmG7CeKBmL8hUibtdP3cMXGC2XtPYEPPC5w` | [voting_verified_v2.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-374/ride/voting_verified_v2.ride) 
 
 ## Pool assets
 | Name | AssetID | Description |
