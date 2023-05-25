@@ -28,14 +28,17 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
   it('should successfully suggestAdd', async function () {
     const currentIndex = 0;
 
+    const payments = [
+      { assetId: this.wxAssetId, amount: this.wxForSuggestAddAmountRequired },
+    ];
+
     const { height, stateChanges } = await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
       periodLength: this.votingPeriodLength,
       assetImage: 'base64:assetImage',
-      wxAssetId: this.wxAssetId,
-      assetAmount: this.votingRewardAmount,
+      payments,
     });
 
     expect(stateChanges.data).to.eql([
@@ -50,32 +53,22 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
         value: true,
       },
       {
-        key: `%s%s%s__votingRewardAssetId__${this.wxAssetId}__${currentIndex}`,
-        type: 'string',
-        value: this.wxAssetId,
-      },
-      {
-        key: `%s%s%s__votingReward__${this.wxAssetId}__${currentIndex}`,
-        type: 'integer',
-        value: this.votingRewardAmount,
-      },
-      {
-        key: `%s%s%s__currentVotingHeightStart__${this.wxAssetId}__${currentIndex}`,
+        key: `%s%s%d__currentVotingHeightStart__${this.wxAssetId}__${currentIndex}`,
         type: 'integer',
         value: height,
       },
       {
-        key: `%s%s%s__periodLengthAdd__${this.wxAssetId}__${currentIndex}`,
+        key: `%s%s%d__periodLengthAdd__${this.wxAssetId}__${currentIndex}`,
         type: 'integer',
         value: this.votingPeriodLength,
       },
       {
-        key: `%s%s%s__suggestIssuer__${this.wxAssetId}__${currentIndex}`,
+        key: `%s%s%d__suggestIssuer__${this.wxAssetId}__${currentIndex}`,
         type: 'string',
         value: this.accounts.user0.addr,
       },
       {
-        key: `%s%s%s__votingEndHeight__${this.wxAssetId}__${currentIndex}`,
+        key: `%s%s%d__votingEndHeight__${this.wxAssetId}__${currentIndex}`,
         type: 'integer',
         value: height + this.votingPeriodLength,
       },

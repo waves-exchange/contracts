@@ -41,23 +41,19 @@ let wxAssetIdStr = emissionContract.getStringOrFail(keyEmissionConfig).split(sep
 let wxAssetId = wxAssetIdStr.fromBase58String()
 # Emission keys
 
-let keyFeePerBlock = ["%s", "feePerBlock"].makeString(separator)
-let feePerBlock = this.getIntegerOrFail(keyFeePerBlock)
-
 let keyVotingThresholdAdd = ["%s%s", "votingThreshold", "add"].makeString(separator)
 let keyVotingThresholdRemove = ["%s%s", "votingThreshold", "remove"].makeString(separator)
 
 func keyPeriodLengthAdd(
   assetId: String,
   index: Int
-) = ["%s%s%s", "periodLengthAdd", assetId, index.toString()].makeString(separator)
+) = ["%s%s%d", "periodLengthAdd", assetId, index.toString()].makeString(separator)
 let keyPeriodLengthRemove = ["%s", "periodLengthRemove"].makeString(separator)
 
 func keyCurrentVotingHeightStart(
   assetId: String,
   index: Int
-) = ["%s%s%s", "currentVotingHeightStart", assetId, index.toString()].makeString(separator)
-
+) = ["%s%s%d", "currentVotingHeightStart", assetId, index.toString()].makeString(separator)
 
 func keyVerified(assetId: String) = ["%s%s", "verified", assetId].makeString(separator)
 func keyVerificationInProgress(
@@ -73,15 +69,12 @@ let keyMinPeriodLength = ["%s", "minPeriodLength"].makeString(separator)
 func keyVotingRewardAssetId(
   assetId: String,
   index: Int
-) = ["%s%s%s", "votingRewardAssetId", assetId, index.toString()].makeString(separator)
+) = ["%s%s%d", "votingRewardAssetId", assetId, index.toString()].makeString(separator)
 func keyTotalVotingReward(assetId: String, index: Int) = {
-  ["%s%s%s", "votingReward", assetId, index.toString()].makeString(separator)
-}
-func keyVotingReward(voterAddress: Address, rewardAssetId: String) = {
-  ["%s%s", "votingReward", voterAddress.toString(), rewardAssetId].makeString(separator)
+  ["%s%s%d", "votingReward", assetId, index.toString()].makeString(separator)
 }
 
-let keyFinilizeCallReward = ["%s", "finilizeCallReward"].makeString(separator)
+let keyFinalizeCallRewardAmount = ["%s", "finalizeCallRewardAmount"].makeString(separator)
 
 let keyMinSuggestRemoveBalance = ["%s", "minSuggestRemoveBalance"].makeString(separator)
 
@@ -91,7 +84,7 @@ func keyVote(
   assetId: String,
   index: Int,
   caller: Address
-) = ["%s%s%s%s", "vote", assetId, index.toString(), caller.toString()].makeString(separator)
+) = ["%s%s%d%s", "vote", assetId, index.toString(), caller.toString()].makeString(separator)
 func voteValue(
   inFavor: Boolean,
   gwxAmount: Int
@@ -99,7 +92,7 @@ func voteValue(
 func keyVotingResult(
   assetId: String,
   index: Int
-) = ["%s%s%s", "votingResult", assetId, index.toString()].makeString(separator)
+) = ["%s%s%d", "votingResult", assetId, index.toString()].makeString(separator)
 func votingValue(
   forAmount: Int,
   againstAmount: Int
@@ -109,13 +102,13 @@ let defaultVotingValue = ["%d%d", "0", "0"].makeString(separator)
 func keySuggestIssuer(
   assetId: String,
   index: Int
-) = ["%s%s%s", "suggestIssuer", assetId, index.toString()].makeString(separator)
+) = ["%s%s%d", "suggestIssuer", assetId, index.toString()].makeString(separator)
 
 func keyClaimHistory(
   userAddress: Address,
   assetId: String,
   index: Int
-) = ["%s%s%s%s", "history", userAddress.toString(), assetId, index.toString()].makeString(separator)
+) = ["%s%s%s%d", "history", userAddress.toString(), assetId, index.toString()].makeString(separator)
 func claimHistoryValue(
   gwxAmount: Int
 ) = ["%d%s", gwxAmount.toString()].makeString(separator)
@@ -123,7 +116,11 @@ func claimHistoryValue(
 func keyVotingEndHeight(
   assetId: String,
   index: Int
-) = ["%s%s%s", "votingEndHeight", assetId, index.toString()].makeString(separator)
+) = ["%s%s%d", "votingEndHeight", assetId, index.toString()].makeString(separator)
+
+let keyWxForSuggestAddAmountRequired = ["%s", "wxForSuggestAddAmountRequired"].makeString(separator)
+let keyWxForSuggestRemoveAmountRequired = ["%s", "wxForSuggestRemoveAmountRequired"].makeString(separator)
+let keyWxSuggestAddBurnAmount = ["%s", "wxSuggestAddBurnAmount"].makeString(separator)
 
 func getUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
   let gwxAmount = boostingContract.invoke("getUserGwxAmountAtHeightREADONLY", [userAddress, targetHeight], [])
@@ -195,19 +192,6 @@ func calculateReward(voter: Address, assetId: String, index: Int) = {
 @Callable(i)
 func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
   strict info = assetId.fromBase58String().assetInfo().valueOrErrorMessage("Invalid asset ID")
-  let payment = i.payments[0]
-  let paymentAssetId = payment.assetId.value().toBase58String()
-  let paymentAmount = payment.amount.value()
-
-  let minPeriodLength = keyMinPeriodLength.getIntegerValue()
-  let maxPeriodLength = keyMaxPeriodLength.getIntegerValue()
-
-  strict checks = [
-    periodLength >= minPeriodLength && periodLength <= maxPeriodLength || "invalid periodLength".throwErr(),
-    paymentAmount == periodLength * feePerBlock || "Invalid fee amount".throwErr()
-  ]
-
-  strict assetsStoreCreateOrUpdateInv = assetsStoreContract.invoke("createOrUpdate", [assetId, assetImage, false], [])
 
   let currentIndexKey = keyCurrentIndex(assetId)
   let currentIndex = currentIndexKey.getInteger()
@@ -217,18 +201,46 @@ func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
     0
   }
 
+  let wxPayment = i.payments[0]
+  let wxPaymentAssetId = wxPayment.assetId.value()
+  let wxPaymentAmount = wxPayment.amount.value()
+
+  let votingRewardActions = if i.payments.size() > 1 then {
+    let votingRewardPayment = i.payments[1]
+    let votingRewardPaymentAssetId = votingRewardPayment.assetId.value().toBase58String()
+    let votingRewardPaymentAmount = votingRewardPayment.amount.value()
+
+    [
+      StringEntry(keyVotingRewardAssetId(assetId, newIndex), votingRewardPaymentAssetId),
+      IntegerEntry(keyTotalVotingReward(assetId, newIndex), votingRewardPaymentAmount)
+    ]
+  } else {
+    []
+  }
+
+  let minPeriodLength = keyMinPeriodLength.getIntegerValue()
+  let maxPeriodLength = keyMaxPeriodLength.getIntegerValue()
+
+  strict checks = [
+    periodLength >= minPeriodLength && periodLength <= maxPeriodLength || "invalid periodLength".throwErr(),
+    keyVerified(assetId).getBoolean() == unit || "already verified".throwErr(),
+    keyVerificationInProgress(assetId).getBoolean() == unit || "already in progress".throwErr(),
+    wxPaymentAmount == keyWxForSuggestAddAmountRequired.getInteger().value() || "invalid payment amount".throwErr()
+  ]
+
+  strict assetsStoreCreateOrUpdateInv = assetsStoreContract.invoke("createOrUpdate", [assetId, assetImage, false], [])
+
   let votingEndHeight = height + periodLength
 
   [
     IntegerEntry(currentIndexKey, newIndex),
     BooleanEntry(keyVerificationInProgress(assetId), true),
-    StringEntry(keyVotingRewardAssetId(assetId, newIndex), paymentAssetId),
-    IntegerEntry(keyTotalVotingReward(assetId, newIndex), paymentAmount),
     IntegerEntry(keyCurrentVotingHeightStart(assetId, newIndex), height),
     IntegerEntry(keyPeriodLengthAdd(assetId, newIndex), periodLength),
     StringEntry(keySuggestIssuer(assetId, newIndex), i.caller.toString()),
-    IntegerEntry(keyVotingEndHeight(assetId, newIndex), votingEndHeight)
-  ]
+    IntegerEntry(keyVotingEndHeight(assetId, newIndex), votingEndHeight),
+    Burn(wxPaymentAssetId, keyWxSuggestAddBurnAmount.getIntegerValue())
+  ] ++ votingRewardActions
 }
 
 @Callable(i)
@@ -395,19 +407,28 @@ func finalize(assetId: String) = {
     votesTotal >= threshold || "not enough votes".throwErr()
   ]
 
-  strict setVerifiedInvoke = votesFor < votesAgainst ||
-    assetsStoreContract.invoke("setVerified", [assetId, verified], [])
+  let finalizeCallRewardAction = if votesFor < votesAgainst then {
+    strict setVerifiedInvoke = assetsStoreContract.invoke("setVerified", [assetId, verified], [])
 
-  let finilizeCallReward = keyFinilizeCallReward.getInteger().valueOrElse(0)
-  let finilizeCallRewardAction = [ScriptTransfer(i.caller, finilizeCallReward, wxAssetId)]
+    let finalizeCallRewardAmount = keyFinalizeCallRewardAmount.getInteger().valueOrElse(0)
+    [ScriptTransfer(i.caller, finalizeCallRewardAmount, wxAssetId)]
+  } else {
+    []
+  }
 
-  finalizeVotingActions ++ finilizeCallRewardAction
+  finalizeVotingActions ++ finalizeCallRewardAction
 }
 
 @Callable(i)
 func claimREADONLY(assetId: String, index: Int) = {
   let callerAddress = i.caller
-  let rewardAmount = calculateReward(callerAddress, assetId, index)
+  let votingRewardAssetIdStr = keyVotingRewardAssetId(assetId, index).getString()
+
+  let rewardAmount = if votingRewardAssetIdStr.isDefined() then {
+    calculateReward(callerAddress, assetId, index)
+  } else {
+    0
+  }
 
   (nil, rewardAmount)
 }
@@ -416,10 +437,6 @@ func claimREADONLY(assetId: String, index: Int) = {
 func claim(assetId: String, index: Int) = {
   let callerAddress = i.caller
 
-  let votingRewardAssetId = keyVotingRewardAssetId(assetId, index).getString().valueOrErrorMessage(
-    wrapErr("votingRewardAssetId not set")
-  ).fromBase58String()
-
   let claimHistoryKey = keyClaimHistory(callerAddress, assetId, index)
   let claimHistory = claimHistoryKey.getString()
 
@@ -427,10 +444,24 @@ func claim(assetId: String, index: Int) = {
     claimHistory == unit || "already claimed".throwErr()
   ]
 
-  let rewardAmount = calculateReward(callerAddress, assetId, index)
+  let rewardAmount = if calculateReward(callerAddress, assetId, index) > 0 then {
+    calculateReward(callerAddress, assetId, index)
+  } else {
+    "nothing to claim".throwErr()
+  }
 
-  [
-    ScriptTransfer(callerAddress, rewardAmount, votingRewardAssetId),
-    StringEntry(claimHistoryKey, claimHistoryValue(rewardAmount))
-  ]
+  let votingRewardAssetIdStr = keyVotingRewardAssetId(assetId, index).getString()
+
+  let rewardAction = if votingRewardAssetIdStr.isDefined() then {
+    let votingRewardAssetId = votingRewardAssetIdStr.value().fromBase58String()
+
+    [
+      ScriptTransfer(callerAddress, rewardAmount, votingRewardAssetId),
+      StringEntry(claimHistoryKey, claimHistoryValue(rewardAmount))
+    ]
+  } else {
+    "nothing to claim".throwErr()
+  }
+
+  rewardAction
 }

@@ -27,14 +27,17 @@ describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */
       ),
     );
 
+    const payments = [
+      { assetId: this.wxAssetId, amount: this.wxForSuggestAddAmountRequired },
+    ];
+
     await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
       periodLength: this.votingPeriodLength,
       assetImage: 'base64:assetImage',
-      wxAssetId: this.wxAssetId,
-      assetAmount: this.votingRewardAmount,
+      payments,
     });
 
     await boostingMock.setUserGWXData(
@@ -62,11 +65,11 @@ describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */
 
     expect(stateChanges.data).to.eql([
       {
-        key: `%s%s%s%s__vote__${this.wxAssetId}__${currentIndex}__${this.accounts.user0.addr}`,
+        key: `%s%s%d%s__vote__${this.wxAssetId}__${currentIndex}__${this.accounts.user0.addr}`,
         value: null,
       },
       {
-        key: `%s%s%s__votingResult__${this.wxAssetId}__${currentIndex}`,
+        key: `%s%s%d__votingResult__${this.wxAssetId}__${currentIndex}`,
         type: 'string',
         value: '%d%d__0__0',
       },

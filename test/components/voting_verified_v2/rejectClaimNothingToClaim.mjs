@@ -5,19 +5,21 @@ import { transfer } from '@waves/waves-transactions';
 
 import { votingVerifiedV2 } from './contract/votingVerifiedV2.mjs';
 
-import { broadcastAndWait } from '../../utils/api.mjs';
+import { broadcastAndWait, waitNBlocks } from '../../utils/api.mjs';
 import { boostingMock } from './contract/boostingMock.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('voting_verified_v2: vote.mjs', /** @this {MochaSuiteModified} */ () => {
+describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () => {
   before(async function () {
+    const inFavor = true;
+
     await broadcastAndWait(
       transfer(
         {
           recipient: this.accounts.user0.addr,
-          amount: this.votingRewardAmount,
+          amount: this.wxForSuggestAddAmountRequired,
           assetId: this.wxAssetId,
           additionalFee: 4e5,
         },
@@ -43,30 +45,33 @@ describe('voting_verified_v2: vote.mjs', /** @this {MochaSuiteModified} */ () =>
       this.accounts.user0.addr,
       this.gwxAmount,
     );
-  });
 
-  it('should successfully vote', async function () {
-    const currentIndex = 0;
-    const inFavor = true;
-
-    const { stateChanges } = await votingVerifiedV2.vote({
+    await votingVerifiedV2.vote({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
       inFavor,
     });
 
-    expect(stateChanges.data).to.eql([
-      {
-        key: `%s%s%d%s__vote__${this.wxAssetId}__${currentIndex}__${this.accounts.user0.addr}`,
-        type: 'string',
-        value: `%s%d__${inFavor}__${this.gwxAmount}`,
-      },
-      {
-        key: `%s%s%d__votingResult__${this.wxAssetId}__${currentIndex}`,
-        type: 'string',
-        value: `%d%d__${this.gwxAmount}__0`,
-      },
-    ]);
+    await waitNBlocks(this.votingPeriodLength, this.waitNBlocksTimeout);
+
+    await votingVerifiedV2.finalize({
+      caller: this.accounts.pacemaker.seed,
+      dApp: this.accounts.votingVerifiedV2.addr,
+      assetId: this.wxAssetId,
+    });
+  });
+
+  it('should reject if nothing to claim', async function () {
+    const currentIndex = 0;
+
+    const claimPromise = votingVerifiedV2.claim({
+      caller: this.accounts.user0.seed,
+      dApp: this.accounts.votingVerifiedV2.addr,
+      assetId: this.wxAssetId,
+      index: currentIndex,
+    });
+
+    expect(claimPromise).to.be.rejectedWith('nothing to claim');
   });
 });

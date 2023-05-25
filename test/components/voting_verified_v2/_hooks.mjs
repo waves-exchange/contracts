@@ -132,12 +132,14 @@ export const mochaHooks = {
     this.minPeriodLength = 2;
     this.maxPeriodLength = 100;
     this.votingPeriodLength = 2;
-    this.feePerBlock = 1e8;
-    this.votingRewardAmount = this.votingPeriodLength * this.feePerBlock;
+    this.votingRewardAmount = 1000;
     this.votingThresholdAdd = this.gwxAmount;
     this.votingThresholdRemove = this.gwxAmount;
     this.minSuggestRemoveBalance = 1e8;
     this.periodLengthRemove = 2;
+    this.wxForSuggestAddAmountRequired = 1000;
+    this.wxForSuggestRemoveAmountRequired = 5;
+    this.wxSuggestAddBurnAmount = 995;
 
     await votingVerifiedV2.init({
       caller: this.accounts.votingVerifiedV2.seed,
@@ -151,6 +153,9 @@ export const mochaHooks = {
       votingThresholdRemove: this.votingThresholdRemove,
       minSuggestRemoveBalance: this.minSuggestRemoveBalance,
       periodLengthRemove: this.periodLengthRemove,
+      wxForSuggestAddAmountRequired: this.wxForSuggestAddAmountRequired,
+      wxForSuggestRemoveAmountRequired: this.wxForSuggestRemoveAmountRequired,
+      wxSuggestAddBurnAmount: this.wxSuggestAddBurnAmount,
     });
 
     const accountsInfo = Object.entries(this.accounts).map(

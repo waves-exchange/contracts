@@ -19,7 +19,7 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
       transfer(
         {
           recipient: this.accounts.user0.addr,
-          amount: this.votingRewardAmount,
+          amount: this.wxForSuggestAddAmountRequired + this.votingRewardAmount,
           assetId: this.wxAssetId,
           additionalFee: 4e5,
         },
@@ -27,14 +27,18 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
       ),
     );
 
+    const payments = [
+      { assetId: this.wxAssetId, amount: this.wxForSuggestAddAmountRequired },
+      { assetId: this.wxAssetId, amount: this.votingRewardAmount },
+    ];
+
     await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
       periodLength: this.votingPeriodLength,
       assetImage: 'base64:assetImage',
-      wxAssetId: this.wxAssetId,
-      assetAmount: this.votingRewardAmount,
+      payments,
     });
 
     await boostingMock.setUserGWXData(
@@ -71,7 +75,7 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
 
     expect(stateChanges.data).to.eql([
       {
-        key: `%s%s%s%s__history__${this.accounts.user0.addr}__${this.wxAssetId}__${currentIndex}`,
+        key: `%s%s%s%d__history__${this.accounts.user0.addr}__${this.wxAssetId}__${currentIndex}`,
         type: 'string',
         value: `%d%s__${this.votingRewardAmount}`,
       },

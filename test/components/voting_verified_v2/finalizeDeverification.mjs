@@ -19,7 +19,7 @@ describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteMo
       transfer(
         {
           recipient: this.accounts.user0.addr,
-          amount: this.votingRewardAmount,
+          amount: this.votingRewardAmount + this.wxForSuggestRemoveAmountRequired,
           assetId: this.wxAssetId,
           additionalFee: 4e5,
         },
@@ -27,14 +27,17 @@ describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteMo
       ),
     );
 
+    let payments = [
+      { assetId: this.wxAssetId, amount: this.wxForSuggestAddAmountRequired },
+    ];
+
     await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
       periodLength: this.votingPeriodLength,
       assetImage: 'base64:assetImage',
-      wxAssetId: this.wxAssetId,
-      assetAmount: this.votingRewardAmount,
+      payments,
     });
 
     await boostingMock.setUserGWXData(
@@ -64,10 +67,15 @@ describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteMo
       this.minSuggestRemoveBalance,
     );
 
+    payments = [
+      { assetId: this.wxAssetId, amount: this.wxForSuggestRemoveAmountRequired },
+    ];
+
     await votingVerifiedV2.suggestRemove({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
+      payments,
     });
 
     await votingVerifiedV2.vote({

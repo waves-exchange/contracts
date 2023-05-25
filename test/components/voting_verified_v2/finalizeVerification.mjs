@@ -27,14 +27,17 @@ describe('voting_verified_v2: finalizeVerification.mjs', /** @this {MochaSuiteMo
       ),
     );
 
+    const payments = [
+      { assetId: this.wxAssetId, amount: this.wxForSuggestAddAmountRequired },
+    ];
+
     await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
       periodLength: this.votingPeriodLength,
       assetImage: 'base64:assetImage',
-      wxAssetId: this.wxAssetId,
-      assetAmount: this.votingRewardAmount,
+      payments,
     });
 
     await boostingMock.setUserGWXData(

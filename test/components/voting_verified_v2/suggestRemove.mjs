@@ -20,7 +20,7 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
       transfer(
         {
           recipient: this.accounts.user0.addr,
-          amount: this.votingRewardAmount,
+          amount: this.votingRewardAmount + this.wxForSuggestRemoveAmountRequired,
           assetId: this.wxAssetId,
           additionalFee: 4e5,
         },
@@ -28,14 +28,17 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
       ),
     );
 
+    const payments = [
+      { assetId: this.wxAssetId, amount: this.wxForSuggestAddAmountRequired },
+    ];
+
     await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
       periodLength: this.votingPeriodLength,
       assetImage: 'base64:assetImage',
-      wxAssetId: this.wxAssetId,
-      assetAmount: this.votingRewardAmount,
+      payments,
     });
 
     await boostingMock.setUserGWXData(
@@ -67,10 +70,15 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
       this.minSuggestRemoveBalance,
     );
 
+    const payments = [
+      { assetId: this.wxAssetId, amount: this.wxForSuggestRemoveAmountRequired },
+    ];
+
     const { height, stateChanges } = await votingVerifiedV2.suggestRemove({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
+      payments,
     });
 
     expect(stateChanges.data).to.eql([
@@ -85,17 +93,17 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
         value: true,
       },
       {
-        key: `%s%s%s__currentVotingHeightStart__${this.wxAssetId}__1`,
+        key: `%s%s%d__currentVotingHeightStart__${this.wxAssetId}__1`,
         type: 'integer',
         value: height,
       },
       {
-        key: `%s%s%s__suggestIssuer__${this.wxAssetId}__1`,
+        key: `%s%s%d__suggestIssuer__${this.wxAssetId}__1`,
         type: 'string',
         value: this.accounts.user0.addr,
       },
       {
-        key: `%s%s%s__votingEndHeight__${this.wxAssetId}__1`,
+        key: `%s%s%d__votingEndHeight__${this.wxAssetId}__1`,
         type: 'integer',
         value: height + this.periodLengthRemove,
       },

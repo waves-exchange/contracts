@@ -6,7 +6,6 @@ export const votingVerifiedV2 = {
     caller,
     minPeriodLength,
     maxPeriodLength,
-    feePerBlock,
     boostingContract,
     emissionContract,
     assetsStoreContract,
@@ -14,6 +13,9 @@ export const votingVerifiedV2 = {
     votingThresholdRemove,
     minSuggestRemoveBalance,
     periodLengthRemove,
+    wxForSuggestAddAmountRequired,
+    wxForSuggestRemoveAmountRequired,
+    wxSuggestAddBurnAmount,
   }) => {
     const dataTx = data(
       {
@@ -28,7 +30,6 @@ export const votingVerifiedV2 = {
             type: 'integer',
             value: maxPeriodLength,
           },
-          { key: '%s__feePerBlock', type: 'integer', value: feePerBlock },
           {
             key: '%s__boostingContract',
             type: 'string',
@@ -64,6 +65,21 @@ export const votingVerifiedV2 = {
             type: 'integer',
             value: periodLengthRemove,
           },
+          {
+            key: '%s__wxForSuggestAddAmountRequired',
+            type: 'integer',
+            value: wxForSuggestAddAmountRequired,
+          },
+          {
+            key: '%s__wxForSuggestRemoveAmountRequired',
+            type: 'integer',
+            value: wxForSuggestRemoveAmountRequired,
+          },
+          {
+            key: '%s__wxSuggestAddBurnAmount',
+            type: 'integer',
+            value: wxSuggestAddBurnAmount,
+          },
         ],
         additionalFee: 4e5,
         chainId,
@@ -80,8 +96,7 @@ export const votingVerifiedV2 = {
     assetId,
     periodLength,
     assetImage,
-    wxAssetId,
-    assetAmount,
+    payments,
   }) => {
     const invokeTx = invokeScript(
       {
@@ -94,7 +109,7 @@ export const votingVerifiedV2 = {
             { type: 'string', value: assetImage },
           ],
         },
-        payment: [{ assetId: wxAssetId, amount: assetAmount }],
+        payment: payments,
         additionalFee: 4e5,
         chainId,
       },
@@ -182,8 +197,9 @@ export const votingVerifiedV2 = {
     return broadcastAndWait(invokeTx);
   },
 
-  // func suggestRemove(assetId: String) = {
-  suggestRemove: async ({ caller, dApp, assetId }) => {
+  suggestRemove: async ({
+    caller, dApp, assetId, payments,
+  }) => {
     const invokeTx = invokeScript(
       {
         dApp,
@@ -191,6 +207,7 @@ export const votingVerifiedV2 = {
           function: 'suggestRemove',
           args: [{ type: 'string', value: assetId }],
         },
+        payment: payments,
         additionalFee: 4e5,
         chainId,
       },
