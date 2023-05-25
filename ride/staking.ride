@@ -595,7 +595,6 @@ func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String, throwIfNothin
   let userAddress = userAddressStr.addressFromString().valueOrErrorMessage(("claimWxINTERNAL: invalid user address").wrapErr())
 
   let poolAddressStr = factoryContract.getStringByAddressOrFail(lpAssetIdStr.keyFactoryLpAssetToPoolContractAddress())
-  strict onModifyWeightInv = this.invoke("onModifyWeight", [lpAssetIdStr, poolAddressStr], [])
   
   let claimedByUserKEY = keyClaimedByUser(lpAssetIdStr, userAddressStr)
   let claimedTotalKEY = keyClaimedTotal(lpAssetIdStr)
@@ -675,7 +674,6 @@ func claimWxREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
 
   let poolAddressStr = factoryContract.getStringByAddressOrFail(lpAssetIdStr.keyFactoryLpAssetToPoolContractAddress())
   let poolWeight = factoryContract.getIntegerValue(poolAddressStr.keyFactoryPoolWeight())
-  strict onModifyWeightInv = this.invoke("onModifyWeight", [lpAssetIdStr, poolAddressStr], [])
 
   let wxEmissionPerBlock = emissionContract.getIntOrFail(keyEmissionRatePerBlockCurrent())
 
@@ -751,7 +749,7 @@ func usersListTraversal(lpAssetId: String) = {
 
 @Callable(i)
 func onModifyWeight(lpAssetIdStr: String, poolAddressStr: String) = {
-  if (i.caller != factoryContract && i.caller != this) then throwErr("permissions denied") else
+  if (i.caller != factoryContract) then throwErr("permissions denied") else
   let (wxPerLpIntegralNew, poolIntegralSTATE, poolDEBUG) = refreshPoolINTEGRALS(lpAssetIdStr, poolAddressStr, 0)
   poolIntegralSTATE
 }
