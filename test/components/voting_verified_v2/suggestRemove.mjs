@@ -20,7 +20,9 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
       transfer(
         {
           recipient: this.accounts.user0.addr,
-          amount: this.votingRewardAmount + this.wxForSuggestRemoveAmountRequired,
+          amount: this.votingRewardAmount
+            + this.wxMinForSuggestAddAmountRequired
+            + this.wxForSuggestRemoveAmountRequired,
           assetId: this.wxAssetId,
           additionalFee: 4e5,
         },
@@ -29,7 +31,7 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
     );
 
     const payments = [
-      { assetId: this.wxAssetId, amount: this.wxForSuggestAddAmountRequired },
+      { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
     ];
 
     await votingVerifiedV2.suggestAdd({

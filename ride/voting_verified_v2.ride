@@ -118,9 +118,11 @@ func keyVotingEndHeight(
   index: Int
 ) = ["%s%s%d", "votingEndHeight", assetId, index.toString()].makeString(separator)
 
-let keyWxForSuggestAddAmountRequired = ["%s", "wxForSuggestAddAmountRequired"].makeString(separator)
+let keyFeePerBlock = ["%s", "feePerBlock"].makeString(separator)
+let feePerBlock = this.getIntegerOrFail(keyFeePerBlock)
+
+let keyMinWxMinForSuggestAddAmountRequired = ["%s", "wxMinForSuggestAddAmountRequired"].makeString(separator)
 let keyWxForSuggestRemoveAmountRequired = ["%s", "wxForSuggestRemoveAmountRequired"].makeString(separator)
-let keyWxSuggestAddBurnAmount = ["%s", "wxSuggestAddBurnAmount"].makeString(separator)
 
 func getUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
   let gwxAmount = boostingContract.invoke("getUserGwxAmountAtHeightREADONLY", [userAddress, targetHeight], [])
@@ -225,12 +227,17 @@ func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
     periodLength >= minPeriodLength && periodLength <= maxPeriodLength || "invalid periodLength".throwErr(),
     keyVerified(assetId).getBoolean() == unit || "already verified".throwErr(),
     keyVerificationInProgress(assetId).getBoolean() == unit || "already in progress".throwErr(),
-    wxPaymentAmount == keyWxForSuggestAddAmountRequired.getInteger().value() || "invalid payment amount".throwErr()
+    wxPaymentAmount > periodLength * feePerBlock || "not enough wx for given period".throwErr(),
+    wxPaymentAmount >= keyMinWxMinForSuggestAddAmountRequired.getIntegerValue() ||
+      "payment less then min for suggest".throwErr()
   ]
 
   strict assetsStoreCreateOrUpdateInv = assetsStoreContract.invoke("createOrUpdate", [assetId, assetImage, false], [])
 
   let votingEndHeight = height + periodLength
+
+  let finalizeCallRewardAmount = keyFinalizeCallRewardAmount.getInteger().valueOrElse(0)
+  let burnWxAmount = wxPaymentAmount - finalizeCallRewardAmount
 
   [
     IntegerEntry(currentIndexKey, newIndex),
@@ -239,7 +246,7 @@ func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
     IntegerEntry(keyPeriodLengthAdd(assetId, newIndex), periodLength),
     StringEntry(keySuggestIssuer(assetId, newIndex), i.caller.toString()),
     IntegerEntry(keyVotingEndHeight(assetId, newIndex), votingEndHeight),
-    Burn(wxPaymentAssetId, keyWxSuggestAddBurnAmount.getIntegerValue())
+    Burn(wxPaymentAssetId, burnWxAmount)
   ] ++ votingRewardActions
 }
 
@@ -248,11 +255,17 @@ func suggestRemove(assetId: String) = {
   let gwxAmountAtNow = i.caller.toString().getUserGwxAmountAtHeight(height)
   let minSuggestRemoveBalance = keyMinSuggestRemoveBalance.getIntegerValue()
 
+  let wxPayment = i.payments[0]
+  let wxPaymentAssetId = wxPayment.assetId.value()
+  let wxPaymentAmount = wxPayment.amount.value()
+
   let isVerified = keyVerified(assetId).getBoolean().valueOrElse(false)
 
   strict checks = [
     isVerified || [assetId, "not verified"].makeString(" ").throwErr(),
-    gwxAmountAtNow >= minSuggestRemoveBalance || "not enough gWXes".throwErr()
+    gwxAmountAtNow >= minSuggestRemoveBalance || "not enough gWXes".throwErr(),
+    wxPaymentAmount >= keyWxForSuggestRemoveAmountRequired.getIntegerValue() ||
+      "payment less then min for suggest".throwErr()
   ]
 
   let currentIndexKey = keyCurrentIndex(assetId)

@@ -13,9 +13,9 @@ export const votingVerifiedV2 = {
     votingThresholdRemove,
     minSuggestRemoveBalance,
     periodLengthRemove,
-    wxForSuggestAddAmountRequired,
+    wxMinForSuggestAddAmountRequired,
     wxForSuggestRemoveAmountRequired,
-    wxSuggestAddBurnAmount,
+    feePerBlock,
   }) => {
     const dataTx = data(
       {
@@ -66,9 +66,9 @@ export const votingVerifiedV2 = {
             value: periodLengthRemove,
           },
           {
-            key: '%s__wxForSuggestAddAmountRequired',
+            key: '%s__wxMinForSuggestAddAmountRequired',
             type: 'integer',
-            value: wxForSuggestAddAmountRequired,
+            value: wxMinForSuggestAddAmountRequired,
           },
           {
             key: '%s__wxForSuggestRemoveAmountRequired',
@@ -76,9 +76,9 @@ export const votingVerifiedV2 = {
             value: wxForSuggestRemoveAmountRequired,
           },
           {
-            key: '%s__wxSuggestAddBurnAmount',
+            key: '%s__feePerBlock',
             type: 'integer',
-            value: wxSuggestAddBurnAmount,
+            value: feePerBlock,
           },
         ],
         additionalFee: 4e5,
