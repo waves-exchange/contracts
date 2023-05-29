@@ -130,6 +130,26 @@ func getUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
   gwxAmount.asInt()
 }
 
+# Manager keys and functions ->
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
+func keyManagerPublicKey() = "%s__managerPublicKey"
+
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
+
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
+}
+# <-
+
 func votingExistChecks(assetId: String, currentIndex: Int) = {
   let verificationInProgress = keyVerificationInProgress(assetId).getBoolean().valueOrElse(false)
   let deverificationInProgress = keyDeverificationInProgress(assetId).getBoolean().valueOrElse(false)
@@ -477,4 +497,13 @@ func claim(assetId: String, index: Int) = {
   }
 
   rewardAction
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
 }
