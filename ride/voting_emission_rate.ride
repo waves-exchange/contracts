@@ -234,6 +234,7 @@ func setThreshold(newThreshold: Int) = {
 
 @Callable(i)
 func finalize() = {
+  strict check = i.caller == votingEmissionContract || i.mustManager() || "Permissino denied".throwErr()
   let votingFinishHeight = keyStartHeight.getIntegerValue() + keyEpochLength.getInteger().value()
   
   if (votingFinishHeight <= height) then {
