@@ -715,7 +715,7 @@ func finalizeWrapper(counter: Int) = {
     if (counter == 0) then {
       throwErr("Current voting is not over yet")
     } else {
-      # strict inv = votingEmissionRateContract.invoke("finalize", [], [])
+      strict inv = votingEmissionRateContract.invoke("finalize", [], [])
       ([], unit)
     }
   } else {
