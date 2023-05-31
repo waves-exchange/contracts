@@ -1,7 +1,7 @@
 import { address, random } from '@waves/ts-lib-crypto';
 import { massTransfer, nodeInteraction, data } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { format } from 'path';
+import { format, join } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
 import {
   apiBase, baseSeed, broadcastAndWait, chainId,
@@ -12,18 +12,20 @@ const api = create(apiBase);
 const nonceLength = 3;
 const ridePath = '../ride';
 const testPath = 'common_mock';
+const mocksDir = join('components', 'voting_emission', 'mocks');
 const votingEmissionPath = format({ dir: ridePath, base: 'voting_emission.ride' });
 const boostingMockPath = format({ dir: testPath, base: 'boosting.mock.ride' });
 const factoryMockPath = format({ dir: testPath, base: 'factory_v2.mock.ride' });
 const stakingMockPath = format({ dir: testPath, base: 'staking.mock.ride' });
 const gwxRewardMockPath = format({ dir: testPath, base: 'gwx_reward.mock.ride' });
+const votingEmissionRateMockPath = format({ dir: mocksDir, base: 'voting_emission_rate.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
     const nonce = random(nonceLength, 'Buffer').toString('hex');
     this.votingDuration = 3;
     // setup accounts
-    const contractNames = ['votingEmission', 'votingEmissionCandidate', 'boosting', 'staking', 'factory', 'assetsStore', 'gwxReward'];
+    const contractNames = ['votingEmission', 'votingEmissionCandidate', 'boosting', 'staking', 'factory', 'assetsStore', 'gwxReward', 'votingEmissionRate'];
     const userNames = Array.from({ length: 3 }, (_, k) => `user${k}`);
     const names = [...contractNames, ...userNames, 'pacemaker'];
     this.accounts = Object.fromEntries(names.map((item) => {
@@ -51,5 +53,6 @@ export const mochaHooks = {
     await setScriptFromFile(factoryMockPath, this.accounts.factory.seed);
     await setScriptFromFile(stakingMockPath, this.accounts.staking.seed);
     await setScriptFromFile(gwxRewardMockPath, this.accounts.gwxReward.seed);
+    await setScriptFromFile(votingEmissionRateMockPath, this.accounts.votingEmissionRate.seed);
   },
 };

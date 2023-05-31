@@ -212,8 +212,8 @@ func changeRatePerBlock(newRatePerBlock: Int) = {
   let factoryCfg = factoryContract.readFactoryCfgOrFail()
   let boostingContract = factoryCfg.getBoostingAddressOrFail()
   
-  strict internalInv = this.invoke("changeRatePerBlockINTERNAL", [newRatePerBlock], [])
   strict boostingInvoke = boostingContract.reentrantInvoke("onBoostEmissionUpdate", [], [])
+  strict internalInv = this.invoke("changeRatePerBlockINTERNAL", [newRatePerBlock], [])
   
   []
 }
