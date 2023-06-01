@@ -1,0 +1,13 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "version": 2,
+    "senderPublicKey": "VOTING_EMISSION_RATE_PUBKEY",
+    "data": [
+        {
+            "key": "%s__managerVaultAddress",
+            "type": "string",
+            "value": "3P4QKaU3NfbfxwF9aB5Kz4rvxFnLc4mBqYN"
+        }
+    ]
+}

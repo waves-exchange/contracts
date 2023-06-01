@@ -4,18 +4,19 @@
 
 let separator = "__"
 let contractFilename = "voting_emission_rate.ride"
-let EPOCH_COUNT = 1
+let DEFAULT_EPOCH_COUNT = 1
 
-let keyEpochLength            = ["%s", "epochLength"].makeString(separator)
-let keyEmissionContract       = ["%s", "emissionContract"].makeString(separator)
-let keyVotingEmissionContract = ["%s", "votingEmissionContract"].makeString(separator)
-let keyBoostingContract       = ["%s", "boostingContract"].makeString(separator)
-let keyThreshold              = ["%s", "votingThreshold"].makeString(separator)
-let keyRatePerBlock           = ["%s%s", "ratePerBlock", "current"].makeString(separator)
-let keyRatePerBlockMax        = ["%s%s", "ratePerBlockMax", "current"].makeString(separator)
-let keyRateChangeStep         = ["%s", "rateChangeStep"].makeString(separator)
-let keyStartHeight            = ["%s", "startHeight"].makeString(separator)
-let keyVotingResult           = ["%s", "votingResult"].makeString(separator)
+let keyEpochLength              = ["%s", "epochLength"].makeString(separator)
+let keyEmissionContract         = ["%s", "emissionContract"].makeString(separator)
+let keyVotingEmissionContract   = ["%s", "votingEmissionContract"].makeString(separator)
+let keyBoostingContract         = ["%s", "boostingContract"].makeString(separator)
+let keyThreshold                = ["%s", "votingThreshold"].makeString(separator)
+let keyRatePerBlock             = ["%s%s", "ratePerBlock", "current"].makeString(separator)
+let keyRatePerBlockMax          = ["%s%s", "ratePerBlockMax", "current"].makeString(separator)
+let keyRateChangeStep           = ["%s", "rateChangeStep"].makeString(separator)
+let keyStartHeight              = ["%s", "startHeight"].makeString(separator)
+let keyVotingResult             = ["%s", "votingResult"].makeString(separator)
+let keyVotingEmissionEpochCount = ["%s", "votingEmissionEpochCount"].makeString(separator)
 
 func throwErr(s: String) = {
   throw(contractFilename + ": " + s)
@@ -103,8 +104,9 @@ func getRateChangeAmountsINTERNAL() = {
 func getEpochLength(votingEmissionContract: Address) = {
   let votingEpochLength = votingEmissionContract.getIntegerValue(keyEpochLength)
   let votingStartLength = votingEmissionContract.getIntegerValue(keyStartHeight)
+  let votingEmissionEpochCount = this.getInteger(keyVotingEmissionEpochCount).valueOrElse(DEFAULT_EPOCH_COUNT)
 
-  votingStartLength + (votingEpochLength * EPOCH_COUNT) - height - 1
+  votingStartLength + (votingEpochLength * votingEmissionEpochCount) - height - 1
 }
 
 @Callable(i)
@@ -113,7 +115,8 @@ func constructor(
   emissionContractPrm: String,
   votingEmissionContractPrm: String,
   threshold: Int,
-  rateChangeStep: Int
+  rateChangeStep: Int,
+  votingEmissionEpochCount: Int
 ) = {
   strict checks = [
     i.mustManager(),
@@ -121,7 +124,8 @@ func constructor(
     emissionContractPrm.addressFromString().isDefined()       || "Invalid emission contract address".throwErr(),
     votingEmissionContractPrm.addressFromString().isDefined() || "Invalid emission contract address".throwErr(),
     threshold > 0                                             || "invalid threshold".throwErr(),
-    rateChangeStep > 0                                        || "invalid rateChangeStep".throwErr()
+    rateChangeStep > 0                                        || "invalid rateChangeStep".throwErr(),
+    votingEmissionEpochCount > 0                              || "invalid votingEmissionEpochCount".throwErr()
   ]
 
   let votingEmission = votingEmissionContractPrm.addressFromStringValue()
@@ -132,6 +136,7 @@ func constructor(
       IntegerEntry(keyEpochLength, getEpochLength(votingEmission)),
       IntegerEntry(keyThreshold, threshold),
       IntegerEntry(keyRateChangeStep, rateChangeStep),
+      IntegerEntry(keyVotingEmissionEpochCount, votingEmissionEpochCount),
       IntegerEntry(keyStartHeight, height),
       StringEntry(keyVotingResult, totalVotes("0", "0", "0"))
     ], unit)
