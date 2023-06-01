@@ -2,7 +2,7 @@
     "type": 12,
     "fee": 500000,
     "version": 2,
-    "senderPublicKey": "VOTING_EMISSION_RATE_PUBKEY",
+    "senderPublicKey": "4yHCNnmSP3YBbix1NaQkDzaFw2r5ZUHhPqBkBDspA1ip",
     "data": [
         {
             "key": "%s__managerVaultAddress",

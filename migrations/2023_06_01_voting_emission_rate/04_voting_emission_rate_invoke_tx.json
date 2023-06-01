@@ -3,7 +3,7 @@
     "fee": 500000,
     "version": 2,
     "senderPublicKey": "8FkC1gHej3uofJ24ba24sYfbsmUvoZsrwKpf67v3chYM",
-    "dApp": "VOTING_EMISSION_RATE_ADDR",
+    "dApp": "3PFKpo9PB2U6YJaF2FsZ76UiGQwSDeyZAjn",
     "call": {
         "function": "constructor",
         "args": [

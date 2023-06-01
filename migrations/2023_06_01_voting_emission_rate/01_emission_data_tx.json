@@ -7,7 +7,12 @@
         {
             "key": "%s%s__config__votingEmissionRateContract",
             "type": "string",
-            "value": "VOTING_EMISSION_RATE_ADDR"
+            "value": "3PFKpo9PB2U6YJaF2FsZ76UiGQwSDeyZAjn"
+        },
+        {
+            "key": "%s%s__gwxHoldersReward__next",
+            "type": "integer",
+            "value": 20000000
         }
     ]
 }
