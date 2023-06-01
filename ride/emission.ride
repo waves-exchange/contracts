@@ -55,6 +55,7 @@ func keyRatePerBlockMaxStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__rateP
 
 # call boosting.onBoostEmissionUpdate rate per block changes
 func keyRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
+func keyRatePerBlockNext() = "%s%s__ratePerBlock__next"
 func keyRatePerBlockStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__ratePerBlock__start", timestamp.toString(), block.toString()].makeString(SEP)
 
 func keyEmissionStartBlock() = "%s%s__emission__startBlock"
