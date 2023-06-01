@@ -4,7 +4,7 @@
 
 let separator = "__"
 let contractFilename = "voting_emission_rate.ride"
-let DEFAULT_EPOCH_COUNT = 1
+let DEFAULT_EPOCH_COUNT = 4
 
 let keyEpochLength              = ["%s", "epochLength"].makeString(separator)
 let keyEmissionContract         = ["%s", "emissionContract"].makeString(separator)
