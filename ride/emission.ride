@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 5 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -53,6 +53,7 @@ func keyRatePerBlockMaxStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__rateP
 
 # call boosting.onBoostEmissionUpdate rate per block changes
 func keyRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
+func keyRatePerBlockNext() = "%s%s__ratePerBlock__next"
 func keyRatePerBlockStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__ratePerBlock__start", timestamp.toString(), block.toString()].makeString(SEP)
 
 func keyEmissionStartBlock() = "%s%s__emission__startBlock"
@@ -63,6 +64,10 @@ func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 func keyBoostCoeff() = "%s__boostCoeff"
 let boostCoeffDefault = 3
 let boostCoeff = this.getInteger(keyBoostCoeff()).valueOrElse(boostCoeffDefault)
+
+# share multiplied by 1e8
+func keyGwxHoldersRewardCurrent() = "%s%s__gwxHoldersReward__current"
+func keyGwxHoldersRewardNext() = "%s%s__gwxHoldersReward__next"
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyManagerVaultAddress() = "%s__managerVaultAddress"
@@ -157,6 +162,25 @@ func burn() = {
     "%s%s%s__history__burn__" + i.transactionId.toBase58String(),
     ["%d%d%d", height.toString(), lastBlock.timestamp.toString(), pmtAmount.toString()].makeString(SEP))
   ]
+}
+
+@Callable(i)
+func gwxHoldersRewardUpdate() = {
+  let factoryContract = readFactoryAddressOrFail()
+  let factoryCfg = factoryContract.readFactoryCfgOrFail()
+  let gwxRewardsContract = factoryCfg.getGwxRewardAddressOrFail()
+  strict checkCaller = i.caller == gwxRewardsContract || i.mustManager()
+  let gwxHolderRewardCurrent = keyGwxHoldersRewardCurrent().getInteger().valueOrElse(0)
+  let gwxHolderRewardNext = keyGwxHoldersRewardNext().getInteger().valueOrElse(gwxHolderRewardCurrent)
+
+  let shouldBeUpdated = gwxHolderRewardCurrent != gwxHolderRewardNext
+
+  let actions = if (shouldBeUpdated) then [
+    IntegerEntry(keyGwxHoldersRewardCurrent(), gwxHolderRewardNext),
+    DeleteEntry(keyGwxHoldersRewardNext())
+  ] else []
+
+  (actions, shouldBeUpdated)
 }
 
 @Callable(i)

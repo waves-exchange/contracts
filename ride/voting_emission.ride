@@ -89,6 +89,12 @@ func stringToPool(str: String) = {
   if (parts.size() == 2) then (parts[0], parts[1]) else "invalid pool string".throwErr()
 }
 
+let factoryContract = this.getStrOrFail(keyFactoryContract).addressFromStringValue()
+let IdxFactoryCfgGwxRewardDapp = 10
+func keyFactoryCfg() = "%s__factoryConfig"
+func readFactoryCfgOrFail(factory: Address) = factory.getStrOrFail(keyFactoryCfg()).split(separator)
+func getGwxRewardAddressOrFail(factoryCfg: List[String]) = factoryCfg[IdxFactoryCfgGwxRewardDapp].addressFromStringValue()
+
 func getLpAssetByPoolAssets(amountAssetId: String, priceAssetId: String) = {
   func keyMappingsBaseAsset2internalId(baseAssetStr: String) = {
     "%s%s%s__mappings__baseAsset2internalId__" + baseAssetStr
@@ -100,7 +106,6 @@ func getLpAssetByPoolAssets(amountAssetId: String, priceAssetId: String) = {
     "%s%s%s__" + poolContractAddress + "__mappings__poolContract2LpAsset"
   }
 
-  let factoryContract = this.getStrOrFail(keyFactoryContract).addressFromStringValue()
   let amountAssetInternalId = factoryContract.getIntOrFail(amountAssetId.keyMappingsBaseAsset2internalId())
   let priceAssetInternalId = factoryContract.getIntOrFail(priceAssetId.keyMappingsBaseAsset2internalId())
   let poolContractAddress = factoryContract.getStrOrFail(keyMappingPoolAssetsToPoolContractAddress(amountAssetInternalId, priceAssetInternalId))
@@ -111,9 +116,15 @@ func getLpAssetByPoolAssets(amountAssetId: String, priceAssetId: String) = {
 
 func checkWxEmissionPoolLabel(pool: (String, String)) = {
   let (amountAssetId, priceAssetId) = pool
-  let factoryContract = this.getStrOrFail(keyFactoryContract).addressFromStringValue()
 
   factoryContract.invoke("checkWxEmissionPoolLabel", [amountAssetId, priceAssetId], []).exactAs[Boolean]
+}
+
+func gwxRewardDeposit() = {
+  let factoryCfg = factoryContract.readFactoryCfgOrFail()
+  let gwxRewardsContract = factoryCfg.getGwxRewardAddressOrFail()
+
+  gwxRewardsContract.invoke("deposit", [], [])
 }
 
 # Doubly linked list ->
@@ -492,7 +503,6 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
   let (amountAssetId, priceAssetId) = pool
   let stakingContract = this.getStrOrFail(keyStakingContract).addressFromStringValue()
 
-  let factoryContract = this.getStrOrFail(keyFactoryContract).addressFromStringValue()
   let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
   strict r = stakingContract.invoke("usersListTraversal", [lpAssetId], []).exactAs[Boolean]
   if (r) then {
@@ -654,6 +664,7 @@ func finalizeHelper() = {
                 IntegerEntry(keyStartHeightUi, startHeight)
               ]
             }
+            strict gwxRewardDepositInv = gwxRewardDeposit()
             (actions, true)
           }
           case nextPoolStr: String => {
@@ -684,6 +695,7 @@ func finalizeHelper() = {
                   DeleteEntry(keyNextPool)
                 ]
               }
+              strict gwxRewardDepositInv = gwxRewardDeposit()
               (actions, true)
             }
             case nextPoolStr: String => {
