@@ -15,6 +15,7 @@ func keyEpochLengthByEpoch(epoch: Int) = ["%s%d", "epochLength", epoch.toString(
 let keyCurrentEpoch = ["%s", "currentEpoch"].makeString(separator)
 let keyMaxDepth = ["%s", "maxDepth"].makeString(separator)
 let keyVotingEmissionCandidateContract = ["%s", "votingEmissionCandidateContract"].makeString(separator)
+let keyVotingEmissionRateContract = ["%s", "votingEmissionRateContract"].makeString(separator)
 let keyFactoryContract = ["%s", "factoryContract"].makeString(separator)
 let keyBoostingContract = ["%s", "boostingContract"].makeString(separator)
 let keyStakingContract = ["%s", "stakingContract"].makeString(separator)
@@ -595,14 +596,13 @@ func finalizeHelper() = {
     match poolOrUnit {
       case _: Unit => {
         match poolsListName.keyListHead().getString() {
-          case _: Unit => (
-            [
+          case _: Unit => {
+            ([
               IntegerEntry(keyFinalizationStage, finalizationStageShares),
               DeleteEntry(keyNextPool),
               DeleteEntry(keyNextUser)
-            ],
-            true
-          )
+            ], true)
+          }
           case poolsHeadStr: String => {
             ([StringEntry(keyNextPool, poolsHeadStr)], true)
           }
@@ -622,14 +622,13 @@ func finalizeHelper() = {
           case _: Unit => {
             let nextPoolOrUnit = poolsListName.keyListNext(poolStr).getString()
             match nextPoolOrUnit {
-              case _: Unit => (
-                [
+              case _: Unit => {
+                ([
                   IntegerEntry(keyFinalizationStage, finalizationStageShares),
                   DeleteEntry(keyNextPool),
                   DeleteEntry(keyNextUser)
-                ],
-                true
-              )
+                ], true)
+              }
               case s: String => {
                 ([
                   StringEntry(keyNextPool, s),
@@ -710,11 +709,13 @@ func finalizeHelper() = {
 
 @Callable(i)
 func finalizeWrapper(counter: Int) = {
+  let votingEmissionRateContract = this.getStringValue(keyVotingEmissionRateContract).addressFromStringValue()
   strict result = this.invoke("finalizeHelper", [], []).exactAs[Boolean]
   if (!result) then {
     if (counter == 0) then {
       throwErr("Current voting is not over yet")
     } else {
+      strict inv = votingEmissionRateContract.invoke("finalize", [], [])
       ([], unit)
     }
   } else {
