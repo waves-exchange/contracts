@@ -73,6 +73,10 @@ describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */
         type: 'string',
         value: '%d%d__0__0',
       },
+      {
+        key: `%s%s%s%d__votingReward__${this.accounts.user0.addr}__${this.wxAssetId}__${currentIndex}`,
+        value: null,
+      },
     ]);
   });
 });

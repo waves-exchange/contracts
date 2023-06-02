@@ -67,6 +67,11 @@ describe('voting_verified_v2: vote.mjs', /** @this {MochaSuiteModified} */ () =>
         type: 'string',
         value: `%d%d__${this.gwxAmount}__0`,
       },
+      {
+        key: `%s%s%s%d__votingReward__${this.accounts.user0.addr}__${this.wxAssetId}__${currentIndex}`,
+        type: 'boolean',
+        value: true,
+      },
     ]);
   });
 });

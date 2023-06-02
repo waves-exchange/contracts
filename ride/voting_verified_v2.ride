@@ -70,6 +70,13 @@ func keyVotingRewardAssetId(
   assetId: String,
   index: Int
 ) = ["%s%s%d", "votingRewardAssetId", assetId, index.toString()].makeString(separator)
+
+func keyVotingReward(
+  userAddress: Address,
+  assetId: String,
+  index: Int
+) = ["%s%s%s%d", "votingReward", userAddress.toString(), assetId, index.toString()].makeString(separator)
+
 func keyTotalVotingReward(assetId: String, index: Int) = {
   ["%s%s%d", "votingReward", assetId, index.toString()].makeString(separator)
 }
@@ -109,9 +116,6 @@ func keyClaimHistory(
   assetId: String,
   index: Int
 ) = ["%s%s%s%d", "history", userAddress.toString(), assetId, index.toString()].makeString(separator)
-func claimHistoryValue(
-  gwxAmount: Int
-) = ["%d%s", gwxAmount.toString()].makeString(separator)
 
 func keyVotingEndHeight(
   assetId: String,
@@ -346,7 +350,8 @@ func vote(assetId: String, inFavor: Boolean) = {
 
   [
     StringEntry(voteKey, voteValue(inFavor, gwxAmountAtEnd)),
-    StringEntry(votingResultKey, newVotingValue)
+    StringEntry(votingResultKey, newVotingValue),
+    BooleanEntry(keyVotingReward(i.caller, assetId, currentIndex), true)
   ]
 }
 
@@ -385,7 +390,8 @@ func cancelVote(assetId: String) = {
 
   [
     DeleteEntry(voteKey),
-    StringEntry(votingResultKey, newVotingResultValue)
+    StringEntry(votingResultKey, newVotingResultValue),
+    DeleteEntry(keyVotingReward(i.caller, assetId, currentIndex))
   ]
 }
 
@@ -471,7 +477,7 @@ func claim(assetId: String, index: Int) = {
   let callerAddress = i.caller
 
   let claimHistoryKey = keyClaimHistory(callerAddress, assetId, index)
-  let claimHistory = claimHistoryKey.getString()
+  let claimHistory = claimHistoryKey.getInteger()
 
   strict checks = [
     claimHistory == unit || "already claimed".throwErr()
@@ -490,7 +496,7 @@ func claim(assetId: String, index: Int) = {
 
     [
       ScriptTransfer(callerAddress, rewardAmount, votingRewardAssetId),
-      StringEntry(claimHistoryKey, claimHistoryValue(rewardAmount))
+      IntegerEntry(claimHistoryKey, rewardAmount)
     ]
   } else {
     "nothing to claim".throwErr()

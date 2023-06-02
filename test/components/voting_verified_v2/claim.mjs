@@ -76,8 +76,8 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
     expect(stateChanges.data).to.eql([
       {
         key: `%s%s%s%d__history__${this.accounts.user0.addr}__${this.wxAssetId}__${currentIndex}`,
-        type: 'string',
-        value: `%d%s__${this.votingRewardAmount}`,
+        type: 'integer',
+        value: this.votingRewardAmount,
       },
     ]);
 
