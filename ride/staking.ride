@@ -595,7 +595,6 @@ func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String, throwIfNothin
   let userAddress = userAddressStr.addressFromString().valueOrErrorMessage(("claimWxINTERNAL: invalid user address").wrapErr())
 
   let poolAddressStr = factoryContract.getStringByAddressOrFail(lpAssetIdStr.keyFactoryLpAssetToPoolContractAddress())
-  
   let claimedByUserKEY = keyClaimedByUser(lpAssetIdStr, userAddressStr)
   let claimedTotalKEY = keyClaimedTotal(lpAssetIdStr)
   let claimedByUserMinRewardKEY = keyClaimedByUserMinReward(lpAssetIdStr, userAddressStr)
