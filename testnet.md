@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-385-emission-rate-voting**](https://github.com/waves-exchange/contracts/tree/wxdefi-385-emission-rate-voting) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **11:49 02.06.2023** (GMT+4)
+[**wxdefi-385-emission-rate-voting**](https://github.com/waves-exchange/contracts/tree/wxdefi-385-emission-rate-voting) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **12:11 02.06.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
