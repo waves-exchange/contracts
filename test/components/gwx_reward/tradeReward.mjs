@@ -9,7 +9,7 @@ function calculateTransfersNumber(stateChanges) {
   let transfersNumber = 0;
   const flat = (obj) => {
     Object.keys(obj).forEach((key) => {
-      if (key === 'transfers') {
+      if (key === 'data') {
         transfersNumber += obj[key].length;
       }
       if (typeof obj[key] === 'object') {
@@ -19,7 +19,7 @@ function calculateTransfersNumber(stateChanges) {
     return transfersNumber;
   };
 
-  return flat(stateChanges);
+  return flat(stateChanges) / 2;
 }
 
 describe('gwxReward: tradeReward.mjs', /** @this {MochaSuiteModified} */() => {
