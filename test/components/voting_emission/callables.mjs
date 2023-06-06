@@ -1,4 +1,4 @@
-import { invokeScript } from '@waves/waves-transactions';
+import { invokeScript, data } from '@waves/waves-transactions';
 import { broadcastAndWait, chainId } from '../../utils/api.mjs';
 
 export const votingEmission = {
@@ -8,8 +8,17 @@ export const votingEmission = {
     votingEmissionCandidateContract,
     boostingContract,
     stakingContract,
+    votingEmissionRate,
     epochLength,
   }) => {
+    await broadcastAndWait(data({
+      data: [
+        { key: '%s__votingEmissionRateContract', type: 'string', value: votingEmissionRate },
+      ],
+      additionalFee: 4e5,
+      chainId,
+    }, caller));
+
     const invokeTx = invokeScript(
       {
         dApp,
