@@ -46,13 +46,6 @@ describe(`${process.pid}: voting_emission: finalize`, () => {
       additionalFee: 4e5,
       chainId,
     }, this.accounts.factory.seed));
-    await broadcastAndWait(data({
-      data: [
-        { key: '%s__votingEmissionRateContract', type: 'string', value: this.accounts.votingEmissionRate.addr },
-      ],
-      additionalFee: 4e5,
-      chainId,
-    }, this.accounts.votingEmission.seed));
     await votingEmission.constructor({
       dApp,
       caller: seed,
@@ -60,6 +53,7 @@ describe(`${process.pid}: voting_emission: finalize`, () => {
       votingEmissionCandidateContract: this.accounts.votingEmissionCandidate.addr,
       boostingContract: this.accounts.boosting.addr,
       stakingContract: this.accounts.staking.addr,
+      votingEmissionRate: this.accounts.votingEmissionRate.addr,
       epochLength,
     });
     await factoryMock.setWxEmissionPoolLabel({
