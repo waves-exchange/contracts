@@ -459,12 +459,12 @@ func finalize(assetId: String) = {
 }
 
 @Callable(i)
-func claimREADONLY(assetId: String, index: Int) = {
-  let callerAddress = i.caller
+func claimREADONLY(assetId: String, index: Int, userAddressStr: String) = {
+  let userAddress = userAddressStr.addressFromString().valueOrErrorMessage(wrapErr("invalid address"))
   let votingRewardAssetIdStr = keyVotingRewardAssetId(assetId, index).getString()
 
   let rewardAmount = if votingRewardAssetIdStr.isDefined() then {
-    calculateReward(callerAddress, assetId, index)
+    calculateReward(userAddress, assetId, index)
   } else {
     0
   }
