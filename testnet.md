@@ -1,5 +1,5 @@
 # Testnet environment
-[**WXDEFI-374**](https://github.com/waves-exchange/contracts/tree/WXDEFI-374) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:30 06.06.2023** (GMT+4)
+[**WXDEFI-374**](https://github.com/waves-exchange/contracts/tree/WXDEFI-374) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **11:04 07.06.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
