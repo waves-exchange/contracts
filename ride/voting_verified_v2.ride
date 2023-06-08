@@ -401,8 +401,11 @@ func vote(assetId: String, inFavor: Boolean) = {
     newVotesAgainst
   )
 
-  let votingRewardAction = match keyVotingRewardAssetId(assetId, currentIndex).getBoolean() {
-    case pk: Boolean => [BooleanEntry(keyVotingReward(i.caller, assetId, currentIndex), true)]
+  let votingRewardAction = match keyVotingRewardAssetId(assetId, currentIndex).getString() {
+    case pk: String => [StringEntry(
+      keyVotingReward(i.caller, assetId, currentIndex),
+      voteValue(inFavor, gwxAmountAtEnd)
+    )]
     case _: Unit => []
   }
 
