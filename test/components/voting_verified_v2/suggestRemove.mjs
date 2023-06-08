@@ -66,6 +66,13 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
   });
 
   it('should successfully suggestRemove', async function () {
+    const expectedIndex = 1;
+    const expectedIsRewardExist = false;
+    const expectedRewardAssetId = 'EMPTY'
+    const expectedRewardAmount = 0;
+    const expectedType = 'deverification';
+    const expectedStatus = 'inProgress';
+
     await boostingMock.setUserGWXData(
       this.accounts.boosting.seed,
       this.accounts.user0.addr,
@@ -87,28 +94,18 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
       {
         key: `%s%s__currentIndex__${this.wxAssetId}`,
         type: 'integer',
-        value: 1,
+        value: expectedIndex,
       },
       {
-        key: `%s%s%s__deverification__inProgress__${this.wxAssetId}`,
-        type: 'boolean',
-        value: true,
-      },
-      {
-        key: `%s%s%d__currentVotingHeightStart__${this.wxAssetId}__1`,
-        type: 'integer',
-        value: height,
-      },
-      {
-        key: `%s%s%d__suggestIssuer__${this.wxAssetId}__1`,
+        key: `%s%s%d__suggestIssuer__${this.wxAssetId}__${expectedIndex}`,
         type: 'string',
         value: this.accounts.user0.addr,
       },
       {
-        key: `%s%s%d__votingEndHeight__${this.wxAssetId}__1`,
-        type: 'integer',
-        value: height + this.periodLengthRemove,
-      },
+        key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
+        type: 'string',
+        value: `%s%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${height}__${height + this.votingPeriodLength}__${this.votingThresholdRemove}__0__0`,
+      }
     ]);
   });
 });

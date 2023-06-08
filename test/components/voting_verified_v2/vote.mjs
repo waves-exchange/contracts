@@ -29,7 +29,7 @@ describe('voting_verified_v2: vote.mjs', /** @this {MochaSuiteModified} */ () =>
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
     ];
 
-    await votingVerifiedV2.suggestAdd({
+    const {height: votingStartHeight} = await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
@@ -37,6 +37,9 @@ describe('voting_verified_v2: vote.mjs', /** @this {MochaSuiteModified} */ () =>
       assetImage: 'base64:assetImage',
       payments,
     });
+
+    this.votingStartHeight = votingStartHeight;
+    this.votingEndHeight = votingStartHeight + this.votingPeriodLength;
 
     await boostingMock.setUserGWXData(
       this.accounts.boosting.seed,
@@ -46,8 +49,13 @@ describe('voting_verified_v2: vote.mjs', /** @this {MochaSuiteModified} */ () =>
   });
 
   it('should successfully vote', async function () {
-    const currentIndex = 0;
     const inFavor = true;
+    const expectedIndex = 0;
+    const expectedIsRewardExist = false;
+    const expectedRewardAssetId = 'EMPTY'
+    const expectedRewardAmount = 0;
+    const expectedType = 'verification';
+    const expectedStatus = 'inProgress';
 
     const { stateChanges } = await votingVerifiedV2.vote({
       caller: this.accounts.user0.seed,
@@ -58,19 +66,14 @@ describe('voting_verified_v2: vote.mjs', /** @this {MochaSuiteModified} */ () =>
 
     expect(stateChanges.data).to.eql([
       {
-        key: `%s%s%d%s__vote__${this.wxAssetId}__${currentIndex}__${this.accounts.user0.addr}`,
+        key: `%s%s%d%s__vote__${this.wxAssetId}__${expectedIndex}__${this.accounts.user0.addr}`,
         type: 'string',
         value: `%s%d__${inFavor}__${this.gwxAmount}`,
       },
       {
-        key: `%s%s%d__votingResult__${this.wxAssetId}__${currentIndex}`,
+        key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
         type: 'string',
-        value: `%d%d__${this.gwxAmount}__0`,
-      },
-      {
-        key: `%s%s%s%d__votingReward__${this.accounts.user0.addr}__${this.wxAssetId}__${currentIndex}`,
-        type: 'boolean',
-        value: true,
+        value: `%s%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdAdd}__${this.gwxAmount}__0`,
       },
     ]);
   });

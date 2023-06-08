@@ -26,7 +26,12 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
   });
 
   it('should successfully suggestAdd', async function () {
-    const currentIndex = 0;
+    const expectedIndex = 0;
+    const expectedIsRewardExist = false;
+    const expectedRewardAssetId = 'EMPTY'
+    const expectedRewardAmount = 0;
+    const expectedType = 'verification';
+    const expectedStatus = 'inProgress';
 
     const payments = [
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
@@ -45,33 +50,18 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
       {
         key: `%s%s__currentIndex__${this.wxAssetId}`,
         type: 'integer',
-        value: currentIndex,
+        value: expectedIndex,
       },
       {
-        key: `%s%s%s__verification__inProgress__${this.wxAssetId}`,
-        type: 'boolean',
-        value: true,
-      },
-      {
-        key: `%s%s%d__currentVotingHeightStart__${this.wxAssetId}__${currentIndex}`,
-        type: 'integer',
-        value: height,
-      },
-      {
-        key: `%s%s%d__periodLengthAdd__${this.wxAssetId}__${currentIndex}`,
-        type: 'integer',
-        value: this.votingPeriodLength,
-      },
-      {
-        key: `%s%s%d__suggestIssuer__${this.wxAssetId}__${currentIndex}`,
+        key: `%s%s%d__suggestIssuer__${this.wxAssetId}__${expectedIndex}`,
         type: 'string',
         value: this.accounts.user0.addr,
       },
       {
-        key: `%s%s%d__votingEndHeight__${this.wxAssetId}__${currentIndex}`,
-        type: 'integer',
-        value: height + this.votingPeriodLength,
-      },
+        key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
+        type: 'string',
+        value: `%s%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${height}__${height + this.votingPeriodLength}__${this.votingThresholdAdd}__0__0`,
+      }
     ]);
   });
 });

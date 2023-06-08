@@ -32,7 +32,7 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
       { assetId: this.wxAssetId, amount: this.votingRewardAmount },
     ];
 
-    await votingVerifiedV2.suggestAdd({
+    const {height: votingStartHeight} = await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
@@ -40,6 +40,9 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
       assetImage: 'base64:assetImage',
       payments,
     });
+
+    this.votingStartHeight = votingStartHeight;
+    this.votingEndHeight = votingStartHeight + this.votingPeriodLength;
 
     await boostingMock.setUserGWXData(
       this.accounts.boosting.seed,
@@ -79,6 +82,10 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
         type: 'integer',
         value: this.votingRewardAmount,
       },
+      {
+        key: `%s%s%s%d__votingReward__${this.accounts.user0.addr}__${this.wxAssetId}__${currentIndex}`,
+        value: null
+      }
     ]);
 
     expect(stateChanges.transfers).to.eql([
