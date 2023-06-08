@@ -31,7 +31,7 @@ describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
     ];
 
-    const {height: votingStartHeight} = await votingVerifiedV2.suggestAdd({
+    const { height: votingStartHeight } = await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
@@ -60,7 +60,7 @@ describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */
   it('should successfully cancelVote', async function () {
     const expectedIndex = 0;
     const expectedIsRewardExist = false;
-    const expectedRewardAssetId = 'EMPTY'
+    const expectedRewardAssetId = 'EMPTY';
     const expectedRewardAmount = 0;
     const expectedType = 'verification';
     const expectedStatus = 'inProgress';

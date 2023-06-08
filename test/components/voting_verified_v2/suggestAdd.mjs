@@ -28,7 +28,7 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
   it('should successfully suggestAdd', async function () {
     const expectedIndex = 0;
     const expectedIsRewardExist = false;
-    const expectedRewardAssetId = 'EMPTY'
+    const expectedRewardAssetId = 'EMPTY';
     const expectedRewardAmount = 0;
     const expectedType = 'verification';
     const expectedStatus = 'inProgress';
@@ -60,8 +60,8 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
       {
         key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
         type: 'string',
-        value: `%s%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${height}__${height + this.votingPeriodLength}__${this.votingThresholdAdd}__0__0`,
-      }
+        value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${height}__${height + this.votingPeriodLength}__${this.votingThresholdAdd}__0__0`,
+      },
     ]);
   });
 });

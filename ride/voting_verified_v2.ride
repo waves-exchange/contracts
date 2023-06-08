@@ -44,10 +44,6 @@ let wxAssetId = wxAssetIdStr.fromBase58String()
 let keyVotingThresholdAdd = ["%s%s", "votingThreshold", "add"].makeString(separator)
 let keyVotingThresholdRemove = ["%s%s", "votingThreshold", "remove"].makeString(separator)
 
-func keyPeriodLengthAdd(
-  assetId: String,
-  index: Int
-) = ["%s%s%d", "periodLengthAdd", assetId, index.toString()].makeString(separator)
 let keyPeriodLengthRemove = ["%s", "periodLengthRemove"].makeString(separator)
 
 let keyMaxPeriodLength = ["%s", "maxPeriodLength"].makeString(separator)
@@ -65,7 +61,7 @@ func keyVotingReward(
 ) = ["%s%s%s%d", "votingReward", userAddress.toString(), assetId, index.toString()].makeString(separator)
 
 func keyTotalVotingReward(assetId: String, index: Int) = {
-  ["%s%s%d", "votingReward", assetId, index.toString()].makeString(separator)
+  ["%s%s%d", "totalVotingReward", assetId, index.toString()].makeString(separator)
 }
 
 let keyFinalizeCallRewardAmount = ["%s", "finalizeCallRewardAmount"].makeString(separator)
@@ -119,7 +115,7 @@ func votingInfoValue(
   votesAgainst: Int
 ) = {
   [
-    "%s%s%s%d%s%s%d%d%d%d%d",
+    "%s%s%d%s%s%d%d%d%d%d",
     isRewardExist.toString(),
     rewardAssetId,
     rewardAmount.toString(),

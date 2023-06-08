@@ -32,7 +32,7 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
       { assetId: this.wxAssetId, amount: this.votingRewardAmount },
     ];
 
-    const {height: votingStartHeight} = await votingVerifiedV2.suggestAdd({
+    const { height: votingStartHeight } = await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
@@ -84,8 +84,8 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
       },
       {
         key: `%s%s%s%d__votingReward__${this.accounts.user0.addr}__${this.wxAssetId}__${currentIndex}`,
-        value: null
-      }
+        value: null,
+      },
     ]);
 
     expect(stateChanges.transfers).to.eql([

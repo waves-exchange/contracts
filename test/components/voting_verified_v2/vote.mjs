@@ -29,7 +29,7 @@ describe('voting_verified_v2: vote.mjs', /** @this {MochaSuiteModified} */ () =>
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
     ];
 
-    const {height: votingStartHeight} = await votingVerifiedV2.suggestAdd({
+    const { height: votingStartHeight } = await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
@@ -52,7 +52,7 @@ describe('voting_verified_v2: vote.mjs', /** @this {MochaSuiteModified} */ () =>
     const inFavor = true;
     const expectedIndex = 0;
     const expectedIsRewardExist = false;
-    const expectedRewardAssetId = 'EMPTY'
+    const expectedRewardAssetId = 'EMPTY';
     const expectedRewardAmount = 0;
     const expectedType = 'verification';
     const expectedStatus = 'inProgress';
@@ -73,7 +73,7 @@ describe('voting_verified_v2: vote.mjs', /** @this {MochaSuiteModified} */ () =>
       {
         key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
         type: 'string',
-        value: `%s%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdAdd}__${this.gwxAmount}__0`,
+        value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdAdd}__${this.gwxAmount}__0`,
       },
     ]);
   });

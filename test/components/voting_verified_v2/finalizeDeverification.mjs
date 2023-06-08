@@ -73,7 +73,7 @@ describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteMo
       { assetId: this.wxAssetId, amount: this.wxForSuggestRemoveAmountRequired },
     ];
 
-    const {height: votingStartHeight} = await votingVerifiedV2.suggestRemove({
+    const { height: votingStartHeight } = await votingVerifiedV2.suggestRemove({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
@@ -96,7 +96,7 @@ describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteMo
   it('should successfully finalize', async function () {
     const expectedIndex = 1;
     const expectedIsRewardExist = false;
-    const expectedRewardAssetId = 'EMPTY'
+    const expectedRewardAssetId = 'EMPTY';
     const expectedRewardAmount = 0;
     const expectedType = 'deverification';
     const expectedStatus = 'accepted';
@@ -110,8 +110,8 @@ describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteMo
     expect(stateChanges.data).to.eql([
       {
         key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
-        type: "string",
-        value: `%s%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdRemove}__${this.minSuggestRemoveBalance}__0`
+        type: 'string',
+        value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdRemove}__${this.minSuggestRemoveBalance}__0`,
       },
     ]);
   });
