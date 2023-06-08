@@ -1,5 +1,5 @@
 # Testnet environment
-[**WXDEFI-374**](https://github.com/waves-exchange/contracts/tree/WXDEFI-374) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **11:04 07.06.2023** (GMT+4)
+[**WXDEFI-374**](https://github.com/waves-exchange/contracts/tree/WXDEFI-374) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:17 08.06.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -48,7 +48,6 @@ USDCLP/USDNLP pool | [`3MuibHtY4WMNqE2AgpPjm9fuDar6TUNCThP`](https://wavesexplor
 testH7/WX pool | [`3N7xSQLWNi2qE1V41ix4P6emu6x4KvbosDg`](https://wavesexplorer.com/addresses/3N7xSQLWNi2qE1V41ix4P6emu6x4KvbosDg?network=testnet) | `8UF4eCTLFgoLmMhyTQuT49eXBqCqqghuiBrUJf7YAoDJ` | [lp.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-374/ride/lp.ride) 
 WavesCommunity/WX pool | [`3MuQGoeYZ9hxoazLfCtzkZoo2GghdyjdCbv`](https://wavesexplorer.com/addresses/3MuQGoeYZ9hxoazLfCtzkZoo2GghdyjdCbv?network=testnet) | `4SVJJoqo22KTtyoXP49Bm6Dd3ioHw7Y21SMhsEEXnX9o` | [lp.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-374/ride/lp.ride) 
 WX/PCBT pool | [`3NCLvCBTu7LDtZufyn6PDNcj13MYfghyg7b`](https://wavesexplorer.com/addresses/3NCLvCBTu7LDtZufyn6PDNcj13MYfghyg7b?network=testnet) | `DQrzSjsRSeT2CkKoPfZghTysdzJzPiMVeHktApm2Jrcb` | [lp.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-374/ride/lp.ride) 
-Nigga Hope/WX pool | [`3N3pYKaFQwSzvUN196NURserVDKtvLYoarn`](https://wavesexplorer.com/addresses/3N3pYKaFQwSzvUN196NURserVDKtvLYoarn?network=testnet) | `E5gx4oD8CYjjFnwYB9xz87WJz4LV7TjKoQBJfTmrHRwS` | [lp.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-374/ride/lp.ride) 
 Hope new again/WX pool | [`3N7kG219HXBcKa99jYSesKMbPmMMxDhRrGG`](https://wavesexplorer.com/addresses/3N7kG219HXBcKa99jYSesKMbPmMMxDhRrGG?network=testnet) | `AtJBRdmdt8B3Z9XEo2ewH6ZtzRyECcEZaRKgQhkgJoQf` | [lp.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-374/ride/lp.ride) 
 Mock ILO Token/USDC pool | [`3MsdLkCCcsf1niGwjyQCMi8aC4CkNbm2Wy9`](https://wavesexplorer.com/addresses/3MsdLkCCcsf1niGwjyQCMi8aC4CkNbm2Wy9?network=testnet) | `B4L9D9LnFwCPW8fFVc65SHyFNYjb1KJv6MUQXPGMPSTy` | [lp.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-374/ride/lp.ride) 
 MinersReward/WAVES pool | [`3N8yRV8Q8ZhGdZ18MLnah4VeHPNtZidcK85`](https://wavesexplorer.com/addresses/3N8yRV8Q8ZhGdZ18MLnah4VeHPNtZidcK85?network=testnet) | `AiJf67HX3s9my1e4STFj2yEKxvzrRZZTdDaHQy1XBoy3` | [lp.ride](https://github.com/waves-exchange/contracts/blob/WXDEFI-374/ride/lp.ride) 
@@ -110,7 +109,6 @@ MinersReward | [`BQRMku6uKKd6wBVGy6PuejKDmJLHoDzanhrnYJihHF7`](https://wavesexpl
 Mock ILO Token | [`3wBArqu1n1rhzBEzazBQRT7fAnP47rBScoBah9bvC4o4`](https://wavesexplorer.com/assets/3wBArqu1n1rhzBEzazBQRT7fAnP47rBScoBah9bvC4o4?network=testnet) | This is the test token for ILO 
 motoken5 | [`7E7SX82ihnq5C1woaJ8BSTPZjoeGGFzRMDbpiJMG3KmN`](https://wavesexplorer.com/assets/7E7SX82ihnq5C1woaJ8BSTPZjoeGGFzRMDbpiJMG3KmN?network=testnet) | — 
 New Hope | [`8JJXgeSkjJ6sqpWdVaTMMBR5f5mTrTcGHKovEDH3W1CZ`](https://wavesexplorer.com/assets/8JJXgeSkjJ6sqpWdVaTMMBR5f5mTrTcGHKovEDH3W1CZ?network=testnet) | — 
-Nigga Hope | [`9457rs52YU52oEYySuFYztNBaFkEMyXuknZF4kDx79qC`](https://wavesexplorer.com/assets/9457rs52YU52oEYySuFYztNBaFkEMyXuknZF4kDx79qC?network=testnet) | — 
 PCBT | [`AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8`](https://wavesexplorer.com/assets/AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8?network=testnet) | PepeTeam Crosschain Bridge Token 
 Primalbase Token | [`5fmYjWQPnE7aGJNZmgJLUcWMMPAdMdxWjNeQBFVQhhqU`](https://wavesexplorer.com/assets/5fmYjWQPnE7aGJNZmgJLUcWMMPAdMdxWjNeQBFVQhhqU?network=testnet) | https://www.primalbase.com Shared workspaces on crypto tokens. One PBT token provides full access to the co-working or shared workspace with all the necessary services at any Primalbase location for one person. The possession of 4 tokens allows you to use a separate office, if it is free. 
 SupaLong TokenNa | [`AQSnz2tZHfoT94MusMV8BZDEs9Vre7F3XTm3fX4giqhF`](https://wavesexplorer.com/assets/AQSnz2tZHfoT94MusMV8BZDEs9Vre7F3XTm3fX4giqhF?network=testnet) | — 
@@ -156,7 +154,6 @@ Mock ILO ~USDCLP | [`CcmYMD4QYfDMExV1nV4jKXjndcFAFv7Da8pNB8kVKUFa`](https://wave
 motoken5WAVESLP | [`FczCzPEs6XtwjvYFzMhKy6xqTYmbft8UBNDcFWikSUBv`](https://wavesexplorer.com/assets/FczCzPEs6XtwjvYFzMhKy6xqTYmbft8UBNDcFWikSUBv?network=testnet) | motoken5/WAVES pool liquidity provider token 
 motoken5WXLP | [`4TB5GL7355innbxBBy9GPfxqAicFCjmKUizVeb1vpnBP`](https://wavesexplorer.com/assets/4TB5GL7355innbxBBy9GPfxqAicFCjmKUizVeb1vpnBP?network=testnet) | motoken5/WX pool liquidity provider token 
 New HopeWXLP | [`Ge475Ytohw5qMrmCsJeasJUx7bDhDw3gXsmjwQTpTXP9`](https://wavesexplorer.com/assets/Ge475Ytohw5qMrmCsJeasJUx7bDhDw3gXsmjwQTpTXP9?network=testnet) | New Hope/WX pool liquidity provider token 
-Nigga HopeWXLP | [`7fg54jKSZmP3rP5NFpQQfLx6XaA2VDRJgNubnZM8h23Q`](https://wavesexplorer.com/assets/7fg54jKSZmP3rP5NFpQQfLx6XaA2VDRJgNubnZM8h23Q?network=testnet) | Nigga Hope/WX pool liquidity provider token 
 PCBTWAVESLP | [`5SHBveQyZVVMvL7jaDqtkT6bH1gpPPJaiMgMnZjp724s`](https://wavesexplorer.com/assets/5SHBveQyZVVMvL7jaDqtkT6bH1gpPPJaiMgMnZjp724s?network=testnet) | PCBT/WAVES pool liquidity provider token 
 Primalbase ~WXLP | [`33xcQUjzdg5HCfLftbcCrJjNQ1NpucCKhNoq9ddm5dCw`](https://wavesexplorer.com/assets/33xcQUjzdg5HCfLftbcCrJjNQ1NpucCKhNoq9ddm5dCw?network=testnet) | Primalbase ~/WX pool liquidity provider token 
 SupaLong To~WXLP | [`CLjm2N8M9EB18dXWoDhBZcZ2uSq3cbjz4Tb721RGMexC`](https://wavesexplorer.com/assets/CLjm2N8M9EB18dXWoDhBZcZ2uSq3cbjz4Tb721RGMexC?network=testnet) | SupaLong To~/WX pool liquidity provider token 
