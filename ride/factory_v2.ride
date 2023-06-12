@@ -19,6 +19,7 @@ let GWXvirtualPOOL = "GWXvirtualPOOL"
 let labelPoolsLp = "POOLS_LP"
 let defaultSpread = 2000000 # 2 / 100 * 10^8
 let wavesString = "WAVES"
+let contractFilename = "factory_v2.ride"
 
 let decimalsMultPrice = 100 * 1000 * 1000 # 10^8
 let SEP = "__"
@@ -48,6 +49,9 @@ let idxPoolType                                 = 11
 # pool labels
 let poolLabelWxEmission = "WX_EMISSION"
 let validPoolLabels = [poolLabelWxEmission]
+
+func wrapErr(msg: String) = [contractFilename, ": ", msg].makeString("")
+func throwErr(msg: String) = msg.wrapErr().throw()
 
 #-------------------------
 # KEYS ON CURRENT CONTRACT
@@ -211,9 +215,9 @@ func managerPublicKeyOrUnit() = {
   }
 }
 
-let permissionDeniedError = "Permission denied".throw()
+let permissionDeniedError = "Permission denied".throwErr()
 
-let testError = "Test error here".throw()
+let testError = "Test error here".throwErr()
 
 func mustThis(i: Invocation) = {
   i.caller == this || permissionDeniedError
@@ -525,7 +529,7 @@ func setAdmins(adminPubKeys: List[String]) = {
 @Callable(i)
 func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr: String, lpAssetName: String, lpAssetDescr: String, poolWeight: Int, poolType: String, logo: String) = {
     strict checkCaller = i.mustAdmin()
-    if(getString(keyMappingPoolContractAddressToPoolAssets(poolAddress)).isDefined()) then throw("Pool address " + poolAddress + " already registered.") else
+    if(getString(keyMappingPoolContractAddressToPoolAssets(poolAddress)).isDefined()) then throwErr("Pool address " + poolAddress + " already registered.") else
       let internalAmountAssetData = getInternalAssetIdOrCreate(amountAssetStr, 1)
       let internalAmountAssetId = internalAmountAssetData._1
 
@@ -536,13 +540,13 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
       let ethalonPoolAccountScriptHash = getBinaryValue(keyPoolScriptHash())
 
       let poolExists = poolExistsInternal(amountAssetStr, priceAssetStr)
-      if (poolExists) then throw("Pool " + amountAssetStr + "/" + priceAssetStr + " has already been activated.") else
+      if (poolExists) then throwErr("Pool " + amountAssetStr + "/" + priceAssetStr + " has already been activated.") else
 
         let poolConfigValue = this.getString(keyPoolConfig(internalAmountAssetId.toString(), internalPriceAssetId.toString())).value()
         # todo: uncomment after debugging
         # validate BLAKE2b-256 hash of the pool account script matches the expected icon script stored on factory account
         #if (poolAccountScriptHash != ethalonPoolAccountScriptHash)
-         # then throw("BLAKE2b-256 hashes don't match. Pool has: " +  toBase64String(poolAccountScriptHash) + " hash. Should have: " + toBase64String(ethalonPoolAccountScriptHash))
+         # then throwErr("BLAKE2b-256 hashes don't match. Pool has: " +  toBase64String(poolAccountScriptHash) + " hash. Should have: " + toBase64String(ethalonPoolAccountScriptHash))
           #else
 
             let amountAssetsDecimals = if(amountAssetStr == "WAVES") then decimalsMultPrice else pow(10, 0, assetInfo(amountAssetStr.fromBase58String()).value().decimals, 0, 0, DOWN)
@@ -557,7 +561,7 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
                                         "activate",
                                         [amountAssetStr, priceAssetStr],
                                         [])
-            if(poolActivateInvokeResult != "success") then throw("Pool initialisation error happened.") else
+            if(poolActivateInvokeResult != "success") then throwErr("Pool initialisation error happened.") else
 
             let assetsStoreContract = keyAssetsStoreContract().getStringOrFail().addressFromStringValue()
             strict createOrUpdateLpAssetInv = assetsStoreContract.invoke("createOrUpdate", [lpAssetIdStr, lpAssetName, false], [])
@@ -682,8 +686,8 @@ func burn(amountToBurn: Int) = {
    let inAmountAssetId = payment.assetId.value().toBase58String()
    let lpAssetRequestedForBurning = getString(keyMappingPoolContractToLPAsset(caller.toString())).valueOrErrorMessage("Invalid LP address called me.")
 
-   if(inAmountAssetId != lpAssetRequestedForBurning) then throw("Invalid asset passed.") else
-   if(amountToBurn != paymentAmount) then throw("Invalid amount passed.")  else
+   if(inAmountAssetId != lpAssetRequestedForBurning) then throwErr("Invalid asset passed.") else
+   if(amountToBurn != paymentAmount) then throwErr("Invalid amount passed.")  else
    let lpAsset = fromBase58String(lpAssetRequestedForBurning)
 
    ([Burn(lpAsset, amountToBurn)], "success")
@@ -737,8 +741,8 @@ func modifyWeights(btcPoolAddress: String, ethPoolAddress: String, ethBtcPoolAdd
    let btcWeightNew = btcWeight - weightDecrement
    let ethWeightNew = ethWeight - weightDecrement
 
-   if (btcWeightNew <= 0) then throw("invalid btcWeightNew: " + btcWeightNew.toString()) else
-   if (ethWeightNew <= 0) then throw("invalid ethWeightNew: " + ethWeightNew.toString()) else
+   if (btcWeightNew <= 0) then throwErr("invalid btcWeightNew: " + btcWeightNew.toString()) else
+   if (ethWeightNew <= 0) then throwErr("invalid ethWeightNew: " + ethWeightNew.toString()) else
 
    let btcLpAssetIdStr = getStringOrFail(keyMappingPoolContractToLPAsset(btcPoolAddress))
    let ethLpAssetIdStr = getStringOrFail(keyMappingPoolContractToLPAsset(ethPoolAddress))
@@ -790,7 +794,7 @@ func deleteWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
 func onVerificationLoss(assetId: String) = {
   strict checkCaller = i.caller.bytes.toBase58String() == this.getString(keyAssetsStoreContract()).valueOrElse("") || i.mustManager()
   let priceAssets = getPriceAssets()
-  strict checkPriceAssetsSize = priceAssets.size() > 0 || "invalid price assets".throw()
+  strict checkPriceAssetsSize = priceAssets.size() > 0 || "invalid price assets".throwErr()
 
   func cb(acc: Unit, priceAsset: String) = {
     strict r = this.invoke("deleteWxEmissionPoolLabel", [assetId, priceAsset], [])
@@ -897,7 +901,7 @@ func getPoolWeightREADONLY(lpAssetId: String) = {
 
 @Callable(i)
 func deletePool(poolContractAddress: String) = {
-  strict checkCaller = i.mustManager()
+  strict checkCaller = i.mustManager() || permissionDeniedError
 
   let poolAssets = keyMappingPoolContractAddressToPoolAssets(poolContractAddress).getStringOrFail().split(SEP)
   let amountAssetInternal = poolAssets[1].parseIntValue()

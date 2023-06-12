@@ -305,6 +305,22 @@ func statusREADONLY(amountAssetId: String, priceAssetId: String) = {
   (nil, status)
 }
 
+@Callable(i)
+func deletePool(amountAssetId: String, priceAssetId: String) = {
+  strict checkCaller = i.caller == factoryContract || i.mustManager() || "Permission denied".throwErr()
+
+  [
+    DeleteEntry(keyCreateCalled(amountAssetId, priceAssetId)),
+    DeleteEntry(keyCreateCaller(amountAssetId, priceAssetId)),
+    DeleteEntry(keySuffix(amountAssetId, priceAssetId)),
+    DeleteEntry(keyHeight(amountAssetId, priceAssetId)),
+    DeleteEntry(keyStatus(amountAssetId, priceAssetId)),
+    DeleteEntry(keyAmountAssetAmount(amountAssetId, priceAssetId)),
+    DeleteEntry(keyPriceAssetAmount(amountAssetId, priceAssetId)),
+    DeleteEntry(keyPoolType(amountAssetId, priceAssetId))
+  ]
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {

@@ -768,6 +768,18 @@ func isFinalizationInProgress() = {
   (nil, finalizationInProgress)
 }
 
+@Callable(i)
+func deletePool(amountId: String, priceId: String) = {
+  strict checkCaller = i.caller == factoryContract || i.mustManager() || "Permission denied".throwErr()
+  
+  let pool = (amountId, priceId)
+  let id = makeString([amountId, priceId], separator)
+  strict actions = deleteNodeActions("pools", id)
+  [
+    DeleteEntry(keyInList(pool))
+  ] ++ actions
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
