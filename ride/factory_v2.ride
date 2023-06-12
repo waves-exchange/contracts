@@ -895,6 +895,34 @@ func getPoolWeightREADONLY(lpAssetId: String) = {
   ([], weight)
 }
 
+@Callable(i)
+func deletePool(poolContractAddress: String) = {
+  strict checkCaller = i.mustManager()
+
+  let poolAssets = keyMappingPoolContractAddressToPoolAssets(poolContractAddress).getStringOrFail().split(SEP)
+  let amountAssetInternal = poolAssets[1].parseIntValue()
+  let priceAssetInternal = poolAssets[2].parseIntValue()
+
+  let amountAssetId = keyMappingsInternal2baseAssetId(amountAssetInternal)
+  let priceAssetId = keyMappingsInternal2baseAssetId(priceAssetInternal)
+
+  let lpAssetId = keyMappingPoolContractToLPAsset(poolContractAddress).getStringOrFail()
+  
+  [
+    DeleteEntry(keyMappingPoolContractToLPAsset(poolContractAddress)),
+    DeleteEntry(keyMappingPoolContractAddressToPoolAssets(poolContractAddress)),
+
+    DeleteEntry(keyMappingPoolAssetsToLpasset(amountAssetInternal.toString(), priceAssetInternal.toString())),
+    DeleteEntry(keyMappingPoolAssetsToPoolContractAddress(amountAssetInternal, priceAssetInternal)),
+    DeleteEntry(keyPoolConfig(amountAssetInternal.toString(), priceAssetInternal.toString())),
+
+    DeleteEntry(keyMappingLpAssetToPoolAssets(lpAssetId)),
+    DeleteEntry(keyMappingPoolLPAssetToPoolContractAddress(lpAssetId)),
+
+    DeleteEntry(keyWxEmission(amountAssetId, priceAssetId))
+  ]
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
