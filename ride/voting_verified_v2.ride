@@ -492,11 +492,14 @@ func finalize(assetId: String) = {
     votingEndHeight <= height || "voting not finished".throwErr()
   ]
 
-  let newStatus = if votesFor + votesAgainst >= votingQuorum then { "accepted" } else { "rejected" }
+  let votingAccepted = if votesFor + votesAgainst >= votingQuorum &&
+    votesFor > votesAgainst then { true } else { false }
+
+  let newStatus = if votingAccepted then { "accepted" } else { "rejected" }
 
   let verified = if votingType == "verification" then { true } else { false }
 
-  let finalizeCallRewardAction = if votesFor < votesAgainst then {
+  let finalizeCallRewardAction = if votingAccepted then {
     strict setVerifiedInvoke = assetsStoreContract.invoke("setVerified", [assetId, verified], [])
 
     let finalizeCallRewardAmount = keyFinalizeCallRewardAmount.getInteger().valueOrElse(0)

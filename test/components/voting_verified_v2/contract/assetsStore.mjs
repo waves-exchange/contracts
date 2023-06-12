@@ -4,6 +4,7 @@ import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 export const assetsStore = {
   init: async ({
     caller,
+    factoryAddress,
     factoryPublicKey,
     votingVerifiedV2PublicKey,
     labels,
@@ -11,6 +12,11 @@ export const assetsStore = {
     const dataTx = data(
       {
         data: [
+          {
+            key: '%s__factoryContract',
+            type: 'string',
+            value: factoryAddress,
+          },
           {
             key: '%s__adminPubKeys',
             type: 'string',

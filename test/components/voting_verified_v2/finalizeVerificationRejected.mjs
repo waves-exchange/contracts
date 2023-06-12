@@ -5,15 +5,15 @@ import { transfer } from '@waves/waves-transactions';
 
 import { votingVerifiedV2 } from './contract/votingVerifiedV2.mjs';
 
-import { broadcastAndWait } from '../../utils/api.mjs';
+import { broadcastAndWait, waitNBlocks } from '../../utils/api.mjs';
 import { boostingMock } from './contract/boostingMock.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */ () => {
+describe('voting_verified_v2: finalizeVerificationRejected.mjs', /** @this {MochaSuiteModified} */ () => {
   before(async function () {
-    const inFavor = true;
+    const inFavor = false;
 
     await broadcastAndWait(
       transfer(
@@ -55,18 +55,20 @@ describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */
       assetId: this.wxAssetId,
       inFavor,
     });
+
+    await waitNBlocks(this.votingPeriodLength, this.waitNBlocksTimeout);
   });
 
-  it('should successfully cancelVote', async function () {
+  it('should successfully finalize', async function () {
     const expectedIndex = 0;
     const expectedIsRewardExist = false;
     const expectedRewardAssetId = 'EMPTY';
     const expectedRewardAmount = 0;
     const expectedType = 'verification';
-    const expectedStatus = 'inProgress';
+    const expectedStatus = 'rejected';
 
-    const { stateChanges } = await votingVerifiedV2.cancelVote({
-      caller: this.accounts.user0.seed,
+    const { stateChanges } = await votingVerifiedV2.finalize({
+      caller: this.accounts.pacemaker.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
     });
@@ -75,15 +77,7 @@ describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */
       {
         key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
         type: 'string',
-        value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdAdd}__0__0`,
-      },
-      {
-        key: `%s%s%d%s__vote__${this.wxAssetId}__${expectedIndex}__${this.accounts.user0.addr}`,
-        value: null,
-      },
-      {
-        key: `%s%s%s%d__votingReward__${this.accounts.user0.addr}__${this.wxAssetId}__${expectedIndex}`,
-        value: null,
+        value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdAdd}__0__${this.gwxAmount}`,
       },
     ]);
   });

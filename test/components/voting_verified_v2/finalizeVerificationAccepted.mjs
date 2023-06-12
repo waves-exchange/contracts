@@ -11,7 +11,7 @@ import { boostingMock } from './contract/boostingMock.mjs';
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteModified} */ () => {
+describe('voting_verified_v2: finalizeVerificationAccepted.mjs', /** @this {MochaSuiteModified} */ () => {
   before(async function () {
     const inFavor = true;
 
@@ -19,9 +19,7 @@ describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteMo
       transfer(
         {
           recipient: this.accounts.user0.addr,
-          amount: this.votingRewardAmount
-            + this.wxMinForSuggestAddAmountRequired
-            + this.wxForSuggestRemoveAmountRequired,
+          amount: this.votingRewardAmount + this.wxMinForSuggestAddAmountRequired,
           assetId: this.wxAssetId,
           additionalFee: 4e5,
         },
@@ -29,11 +27,11 @@ describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteMo
       ),
     );
 
-    let payments = [
+    const payments = [
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
     ];
 
-    await votingVerifiedV2.suggestAdd({
+    const { height: votingStartHeight } = await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
@@ -41,6 +39,9 @@ describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteMo
       assetImage: 'base64:assetImage',
       payments,
     });
+
+    this.votingStartHeight = votingStartHeight;
+    this.votingEndHeight = votingStartHeight + this.votingPeriodLength;
 
     await boostingMock.setUserGWXData(
       this.accounts.boosting.seed,
@@ -56,49 +57,14 @@ describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteMo
     });
 
     await waitNBlocks(this.votingPeriodLength, this.waitNBlocksTimeout);
-
-    await votingVerifiedV2.finalize({
-      caller: this.accounts.pacemaker.seed,
-      dApp: this.accounts.votingVerifiedV2.addr,
-      assetId: this.wxAssetId,
-    });
-
-    await boostingMock.setUserGWXData(
-      this.accounts.boosting.seed,
-      this.accounts.user0.addr,
-      this.minSuggestRemoveBalance,
-    );
-
-    payments = [
-      { assetId: this.wxAssetId, amount: this.wxForSuggestRemoveAmountRequired },
-    ];
-
-    const { height: votingStartHeight } = await votingVerifiedV2.suggestRemove({
-      caller: this.accounts.user0.seed,
-      dApp: this.accounts.votingVerifiedV2.addr,
-      assetId: this.wxAssetId,
-      payments,
-    });
-
-    this.votingStartHeight = votingStartHeight;
-    this.votingEndHeight = votingStartHeight + this.votingPeriodLength;
-
-    await votingVerifiedV2.vote({
-      caller: this.accounts.user0.seed,
-      dApp: this.accounts.votingVerifiedV2.addr,
-      assetId: this.wxAssetId,
-      inFavor,
-    });
-
-    await waitNBlocks(this.votingPeriodLength, this.waitNBlocksTimeout);
   });
 
   it('should successfully finalize', async function () {
-    const expectedIndex = 1;
+    const expectedIndex = 0;
     const expectedIsRewardExist = false;
     const expectedRewardAssetId = 'EMPTY';
     const expectedRewardAmount = 0;
-    const expectedType = 'deverification';
+    const expectedType = 'verification';
     const expectedStatus = 'accepted';
 
     const { stateChanges } = await votingVerifiedV2.finalize({
@@ -111,7 +77,7 @@ describe('voting_verified_v2: finalizeDevification.mjs', /** @this {MochaSuiteMo
       {
         key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
         type: 'string',
-        value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdRemove}__${this.minSuggestRemoveBalance}__0`,
+        value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdAdd}__${this.gwxAmount}__0`,
       },
     ]);
   });
