@@ -241,9 +241,11 @@ func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
   let minPeriodLength = keyMinPeriodLength.getIntegerValue()
   let maxPeriodLength = keyMaxPeriodLength.getIntegerValue()
 
+  let tokenIsVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [assetId], []).exactAs[Boolean]
+
   strict checks = [
     periodLength >= minPeriodLength && periodLength <= maxPeriodLength || "invalid periodLength".throwErr(),
-    # TODO check in asset store status. if its veriried then throw error
+    tokenIsVerified == false || "token already verified".throwErr(),
     wxPaymentAmount > periodLength * feePerBlock || "not enough wx for given period".throwErr(),
     wxPaymentAmount >= keyMinWxMinForSuggestAddAmountRequired.getIntegerValue() ||
       "payment less then min for suggest".throwErr()
@@ -314,8 +316,10 @@ func suggestRemove(assetId: String) = {
   let wxPaymentAssetId = wxPayment.assetId.value()
   let wxPaymentAmount = wxPayment.amount.value()
 
+  let tokenIsVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [assetId], []).exactAs[Boolean]
+
   strict checks = [
-    # TODO check in asset store status. if its unveriried then throw error
+    tokenIsVerified || "token not verified".throwErr(),
     gwxAmountAtNow >= minSuggestRemoveBalance || "not enough gWXes".throwErr(),
     wxPaymentAmount >= keyWxForSuggestRemoveAmountRequired.getIntegerValue() ||
       "payment less then min for suggest".throwErr()

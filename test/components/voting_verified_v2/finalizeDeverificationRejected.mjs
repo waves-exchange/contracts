@@ -13,7 +13,8 @@ const { expect } = chai;
 
 describe('voting_verified_v2: finalizeDeverificationRejected.mjs', /** @this {MochaSuiteModified} */ () => {
   before(async function () {
-    const inFavor = false;
+    const firstVoteInFavor = true;
+    const secondVoteInFavor = false;
 
     await broadcastAndWait(
       transfer(
@@ -52,7 +53,7 @@ describe('voting_verified_v2: finalizeDeverificationRejected.mjs', /** @this {Mo
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
-      inFavor,
+      inFavor: firstVoteInFavor,
     });
 
     await waitNBlocks(this.votingPeriodLength, this.waitNBlocksTimeout);
@@ -87,7 +88,7 @@ describe('voting_verified_v2: finalizeDeverificationRejected.mjs', /** @this {Mo
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
-      inFavor,
+      inFavor: secondVoteInFavor,
     });
 
     await waitNBlocks(this.votingPeriodLength, this.waitNBlocksTimeout);
