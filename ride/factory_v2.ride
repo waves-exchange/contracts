@@ -81,6 +81,7 @@ func keyManagerVaultAddress() = "%s__managerVaultAddress"
 func keyAdminPubKeys() = "%s__adminPubKeys"
 func keyAssetsStoreContract() = "%s__assetsStoreContract"
 func keyVotingEmissionContract() = "%s__votingEmissionContract"
+func keyUserPoolsContract() = "%s__userPoolsContract"
 func keyPriceAssets() = ["%s", "priceAssets"].makeString(SEP)
 
 func keyPriceDecimals()
@@ -907,10 +908,16 @@ func deletePool(poolContractAddress: String) = {
   let amountAssetInternal = poolAssets[1].parseIntValue()
   let priceAssetInternal = poolAssets[2].parseIntValue()
 
-  let amountAssetId = keyMappingsInternal2baseAssetId(amountAssetInternal)
-  let priceAssetId = keyMappingsInternal2baseAssetId(priceAssetInternal)
+  let amountAssetId = keyMappingsInternal2baseAssetId(amountAssetInternal).getStringValue()
+  let priceAssetId = keyMappingsInternal2baseAssetId(priceAssetInternal).getStringValue()
 
   let lpAssetId = keyMappingPoolContractToLPAsset(poolContractAddress).getStringOrFail()
+
+  let userPoolsContract = keyUserPoolsContract().getStringValue().addressFromStringValue()
+  strict userPoolsInvoke = userPoolsContract.invoke("deletePool", [amountAssetId, priceAssetId], [])
+
+  let votingEmissionContract = keyVotingEmissionContract().getStringValue().addressFromStringValue()
+  strict votingEmissionInvoke = votingEmissionContract.invoke("deletePool", [amountAssetId, priceAssetId], [])
   
   [
     DeleteEntry(keyMappingPoolContractToLPAsset(poolContractAddress)),

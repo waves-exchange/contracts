@@ -1,0 +1,12 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+@Callable(i)
+func deletePool(amountId: String, priceId: String) = {
+    let key = makeString([amountId, priceId], "__")
+
+    [
+        DeleteEntry(key)
+    ]
+}
