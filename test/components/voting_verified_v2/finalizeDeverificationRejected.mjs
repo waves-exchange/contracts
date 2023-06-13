@@ -3,18 +3,18 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { transfer } from '@waves/waves-transactions';
 
-import { waitNBlocks } from '@waves/waves-transactions/dist/nodeInteraction.js';
 import { votingVerifiedV2 } from './contract/votingVerifiedV2.mjs';
 
-import { broadcastAndWait } from '../../utils/api.mjs';
+import { broadcastAndWait, waitNBlocks } from '../../utils/api.mjs';
 import { boostingMock } from './contract/boostingMock.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified} */ () => {
+describe('voting_verified_v2: finalizeDeverificationRejected.mjs', /** @this {MochaSuiteModified} */ () => {
   before(async function () {
-    const inFavor = true;
+    const firstVoteInFavor = true;
+    const secondVoteInFavor = false;
 
     await broadcastAndWait(
       transfer(
@@ -30,7 +30,7 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
       ),
     );
 
-    const payments = [
+    let payments = [
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
     ];
 
@@ -53,7 +53,7 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
-      inFavor,
+      inFavor: firstVoteInFavor,
     });
 
     await waitNBlocks(this.votingPeriodLength, this.waitNBlocksTimeout);
@@ -63,15 +63,6 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
     });
-  });
-
-  it('should successfully suggestRemove', async function () {
-    const expectedIndex = 1;
-    const expectedIsRewardExist = false;
-    const expectedRewardAssetId = 'EMPTY';
-    const expectedRewardAmount = 0;
-    const expectedType = 'deverification';
-    const expectedStatus = 'inProgress';
 
     await boostingMock.setUserGWXData(
       this.accounts.boosting.seed,
@@ -79,32 +70,49 @@ describe('voting_verified_v2: suggestRemove.mjs', /** @this {MochaSuiteModified}
       this.minSuggestRemoveBalance,
     );
 
-    const payments = [
+    payments = [
       { assetId: this.wxAssetId, amount: this.wxForSuggestRemoveAmountRequired },
     ];
 
-    const { height, stateChanges } = await votingVerifiedV2.suggestRemove({
+    const { height: votingStartHeight } = await votingVerifiedV2.suggestRemove({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
       payments,
     });
 
+    this.votingStartHeight = votingStartHeight;
+    this.votingEndHeight = votingStartHeight + this.votingPeriodLength;
+
+    await votingVerifiedV2.vote({
+      caller: this.accounts.user0.seed,
+      dApp: this.accounts.votingVerifiedV2.addr,
+      assetId: this.wxAssetId,
+      inFavor: secondVoteInFavor,
+    });
+
+    await waitNBlocks(this.votingPeriodLength, this.waitNBlocksTimeout);
+  });
+
+  it('should successfully finalize', async function () {
+    const expectedIndex = 1;
+    const expectedIsRewardExist = false;
+    const expectedRewardAssetId = 'EMPTY';
+    const expectedRewardAmount = 0;
+    const expectedType = 'deverification';
+    const expectedStatus = 'rejected';
+
+    const { stateChanges } = await votingVerifiedV2.finalize({
+      caller: this.accounts.pacemaker.seed,
+      dApp: this.accounts.votingVerifiedV2.addr,
+      assetId: this.wxAssetId,
+    });
+
     expect(stateChanges.data).to.eql([
-      {
-        key: `%s%s__currentIndex__${this.wxAssetId}`,
-        type: 'integer',
-        value: expectedIndex,
-      },
-      {
-        key: `%s%s%d__suggestIssuer__${this.wxAssetId}__${expectedIndex}`,
-        type: 'string',
-        value: this.accounts.user0.addr,
-      },
       {
         key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
         type: 'string',
-        value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${height}__${height + this.votingPeriodLength}__${this.votingThresholdRemove}__0__0`,
+        value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdRemove}__0__${this.minSuggestRemoveBalance}`,
       },
     ]);
   });

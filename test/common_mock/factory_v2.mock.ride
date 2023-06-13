@@ -47,3 +47,8 @@ func modifyWeight(lpAssetId: String, share: Int) = {
 func poolExistsREADONLY(amountAssetId: String, priceAssetId: String) = {
   ([], true)
 }
+
+@Callable(i)
+func onVerificationLoss(assetId: String) = {
+  (nil, unit)
+}

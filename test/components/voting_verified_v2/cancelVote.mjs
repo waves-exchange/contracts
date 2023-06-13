@@ -31,7 +31,7 @@ describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
     ];
 
-    await votingVerifiedV2.suggestAdd({
+    const { height: votingStartHeight } = await votingVerifiedV2.suggestAdd({
       caller: this.accounts.user0.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
@@ -39,6 +39,9 @@ describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */
       assetImage: 'base64:assetImage',
       payments,
     });
+
+    this.votingStartHeight = votingStartHeight;
+    this.votingEndHeight = votingStartHeight + this.votingPeriodLength;
 
     await boostingMock.setUserGWXData(
       this.accounts.boosting.seed,
@@ -55,7 +58,12 @@ describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */
   });
 
   it('should successfully cancelVote', async function () {
-    const currentIndex = 0;
+    const expectedIndex = 0;
+    const expectedIsRewardExist = false;
+    const expectedRewardAssetId = 'EMPTY';
+    const expectedRewardAmount = 0;
+    const expectedType = 'verification';
+    const expectedStatus = 'inProgress';
 
     const { stateChanges } = await votingVerifiedV2.cancelVote({
       caller: this.accounts.user0.seed,
@@ -65,16 +73,16 @@ describe('voting_verified_v2: cancelVote.mjs', /** @this {MochaSuiteModified} */
 
     expect(stateChanges.data).to.eql([
       {
-        key: `%s%s%d%s__vote__${this.wxAssetId}__${currentIndex}__${this.accounts.user0.addr}`,
+        key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
+        type: 'string',
+        value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdAdd}__0__0`,
+      },
+      {
+        key: `%s%s%d%s__vote__${this.wxAssetId}__${expectedIndex}__${this.accounts.user0.addr}`,
         value: null,
       },
       {
-        key: `%s%s%d__votingResult__${this.wxAssetId}__${currentIndex}`,
-        type: 'string',
-        value: '%d%d__0__0',
-      },
-      {
-        key: `%s%s%s%d__votingReward__${this.accounts.user0.addr}__${this.wxAssetId}__${currentIndex}`,
+        key: `%s%s%s%d__votingReward__${this.accounts.user0.addr}__${this.wxAssetId}__${expectedIndex}`,
         value: null,
       },
     ]);

@@ -10,6 +10,7 @@ import { api, broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
 import { assetsStore } from './contract/assetsStore.mjs';
 import { emission } from './contract/emission.mjs';
 import { votingVerifiedV2 } from './contract/votingVerifiedV2.mjs';
+import { factoryV2 } from './contract/factoryV2.mjs';
 
 const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 const nonceLength = 3;
@@ -23,7 +24,7 @@ const votingVerifiedV2Path = format({
 const boostingPath = format({ dir: mockPath, base: 'boosting.mock.ride' });
 const emissionPath = format({ dir: ridePath, base: 'emission.ride' });
 const assetsStorePath = format({ dir: ridePath, base: 'assets_store.ride' });
-const factoryV2 = format({ dir: ridePath, base: 'factory_v2.ride' });
+const factoryV2Path = format({ dir: mockPath, base: 'factory_v2.mock.ride' });
 const referralPath = format({ dir: ridePath, base: 'referral.ride' });
 const gwxRewardPath = format({ dir: ridePath, base: 'gwx_reward.ride' });
 const votingEmissionPath = format({
@@ -91,7 +92,7 @@ export const mochaHooks = {
     await setScriptFromFile(boostingPath, this.accounts.boosting.seed);
     await setScriptFromFile(emissionPath, this.accounts.emission.seed);
     await setScriptFromFile(assetsStorePath, this.accounts.store.seed);
-    await setScriptFromFile(factoryV2, this.accounts.factory.seed);
+    await setScriptFromFile(factoryV2Path, this.accounts.factory.seed);
     await setScriptFromFile(referralPath, this.accounts.referral.seed);
     await setScriptFromFile(gwxRewardPath, this.accounts.gwx.seed);
     await setScriptFromFile(
@@ -120,10 +121,16 @@ export const mochaHooks = {
 
     await assetsStore.init({
       caller: this.accounts.store.seed,
+      factoryAddress: this.accounts.factory.addr,
       factoryPublicKey: this.accounts.factory.publicKey,
       votingVerifiedV2PublicKey: this.accounts.votingVerifiedV2.publicKey,
       labels:
         'COMMUNITY_VERIFIED__GATEWAY__STABLECOIN__STAKING_LP__3RD_PARTY__ALGO_LP__LAMBO_LP__POOLS_LP__WX__PEPE',
+    });
+
+    await factoryV2.init({
+      caller: this.accounts.factory.seed,
+      assetsStoreAddress: this.accounts.store.addr,
     });
 
     // boostingMock
