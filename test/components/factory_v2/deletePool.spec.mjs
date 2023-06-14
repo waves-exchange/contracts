@@ -1,5 +1,6 @@
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import chaiSubset from 'chai-subset';
 import { address, publicKey } from '@waves/ts-lib-crypto';
 import {
   invokeScript, issue, nodeInteraction,
@@ -7,6 +8,7 @@ import {
 import { create } from '@waves/node-api-js';
 
 chai.use(chaiAsPromised);
+chai.use(chaiSubset);
 // const { expect } = chai;
 
 const { waitForTx } = nodeInteraction;
@@ -191,6 +193,27 @@ describe('Factory V2 - deletePool', /** @this {MochaSuiteModified} */() => {
       },
     ]);
 
-    expect(stateChanges.invokes.length).to.eql(2);
+    expect(stateChanges.invokes).to.containSubset([
+      {
+        dApp: address(this.accounts.userpools, chainId),
+        call: {
+          args: [
+            { type: 'String', value: someAssetIssueTx.id },
+            { type: 'String', value: this.usdnAssetId },
+          ],
+          function: 'deletePool',
+        },
+      },
+      {
+        dApp: address(this.accounts.voting_emission, chainId),
+        call: {
+          args: [
+            { type: 'String', value: someAssetIssueTx.id },
+            { type: 'String', value: this.usdnAssetId },
+          ],
+          function: 'deletePool',
+        },
+      },
+    ]);
   });
 });

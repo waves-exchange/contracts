@@ -60,6 +60,7 @@
     "table": "^6.8.0"
   },
   "devDependencies": {
+    "chai-subset": "^1.6.0",
     "dotenv": "^16.0.3"
   }
 }
