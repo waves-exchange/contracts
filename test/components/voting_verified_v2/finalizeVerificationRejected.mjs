@@ -11,15 +11,15 @@ import { boostingMock } from './contract/boostingMock.mjs';
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () => {
+describe('voting_verified_v2: finalizeVerificationRejected.mjs', /** @this {MochaSuiteModified} */ () => {
   before(async function () {
-    const inFavor = true;
+    const inFavor = false;
 
     await broadcastAndWait(
       transfer(
         {
           recipient: this.accounts.user0.addr,
-          amount: this.wxMinForSuggestAddAmountRequired + this.votingRewardAmount,
+          amount: this.votingRewardAmount + this.wxMinForSuggestAddAmountRequired,
           assetId: this.wxAssetId,
           additionalFee: 4e5,
         },
@@ -29,7 +29,6 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
 
     const payments = [
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
-      { assetId: this.wxAssetId, amount: this.votingRewardAmount },
     ];
 
     const { height: votingStartHeight } = await votingVerifiedV2.suggestAdd({
@@ -58,41 +57,27 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
     });
 
     await waitNBlocks(this.votingPeriodLength, this.waitNBlocksTimeout);
+  });
 
-    await votingVerifiedV2.finalize({
+  it('should successfully finalize', async function () {
+    const expectedIndex = 0;
+    const expectedIsRewardExist = false;
+    const expectedRewardAssetId = 'EMPTY';
+    const expectedRewardAmount = 0;
+    const expectedType = 'verification';
+    const expectedStatus = 'rejected';
+
+    const { stateChanges } = await votingVerifiedV2.finalize({
       caller: this.accounts.pacemaker.seed,
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
     });
-  });
-
-  it('should successfully claim', async function () {
-    const currentIndex = 0;
-
-    const { stateChanges } = await votingVerifiedV2.claim({
-      caller: this.accounts.user0.seed,
-      dApp: this.accounts.votingVerifiedV2.addr,
-      assetId: this.wxAssetId,
-      index: currentIndex,
-    });
 
     expect(stateChanges.data).to.eql([
       {
-        key: `%s%s%s%d__history__${this.accounts.user0.addr}__${this.wxAssetId}__${currentIndex}`,
-        type: 'integer',
-        value: this.votingRewardAmount,
-      },
-      {
-        key: `%s%s%s%d__votingReward__${this.accounts.user0.addr}__${this.wxAssetId}__${currentIndex}`,
-        value: null,
-      },
-    ]);
-
-    expect(stateChanges.transfers).to.eql([
-      {
-        address: this.accounts.user0.addr,
-        asset: this.wxAssetId,
-        amount: this.votingRewardAmount,
+        key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
+        type: 'string',
+        value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdAdd}__0__${this.gwxAmount}`,
       },
     ]);
   });
