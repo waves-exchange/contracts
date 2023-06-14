@@ -930,7 +930,17 @@ func deletePool(poolContractAddress: String) = {
     DeleteEntry(keyMappingLpAssetToPoolAssets(lpAssetId)),
     DeleteEntry(keyMappingPoolLPAssetToPoolContractAddress(lpAssetId)),
 
-    DeleteEntry(keyWxEmission(amountAssetId, priceAssetId))
+    DeleteEntry(keyWxEmission(amountAssetId, priceAssetId)),
+
+    DeleteEntry(keyPoolToWeight(poolContractAddress)),
+    DeleteEntry(keyPoolSpread(poolContractAddress)),
+    DeleteEntry(keyInFee(poolContractAddress)),
+    DeleteEntry(keyOutFee(poolContractAddress)),
+    DeleteEntry(keySkipOrderValidation(poolContractAddress)),
+    
+    DeleteEntry(keyChangeAmpDelay(poolContractAddress)),
+    DeleteEntry(keyChangeAmpDelta(poolContractAddress)),
+    DeleteEntry(keyChangeAmpTarget(poolContractAddress))
   ]
 }
 

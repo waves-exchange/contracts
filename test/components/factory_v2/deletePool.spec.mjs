@@ -191,6 +191,38 @@ describe('Factory V2 - deletePool', /** @this {MochaSuiteModified} */() => {
         key: `%s%s%s__wxEmission__${someAssetIssueTx.id}__${this.usdnAssetId}`,
         value: null,
       },
+      {
+        key: `%s%s__poolWeight__${poolAddress}`,
+        value: null,
+      },
+      {
+        key: `%s%s__spread__${poolAddress}`,
+        value: null,
+      },
+      {
+        key: `%s%s__inFee__${poolAddress}`,
+        value: null,
+      },
+      {
+        key: `%s%s__outFee__${poolAddress}`,
+        value: null,
+      },
+      {
+        key: `%s%s__skipOrderValidation__${poolAddress}`,
+        value: null,
+      },
+      {
+        key: `%s%s__changeAmpDelay__${poolAddress}`,
+        value: null,
+      },
+      {
+        key: `%s%s__changeAmpDelta__${poolAddress}`,
+        value: null,
+      },
+      {
+        key: `%s%s__changeAmpTarget__${poolAddress}`,
+        value: null,
+      },
     ]);
 
     expect(stateChanges.invokes).to.containSubset([
