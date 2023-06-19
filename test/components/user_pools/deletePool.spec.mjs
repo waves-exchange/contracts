@@ -61,7 +61,6 @@ describe('User Pools - Delete Pool', /** @this {MochaSuiteModified} */() => {
 
     await api.transactions.broadcast(deletePoolInvokeTx, {});
     const { stateChanges } = await waitForTx(deletePoolInvokeTx.id, { apiBase });
-    console.log(stateChanges);
 
     expect(stateChanges.data).to.deep.eql([
       { key: '%s%s%s__createCalled__AmountAssetId__PriceAssetId', value: null },
