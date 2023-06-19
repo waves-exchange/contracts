@@ -50,3 +50,12 @@ func isVerifiedREADONLY(assetId: String) = {
   # (nil, assetId.getBoolean().valueOrElse(false))
   (nil, assetId.isVerified())
 }
+
+@Callable(i)
+func deletePool(amountId: String, priceId: String) = {
+    let key = makeString([amountId, priceId], "__")
+
+    [
+        DeleteEntry(key)
+    ]
+}

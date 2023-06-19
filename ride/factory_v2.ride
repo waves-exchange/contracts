@@ -903,6 +903,7 @@ func getPoolWeightREADONLY(lpAssetId: String) = {
 @Callable(i)
 func deletePool(poolContractAddress: String) = {
   strict checkCaller = i.mustManager() || permissionDeniedError
+  strict checkWeight = keyPoolToWeight(poolContractAddress).getInteger().valueOrElse(0) == 0 || "Pool weight is not Zero".throwErr()
 
   let poolAssets = keyMappingPoolContractAddressToPoolAssets(poolContractAddress).getStringOrFail().split(SEP)
   let amountAssetInternal = poolAssets[1].parseIntValue()
@@ -918,6 +919,9 @@ func deletePool(poolContractAddress: String) = {
 
   let votingEmissionContract = keyVotingEmissionContract().getStringValue().addressFromStringValue()
   strict votingEmissionInvoke = votingEmissionContract.invoke("deletePool", [amountAssetId, priceAssetId], [])
+
+  let assetsStoreContract = keyAssetsStoreContract().getStringValue().addressFromStringValue()
+  strict assetsStoreInvoke = assetsStoreContract.invoke("deletePool", [amountAssetId, priceAssetId], [])
   
   [
     DeleteEntry(keyMappingPoolContractToLPAsset(poolContractAddress)),

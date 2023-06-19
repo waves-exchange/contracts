@@ -19,8 +19,8 @@ const mockPath = 'components/factory_v2/mocks';
 const factoryV2Path = format({ dir: ridePath, base: 'factory_v2.ride' });
 const assetsStoreMockPath = format({ dir: testPath, base: 'assets_store.mock.ride' });
 const lpMockPath = format({ dir: testPath, base: 'lp.mock.ride' });
-const userpoolsMockPath = format({ dir: mockPath, base: 'user_pools.ride' });
-const votingEmissionMockPath = format({ dir: mockPath, base: 'voting_emission.ride' });
+const userpoolsMockPath = format({ dir: mockPath, base: 'user_pools.mock.ride' });
+const votingEmissionMockPath = format({ dir: mockPath, base: 'voting_emission.mock.ride' });
 
 export const mochaHooks = {
   async beforeAll() {

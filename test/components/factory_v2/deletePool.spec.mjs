@@ -246,6 +246,16 @@ describe('Factory V2 - deletePool', /** @this {MochaSuiteModified} */() => {
           function: 'deletePool',
         },
       },
+      {
+        dApp: address(this.accounts.store, chainId),
+        call: {
+          args: [
+            { type: 'String', value: someAssetIssueTx.id },
+            { type: 'String', value: this.usdnAssetId },
+          ],
+          function: 'deletePool',
+        },
+      },
     ]);
   });
 });
