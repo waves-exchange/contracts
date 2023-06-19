@@ -129,6 +129,10 @@ func votingInfoValue(
   ].makeString(separator)
 }
 
+func keyAssetImage(assetId: String) = {
+  ["%s%s", "assetImage", assetId].makeString(separator)
+}
+
 func getUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
   let gwxAmount = boostingContract.invoke("getUserGwxAmountAtHeightREADONLY", [userAddress, targetHeight], [])
 
@@ -297,12 +301,11 @@ func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
   let finalizeCallRewardAmount = keyFinalizeCallRewardAmount.getInteger().valueOrElse(0)
   let burnWxAmount = wxPaymentAmount - finalizeCallRewardAmount
 
-  strict assetsStoreCreateOrUpdateInv = assetsStoreContract.invoke("createOrUpdate", [assetId, assetImage, false], [])
-
   [
     IntegerEntry(currentIndexKey, newIndex),
     StringEntry(keySuggestIssuer(assetId, newIndex), i.caller.toString()),
     StringEntry(keyVotingInfo(assetId, newIndex), votingInfo),
+    StringEntry(keyAssetImage(assetId), assetImage),
     Burn(wxPaymentAssetId, burnWxAmount)
   ] ++ votingRewardActions
 }
@@ -493,7 +496,8 @@ func finalize(assetId: String) = {
 
   strict checks = [
     status == "inProgress" || "voting not in progress".throwErr(),
-    votingEndHeight <= height || "voting not finished".throwErr()
+    votingEndHeight <= height || "voting not finished".throwErr(),
+    keyAssetImage(assetId).getString().isDefined() || "asset image not set".throwErr()
   ]
 
   let votingAccepted = if votesFor + votesAgainst >= votingQuorum &&
@@ -504,6 +508,10 @@ func finalize(assetId: String) = {
   let verified = if votingType == "verification" then { true } else { false }
 
   let finalizeCallRewardAction = if votingAccepted then {
+    let assetImage = keyAssetImage(assetId).getStringValue()
+    strict assetsStoreCreateOrUpdateInvoke = assetsStoreContract.invoke(
+      "createOrUpdate", [assetId, assetImage, false], []
+    )
     strict setVerifiedInvoke = assetsStoreContract.invoke("setVerified", [assetId, verified], [])
 
     let finalizeCallRewardAmount = keyFinalizeCallRewardAmount.getInteger().valueOrElse(0)
