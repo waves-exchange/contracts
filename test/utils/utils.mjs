@@ -1,7 +1,6 @@
 import { setScript, nodeInteraction } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { readFile } from 'fs/promises';
-import ride from '@waves/ride-js';
 
 const { waitForTx } = nodeInteraction;
 const apiBase = process.env.API_NODE_URL;
@@ -12,14 +11,17 @@ const api = create(apiBase);
 /**
  * @param {string} path
  * @param {string} account
- * @param {function(*): *} transform
  */
 export const setScriptFromFile = async (
   path,
   account,
-  transform = (content) => content,
 ) => {
-  const { base64, size } = ride.compile(transform(await readFile(path, { encoding: 'utf-8' }))).result;
+  const { script, error } = await api.utils.fetchCompileCode(await readFile(path, { encoding: 'utf-8' }));
+  if (error) throw new Error(error.message);
+
+  const scriptWithoutBase64Prefix = script.replace('base64:', '');
+  const size = Buffer.from(scriptWithoutBase64Prefix, 'base64').length;
+
   const waveletsPerKilobyte = 1e5;
   const bitsInByte = 1024;
   const min = 1000000;
@@ -29,7 +31,7 @@ export const setScriptFromFile = async (
   }
   fee += 4e5;
   const ssTx = setScript({
-    script: base64,
+    script,
     chainId,
     fee,
   }, account);
