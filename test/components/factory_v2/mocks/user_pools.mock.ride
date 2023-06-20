@@ -2,6 +2,9 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+let SEP = "__"
+func keyCreateCaller(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "createCaller", amountAssetId, priceAssetId].makeString(SEP)
+
 @Callable(i)
 func deletePool(amountId: String, priceId: String) = {
     let key = makeString([amountId, priceId], "__")
@@ -9,4 +12,11 @@ func deletePool(amountId: String, priceId: String) = {
     [
         DeleteEntry(key)
     ]
+}
+
+@Callable(i)
+func getPoolCreatorREADONLY(amountAssetId: String, priceAssetId: String) = {
+  let creator = keyCreateCaller(amountAssetId, priceAssetId).getString().valueOrElse("")
+  
+  (nil, creator)
 }

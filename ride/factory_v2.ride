@@ -369,7 +369,11 @@ func poolExistsInternal(amountAssetId: String, priceAssetId: String) = {
 }
 
 func getAssetsDataFromPoolAddress(poolContractAddress: String) = {
-  let poolAssets = keyMappingPoolContractAddressToPoolAssets(poolContractAddress).getStringValue().split(SEP)
+  let poolAssets = match(keyMappingPoolContractAddressToPoolAssets(poolContractAddress).getString()) {
+    case s:String => s.split(SEP)
+    case _ => makeString([poolContractAddress, "pool is not found"], " ").throwErr()
+  }
+
   let amountAssetInternal = poolAssets[1].parseIntValue()
   let priceAssetInternal = poolAssets[2].parseIntValue()
 
@@ -396,7 +400,7 @@ func getAddressBalance(addressString: String, assetIdString: String) = {
   if (assetIdString == "WAVES") then {
     address.wavesBalance().regular
   } else {
-    let assetId = assetIdString.toBytes()
+    let assetId = assetIdString.fromBase58String()
     address.assetBalance(assetId)
   }
 }
@@ -941,9 +945,14 @@ func getPoolWeightREADONLY(lpAssetId: String) = {
 
 @Callable(i)
 func deletePool(poolContractAddress: String) = {
-  strict checkCaller = i.mustManager() || (isPoolEmpty(poolContractAddress) && i.caller.toString() == getPoolCreator(poolContractAddress)) || permissionDeniedError
-  strict checkWeight = keyPoolToWeight(poolContractAddress).getInteger().valueOrElse(0) == 0 || "Pool weight is not Zero".throwErr()
+  strict checkCaller = if (i.caller.toString() == getPoolCreator(poolContractAddress)) then {
+    isPoolEmpty(poolContractAddress) || "Pool is not empty".throwErr()
+  } else {
+    i.mustManager()
+  }
 
+  strict checkWeight = keyPoolToWeight(poolContractAddress).getInteger().valueOrElse(0) == 0 || "Pool weight is not Zero".throwErr()
+  
   let (amountAssetId, priceAssetId, lpAssetId, amountAssetInternal, priceAssetInternal) = getAssetsDataFromPoolAddress(poolContractAddress)
 
   let userPoolsContract = keyUserPoolsContract().getStringValue().addressFromStringValue()
