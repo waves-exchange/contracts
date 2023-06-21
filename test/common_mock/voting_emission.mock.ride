@@ -11,9 +11,9 @@ func create(amountAssetId: String, priceAssetId: String) = {
 
 @Callable(i)
 func deletePool(amountId: String, priceId: String) = {
-    let key = makeString([amountId, priceId], separator)
+    let keyPoolPair = makeString([amountId, priceId], separator)
 
     [
-        DeleteEntry(key)
+        DeleteEntry(keyPoolPair)
     ]
 }
