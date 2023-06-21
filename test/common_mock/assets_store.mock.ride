@@ -53,9 +53,9 @@ func isVerifiedREADONLY(assetId: String) = {
 
 @Callable(i)
 func deletePool(amountId: String, priceId: String) = {
-    let key = makeString([amountId, priceId], "__")
+    let keyPoolPair = makeString([amountId, priceId], SEP)
 
     [
-        DeleteEntry(key)
+        DeleteEntry(keyPoolPair)
     ]
 }
