@@ -129,6 +129,10 @@ func votingInfoValue(
   ].makeString(separator)
 }
 
+func keyAssetImage(assetId: String) = {
+  ["%s%s", "assetImage", assetId].makeString(separator)
+}
+
 func getUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
   let gwxAmount = boostingContract.invoke("getUserGwxAmountAtHeightREADONLY", [userAddress, targetHeight], [])
 
@@ -294,15 +298,14 @@ func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
     0
   )
 
-  let finalizeCallRewardAmount = keyFinalizeCallRewardAmount.getInteger().valueOrElse(0)
+  let finalizeCallRewardAmount = keyFinalizeCallRewardAmount.getIntegerValue()
   let burnWxAmount = wxPaymentAmount - finalizeCallRewardAmount
-
-  strict assetsStoreCreateOrUpdateInv = assetsStoreContract.invoke("createOrUpdate", [assetId, assetImage, false], [])
 
   [
     IntegerEntry(currentIndexKey, newIndex),
     StringEntry(keySuggestIssuer(assetId, newIndex), i.caller.toString()),
     StringEntry(keyVotingInfo(assetId, newIndex), votingInfo),
+    StringEntry(keyAssetImage(assetId), assetImage),
     Burn(wxPaymentAssetId, burnWxAmount)
   ] ++ votingRewardActions
 }
@@ -493,7 +496,8 @@ func finalize(assetId: String) = {
 
   strict checks = [
     status == "inProgress" || "voting not in progress".throwErr(),
-    votingEndHeight <= height || "voting not finished".throwErr()
+    votingEndHeight <= height || "voting not finished".throwErr(),
+    keyAssetImage(assetId).getString().isDefined() || "asset image not set".throwErr()
   ]
 
   let votingAccepted = if votesFor + votesAgainst >= votingQuorum &&
@@ -501,15 +505,18 @@ func finalize(assetId: String) = {
 
   let newStatus = if votingAccepted then { "accepted" } else { "rejected" }
 
-  let verified = if votingType == "verification" then { true } else { false }
+  let assetImage = keyAssetImage(assetId).getStringValue()
 
-  let finalizeCallRewardAction = if votingAccepted then {
-    strict setVerifiedInvoke = assetsStoreContract.invoke("setVerified", [assetId, verified], [])
+  strict isVotingAccepted = if votingAccepted then {
+    let votingAcceptedInvokes = if votingType == "verification" then { 
+      assetsStoreContract.invoke("createOrUpdate", [assetId, assetImage, true], [])
+    } else {
+      assetsStoreContract.invoke("setVerified", [assetId, false], [])
+    }
 
-    let finalizeCallRewardAmount = keyFinalizeCallRewardAmount.getInteger().valueOrElse(0)
-    [ScriptTransfer(i.caller, finalizeCallRewardAmount, wxAssetId)]
+    votingAcceptedInvokes
   } else {
-    []
+    nil
   }
 
   let newVotingInfoValue = votingInfoValue(
@@ -525,9 +532,12 @@ func finalize(assetId: String) = {
     votingInfoParts._10
   )
 
+  let finalizeCallRewardAmount = keyFinalizeCallRewardAmount.getIntegerValue()
+
   [
-    StringEntry(keyVotingInfo(assetId, currentIndex), newVotingInfoValue)
-  ] ++ finalizeCallRewardAction
+    StringEntry(keyVotingInfo(assetId, currentIndex), newVotingInfoValue),
+    ScriptTransfer(i.caller, finalizeCallRewardAmount, wxAssetId)
+  ]
 }
 
 @Callable(i)

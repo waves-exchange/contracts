@@ -33,6 +33,8 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
     const expectedType = 'verification';
     const expectedStatus = 'inProgress';
 
+    const assetImage = 'base64:assetImage';
+
     const payments = [
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
     ];
@@ -42,7 +44,7 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
       periodLength: this.votingPeriodLength,
-      assetImage: 'base64:assetImage',
+      assetImage,
       payments,
     });
 
@@ -61,6 +63,11 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
         key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
         type: 'string',
         value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${height}__${height + this.votingPeriodLength}__${this.votingThresholdAdd}__0__0`,
+      },
+      {
+        key: `%s%s__assetImage__${this.wxAssetId}`,
+        type: 'string',
+        value: assetImage,
       },
     ]);
   });
