@@ -954,7 +954,7 @@ func deletePool(poolContractAddress: String) = {
   }
 
   strict checkWeight = keyPoolToWeight(poolContractAddress).getInteger().valueOrElse(0) == 0 || "Pool weight is not Zero".throwErr()
-  strict checkStatus = poolConfig[idxPoolStatus].getIntegerValue() == PoolShutdown || "Pools must be SHUTDOWN (4)".throwErr()
+  strict checkStatus = poolConfig[idxPoolStatus] == PoolShutdown.toString() || "Pool must be SHUTDOWN (4)".throwErr()
 
   let (amountAssetId, priceAssetId, lpAssetId, amountAssetInternal, priceAssetInternal) = getAssetsDataFromPoolAddress(poolContractAddress)
 

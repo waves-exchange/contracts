@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import chaiSubset from 'chai-subset';
 import { address, publicKey } from '@waves/ts-lib-crypto';
 import {
-  invokeScript, issue, nodeInteraction,
+  invokeScript, issue, nodeInteraction, data,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 
@@ -24,7 +24,7 @@ const api = create(apiBase);
  * } MochaSuiteModified
  * */
 
-describe('Factory V2 - deletePool', /** @this {MochaSuiteModified} */() => {
+describe('Factory V2 - deletePool by pool creator', /** @this {MochaSuiteModified} */() => {
   before(async function () {
     const constructorInvokeTx = invokeScript({
       dApp: address(this.accounts.factory, chainId),
@@ -107,7 +107,7 @@ describe('Factory V2 - deletePool', /** @this {MochaSuiteModified} */() => {
     await api.transactions.broadcast(constructorV5InvokeTx, {});
     await waitForTx(constructorV5InvokeTx.id, { apiBase });
   });
-  it('Delete pool keys from data state and invoke UserPools and VotingEmission deletePool ', async function () {
+  it('User initiates Delete pool, Reject if pool status is not SHUTDOWN', async function () {
     // issue USDN asset
     const someAssetIssueTx = issue({
       name: 'some asset',
@@ -138,23 +138,21 @@ describe('Factory V2 - deletePool', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.factory);
     await api.transactions.broadcast(activateNewPoolInvokeTx, {});
-    const activateInvokeChanges = await waitForTx(activateNewPoolInvokeTx.id, { apiBase });
+    await waitForTx(activateNewPoolInvokeTx.id, { apiBase });
 
-    const shutdownPoolInvokeTx = invokeScript({
-      dApp: address(this.accounts.factory, chainId),
-      call: {
-        function: 'managePool',
-        args: [
-          { type: 'string', value: address(this.accounts.lp, chainId) },
-          { type: 'integer', value: 4 }, // SHUTDOWN
-        ],
-      },
-      fee: 1e8 + 9e5,
+    const userPoolsDataTx = data({
+      data: [
+        {
+          key: `%s%s%s__createCaller__${someAssetIssueTx.id}__${this.usdnAssetId}`,
+          type: 'string',
+          value: address(this.accounts.user, chainId),
+        },
+      ],
+      additionalFee: 4e5,
       chainId,
-    }, this.accounts.factory);
-
-    await api.transactions.broadcast(shutdownPoolInvokeTx, {});
-    await waitForTx(shutdownPoolInvokeTx.id, { apiBase });
+    }, this.accounts.userpools);
+    await api.transactions.broadcast(userPoolsDataTx, {});
+    await waitForTx(userPoolsDataTx.id, { apiBase });
 
     const deletePoolInvokeTx = invokeScript({
       dApp: address(this.accounts.factory, chainId),
@@ -166,112 +164,10 @@ describe('Factory V2 - deletePool', /** @this {MochaSuiteModified} */() => {
       },
       fee: 1e8 + 9e5,
       chainId,
-    }, this.accounts.factory);
+    }, this.accounts.user);
 
-    await api.transactions.broadcast(deletePoolInvokeTx, {});
-    const { stateChanges } = await waitForTx(deletePoolInvokeTx.id, { apiBase });
-
-    const poolAddress = address(this.accounts.lp, chainId);
-    const lpAssetId = activateInvokeChanges.stateChanges.issues[0].assetId;
-
-    expect(stateChanges.data).to.deep.eql([
-      {
-        key: `%s%s%s__${poolAddress}__mappings__poolContract2LpAsset`,
-        value: null,
-      },
-      {
-        key: `%s%s%s__${poolAddress}__mappings__poolContract2PoolAssets`,
-        value: null,
-      },
-      {
-        key: '%d%d%s%s__1__2__mappings__PoolAssets2LpAsset',
-        value: null,
-      },
-      {
-        key: '%d%d%s%s__1__2__mappings__poolAssets2PoolContract',
-        value: null,
-      },
-      {
-        key: '%d%d%s__1__2__config',
-        value: null,
-      },
-      {
-        key: `%s%s%s__${lpAssetId}__mappings__lpAsset2Pool`,
-        value: null,
-      },
-      {
-        key: `%s%s%s__${lpAssetId}__mappings__lpAsset2PoolContract`,
-        value: null,
-      },
-      {
-        key: `%s%s%s__wxEmission__${someAssetIssueTx.id}__${this.usdnAssetId}`,
-        value: null,
-      },
-      {
-        key: `%s%s__poolWeight__${poolAddress}`,
-        value: null,
-      },
-      {
-        key: `%s%s__spread__${poolAddress}`,
-        value: null,
-      },
-      {
-        key: `%s%s__inFee__${poolAddress}`,
-        value: null,
-      },
-      {
-        key: `%s%s__outFee__${poolAddress}`,
-        value: null,
-      },
-      {
-        key: `%s%s__skipOrderValidation__${poolAddress}`,
-        value: null,
-      },
-      {
-        key: `%s%s__changeAmpDelay__${poolAddress}`,
-        value: null,
-      },
-      {
-        key: `%s%s__changeAmpDelta__${poolAddress}`,
-        value: null,
-      },
-      {
-        key: `%s%s__changeAmpTarget__${poolAddress}`,
-        value: null,
-      },
-    ]);
-
-    expect(stateChanges.invokes).to.containSubset([
-      {
-        dApp: address(this.accounts.userpools, chainId),
-        call: {
-          args: [
-            { type: 'String', value: someAssetIssueTx.id },
-            { type: 'String', value: this.usdnAssetId },
-          ],
-          function: 'deletePool',
-        },
-      },
-      {
-        dApp: address(this.accounts.voting_emission, chainId),
-        call: {
-          args: [
-            { type: 'String', value: someAssetIssueTx.id },
-            { type: 'String', value: this.usdnAssetId },
-          ],
-          function: 'deletePool',
-        },
-      },
-      {
-        dApp: address(this.accounts.store, chainId),
-        call: {
-          args: [
-            { type: 'String', value: someAssetIssueTx.id },
-            { type: 'String', value: this.usdnAssetId },
-          ],
-          function: 'deletePool',
-        },
-      },
-    ]);
+    await expect(api.transactions.broadcast(deletePoolInvokeTx, {}))
+      .to.be
+      .rejectedWith('Error while executing dApp: factory_v2.ride: Pool must be SHUTDOWN (4)');
   });
 });

@@ -154,6 +154,22 @@ describe('Factory V2 - deletePool by pool creator', /** @this {MochaSuiteModifie
     await api.transactions.broadcast(userPoolsDataTx, {});
     await waitForTx(userPoolsDataTx.id, { apiBase });
 
+    const shutdownPoolInvokeTx = invokeScript({
+      dApp: address(this.accounts.factory, chainId),
+      call: {
+        function: 'managePool',
+        args: [
+          { type: 'string', value: address(this.accounts.lp, chainId) },
+          { type: 'integer', value: 4 }, // SHUTDOWN
+        ],
+      },
+      fee: 1e8 + 9e5,
+      chainId,
+    }, this.accounts.factory);
+
+    await api.transactions.broadcast(shutdownPoolInvokeTx, {});
+    await waitForTx(shutdownPoolInvokeTx.id, { apiBase });
+
     const deletePoolInvokeTx = invokeScript({
       dApp: address(this.accounts.factory, chainId),
       call: {
