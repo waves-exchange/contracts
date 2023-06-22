@@ -945,6 +945,8 @@ func getPoolWeightREADONLY(lpAssetId: String) = {
 
 @Callable(i)
 func deletePool(poolContractAddress: String) = {
+  let poolConfig = getPoolConfig(poolContractAddress)
+
   strict checkCaller = if (i.caller.toString() == getPoolCreator(poolContractAddress)) then {
     isPoolEmpty(poolContractAddress) || "Pool is not empty".throwErr()
   } else {
@@ -952,7 +954,8 @@ func deletePool(poolContractAddress: String) = {
   }
 
   strict checkWeight = keyPoolToWeight(poolContractAddress).getInteger().valueOrElse(0) == 0 || "Pool weight is not Zero".throwErr()
-  
+  strict checkStatus = poolConfig[idxPoolStatus].getIntegerValue() == PoolShutdown || "Pools must be SHUTDOWN (4)".throwErr()
+
   let (amountAssetId, priceAssetId, lpAssetId, amountAssetInternal, priceAssetInternal) = getAssetsDataFromPoolAddress(poolContractAddress)
 
   let userPoolsContract = keyUserPoolsContract().getStringValue().addressFromStringValue()
