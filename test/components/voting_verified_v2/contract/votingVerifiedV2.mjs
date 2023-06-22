@@ -15,11 +15,17 @@ export const votingVerifiedV2 = {
     periodLengthRemove,
     wxMinForSuggestAddAmountRequired,
     wxForSuggestRemoveAmountRequired,
+    finalizeCallRewardAmount,
     feePerBlock,
   }) => {
     const dataTx = data(
       {
         data: [
+          {
+            key: '%s__finalizeCallRewardAmount',
+            type: 'integer',
+            value: finalizeCallRewardAmount,
+          },
           {
             key: '%s__minPeriodLength',
             type: 'integer',
