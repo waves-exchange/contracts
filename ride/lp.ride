@@ -665,7 +665,7 @@ func skipOrderValidation() = {
 }
 
 func validateUpdatedKLp(oldKLp: BigInt, updatedKLp: BigInt) = {
-  updatedKLp >= oldKLp || 
+  updatedKLp == big0 || updatedKLp >= oldKLp || 
   [
     "updated KLp lower than current KLp",
     oldKLp.toString(),

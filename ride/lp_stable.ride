@@ -656,7 +656,7 @@ func refreshDLpInternal(amountAssetBalanceDelta: Int, priceAssetBalanceDelta: In
 }
 
 func validateUpdatedDLp(oldDLp: BigInt, updatedDLp: BigInt) = {
-  updatedDLp >= oldDLp || "updated DLp lower than current DLp".throwErr()
+  updatedDLp == big0 || updatedDLp >= oldDLp || "updated DLp lower than current DLp".throwErr()
 }
 
 func validateMatcherOrderAllowed(order: Order) = {
