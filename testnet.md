@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-421-delete-pool**](https://github.com/waves-exchange/contracts/tree/wxdefi-421-delete-pool) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **15:53 22.06.2023** (GMT+4)
+[**wxdefi-421-delete-pool**](https://github.com/waves-exchange/contracts/tree/wxdefi-421-delete-pool) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **17:00 23.06.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -54,7 +54,6 @@ motoken5/WX pool | [`3N9tTbtGnWHjxFq9FSfV4skFikcpEhZrURQ`](https://wavesexplorer
 USDTLP/USDCLP pool | [`3Mr5cSKi6xmWu2eGTgV6PskAZmoViPsDcQY`](https://wavesexplorer.com/addresses/3Mr5cSKi6xmWu2eGTgV6PskAZmoViPsDcQY?network=testnet) | `Eu6QizS4RbVadxrgHvD1oeuVPAvFJ35LSir8nMhzEUzx` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/lp.ride) 
 iloToken/WX pool | [`3MvNo8pHCQBkHLJJwBzdfxpi2Q7GyP6kPJf`](https://wavesexplorer.com/addresses/3MvNo8pHCQBkHLJJwBzdfxpi2Q7GyP6kPJf?network=testnet) | `3UZi1JWbt2cDquCj6zgP86Vcpw2FzmGcDZhM1ZVqgoZj` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/lp.ride) 
 SupaLong TokenNa/WX pool | [`3N78c92CyU7Vpp389aLJUZ1XmJMgZfHLBZD`](https://wavesexplorer.com/addresses/3N78c92CyU7Vpp389aLJUZ1XmJMgZfHLBZD?network=testnet) | `Aa3RUHCTmrUubhEzMxZXHcukRTQr7YWxBnDSgiF7sRXu` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/lp.ride) 
-WX/10_05_token1 pool | [`3MwWUz7cpzhdjZfooADgkqqssj3kLQ9wfYk`](https://wavesexplorer.com/addresses/3MwWUz7cpzhdjZfooADgkqqssj3kLQ9wfYk?network=testnet) | `3atTecFPmsYBR4HN3CyTEqLgDru3c5iTzs4h29qHjWnh` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/lp.ride) 
 Kekenger/WAVES pool | [`3N7saV8fdobqv3pihDzmMPni3uetdv4nZDG`](https://wavesexplorer.com/addresses/3N7saV8fdobqv3pihDzmMPni3uetdv4nZDG?network=testnet) | `ED6rGCzJohtkCgCUQvitw4BomNup6j96YwTSGAB8pbSf` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/lp.ride) 
 WX/Hope_s pool | [`3N9YGptFazvyfL1PQuyAach9RNACCvDFye2`](https://wavesexplorer.com/addresses/3N9YGptFazvyfL1PQuyAach9RNACCvDFye2?network=testnet) | `GEaL8JnZDCGgvBuVZkjzyeai6cgB6aEAG6nDd3mAUgh7` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/lp.ride) 
 Kekenger/USDT pool | [`3N3LtGiBDqDjfHpd7WnTCTKXB3gPWqUrDLL`](https://wavesexplorer.com/addresses/3N3LtGiBDqDjfHpd7WnTCTKXB3gPWqUrDLL?network=testnet) | `3wnnbmrpP3X4LxULFVHTeu7zNZBzFV7NSxRokwryVFaJ` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/lp.ride) 
@@ -184,4 +183,3 @@ WXPCBTLP | [`6ADzGwRRWgerfFMfjkAfJPayWzLPMUFACE2uKE1pn9Ju`](https://wavesexplore
 WXtesttoken5LP | [`AFASa8sDNPtKye29GusrBb3DTAMGQayRkFPnKHTbGX7P`](https://wavesexplorer.com/assets/AFASa8sDNPtKye29GusrBb3DTAMGQayRkFPnKHTbGX7P?network=testnet) | WX/testtoken5 pool liquidity provider token 
 WXUSDNWXLP | [`2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib`](https://wavesexplorer.com/assets/2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib?network=testnet) | WX WX/Usdn pool liquidity provider token 
 WXUSDTLP | [`7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8`](https://wavesexplorer.com/assets/7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8?network=testnet) | WX/USDT pool liquidity provider token 
-W~10_05_token1LP | [`CnZSHABrApUxvth5FUSbv7KJTzPyc5Dv25SXSga4enzs`](https://wavesexplorer.com/assets/CnZSHABrApUxvth5FUSbv7KJTzPyc5Dv25SXSga4enzs?network=testnet) | W~/10_05_token1 pool liquidity provider token 
