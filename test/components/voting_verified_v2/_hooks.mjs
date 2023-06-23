@@ -151,6 +151,8 @@ export const mochaHooks = {
     this.wxForSuggestRemoveAmountRequired = 5;
     this.finalizeCallRewardAmount = 5;
 
+    this.assetImage = 'base64:assetImage';
+
     await votingVerifiedV2.init({
       caller: this.accounts.votingVerifiedV2.seed,
       minPeriodLength: this.minPeriodLength,

@@ -37,7 +37,7 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
       periodLength: this.votingPeriodLength,
-      assetImage: 'base64:assetImage',
+      assetImage: this.assetImage,
       payments,
     });
 
