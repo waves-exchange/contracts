@@ -149,6 +149,9 @@ export const mochaHooks = {
     this.periodLengthRemove = 2;
     this.wxMinForSuggestAddAmountRequired = 100;
     this.wxForSuggestRemoveAmountRequired = 5;
+    this.finalizeCallRewardAmount = 5;
+
+    this.assetImage = 'base64:assetImage';
 
     await votingVerifiedV2.init({
       caller: this.accounts.votingVerifiedV2.seed,
@@ -164,6 +167,7 @@ export const mochaHooks = {
       periodLengthRemove: this.periodLengthRemove,
       wxMinForSuggestAddAmountRequired: this.wxMinForSuggestAddAmountRequired,
       wxForSuggestRemoveAmountRequired: this.wxForSuggestRemoveAmountRequired,
+      finalizeCallRewardAmount: this.finalizeCallRewardAmount,
     });
 
     const accountsInfo = Object.entries(this.accounts).map(
