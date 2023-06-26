@@ -19,14 +19,14 @@ describe('lp: unstakeAndGet.mjs', /** @this {MochaSuiteModified} */() => {
     async function () {
       const usdnAmount = 10e6;
       const shibAmount = 10e2;
-      const lpAmount = 1e9 - 1;
+      const lpAmount = 1e9;
       const shouldAutoStake = true;
 
       const expectedPriceLast = 1e8;
       const expectedPriceHistory = 1e8;
       const expectedInvokesCount = 4;
-      const expectedUsdnAmount = usdnAmount - 1;
-      const expectedShibAmount = shibAmount - 1;
+      const expectedUsdnAmount = usdnAmount;
+      const expectedShibAmount = shibAmount;
 
       const lp = address(this.accounts.lp, chainId);
 
@@ -87,7 +87,7 @@ describe('lp: unstakeAndGet.mjs', /** @this {MochaSuiteModified} */() => {
       }, {
         key: '%s__kLp',
         type: 'string',
-        value: '100000000000000000000000000000000',
+        value: '0',
       }]);
 
       expect(stateChanges.transfers).to.eql([{

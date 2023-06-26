@@ -18,7 +18,7 @@ describe('lp_stable: unstakeAndGet.mjs', /** @this {MochaSuiteModified} */() => 
     async function () {
       const usdnAmount = 1e16 / 10;
       const usdtAmount = 1e8 / 10;
-      const lpStableAmount = 268990720838218;
+      const lpStableAmount = 2689907208382172;
       const shouldAutoStake = true;
       const priceLast = 1e16;
       const priceHistory = 1e16;
@@ -62,7 +62,7 @@ describe('lp_stable: unstakeAndGet.mjs', /** @this {MochaSuiteModified} */() => 
       expect(stateChanges.data).to.eql([{
         key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${id}`,
         type: 'string',
-        value: `%d%d%d%d%d%d__${usdtAmount / 10}__${usdnAmount / 10}__${lpStableAmount}__${priceLast}__${height}__${timestamp}`,
+        value: `%d%d%d%d%d%d__${usdtAmount}__${usdnAmount}__${lpStableAmount}__${priceLast}__${height}__${timestamp}`,
       }, {
         key: '%s%s__price__last',
         type: 'integer',
@@ -78,17 +78,17 @@ describe('lp_stable: unstakeAndGet.mjs', /** @this {MochaSuiteModified} */() => 
       }, {
         key: '%s__dLp',
         type: 'string',
-        value: '10000000000000006424805538327',
+        value: '0',
       }]);
 
       expect(stateChanges.transfers).to.eql([{
         address: address(this.accounts.user1, chainId),
         asset: this.usdtAssetId,
-        amount: usdtAmount / 10,
+        amount: usdtAmount,
       }, {
         address: address(this.accounts.user1, chainId),
         asset: this.usdnAssetId,
-        amount: (usdnAmount / 10).toString(),
+        amount: (usdnAmount).toString(),
       }]);
 
       expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
