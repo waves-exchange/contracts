@@ -310,6 +310,13 @@ func setLogo(assetId: String, logo: String) = {
 }
 
 @Callable(i)
+func getAssetLogoREADONLY(assetId: String) = {
+  let logo = keyLogo(assetId).getString().valueOrElse("")
+
+  (nil, logo)
+}
+
+@Callable(i)
 func setVerified(assetId: String, verified: Boolean) = {
   strict checks = [
     i.mustAdmin(),
