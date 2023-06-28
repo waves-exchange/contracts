@@ -178,7 +178,8 @@ func _create(i: Invocation, poolType: String) = {
   ], []).exactAs[Boolean]
 
   strict checks = [
-    !isCreateCalled(amountAssetId, priceAssetId),
+    !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
+    !poolExists || throwPoolExists(),
     amountAssetId != priceAssetId || throwInvalidAssetPair(),
     i.isManager() || (amountAssetId.isVerified() && priceAssetId.isVerified()) || throwInvalidAssetPair(),
     priceAssetsList.containsElement(amountAssetId) || priceAssetsList.containsElement(priceAssetId) || throwInvalidAssetPair(),
