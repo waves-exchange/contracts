@@ -239,7 +239,7 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
   strict checks = [
     i.mustAdmin(),
     isCreateCalled(amountAssetId, priceAssetId) || throwCreateNotCalled(),
-    keyStatus(amountAssetId, priceAssetId).getString().value() == statusPending
+    keyStatus(amountAssetId, priceAssetId).getString().value() == statusPending || throwCanActivateOnlyPendingPool()
   ]
 
   let poolTypeOption = this.getString(keyPoolType(amountAssetId, priceAssetId))
