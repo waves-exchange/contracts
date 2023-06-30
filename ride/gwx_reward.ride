@@ -639,16 +639,16 @@ func tradeReward(userAddresses: List[String], rewards: List[Int]) = {
   (nil, tradeRewardInternal)
 }
 
-@Callable(i)
-func claimTradingReward() = {
-  let userAddress = i.caller
-  let reward = userAddress.toString().getTradingReward()
-  if (reward > 0) then {
-    ([
-      ScriptTransfer(userAddress, reward, wxAssetId)
-    ], reward)
-  } else "nothing to claim".throwErr()
-}
+#@Callable(i)
+#func claimTradingReward() = {
+#  let userAddress = i.caller
+#  let reward = userAddress.toString().getTradingReward()
+#  if (reward > 0) then {
+#   ([
+#      ScriptTransfer(userAddress, reward, wxAssetId)
+#    ], reward)
+#  } else "nothing to claim".throwErr()
+#}
 
 @Callable(i)
 func claimTradingRewardREADONLY(userAddress: String) = {
