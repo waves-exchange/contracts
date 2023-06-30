@@ -69,7 +69,7 @@ func getManagerVaultAddressOrThis() = {
 
 func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage(key + " is not defined")
 func stringOptionToList(stringOrUnit: String|Unit) = match stringOrUnit {
-  case s: String => if (s.size() == 0) then nil else s.split(SEP)
+  case s: String => if (s.size() == 0) then nil else s.split_51C(SEP)
   case _: Unit => nil
 }
 
