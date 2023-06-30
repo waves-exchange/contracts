@@ -56,7 +56,7 @@ let SEP = "__"
 let EMPTY = ""
 let PoolActive               = 1   # ACTIVE, pool without restrictions
 let PoolPutDis               = 2   # PUT DISABLED, pool with put operation disabled
-let PoolMatcherDis           = 3   # MATCHER DISABLED, pool with matcher operations disabled
+let PoolPutAndMatcherDis     = 3   # MATCHER DISABLED, pool with put and matcher operations disabled
 let PoolShutdown             = 4   # SHUTDOWN, pool operations halted
 # data indexes from pool config stored in factory
 let idxPoolAddress                           = 1
@@ -672,7 +672,7 @@ func validateMatcherOrderAllowed(order: Order) = {
   }
 
   # validate status
-  if (igs() || cfgPoolStatus == PoolMatcherDis || cfgPoolStatus == PoolShutdown) then throw("Admin blocked") else
+  if (igs() || cfgPoolStatus == PoolPutAndMatcherDis || cfgPoolStatus == PoolShutdown) then throw("Admin blocked") else
 
   # validate pairs
   if (order.assetPair.amountAsset != cfgAmountAssetId || order.assetPair.priceAsset != cfgPriceAssetId) then throw("Wr assets") else
@@ -745,7 +745,12 @@ func cp(caller: String,
                       pmtId)
 
     let sts  = r._8.parseIntValue()
-    if(igs() || sts == PoolPutDis || sts == PoolShutdown) then throw("Blocked:" + sts.toString()) else
+    if(
+      igs() ||
+      sts == PoolPutDis ||
+      sts == PoolPutAndMatcherDis ||
+      sts == PoolShutdown
+    ) then throw("Blocked:" + sts.toString()) else
     r
 }
 
@@ -1171,7 +1176,12 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
     [this.toString()],
     []
   ).exactAs[Boolean]
-  let isPutDisabled = igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  let isPutDisabled = 
+    igs() ||
+    cfgPoolStatus == PoolPutDis ||
+    cfgPoolStatus == PoolPutAndMatcherDis ||
+    cfgPoolStatus == PoolShutdown ||
+    isPoolOneTokenOperationsDisabled
 
   strict checks = [
     !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr(),
