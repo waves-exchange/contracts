@@ -7,7 +7,7 @@ chai.use(chaiAsPromised);
 
 const reward = Number(1e8);
 
-describe('gwxReward: claimTradeReward.mjs', /** @this {MochaSuiteModified} */() => {
+describe('gwxReward: claimTradingReward.mjs', /** @this {MochaSuiteModified} */() => {
   before(async function () {
     const userAddresses = [
       this.accounts.user0.addr,
@@ -32,7 +32,7 @@ describe('gwxReward: claimTradeReward.mjs', /** @this {MochaSuiteModified} */() 
   });
 
   it(
-    'should successfully claimReward',
+    'should successfully claimTradingReward',
     async function () {
       const res = await gwxReward.claimTradingReward({
         caller: this.accounts.user1.seed,
