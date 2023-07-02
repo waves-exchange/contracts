@@ -1,5 +1,5 @@
 # Testnet environment
-[**gwx-reward-fix**](https://github.com/waves-exchange/contracts/tree/gwx-reward-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **15:17 02.07.2023** (GMT+4)
+[**gwx-reward-fix**](https://github.com/waves-exchange/contracts/tree/gwx-reward-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **15:59 02.07.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
