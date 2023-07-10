@@ -642,10 +642,12 @@ func tradeReward(userAddresses: List[String], rewards: List[Int]) = {
 @Callable(i)
 func claimTradingReward() = {
   let userAddress = i.caller
-  let reward = userAddress.toString().getTradingReward()
+  let userAddressString = userAddress.toString()
+  let reward = userAddressString.getTradingReward()
   if (reward > 0) then {
     ([
-      ScriptTransfer(userAddress, reward, wxAssetId)
+      ScriptTransfer(userAddress, reward, wxAssetId),
+      IntegerEntry(keyTradingReward(userAddressString), 0)
     ], reward)
   } else "nothing to claim".throwErr()
 }

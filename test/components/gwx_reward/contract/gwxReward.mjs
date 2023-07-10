@@ -61,4 +61,22 @@ export const gwxReward = {
     );
     return broadcastAndWait(invokeTx);
   },
+
+  claimTradingReward: async ({
+    caller,
+    gwxRewardAddress,
+  }) => {
+    const invokeTx = invokeScript(
+      {
+        dApp: gwxRewardAddress,
+        call: {
+          function: 'claimTradingReward',
+        },
+        additionalFee: 4e5,
+        chainId,
+      },
+      caller,
+    );
+    return broadcastAndWait(invokeTx);
+  },
 };
