@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-429-pools-withdraw-all**](https://github.com/waves-exchange/contracts/tree/wxdefi-429-pools-withdraw-all) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **11:25 10.07.2023** (GMT+4)
+[**wxdefi-429-pools-withdraw-all**](https://github.com/waves-exchange/contracts/tree/wxdefi-429-pools-withdraw-all) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **15:43 10.07.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
