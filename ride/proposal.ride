@@ -114,13 +114,13 @@ func voteFor(proposalIndex: Int, choice: Boolean) = {
   let userVoteInfo = this.getString(keyUserVoteOnProposal(proposalIndex, toString(i.caller))).valueOrElse(EMPTY)
   strict checks = [
     voteInfo != EMPTY || "No such vote".throw(),
-    lastBlock.height < voteInfoArray[3].parseInt().value() || blockHeightError(),
+    lastBlock.height < voteInfoArray[2].parseInt().value() || blockHeightError(),
     userVoteInfo == EMPTY || alreadyVoteError()
   ]
   let gwxNumber = invoke(
     addressFromStringValue(getStringValue(gwxContractAddress())),
     "getUserGwxAmountAtHeightREADONLY",
-    [i.caller.toString(), voteInfoArray[3].parseInt().value()],
+    [i.caller.toString(), voteInfoArray[2].parseInt().value()],
     []
   ).asInt()
 
@@ -179,7 +179,7 @@ func deleteVote(proposalIndex: Int) = {
   let userVoteInfoArray = userVoteInfo.split(SEP)
   strict checks = [
     voteInfo != EMPTY || "No such vote".throw(),
-    lastBlock.height < voteInfoArray[3].parseInt().value() || blockHeightError(),
+    lastBlock.height < voteInfoArray[2].parseInt().value() || blockHeightError(),
     userVoteInfo != EMPTY ||  noVoteError()
   ]
   let action = if (userVoteInfoArray[1] == "1") 
@@ -221,7 +221,7 @@ func changeVote(proposalIndex: Int, choice: Boolean) = {
   let userVoteInfoArray = userVoteInfo.split(SEP)
   strict checks = [
     voteInfo != EMPTY || "No such vote".throw(),
-    lastBlock.height < voteInfoArray[3].parseInt().value() || blockHeightError(),
+    lastBlock.height < voteInfoArray[2].parseInt().value() || blockHeightError(),
     userVoteInfo != EMPTY ||  noVoteError()
   ]
   let gwxNumber = invoke(
