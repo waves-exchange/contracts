@@ -219,8 +219,7 @@ func keyTotalMaxBoostINTEGRAL()                               = "%s%s__maxBoostI
 func keyUserBoostAvalaibleToClaimTotal(userNum: String)       = makeString(["%s%d__userBoostAvaliableToClaimTotal", userNum], SEP)
 func keyUserBoostClaimed(userNum: String)                     = makeString(["%s%d__userBoostClaimed", userNum], SEP)
 
-func keyTotalCachedGwx()                               = "%s%s__gwxCached__total"
-func keyTotalCachedGwxCorrective() = "%s__gwxCachedTotalCorrective"
+func keyGwxTotal() = "%s%s__gwx__total"
 
 # Voting emission
 # User vote
@@ -279,20 +278,8 @@ let votingEmissionContract = factoryContract.getStringValue(keyVotingEmissionCon
 
 let boostCoeff = emissionContract.invoke("getBoostCoeffREADONLY", [], []).exactAs[Int]
 
-func getTotalCachedGwx(correct: Boolean) = {
-  let currentEpochUi = votingEmissionContract.getIntegerValue(keyCurrentEpochUi())
-
-  let keyTargetEpoch = ["%s%s", "totalCachedGwxCorrection__activationEpoch"].makeString(SEP)
-  let targetEpochOption = this.getInteger(keyTargetEpoch)
-
-  let totalCachedGwxRaw = this.getInteger(keyTotalCachedGwx()).valueOrElse(0)
-
-  let isCorrectionActivated = targetEpochOption.isDefined() && (currentEpochUi >= targetEpochOption.value())
-  let corrective = if (isCorrectionActivated && correct) then {
-    this.getInteger(keyTotalCachedGwxCorrective()).valueOrElse(0)
-  } else 0
-
-  max([0, totalCachedGwxRaw + corrective])
+func getGwxTotal() = {
+  this.getInteger(keyGwxTotal()).valueOrElse(0)
 }
 
 func HistoryEntry(type: String, user: String, amount: Int, lockStart: Int, duration: Int, k: Int, b: Int, i: Invocation) = {
@@ -653,7 +640,7 @@ func lockActions(i: Invocation, duration: Int) = {
   let b = gWxParamsResultList[1].ai()
   let period = gWxParamsResultList[2].ai().toString()
 
-  let totalCachedGwxRaw = getTotalCachedGwx(false)
+  let totalCachedGwxRaw = getGwxTotal()
 
   let userBoostEmissionLastIntegralKEY = keyUserBoostEmissionLastINTEGRAL(userNumStr)
   let boostEmissionIntegral = refreshBoostEmissionIntegral()._2
@@ -668,7 +655,7 @@ func lockActions(i: Invocation, duration: Int) = {
   :+ HistoryEntry("lock", userAddressStr, pmtAmount, lockStart, duration, k, b, i)
   ++ [
     IntegerEntry(userBoostEmissionLastIntegralKEY, boostEmissionIntegral),
-    IntegerEntry(keyTotalCachedGwx(), totalCachedGwxRaw + gWxAmountStart)
+    IntegerEntry(keyGwxTotal(), totalCachedGwxRaw + gWxAmountStart)
   ], gWxAmountStart)
 }
 
@@ -748,14 +735,13 @@ func increaseLock(deltaDuration: Int) = {
   let currUserGwx = calcCurrentGwxAmount(userAddressStr)
   let gwxDiff = gWxAmountStart - currUserGwx
   if (gwxDiff < 0) then throwErr("gwxDiff is less then 0: " + gwxDiff.toString()) else
-  let totalCachedGwxRaw = getTotalCachedGwx(false)
-  let totalCachedGwxCorrected = getTotalCachedGwx(true)
+  let totalCachedGwxRaw = getGwxTotal()
 
   LockParamsEntry(userAddressStr, userNumStr, userAmountNew, lockStartNew, lockDurationNew, k, b, period)
     ++ StatsEntry(pmtAmount, deltaDuration, 0, 0)
     :+ HistoryEntry("lock", userAddressStr, pmtAmount, lockStart, lockDurationNew, k, b, i)
     ++ [
-      IntegerEntry(keyTotalCachedGwx(), totalCachedGwxRaw + gwxDiff)
+      IntegerEntry(keyGwxTotal(), totalCachedGwxRaw + gwxDiff)
     ]
 }
 
@@ -782,11 +768,38 @@ func unlock(userAddress: String) = {
   let lockStart           = userRecordArray[IdxLockStart].parseIntValue()
   let lockDuration        = userRecordArray[IdxLockDuration].parseIntValue()
   let lockEnd             = lockStart + lockDuration
+  # TODO: save claimed amount
+  let userClaimed = 0
+
+  let blocksInDay = 24 * 60
+  let t = (height - lockStart) / blocksInDay
+  let daysInYearX8 = fraction(3652425, MULT8, 10000)
+  # let blocksInYearX8 = daysInYearX8 * blocksInDay
+  # let monthsInYear = 12
+  # let blockInMonthX8 = blocksInYearX8 / monthsInYear
+  let exponent = fraction(
+    t,
+    8 * blocksInDay * MULT8,
+    lockDuration
+  )
+  let wxWithdrawable = if (height > lockEnd) then {
+    userAmount - userClaimed
+  } else {
+    fraction(
+      userAmount,
+      MULT8 - pow(5, 1, exponent, SCALE8, SCALE8, DOWN),
+      MULT8
+    )
+  }
+
+  let gwxBurned = max([
+    wxWithdrawable,
+    fraction(t, userAmount * MULT8, 4 * daysInYearX8)
+  ])
 
   let cfgArray          = readConfigArrayOrFail()
   let assetId           = cfgArray[IdxCfgAssetId].fromBase58String()
 
-  if (lockEnd >= height) then throwErr("wait " + lockEnd.toString() + " to unlock") else
   if (userAmount <= 0) then throwErr("nothing to unlock") else
 
   let period = mathContract.getInteger(keyNextPeriod()).valueOrElse(0)
@@ -832,8 +845,8 @@ func getUserGwxAmountAtHeightREADONLY(userAddress: String, targetHeight: Int) = 
 }
 
 @Callable(i)
-func getTotalCachedGwxREADONLY() = {
-  ([], getTotalCachedGwx(true))
+func getGwxTotalREADONLY() = {
+  ([], getGwxTotal())
 }
 
 # call this function when wxEmissionRate or boostCoeff changes
