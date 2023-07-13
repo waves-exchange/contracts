@@ -293,9 +293,21 @@ func getGwxTotal() = {
   this.getInteger(keyGwxTotal()).valueOrElse(0)
 }
 
-# TODO: should returns locked gwx amount
 func getLockedGwxAmount(userAddress: Address) = {
-  0
+  # TODO: get locked amount for userAddress (invoke or state)
+  let lockedProposal = 0
+  let lockedVotingEmissionRate = 0
+  let lockedVotingEmission = 0
+  let lockedVotingVerified = 0
+
+  let locked = max([
+    lockedProposal,
+    lockedVotingEmissionRate,
+    lockedVotingEmission,
+    lockedVotingVerified
+  ])
+
+  locked
 }
 
 func HistoryEntry(type: String, user: String, amount: Int, lockStart: Int, duration: Int, k: Int, b: Int, i: Invocation) = {
