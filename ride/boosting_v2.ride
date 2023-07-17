@@ -20,6 +20,7 @@ let daysInYearX8 = fraction(3652425, MULT8, 10000)
 let blocksInYearX8 = daysInYearX8 * blocksInDay
 let monthsInYear = 12
 let blockInMonthX8 = blocksInYearX8 / monthsInYear
+let maxLockDurationX8 = 4 * blocksInYearX8
 
 func wrapErr(msg: String) = [contractFilename, ": ", msg].makeString("")
 func throwErr(msg: String) = msg.wrapErr().throw()
@@ -143,57 +144,40 @@ func mustManager(i: Invocation) = {
   }
 }
 
-let IdxLockUserNum = 1
-let IdxLockAmount = 2
-let IdxLockStart = 3
-let IdxLockDuration = 4
-let IdxLockParamK = 5
-let IdxLockParamB = 6
+let IdxLockAmount = 1
+let IdxLockStart = 2
+let IdxLockDuration = 3
+let IdxLockParamLastUpdateTimestamp = 4
+let IdxLockParamGwxAmount = 5
+let IdxLockParamWxClaimed = 6
 
-func keyLockParamsRecord(userAddress: String) = makeString(["%s%s__lock", userAddress], SEP)
-func readLockParamsRecordOrFail(userAddress: String) = this.getStringOrFail(keyLockParamsRecord(userAddress)).split(SEP)
+func keyLockParamsRecord(userAddress: Address, txId: ByteVector) = makeString(["%s%s%s__lock", userAddress.toString(), txId.toBase58String()], SEP)
+func readLockParamsRecordOrFail(userAddress: Address, txId: ByteVector) = this.getStringOrFail(keyLockParamsRecord(userAddress, txId)).split(SEP)
 
-func formatLockParamsRecordS(userNum: String, amount: String, start: String, duration: String, paramK: String, paramB: String, lastUpdTimestamp: String, gwxAmount: String) = {
+func keyUserGwxAmountTotal(userAddress: Address) = makeString(["%s%s%s__gwxAmountTotal", userAddress.toString()], SEP)
 
+func formatLockParamsRecord(
+  amount: Int,
+  start: Int,
+  duration: Int,
+  gwxAmount: Int,
+  wxClaimed: Int
+) = {
   makeString([
-      "%d%d%d%d%d%d%d%d", # 0
-      userNum, # 1
-      amount, # 2
-      start, # 3
-      duration, # 4
-      paramK, # 5
-      paramB, # 6
-      lastUpdTimestamp, #7
-      gwxAmount # 8
-      ],
-  SEP)
-}
-
-func formatLockParamsRecord(userNum: String, amount: Int, start: Int, duration: Int, paramK: Int, paramB: Int, gwxAmount: Int) = {
-  formatLockParamsRecordS(
-    userNum, # 1
-    amount.toString(), # 2
-    start.toString(), # 3
-    duration.toString(), # 4
-    paramK.toString(), # 5
-    paramB.toString(), # 6
-    lastBlock.timestamp.toString(), # 7
-    gwxAmount.toString() # 8
-  )
+    "%d%d%d%d%d%d%d", # 0
+    amount.toString(), # 1
+    start.toString(), # 2
+    duration.toString(), # 3
+    lastBlock.timestamp.toString(), # 4
+    gwxAmount.toString(), # 5
+    wxClaimed.toString() # 6
+  ], SEP)
 }
 
 # mappings
 func keyNextUserNum() = "%s__nextUserNum"
 func keyUser2NumMapping(userAddress: String) = makeString(["%s%s%s__mapping__user2num", userAddress], SEP)
 func keyNum2UserMapping(num: String) = makeString(["%s%s%s__mapping__num2user", num], SEP)
-
-func keyLockParamUserAmount(userNum: String) = makeString(["%s%d%s__paramByUserNum", userNum, "amount"], SEP)
-func keyLockParamStartBlock(userNum: String) = makeString(["%s%d%s__paramByUserNum", userNum, "start"], SEP)
-func keyLockParamDuration(userNum: String) = makeString(["%s%d%s__paramByUserNum", userNum, "duration"], SEP)
-func keyLockParamK(userNum: String) = makeString(["%s%d%s__paramByUserNum", userNum, "k"], SEP)
-func keyLockParamB(userNum: String) = makeString(["%s%d%s__paramByUserNum", userNum, "b"], SEP)
-func keyLockParamByPeriodK(userNum: String, period: String) = makeString(["%s%d%s%d__paramByPeriod", userNum, "k", period], SEP)
-func keyLockParamByPeriodB(userNum: String, period: String) = makeString(["%s%d%s%d__paramByPeriod", userNum, "b", period], SEP)
 
 # TODO - consider to concat
 func keyLockParamTotalAmount() = "%s%s__stats__activeTotalLocked"
@@ -202,12 +186,12 @@ func keyStatsLocksCount() = "%s%s__stats__locksCount"
 func keyStatsUsersCount() = "%s%s__stats__activeUsersCount"
 
 # boost integral
-func keyUserBoostEmissionLastINTEGRAL(userNum: String) = makeString(["%s%d__userBoostEmissionLastIntV2", userNum], SEP)
-func keyUserLpBoostEmissionLastINTEGRAL(userNum: String, lpAssetId: String) = makeString(["%s%d__userBoostEmissionLastIntV2", userNum, lpAssetId], SEP)
-func keyUserMaxBoostINTEGRAL(userNum: String) = makeString(["%s%d__maxBoostInt", userNum], SEP)
+func keyUserBoostEmissionLastINTEGRAL(userNum: Int) = makeString(["%s%d__userBoostEmissionLastIntV2", userNum.toString()], SEP)
+func keyUserLpBoostEmissionLastINTEGRAL(userNum: Int, lpAssetId: String) = makeString(["%s%d__userBoostEmissionLastIntV2", userNum.toString(), lpAssetId], SEP)
+func keyUserMaxBoostINTEGRAL(userNum: Int) = makeString(["%s%d__maxBoostInt", userNum.toString()], SEP)
 func keyTotalMaxBoostINTEGRAL() = "%s%s__maxBoostInt__total"
-func keyUserBoostAvalaibleToClaimTotal(userNum: String) = makeString(["%s%d__userBoostAvaliableToClaimTotal", userNum], SEP)
-func keyUserBoostClaimed(userNum: String) = makeString(["%s%d__userBoostClaimed", userNum], SEP)
+func keyUserBoostAvalaibleToClaimTotal(userNum: Int) = makeString(["%s%d__userBoostAvaliableToClaimTotal", userNum.toString()], SEP)
+func keyUserBoostClaimed(userNum: Int) = makeString(["%s%d__userBoostClaimed", userNum.toString()], SEP)
 
 func keyGwxTotal() = "%s%s__gwx__total"
 
@@ -268,6 +252,13 @@ let votingEmissionContract = factoryContract.getStringValue(keyVotingEmissionCon
 
 let boostCoeff = emissionContract.invoke("getBoostCoeffREADONLY", [], []).exactAs[Int]
 
+func userNumberByAddressOrFail(userAddress: Address) = {
+  match this.getString(keyUser2NumMapping(userAddress.toString())) {
+    case s: String => s.parseInt().valueOrErrorMessage(wrapErr("invalid user number"))
+    case _: Unit => throwErr("invalid user")
+  }
+}
+
 func getGwxTotal() = {
   this.getInteger(keyGwxTotal()).valueOrElse(0)
 }
@@ -321,35 +312,29 @@ func StatsEntry(totalLockedInc: Int, durationInc: Int, lockCountInc: Int, usersC
   IntegerEntry(totalAmountKEY, totalAmount + totalLockedInc)]
 }
 
-func calcGwxAmount(amount: Int, duration: Int) = {
+func calcGwxAmountStart(amount: Int, duration: Int) = {
   fraction(
     amount,
     duration * MULT8,
-    4 * blocksInYearX8
+    maxLockDurationX8
   )
 }
 
-func LockParamsEntry(userAddress: String, userNum: String, amount: Int, start: Int, duration: Int, k: Int, b: Int, period: String) = {
-
-  let userAmountKEY = keyLockParamUserAmount(userNum)
-  let startBlockKEY = keyLockParamStartBlock(userNum)
-  let durationKEY = keyLockParamDuration(userNum)
-  let kKEY = keyLockParamK(userNum)
-  let bKEY = keyLockParamB(userNum)
-  let kByPeriodKEY = keyLockParamByPeriodK(userNum, period)
-  let bByPeriodKEY = keyLockParamByPeriodB(userNum, period)
-
-  let gwxAmount = calcGwxAmount(amount, duration)
-  [IntegerEntry(userAmountKEY, amount),
-    IntegerEntry(startBlockKEY, start),
-    IntegerEntry(durationKEY, duration),
-    IntegerEntry(kKEY, k),
-    IntegerEntry(bKEY, b),
-    IntegerEntry(kByPeriodKEY, k),
-    IntegerEntry(bByPeriodKEY, b),
-    StringEntry( # fixme: it does not work for multi lock. The key should include period
-      keyLockParamsRecord(userAddress),
-      formatLockParamsRecord(userNum, amount, start, duration, k, b, gwxAmount))]
+func LockParamsEntry(
+  userAddress: Address,
+  txId: ByteVector,
+  amount: Int,
+  start: Int,
+  duration: Int,
+  gwxAmount: Int,
+  wxClaimed: Int
+) = {
+  [
+    StringEntry(
+      keyLockParamsRecord(userAddress, txId),
+      formatLockParamsRecord(amount, start, duration, gwxAmount, wxClaimed)
+    )
+  ]
 }
 
 func extractOptionalPaymentAmountOrFail(i: Invocation, expectedAssetId: ByteVector) = {
@@ -537,11 +522,9 @@ func refreshBoostEmissionIntegral() = {
 }
 
 func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly: Boolean) = {
-  let userRecordOption = this.getString(keyLockParamsRecord(userAddressStr))
-  if (userRecordOption == unit) then (0, [], "userRecord::is::empty") else
+  let userAddress = addressFromString(userAddressStr).valueOrErrorMessage(wrapErr("invalid user address"))
 
-  let userRecordArray = userRecordOption.value().split(SEP)
-  let userNumStr = userRecordArray[IdxLockUserNum]
+  strict userNum = userNumberByAddressOrFail(userAddress)
 
   let EMPTYSTR = "empty" # is used from REST
   let poolWeight = if (lpAssetIdStr != EMPTYSTR) then {
@@ -553,9 +536,9 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
 
   # BOOST INTEGRAL RECALC
   # updated by claim
-  let userLpBoostEmissionLastIntegralKEY = keyUserLpBoostEmissionLastINTEGRAL(userNumStr, lpAssetIdStr)
+  let userLpBoostEmissionLastIntegralKEY = keyUserLpBoostEmissionLastINTEGRAL(userNum, lpAssetIdStr)
   # updated by lock
-  let userBoostEmissionLastIntegralKEY = keyUserBoostEmissionLastINTEGRAL(userNumStr)
+  let userBoostEmissionLastIntegralKEY = keyUserBoostEmissionLastINTEGRAL(userNum)
 
   let userBoostEmissionLastIntegral = this.getInteger(userLpBoostEmissionLastIntegralKEY)
     .valueOrElse(this.getIntOrZero(userBoostEmissionLastIntegralKEY))
@@ -604,7 +587,8 @@ func lockActions(i: Invocation, duration: Int) = {
   if (assetId != pmt.assetId.value()) then throwErr("invalid asset is in payment - " + assetIdStr + " is expected") else
 
   let nextUserNumKEY = keyNextUserNum()
-  let userAddressStr = i.caller.toString()
+  let userAddress = i.caller
+  let userAddressStr = userAddress.toString()
 
   let userIsExisting = getString(keyUser2NumMapping(userAddressStr)).isDefined()
   let userNumStr = if (userIsExisting) then {
@@ -615,16 +599,9 @@ func lockActions(i: Invocation, duration: Int) = {
   let userNum = userNumStr.parseIntValue()
   let lockStart = height
 
-  let startBlockKEY = keyLockParamStartBlock(userNumStr)
-  let durationKEY = keyLockParamDuration(userNumStr)
-
-  let userAmountKEY = keyLockParamUserAmount(userNumStr)
-
-  if ((pmtAmount < minLockAmount) && i.caller != lpStakingPoolsContract) then throwErr("amount is less then minLockAmount=" + minLockAmount.toString()) else
+  if ((pmtAmount < minLockAmount) && userAddress != lpStakingPoolsContract) then throwErr("amount is less then minLockAmount=" + minLockAmount.toString()) else
   if (duration < minLockDuration) then throwErr("passed duration is less then minLockDuration=" + minLockDuration.toString()) else
   if (duration > maxLockDuration) then throwErr("passed duration is greater then maxLockDuration=" + maxLockDuration.toString()) else
-  if (userIsExisting && (this.getIntOrFail(startBlockKEY) + this.getIntOrFail(durationKEY)) >= lockStart) then throwErr("there is an active lock - consider to use increaseLock") else
-  if (this.getIntOrZero(userAmountKEY) > 0) then throwErr("there are locked WXs - consider to use increaseLock " + userAmountKEY) else
 
   let coeffX8 = fraction(duration, MULT8, maxLockDuration)
   let gWxAmountStart = fraction(pmtAmount, coeffX8, MULT8)
@@ -637,7 +614,7 @@ func lockActions(i: Invocation, duration: Int) = {
 
   let totalCachedGwxRaw = getGwxTotal()
 
-  let userBoostEmissionLastIntegralKEY = keyUserBoostEmissionLastINTEGRAL(userNumStr)
+  let userBoostEmissionLastIntegralKEY = keyUserBoostEmissionLastINTEGRAL(userNum)
   let boostEmissionIntegral = refreshBoostEmissionIntegral()._2
 
   let arr = if (userIsExisting) then [] else [
@@ -645,7 +622,7 @@ func lockActions(i: Invocation, duration: Int) = {
     StringEntry(keyUser2NumMapping(userAddressStr), userNumStr),
     StringEntry(keyNum2UserMapping(userNumStr), userAddressStr)
   ]
-  (arr ++ LockParamsEntry(userAddressStr, userNumStr, pmtAmount, lockStart, duration, k, b, period)
+  (arr ++ LockParamsEntry(userAddress, i.transactionId, pmtAmount, lockStart, duration, gWxAmountStart, 0)
   ++ StatsEntry(pmtAmount, duration, 1, if (userIsExisting) then 0 else 1)
   :+ HistoryEntry("lock", userAddressStr, pmtAmount, lockStart, duration, k, b, i)
   ++ [
@@ -688,60 +665,6 @@ func lock(duration: Int) = {
 }
 
 @Callable(i)
-func increaseLock(deltaDuration: Int) = {
-  let cfgArray = readConfigArrayOrFail()
-  let assetIdStr = cfgArray[IdxCfgAssetId]
-  let assetId = assetIdStr.fromBase58String()
-  let minLockDuration = cfgArray[IdxCfgMinLockDuration].parseIntValue()
-  let maxLockDuration = cfgArray[IdxCfgMaxLockDuration].parseIntValue()
-
-  let pmtAmount = extractOptionalPaymentAmountOrFail(i, assetId)
-
-  let userAddress = i.caller
-  let userAddressStr = userAddress.toString()
-  let userRecordArray = readLockParamsRecordOrFail(userAddressStr)
-
-  let userNumStr = userRecordArray[IdxLockUserNum]
-  let userAmount = userRecordArray[IdxLockAmount].parseIntValue()
-  let lockStart = userRecordArray[IdxLockStart].parseIntValue()
-  let lockDuration = userRecordArray[IdxLockDuration].parseIntValue()
-  let lockEnd = lockStart + lockDuration
-  let remainingDuration = max([lockEnd - height, 0])
-
-  let userAmountNew = userAmount + pmtAmount
-  let lockDurationNew = remainingDuration + deltaDuration
-
-  if (deltaDuration < 0) then throwErr("duration is less then zero") else
-  if (lockDurationNew < minLockDuration) then throwErr("lockDurationNew is less then minLockDuration=" + minLockDuration.toString()) else
-  if (lockDurationNew > maxLockDuration) then throwErr("deltaDuration + existedLockDuration is greater then maxLockDuration=" + maxLockDuration.toString()) else
-  #if (lockEnd <= height && userAmount > 0) then throwErr("there is an expired lock - need to unlock before new lock") else
-
-  let coeffX8 = fraction(lockDurationNew, MULT8, maxLockDuration)
-  let gWxAmountStart = fraction(userAmountNew, coeffX8, MULT8)
-
-  strict updateRefActivity = mathContract.invoke("updateReferralActivity", [i.caller.toString(), gWxAmountStart], [])
-
-  let lockStartNew = height
-  let gWxParamsResultList = invoke(mathContract, "calcGwxParamsREADONLY", [gWxAmountStart, lockStartNew, lockDurationNew], []).exactAs[List[Any]]
-  # TODO check the following macros: gWxParamsInvokeResult[0].exactAs[Int]
-  let k = gWxParamsResultList[0].exactAs[Int]
-  let b = gWxParamsResultList[1].exactAs[Int]
-  let period = gWxParamsResultList[2].exactAs[Int].toString()
-
-  let currUserGwx = getGwxAmount(userAddress)
-  let gwxDiff = gWxAmountStart - currUserGwx
-  if (gwxDiff < 0) then throwErr("gwxDiff is less then 0: " + gwxDiff.toString()) else
-  let totalCachedGwxRaw = getGwxTotal()
-
-  LockParamsEntry(userAddressStr, userNumStr, userAmountNew, lockStartNew, lockDurationNew, k, b, period)
-    ++ StatsEntry(pmtAmount, deltaDuration, 0, 0)
-    :+ HistoryEntry("lock", userAddressStr, pmtAmount, lockStart, lockDurationNew, k, b, i)
-    ++ [
-      IntegerEntry(keyGwxTotal(), totalCachedGwxRaw + gwxDiff)
-    ]
-}
-
-@Callable(i)
 func claimWxBoost(lpAssetIdStr: String, userAddressStr: String) = {
   if (stakingContract != i.caller) then throwErr("permissions denied") else
   let (userBoostAvailable, dataState, debug) = internalClaimWxBoost(lpAssetIdStr, userAddressStr, false)
@@ -756,18 +679,18 @@ func claimWxBoostREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
 }
 
 @Callable(i)
-func unlock(userAddressStr: String, amount: Int) = {
+func unlock(userAddressStr: String, txIdStr: String, amount: Int) = {
   let userAddress = userAddressStr.addressFromString()
     .valueOrErrorMessage(wrapErr("invalid user address"))
-  let userRecordArray = readLockParamsRecordOrFail(userAddressStr)
+  let txId = txIdStr.fromBase58String()
+  let userRecordArray = readLockParamsRecordOrFail(userAddress, txId)
 
-  let userNumStr = userRecordArray[IdxLockUserNum]
   let userAmount = userRecordArray[IdxLockAmount].parseIntValue()
   let lockStart = userRecordArray[IdxLockStart].parseIntValue()
   let lockDuration = userRecordArray[IdxLockDuration].parseIntValue()
   let lockEnd = lockStart + lockDuration
   # TODO: save claimed amount
-  let userClaimed = 0
+  let wxClaimed = 0
   # TODO: gwx amount
   let gwxAmount = 0
 
@@ -779,7 +702,7 @@ func unlock(userAddressStr: String, amount: Int) = {
     lockDuration
   )
   let wxWithdrawable = if (height > lockEnd) then {
-    userAmount - userClaimed
+    userAmount - wxClaimed
   } else {
     fraction(
       userAmount,
@@ -810,7 +733,7 @@ func unlock(userAddressStr: String, amount: Int) = {
 
   let period = mathContract.getInteger(keyNextPergetIntOrDefault()).valueOrElse(0)
 
-  LockParamsEntry(userAddressStr, userNumStr, 0, lockStart, lockDuration, 0, 0, period.toString())
+  LockParamsEntry(userAddress, txId, userAmount, lockStart, lockDuration, gwxRemaining, wxClaimed + amount)
     ++ StatsEntry(-userAmount, 0, 0, -1) # fixme: -1 only if single lock from user existed
     :+ HistoryEntry("unlock", userAddressStr, userAmount, lockStart, lockDuration, 0, 0, i)
     :+ ScriptTransfer(userAddress, userAmount, assetId)
@@ -826,23 +749,10 @@ func gwxUserInfoREADONLY(userAddressStr: String) = {
 }
 
 # for lp_staking_pools
+# TODO: check if it works correctly
 @Callable(i)
 func userMaxDurationREADONLY(userAddressStr: String) = {
-  let cfgArray = readConfigArrayOrFail()
-  let maxLockDuration = cfgArray[IdxCfgMaxLockDuration].parseIntValue()
-
-  let userRecordOption = this.getString(userAddressStr.keyLockParamsRecord())
-  if (userRecordOption == unit) then ([], ("lock", maxLockDuration)) else {
-    let userRecordArray = userRecordOption.value().split(SEP)
-    let lockStart = userRecordArray[IdxLockStart].parseIntValue()
-    let lockDuration = userRecordArray[IdxLockDuration].parseIntValue()
-    let lockEnd = lockStart + lockDuration
-    let remainingDuration = max([lockEnd - height, 0])
-
-    let maxDeltaDuration = maxLockDuration - remainingDuration
-
-    ([], ("increaseLock", maxDeltaDuration))
-  }
+  (nil, maxLockDurationX8 / MULT8)
 }
 
 # TODO: replace by getUserGwxAmountREADONLY (in all contracts)
