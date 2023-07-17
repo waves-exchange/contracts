@@ -33,8 +33,6 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
     const expectedType = 'verification';
     const expectedStatus = 'inProgress';
 
-    const assetImage = 'base64:assetImage';
-
     const payments = [
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
     ];
@@ -44,7 +42,7 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
       periodLength: this.votingPeriodLength,
-      assetImage,
+      assetImage: this.assetImage,
       payments,
     });
 
@@ -67,7 +65,7 @@ describe('voting_verified_v2: suggestAdd.mjs', /** @this {MochaSuiteModified} */
       {
         key: `%s%s__assetImage__${this.wxAssetId}`,
         type: 'string',
-        value: assetImage,
+        value: this.assetImage,
       },
     ]);
   });

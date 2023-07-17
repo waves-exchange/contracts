@@ -358,11 +358,20 @@ func suggestRemove(assetId: String) = {
     0
   )
 
-  [ 
+  let setAssetImageAction = match keyAssetImage(assetId).getString() {
+    case s:String => nil
+    case _: Unit => {
+      let assetsStoreAssetImage = assetsStoreContract.invoke("getAssetLogoREADONLY", [assetId], []).exactAs[String]
+
+      [StringEntry(keyAssetImage(assetId), assetsStoreAssetImage)]
+    }
+  }
+
+  [
     IntegerEntry(currentIndexKey, newIndex),
     StringEntry(keySuggestIssuer(assetId, newIndex), i.caller.toString()),
     StringEntry(keyVotingInfo(assetId, newIndex), votingInfo)
-  ]
+  ] ++ setAssetImageAction
 }
 
 @Callable(i)
