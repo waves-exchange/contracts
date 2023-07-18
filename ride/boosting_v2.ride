@@ -336,7 +336,6 @@ func extractOptionalPaymentAmountOrFail(i: Invocation, expectedAssetId: ByteVect
   pmt.amount
 }
 
-# TODO: parse state and return user's current gwx amount
 func getUserGwxAmountTotal(userAddress: Address) = {
   this.getInteger(keyUserGwxAmountTotal(userAddress)).valueOrElse(0)
 }
