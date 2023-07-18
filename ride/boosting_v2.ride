@@ -311,14 +311,6 @@ func StatsEntry(totalLockedInc: Int, durationInc: Int, lockCountInc: Int, usersC
   IntegerEntry(totalAmountKEY, totalAmount + totalLockedInc)]
 }
 
-func calcGwxAmountStart(amount: Int, duration: Int) = {
-  fraction(
-    amount,
-    duration * MULT8,
-    maxLockDurationX8
-  )
-}
-
 func LockParamsEntry(
   userAddress: Address,
   txId: ByteVector,
