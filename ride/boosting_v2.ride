@@ -705,7 +705,7 @@ func unlock(userAddressStr: String, txIdStr: String, amount: Int) = {
 
   let gwxBurned = max([
     amount,
-    fraction(t * blocksInDay, userAmount * MULT8, maxLockDuration)
+    fraction(t * blocksInDay, userAmount, maxLockDuration)
   ])
   let gwxRemaining = ensurePositive(gwxAmount - gwxBurned, "gwxRemaining")
   let lockedGwxAmount = getLockedGwxAmount(userAddress)
