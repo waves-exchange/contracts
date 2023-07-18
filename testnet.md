@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-421-delete-pool**](https://github.com/waves-exchange/contracts/tree/wxdefi-421-delete-pool) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:45 18.07.2023** (GMT+4)
+[**wxdefi-421-delete-pool**](https://github.com/waves-exchange/contracts/tree/wxdefi-421-delete-pool) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:50 18.07.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
