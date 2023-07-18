@@ -1,0 +1,133 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let contractFile = "mrt_staking.ride"
+let SEP = "__"
+let scale8 = 1_0000_0000
+
+func throwErr(msg: String) = {
+    throw(contractFile + ": " + msg)
+}
+
+let keyAssetId = ["%s", "assetId"].makeString(SEP)
+
+let keyEmissionPerBlock = ["%s", "emissionPerBlock"].makeString(SEP)
+let keyStartBlock       = ["%s", "startBlock"].makeString(SEP)
+let keyTotalLpAmount    = ["%s", "totalLpAmount"].makeString(SEP)
+let keyTotalAssetAmount = ["%s", "totalAssetAmount"].makeString(SEP)
+
+func keyUserLpAmount(userAddress: String)            = ["%s%s", "userLpAmount", userAddress].makeString(SEP)
+func keyUserTotalAssetWithdrawn(userAddress: String) = ["%s%s", "totalAssetWithdrawn", userAddress].makeString(SEP)
+func keyUserTotalAssetStaked(userAddress: String)    = ["%s%s", "totalAssetStaked", userAddress].makeString(SEP)
+
+let totalLpAmount = this.getInteger(keyTotalLpAmount).valueOrElse(0)
+let totalAssetAmount = this.getInteger(keyTotalAssetAmount).valueOrElse(0)
+let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
+let assetIdBytes = if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
+
+func getUserLpAmount(userAddress: String) = this.getInteger(keyUserLpAmount(userAddress)).valueOrElse(0)
+
+func calcTotalProfit() = {
+    let emissionPerBlock = this.getInteger(keyEmissionPerBlock).valueOrElse(0)
+    let startBlock = this.getInteger(keyStartBlock).valueOrElse(0)
+    let elapsedBlocks = height - startBlock
+
+    max([0, emissionPerBlock * elapsedBlocks])
+}
+
+func getTotalAssetAmountWithProfitOrMaxAvailable() = {
+    let totalAssetAmountWithProfit = totalAssetAmount + calcTotalProfit()
+
+    match(assetIdBytes) {
+        case u: Unit => min([totalAssetAmountWithProfit, this.wavesBalance().available])
+        case b: ByteVector => min([totalAssetAmountWithProfit, this.assetBalance(b)])
+    }
+}
+
+func getCurrentPrice() = {
+    let currentPrice = if (totalLpAmount != 0) then {
+        fraction(getTotalAssetAmountWithProfitOrMaxAvailable(), scale8, totalLpAmount)
+    } else {
+        1 * scale8
+    }
+
+    currentPrice
+}
+
+
+
+@Callable(i)
+func setEmissionPerBlock(emissionPerBlock: Int) = {
+    [
+        IntegerEntry(keyTotalAssetAmount, getTotalAssetAmountWithProfitOrMaxAvailable()),
+        IntegerEntry(keyStartBlock, height),
+        IntegerEntry(keyEmissionPerBlock, max([0, emissionPerBlock]))
+    ]
+}
+
+@Callable(i)
+func stake() = {
+    strict checks = [
+        i.payments.size() == 1 || "should include 1 payment".throwErr(),
+        i.payments[0].assetId == assetIdBytes || ("payment should be in " + assetIdString).throwErr(),
+        i.payments[0].amount > 0 || "payment amount should be greater than 0"
+    ]
+
+    let paymentAmount = i.payments[0].amount
+    let paymentLpAmount = fraction(paymentAmount, scale8, getCurrentPrice())
+    let userAddress = i.caller.toString()
+    let userLpAmount = getUserLpAmount(userAddress)
+    let userTotalInvestedAmount = this.getInteger(keyUserTotalAssetStaked(userAddress)).valueOrElse(0)
+
+    let newTotalLpAmount= totalLpAmount + paymentLpAmount
+    let newTotalAssetAmount = totalAssetAmount + paymentAmount
+    let newUserLpAmount = userLpAmount + paymentLpAmount
+    let newUserTotalInvestedAmount = userTotalInvestedAmount + paymentAmount
+
+    [
+        IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
+        IntegerEntry(keyTotalAssetAmount, newTotalAssetAmount),
+        IntegerEntry(keyUserLpAmount(userAddress), newUserLpAmount),
+        IntegerEntry(keyUserTotalAssetStaked(userAddress), newUserTotalInvestedAmount)
+    ]
+}
+
+@Callable(i)
+func withdraw(lpAssetWithdrawAmount: Int) = {
+    let userAddress = i.caller.toString()
+    let userLpAmount = getUserLpAmount(userAddress)
+    strict check = [
+        lpAssetWithdrawAmount <= userLpAmount || ("cannot withdraw more than available (" + userLpAmount.toString() + ")").throwErr()
+    ]
+
+    let newUserLpAmount = userLpAmount - lpAssetWithdrawAmount
+    let withdrawAssetAmount = fraction(lpAssetWithdrawAmount, getCurrentPrice(), scale8)
+    let newTotalLpAmount = totalLpAmount - lpAssetWithdrawAmount
+    let newTotalAssetAmount = fraction(newTotalLpAmount, getCurrentPrice(), scale8)
+    
+    let userTotalAssetWithdrawn = this.getInteger(keyUserTotalAssetWithdrawn(userAddress)).valueOrElse(0)
+    let newUserTotalAssetWithdrawn = userTotalAssetWithdrawn + withdrawAssetAmount
+
+    [
+        IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
+        IntegerEntry(keyTotalAssetAmount, newTotalAssetAmount),
+        IntegerEntry(keyUserLpAmount(userAddress), newUserLpAmount),
+        IntegerEntry(keyUserTotalAssetWithdrawn(userAddress), newUserTotalAssetWithdrawn),
+        IntegerEntry(keyStartBlock, height),
+        ScriptTransfer(i.caller, withdrawAssetAmount, assetIdBytes)
+    ]
+}
+
+@Callable(i)
+func getAvailableToWithdrawREADONLY(userAddress: String) = {
+    let userLpAmount = getUserLpAmount(userAddress)
+    let userAvailableAssetToWithdraw = fraction(userLpAmount, getCurrentPrice(), scale8)
+
+    (nil, (userLpAmount, userAvailableAssetToWithdraw))
+}
+
+@Callable(i)
+func getTotalAssetsREADONLY() = {
+    (nil, (totalLpAmount, getTotalAssetAmountWithProfitOrMaxAvailable()))
+}
