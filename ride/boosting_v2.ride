@@ -16,11 +16,6 @@ let POOLWEIGHTMULT = MULT8
 let contractFilename = "boosting.ride"
 
 let blocksInDay = 24 * 60
-let daysInYearX8 = fraction(3652425, MULT8, 10000)
-let blocksInYearX8 = daysInYearX8 * blocksInDay
-let monthsInYear = 12
-let blockInMonthX8 = blocksInYearX8 / monthsInYear
-let maxLockDurationX8 = 4 * blocksInYearX8
 
 func wrapErr(msg: String) = [contractFilename, ": ", msg].makeString("")
 func throwErr(msg: String) = msg.wrapErr().throw()
@@ -96,7 +91,12 @@ let IdxCfgMathContract = 5
 
 func keyConfig() = {"%s__config"}
 func readConfigArrayOrFail() = this.getStringOrFail(keyConfig()).split(SEP)
-let mathContract = readConfigArrayOrFail()[IdxCfgMathContract].addressFromStringValue()
+let cfgArray = readConfigArrayOrFail()
+let assetId = cfgArray[IdxCfgAssetId].fromBase58String()
+let minLockAmount = cfgArray[IdxCfgMinLockAmount].parseInt().valueOrErrorMessage(wrapErr("invalid min lock amount"))
+let minLockDuration = cfgArray[IdxCfgMinLockDuration].parseInt().valueOrErrorMessage(wrapErr("invalid min lock duration"))
+let maxLockDuration = cfgArray[IdxCfgMaxLockDuration].parseInt().valueOrErrorMessage(wrapErr("invalid max lock duration"))
+let mathContract = cfgArray[IdxCfgMathContract].addressFromString().valueOrErrorMessage(wrapErr("invalid math contract address"))
 
 func formatConfigS(assetId: String, minLockAmount: String, minLockDuration: String, maxLockDuration: String, mathContract: String) = {
   makeString([
@@ -564,13 +564,7 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
 }
 
 func lockActions(i: Invocation, duration: Int) = {
-  let cfgArray = readConfigArrayOrFail()
-  let assetIdStr = cfgArray[IdxCfgAssetId]
-  let assetId = assetIdStr.fromBase58String()
-  let minLockAmount = cfgArray[IdxCfgMinLockAmount].parseIntValue()
-  let minLockDuration = cfgArray[IdxCfgMinLockDuration].parseIntValue()
-  let maxLockDuration = cfgArray[IdxCfgMaxLockDuration].parseIntValue()
-
+  let assetIdStr = assetId.toBase58String()
   if (i.payments.size() != 1) then throwErr("invalid payment - exact one payment must be attached") else
   let pmt = i.payments[0]
   let pmtAmount = pmt.amount
@@ -711,7 +705,7 @@ func unlock(userAddressStr: String, txIdStr: String, amount: Int) = {
 
   let gwxBurned = max([
     amount,
-    fraction(t, userAmount * MULT8, 4 * daysInYearX8)
+    fraction(t * blocksInDay, userAmount * MULT8, maxLockDuration)
   ])
   let gwxRemaining = ensurePositive(gwxAmount - gwxBurned, "gwxRemaining")
   let lockedGwxAmount = getLockedGwxAmount(userAddress)
@@ -719,9 +713,6 @@ func unlock(userAddressStr: String, txIdStr: String, amount: Int) = {
   if (gwxRemaining < lockedGwxAmount)
     then throwErr("locked gwx amount: " + lockedGwxAmount.toString())
     else
-
-  let cfgArray = readConfigArrayOrFail()
-  let assetId = cfgArray[IdxCfgAssetId].fromBase58String()
 
   if (userAmount <= 0) then throwErr("nothing to unlock") else
 
@@ -754,7 +745,7 @@ func gwxUserInfoREADONLY(userAddressStr: String) = {
 # TODO: check if it works correctly
 @Callable(i)
 func userMaxDurationREADONLY(userAddressStr: String) = {
-  (nil, maxLockDurationX8 / MULT8)
+  (nil, maxLockDuration)
 }
 
 # TODO: replace by getUserGwxAmountREADONLY (in all contracts)
