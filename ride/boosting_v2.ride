@@ -147,9 +147,9 @@ func mustManager(i: Invocation) = {
 let IdxLockAmount = 1
 let IdxLockStart = 2
 let IdxLockDuration = 3
-let IdxLockParamLastUpdateTimestamp = 4
-let IdxLockParamGwxAmount = 5
-let IdxLockParamWxClaimed = 6
+let IdxLockLastUpdateTimestamp = 4
+let IdxLockGwxAmount = 5
+let IdxLockWxClaimed = 6
 
 func keyLockParamsRecord(userAddress: Address, txId: ByteVector) = makeString(["%s%s%s__lock", userAddress.toString(), txId.toBase58String()], SEP)
 func readLockParamsRecordOrFail(userAddress: Address, txId: ByteVector) = this.getStringOrFail(keyLockParamsRecord(userAddress, txId)).split(SEP)
