@@ -677,10 +677,8 @@ func unlock(userAddressStr: String, txIdStr: String, amount: Int) = {
   let lockStart = userRecordArray[IdxLockStart].parseIntValue()
   let lockDuration = userRecordArray[IdxLockDuration].parseIntValue()
   let lockEnd = lockStart + lockDuration
-  # TODO: save claimed amount
-  let wxClaimed = 0
-  # TODO: gwx amount
-  let gwxAmount = 0
+  let wxClaimed = userRecordArray[IdxLockWxClaimed].parseIntValue()
+  let gwxAmount = userRecordArray[IdxLockGwxAmount].parseIntValue()
 
   let t = (height - lockStart) / blocksInDay
 
