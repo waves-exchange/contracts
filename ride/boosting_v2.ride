@@ -154,7 +154,7 @@ let IdxLockParamWxClaimed = 6
 func keyLockParamsRecord(userAddress: Address, txId: ByteVector) = makeString(["%s%s%s__lock", userAddress.toString(), txId.toBase58String()], SEP)
 func readLockParamsRecordOrFail(userAddress: Address, txId: ByteVector) = this.getStringOrFail(keyLockParamsRecord(userAddress, txId)).split(SEP)
 
-func keyUserGwxAmountTotal(userAddress: Address) = makeString(["%s%s%s__gwxAmountTotal", userAddress.toString()], SEP)
+func keyUserGwxAmountTotal(userAddress: Address) = makeString(["%s%s__gwxAmountTotal", userAddress.toString()], SEP)
 
 func formatLockParamsRecord(
   amount: Int,
