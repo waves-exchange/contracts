@@ -280,18 +280,17 @@ func getLockedGwxAmount(userAddress: Address) = {
   locked
 }
 
-func HistoryEntry(type: String, user: String, amount: Int, lockStart: Int, duration: Int, k: Int, b: Int, i: Invocation) = {
+func HistoryEntry(type: String, user: String, amount: Int, lockStart: Int, duration: Int, gwxAmount: Int, i: Invocation) = {
   let historyKEY = makeString(["%s%s%s%s__history", type, user, i.transactionId.toBase58String()], SEP)
   let historyDATA = makeString([
-        "%d%d%d%d%d%d%d",
-        lastBlock.height.toString(),
-        lastBlock.timestamp.toString(),
-        amount.toString(),
-        lockStart.toString(),
-        duration.toString(),
-        k.toString(),
-        b.toString()],
-    SEP)
+    "%d%d%d%d%d%d%d",
+    lastBlock.height.toString(),
+    lastBlock.timestamp.toString(),
+    amount.toString(),
+    lockStart.toString(),
+    duration.toString(),
+    gwxAmount.toString()
+  ], SEP)
   StringEntry(historyKEY, historyDATA)
 }
 
@@ -626,7 +625,7 @@ func lockActions(i: Invocation, duration: Int) = {
   ]
   (arr ++ LockParamsEntry(userAddress, i.transactionId, pmtAmount, lockStart, duration, gWxAmountStart, 0)
   ++ StatsEntry(pmtAmount, duration, 1, if (userIsExisting) then 0 else 1)
-  :+ HistoryEntry("lock", userAddressStr, pmtAmount, lockStart, duration, k, b, i)
+  :+ HistoryEntry("lock", userAddressStr, pmtAmount, lockStart, duration, gWxAmountStart, i)
   ++ [
     IntegerEntry(userBoostEmissionLastIntegralKEY, boostEmissionIntegral),
     IntegerEntry(keyGwxTotal(), gwxAmountTotal + gWxAmountStart),
@@ -741,7 +740,7 @@ func unlock(userAddressStr: String, txIdStr: String, amount: Int) = {
 
   LockParamsEntry(userAddress, txId, userAmount, lockStart, lockDuration, gwxRemaining, wxClaimed + amount)
     ++ StatsEntry(-userAmount, 0, 0, -1) # fixme: -1 only if single lock from user existed
-    :+ HistoryEntry("unlock", userAddressStr, userAmount, lockStart, lockDuration, 0, 0, i)
+    :+ HistoryEntry("unlock", userAddressStr, userAmount, lockStart, lockDuration, gwxBurned, i)
     :+ ScriptTransfer(userAddress, userAmount, assetId)
     ++ [
       # TODO: refresh userBoostEmissionLastIntegralKEY?
