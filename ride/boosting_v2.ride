@@ -716,7 +716,6 @@ func unlock(userAddressStr: String, txIdStr: String, amount: Int) = {
     :+ HistoryEntry("unlock", userAddressStr, userAmount, lockStart, lockDuration, gwxBurned, i)
     :+ ScriptTransfer(userAddress, userAmount, assetId)
     ++ [
-      # TODO: refresh userBoostEmissionLastIntegralKEY?
       IntegerEntry(keyGwxTotal(), ensurePositive(gwxAmountTotal - gwxBurned, "gwxTotal")),
       IntegerEntry(keyUserGwxAmountTotal(userAddress), ensurePositive(userGwxAmountTotal - gwxBurned, "userGwxAmountTotal"))
     ]
@@ -738,9 +737,9 @@ func userMaxDurationREADONLY(userAddressStr: String) = {
   (nil, maxLockDuration)
 }
 
-# TODO: replace by getUserGwxAmountREADONLY (in all contracts)
+# targetHeight is unused
 @Callable(i)
-func getUserGwxAmountAtHeightREADONLY(userAddressStr: String) = {
+func getUserGwxAmountAtHeightREADONLY(userAddressStr: String, targetHeight: Int) = {
   let userAddress = userAddressStr.addressFromString()
     .valueOrErrorMessage(wrapErr("invalid user address"))
   let gwxAmount = userAddress.getUserGwxAmountTotal()
