@@ -734,7 +734,7 @@ func gwxUserInfoREADONLY(userAddressStr: String) = {
 # TODO: check if it works correctly
 @Callable(i)
 func userMaxDurationREADONLY(userAddressStr: String) = {
-  (nil, maxLockDuration)
+  ([], ("increaseLock", maxLockDuration))
 }
 
 # targetHeight is unused
