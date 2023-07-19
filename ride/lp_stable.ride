@@ -1587,7 +1587,8 @@ func activate(amtAsStr: String, prAsStr: String) = {
         ([
             StringEntry(aa(),amtAsStr),
             StringEntry(pa(),prAsStr),
-            StringEntry(amp(), ampInitial.toString())
+            StringEntry(amp(), ampInitial.toString()),
+            StringEntry(keyAmpHistory(height), ampInitial.toString())
             ],
         "success")
     }
