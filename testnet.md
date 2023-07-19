@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-403-fix-stable**](https://github.com/waves-exchange/contracts/tree/wxdefi-403-fix-stable) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **15:39 19.07.2023** (GMT+4)
+[**wxdefi-403-fix-stable**](https://github.com/waves-exchange/contracts/tree/wxdefi-403-fix-stable) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:50 19.07.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -26,6 +26,7 @@ USDTLP/USDCLP pool | [`3Mr5cSKi6xmWu2eGTgV6PskAZmoViPsDcQY`](https://wavesexplor
 Kekenger/USDT pool | [`3N3LtGiBDqDjfHpd7WnTCTKXB3gPWqUrDLL`](https://wavesexplorer.com/addresses/3N3LtGiBDqDjfHpd7WnTCTKXB3gPWqUrDLL?network=testnet) | `3wnnbmrpP3X4LxULFVHTeu7zNZBzFV7NSxRokwryVFaJ` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-403-fix-stable/ride/lp.ride) 
 WX/WAVES pool | [`3MqGtuaL3yJbKHqUxnSihJmYroyPf6QDp1x`](https://wavesexplorer.com/addresses/3MqGtuaL3yJbKHqUxnSihJmYroyPf6QDp1x?network=testnet) | `HNMWjb4Vq8JwETf7kHV57gaKXLvsdCS5KPTaHKa4XKa6` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-403-fix-stable/ride/lp.ride) 
 APPLE/TESTEAST pool | [`3MwgVcc26F1kRAfYdaHr3ZXkWCmRi3bPcAY`](https://wavesexplorer.com/addresses/3MwgVcc26F1kRAfYdaHr3ZXkWCmRi3bPcAY?network=testnet) | `aiasL8zA6M6XjqL4Vj6VQ6QMxp2YjUzvCmd7mfAT9oS` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-403-fix-stable/ride/lp.ride) 
+MYCOIN/TESTEAST pool | [`3N9gee8G3PpYacSwKwjCq4FCoEHrsgupsdA`](https://wavesexplorer.com/addresses/3N9gee8G3PpYacSwKwjCq4FCoEHrsgupsdA?network=testnet) | `BC48B3Axpv2LvE7A2JPYR77mgwDkigKqtKZh5352WZmJ` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-403-fix-stable/ride/lp.ride) 
 USDC/USDT pool | [`3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA`](https://wavesexplorer.com/addresses/3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA?network=testnet) | `35yd3qw1gxKDxKwGAykHN9fANbXNWwseaUwbWDj24o3x` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-403-fix-stable/ride/lp_stable.ride) 
 USDT/USDN pool | [`3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT`](https://wavesexplorer.com/addresses/3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT?network=testnet) | `D1BL65meykxFZTCuq7jq9HSGLLnWvQamQPUNrguW5w39` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-403-fix-stable/ride/lp_stable.ride) 
 lp_staking | [`3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL`](https://wavesexplorer.com/addresses/3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL?network=testnet) | `ER6eHxtBYJ4JakpeheRtGgvT5AeP1S4g44VxoNJo14kd` | [lp_staking.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-403-fix-stable/ride/lp_staking.ride) 
@@ -59,6 +60,7 @@ EAST | [`6dtQJDYyQxjngoY5QKVMQxkxeNeExdetWugQMfrfFk47`](https://wavesexplorer.co
 ETH-Ethereum-PPT | [`EGo1BQqGxHsc4nFCi5uzpd8eSbH22xGR8hiw9P44Uviw`](https://wavesexplorer.com/assets/EGo1BQqGxHsc4nFCi5uzpd8eSbH22xGR8hiw9P44Uviw?network=testnet) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
 Ethereum | [`BrmjyAWT5jjr3Wpsiyivyvg5vDuzoX2s93WgiexXetB3`](https://wavesexplorer.com/assets/BrmjyAWT5jjr3Wpsiyivyvg5vDuzoX2s93WgiexXetB3?network=testnet) | Ethereum Token 
 Kekenger | [`EutPdKtshH6mBBJBSbu8RJKC1pe87cJeG3AZybKiymG1`](https://wavesexplorer.com/assets/EutPdKtshH6mBBJBSbu8RJKC1pe87cJeG3AZybKiymG1?network=testnet) | — 
+MYCOIN | [`6B1HUt9VTUa2x9Rg8EwfY9u6RYsWag1A6GiRrjKxneNH`](https://wavesexplorer.com/assets/6B1HUt9VTUa2x9Rg8EwfY9u6RYsWag1A6GiRrjKxneNH?network=testnet) | Test MYCOIN 
 PCBT | [`AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8`](https://wavesexplorer.com/assets/AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8?network=testnet) | PepeTeam Crosschain Bridge Token 
 sWAVES | [`FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm`](https://wavesexplorer.com/assets/FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm?network=testnet) | sWAVES is the tokenized form of staked WAVES powered by PepeTeam. See details at https://swaves.pepe.team 
 TESTEAST | [`Ago2eaFkPqiiDnHej9NzMfqYEA7Y9qsAdqJhSWvmwtfQ`](https://wavesexplorer.com/assets/Ago2eaFkPqiiDnHej9NzMfqYEA7Y9qsAdqJhSWvmwtfQ?network=testnet) | Stable token 
@@ -79,6 +81,7 @@ EASTUSDNLP | [`6tJ1PwMyq942TaFxmgid215YqDucmvg4bXrixNteYbQt`](https://wavesexplo
 ETHWAVESLP | [`5u5YKfNXUuefZSjKncQgvLWkMsMYkPN5HFXMQR3sH7ZS`](https://wavesexplorer.com/assets/5u5YKfNXUuefZSjKncQgvLWkMsMYkPN5HFXMQR3sH7ZS?network=testnet) | ETH/WAVES pool liquidity provider token 
 ETHWXLP | [`D7qTknoXn5iQMiUeQvx33kFGiR6zmjTsuAmwB8KxgCz2`](https://wavesexplorer.com/assets/D7qTknoXn5iQMiUeQvx33kFGiR6zmjTsuAmwB8KxgCz2?network=testnet) | ETH/WX pool liquidity provider token 
 KekengerUSDTLP | [`CPP3z7oYNNp4URYrmUVsxDXXjg7D7r4bAyAyK2Sh2Qmd`](https://wavesexplorer.com/assets/CPP3z7oYNNp4URYrmUVsxDXXjg7D7r4bAyAyK2Sh2Qmd?network=testnet) | Kekenger/USDT pool liquidity provider token 
+MYCOI~TESTEASTLP | [`3HhsydweErB43KJTW7K7X66G2rZ2mxte9TiQdnSruUtc`](https://wavesexplorer.com/assets/3HhsydweErB43KJTW7K7X66G2rZ2mxte9TiQdnSruUtc?network=testnet) | MYCOI~/TESTEAST pool liquidity provider token 
 PCBTWAVESLP | [`5SHBveQyZVVMvL7jaDqtkT6bH1gpPPJaiMgMnZjp724s`](https://wavesexplorer.com/assets/5SHBveQyZVVMvL7jaDqtkT6bH1gpPPJaiMgMnZjp724s?network=testnet) | PCBT/WAVES pool liquidity provider token 
 sWAVESWAVESLP | [`6oXgVr7nAK1uCjfttUSonPxcyfM6NyV7tQ8nC4zFvcX3`](https://wavesexplorer.com/assets/6oXgVr7nAK1uCjfttUSonPxcyfM6NyV7tQ8nC4zFvcX3?network=testnet) | sWAVES/WAVES pool liquidity provider token 
 TXW-DEVa~WAVESLP | [`GKxF718hhjSNscZmJUfTd4ovuQNLAkTU7zf3Y14UzTTh`](https://wavesexplorer.com/assets/GKxF718hhjSNscZmJUfTd4ovuQNLAkTU7zf3Y14UzTTh?network=testnet) | TXW-DEVa~/WAVES pool liquidity provider token 
