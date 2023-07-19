@@ -706,8 +706,6 @@ func unlock(userAddressStr: String, txIdStr: String, amount: Int) = {
 
   if (userAmount <= 0) then throwErr("nothing to unlock") else
 
-  let period = mathContract.getInteger(keyNextPergetIntOrDefault()).valueOrElse(0)
-
   let gwxAmountTotal = getGwxAmountTotal()
   let userGwxAmountTotal = getUserGwxAmountTotal(userAddress)
 
