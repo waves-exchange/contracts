@@ -15,7 +15,10 @@ let MULT8 = 100000000
 let POOLWEIGHTMULT = MULT8
 let contractFilename = "boosting.ride"
 
-let blocksInDay = 24 * 60
+# 24 * 60
+let blocksInDay = 1440
+# 365 * 24 * 60 / 12
+let blocksInMonth = 43800
 
 func wrapErr(msg: String) = [contractFilename, ": ", msg].makeString("")
 func throwErr(msg: String) = msg.wrapErr().throw()
@@ -561,7 +564,10 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   (userBoostAvaliableToClaimTotalNew, dataState, debug)
 }
 
-func lockActions(i: Invocation, duration: Int) = {
+func lockActions(i: Invocation, durationMonths: Int) = {
+  let durationMonthsAllowed = [1, 3, 6, 12, 24, 48]
+  if (!durationMonthsAllowed.containsElement(durationMonths)) then throwErr("invalid duration") else
+  let duration = durationMonths * blocksInMonth
   let assetIdStr = assetId.toBase58String()
   if (i.payments.size() != 1) then throwErr("invalid payment - exact one payment must be attached") else
   let pmt = i.payments[0]
