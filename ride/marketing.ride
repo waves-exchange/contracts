@@ -97,7 +97,12 @@ func readTotalsArray() = {
   getStringOrFail(keyTotals()).split(SEP)
 }
 
-func getManagerAddressOrFail() = keyManagerVaultAddress().getStringValue().addressFromStringValue()
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
 
 # Custom Data Entries
 func TotalsEntry(key: String, origArray: List[String], claimedAmt: Int, newLastClaimedHeight: Int) = {
@@ -122,7 +127,7 @@ func ClaimOperationHistoryEntry(userAddress: String, claimedAssetAmount: Int,  c
 }
 
 func managerPublicKeyOrUnit() = {
-  let managerVaultAddress = getManagerAddressOrFail()
+  let managerVaultAddress = getManagerVaultAddressOrThis()
   match managerVaultAddress.getString(keyManagerPublicKey()) {
     case s: String => s.fromBase58String()
     case _: Unit => unit

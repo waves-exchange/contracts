@@ -53,6 +53,7 @@ describe(`${process.pid}: voting_emission: finalize`, () => {
       votingEmissionCandidateContract: this.accounts.votingEmissionCandidate.addr,
       boostingContract: this.accounts.boosting.addr,
       stakingContract: this.accounts.staking.addr,
+      votingEmissionRate: this.accounts.votingEmissionRate.addr,
       epochLength,
     });
     await factoryMock.setWxEmissionPoolLabel({
@@ -138,7 +139,7 @@ describe(`${process.pid}: voting_emission: finalize`, () => {
     const pool2Share = (user2GwxAmount / totalVotes) * poolWeightMult;
 
     const dAppState = await api.addresses.data(dApp);
-
+    const votingEmissionRateState = await api.addresses.data(this.accounts.votingEmissionRate.addr);
     expect(dAppState).to.include.deep.members([
       {
         key: '%s__currentEpoch',
@@ -155,6 +156,10 @@ describe(`${process.pid}: voting_emission: finalize`, () => {
         type: 'integer',
         value: pool2Share,
       },
+    ]);
+    expect(votingEmissionRateState).to.include.deep.members([
+      { key: 'counter', type: 'integer', value: 1 },
+      { key: 'finalized', type: 'boolean', value: true },
     ]);
   });
 });

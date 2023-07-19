@@ -1,0 +1,13 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "version": 2,
+    "senderPublicKey": "FoGdD9qz4AFW3pdmp1QCA5vvo9wn3fTbv4JnYrWZe3BB",
+    "data": [
+        {
+            "key": "%s%s__config__votingEmissionRateContract",
+            "type": "string",
+            "value": "3PFKpo9PB2U6YJaF2FsZ76UiGQwSDeyZAjn"
+        }
+    ]
+}

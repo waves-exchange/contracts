@@ -76,6 +76,9 @@ func keyTopupHistory(internalBasetAssetStr: String, topupIdx: Int)
 func keyLimitsRemaining(internalBasetAssetStr: String)
     = {"%s%s%d__limits__remaining__" + internalBasetAssetStr}
 
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
+func keyManagerPublicKey() = "%s__managerPublicKey"
+
 let IdxCfgShareAssetId                = 1
 let IdxCfgInternalBaseAsset           = 2
 let IdxCfgDecimalsMultBothAssets      = 3
@@ -336,6 +339,32 @@ func calcPrice(internalBaseAssetStr: String, baseAssetId: ByteVector, shareAsset
   genericCalcPrice(internalBaseAssetStr, baseAssetId, 0, shareAssetId, decimalsMultPrice)
 }
 
+func getManagerVaultAddressOrThis() = {
+  match this.getString(keyManagerVaultAddress()) {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
+
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
+}
+
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
+
+func mustManager(i: Invocation) = {
+  i.isManager() || "permission denied".throw()
+}
+
 func commonSubmit(operationType: String, i: Invocation, inAmount: Int, inAssetId: ByteVector, baseAssetStr: String) = {
   let inAssetStr = inAssetId.toBase58String()
   let userAddressStr = i.caller.toString()
@@ -469,8 +498,7 @@ func adminRegisterAsset(baseAssetStr:        String, shareAssetName:          St
   let topupMaxNegativePercents = fraction(topupMaxNegativePart, 100, decimalsMultBothAssets)
   let baseAssetBalance = this.assetBalance(baseAssetId)
 
-  # validate admin public key - in our case contract PK
-  if (i.caller != this) then throw("permissions denied") else
+  strict checkCaller = i.mustManager()
   if (baseAssetBalance == 0) then throw(this.toString() + " must have any initial balance of " + baseAssetStr) else
   if (this.getString(keyAssetCfg(baseAssetStr)).isDefined()) then throw(baseAssetStr + " has been already registered") else
   if (addressFromStringValue(shutdownManagerAddress).toString() != shutdownManagerAddress) then throw("invalid shutdownManagerAddress") else
@@ -546,11 +574,11 @@ func adminRegisterAsset(baseAssetStr:        String, shareAssetName:          St
 
 @Callable(i)
 func shutdownSubmits(internalBaseAssetId: Int) = {
+  strict checkCaller = i.mustManager()
   let internalBaseAssetIdStr = internalBaseAssetId.toString()
   let baseAssetIdStr = getStringOrFail(keyMappingsInternal2baseAssetId(internalBaseAssetId))
   let shutdownManagerAddress = getStringOrFail(keyShutdownManager(internalBaseAssetIdStr))
   if (baseAssetIdStr.size() < 1) then throw("invalid internalBaseAssetId") else
-  if (i.caller.toString() != shutdownManagerAddress) then throw("access denied") else
 
   [BooleanEntry(keyShutdownSubmitOperation(internalBaseAssetId.toString()), true)]
 }
@@ -702,6 +730,11 @@ func currentSysParamsREST(baseAssetStr: String)= {
 }
 
 @Verifier(tx)
-func verify () = {
-  sigVerify(tx.bodyBytes, tx.proofs[0], fromBase58String("2Cbd8ozG7A1RyRNC3nNnZgHu7Ru4K3JCfpyPkhqr9zxq"))
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
 }
+

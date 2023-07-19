@@ -16,10 +16,19 @@ let zeroBigInt = 0.toBigInt()
 let processingStageTotal = 0
 let processingStageShares = 1
 
+let wavesString = "WAVES"
+
 func getNumberByKey(key: String) = this.getInteger(key).valueOrElse(0)
 func getNumberOrFail(key: String) = this.getInteger(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
 func getStringByKey(key: String) = this.getString(key).valueOrElse("")
 func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func wrapErr(msg: String) = ["gwx_reward.ride:", msg].makeString(" ")
+func throwErr(msg: String) = msg.wrapErr().throw()
 
 func abs(val: Int) = if (val < 0) then -val else val
 func absBigInt(val: BigInt) = if (val < zeroBigInt) then -val else val
@@ -39,6 +48,9 @@ let factoryContract = factoryAddressStr.addressFromStringValue()
 # EMISSION API
 # own emission address key
 func keyEmissionAddress() = "%s%s__config__emissionAddress"
+
+func keyVotingEmissionContract() = ["%s", "votingEmissionContract"].makeString(SEP)
+let votingEmissionContract = factoryContract.getStringValue(keyVotingEmissionContract()).addressFromStringValue()
 
 # Boosting
 func keyNumToUserMapping(num: Int) = ["%s%s%s", "mapping", "num2user", num.toString()].makeString(SEP)
@@ -86,6 +98,17 @@ let IdxCfgMaxDepth            = 4
 
 func keyConfig() = "%s__config"
 
+func getEmissionAddress() = this.getString(
+  keyEmissionAddress()
+).valueOrErrorMessage(
+  "mandatory this." + keyEmissionAddress() + " is not defined"
+).addressFromStringValue()
+
+
+let emissionAddress = getEmissionAddress()
+let wxAssetIdStr = emissionAddress.getString(keyConfig()).value().split(SEP)[1]
+let wxAssetId = wxAssetIdStr.fromBase58String()
+
 func readConfigArrayOrFail() = getStringOrFail(keyConfig()).split(SEP)
 
 func formatConfig(wxAssetIdStr: String, matcherPacemakerAddressStr: String, boostingContractAddressStr: String, maxDepth: Int) = {
@@ -114,6 +137,8 @@ func keyUsersCount() = "%s__nextUserNum"
 
 # emission contract key
 func keyRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
+func keyGwxHoldersRewardCurrent() = "%s%s__gwxHoldersReward__current"
+func keyGwxHoldersRewardNext() = "%s%s__gwxHoldersReward__next"
 
 # factory contract key
 func keyPoolWeightVirtual() = "%s%s__poolWeight__GWXvirtualPOOL"
@@ -183,6 +208,16 @@ func keyUserWeightForPeriod(period: Int, userIndex: Int) =
 func keyReferralsContractAddress()  = ["%s%s", "config", "referralsContractAddress"].makeString(SEP)
 let referralsContractAddressOrFail = keyReferralsContractAddress().getStringOrFail().addressFromStringValue()
 
+func keyTradingRewardHistory(user: String, i: Invocation) = {
+  makeString(["%s%s%s%s", "tradingReward", "history", user, i.transactionId.toBase58String()], SEP)
+}
+
+func keyTradingReward(userAddress: String) = {
+  makeString(["%s%s", "tradingReward", userAddress], SEP)
+}
+
+func keyMaxRecipients() = ["%s", "maxRecipients"].makeString(SEP)
+
 func HistoryEntry(type: String, user: String, amount: Int, i: Invocation) = {
   let historyKEY = makeString(["%s%s%s%s__history", type, user, i.transactionId.toBase58String()], SEP)
   let historyDATA = makeString([
@@ -195,16 +230,21 @@ func HistoryEntry(type: String, user: String, amount: Int, i: Invocation) = {
 }
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
-func keyPendingManagerPublicKey() = {"%s__pendingManagerPublicKey"}
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
-func managerPublicKeyOrUnit() = match keyManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
 }
 
-func pendingManagerPublicKeyOrUnit() = match keyPendingManagerPublicKey().getString() {
-  case s: String => s.fromBase58String()
-  case _: Unit => unit
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
 }
 
 func mustManager(i: Invocation) = {
@@ -270,6 +310,48 @@ func commonClaimReward(userAddress: String) = {
       IntegerEntry(userIdx.keyUserUnclaimed(), 0)
     ])
   }
+}
+
+func getTradingReward(userAddress: String) = {
+  this.getInteger(userAddress.keyTradingReward()).valueOrElse(0)
+}
+
+@Callable(i)
+func tradeRewardInternal(
+  paymentAmountLeftOver: Int,
+  userAddresses: List[String],
+  rewards: List[Int],
+  currentIter: Int
+) = {
+  if (currentIter == userAddresses.size()) then ([]) else
+
+  strict checks = [
+    i.caller == this || "Permission denied".throwErr(),
+    paymentAmountLeftOver >= rewards[currentIter] || "insufficient payment assetId".throwErr()
+  ]
+
+  strict tradeRewardInternal = this.invoke(
+    "tradeRewardInternal",
+    [ 
+      paymentAmountLeftOver - rewards[currentIter],
+      userAddresses,
+      rewards,
+      currentIter+1
+    ],
+    []
+  )
+
+  let tradingRewardHistoryKey = keyTradingRewardHistory(
+    userAddresses[currentIter],
+    i
+  )
+
+  let userAddress = addressFromStringValue(userAddresses[currentIter])
+
+  ([
+    IntegerEntry(tradingRewardHistoryKey, rewards[currentIter]),
+    IntegerEntry(userAddresses[currentIter].keyTradingReward(), rewards[currentIter])
+  ], tradeRewardInternal)
 }
 
 @Callable(i)
@@ -374,24 +456,23 @@ func processPendingPeriodsAndUsers() = {
 # Called by matcher pacemaker
 @Callable(i)
 func deposit() = {
-  let cfgArray = readConfigArrayOrFail()
-  if (i.caller != Address(cfgArray[IdxCfgPacemakerAddress].fromBase58String())) then throw("Wrong caller address") else
-  let assetId = i.payments[0].value().assetId.value()
-  if (assetId != cfgArray[IdxCfgAssetId].fromBase58String()) then throw("Wrong payment asset") else
+  strict checkCaller = i.caller == votingEmissionContract || i.mustManager()
   let period = nextPeriod()
-#  strict call = invoke(this, "processPendingPeriodsAndUsers", [], []) # optional
-
-  let deltaH = height - getNumberOrFail(keyGwxRewardEmissionStartHeight())
-  let emissionRate = getInteger(emissionContract, keyRatePerBlockCurrent()) # 38_0517_5038 = 38 WX per block
+  let deltaH = height - keyGwxRewardEmissionStartHeight().getNumberOrFail()
+  let emissionRate = emissionContract.getInteger(keyRatePerBlockCurrent())
     .valueOrErrorMessage("mandatory emission_contract." + keyRatePerBlockCurrent() + " is not defined")
-  let weight = getInteger(factoryContract, keyPoolWeightVirtual()) # 0_0500_0000 = 5%
-    .valueOrErrorMessage("mandatory factory_contract." + keyPoolWeightVirtual() + " is not defined")
-  let auxAmount = fraction(deltaH * weight, emissionRate, MULT8)
-  strict em = invoke(emissionContract, "emit", [auxAmount], []) # request auxAmount WX from emission contract
+  strict gwxHoldersRewardCurrent = emissionContract.getInteger(keyGwxHoldersRewardCurrent())
+    .valueOrElse(0)
+  let auxAmount = fraction(deltaH * gwxHoldersRewardCurrent, emissionRate, MULT8)
+  strict em = if (auxAmount > 0) then emissionContract.invoke("emit", [auxAmount], []) else unit # request auxAmount WX from emission contract
 
-  let matcherPart = i.payments[0].value().amount
+  let matcherPart = 0
   let payoutInfo = PeriodPayoutInfo(period, matcherPart, auxAmount)
-  [
+
+  strict gwxHoldersRewardUpdated = emissionContract.invoke("gwxHoldersRewardUpdate", [], []).exactAs[Boolean]
+
+  let totalReward = matcherPart + auxAmount
+  let actions = if (totalReward == 0 && !gwxHoldersRewardUpdated) then [] else [
     IntegerEntry(keyLatestPeriod(), period),
     IntegerEntry(keyHeightForPeriod(period), height), # save period start height
     IntegerEntry(keyAuxEmissionRewardForPeriod(period), auxAmount), # amount to distribute between users (emission part)
@@ -401,6 +482,8 @@ func deposit() = {
     StringEntry(keyLastPayoutInfo(), payoutInfo),
     StringEntry(keyPayoutHistoryInfo(period), payoutInfo)
   ]
+
+  (actions, unit)
 }
 
 # Send all WX earned to caller
@@ -529,23 +612,49 @@ func calcD(
 }
 
 @Callable(i)
-func setManager(pendingManagerPublicKey: String) = {
-  strict checkCaller = i.mustManager()
-  strict checkManagerPublicKey = pendingManagerPublicKey.fromBase58String()
+func tradeReward(userAddresses: List[String], rewards: List[Int]) = {
+  let argsComparison = userAddresses.size() == rewards.size()
+  let maxRecipients = keyMaxRecipients().getInteger().valueOrElse(0)
+  let payment = i.payments[0]
+  let paymentAssetId = payment.assetId
+  let paymentAmount = payment.amount
 
-  [StringEntry(keyPendingManagerPublicKey(), pendingManagerPublicKey)]
+  strict checks = [
+    userAddresses.size() <= maxRecipients || "Too many recipients".throwErr(),
+    argsComparison || "Arguments size mismatch".throwErr(),
+    paymentAssetId == wxAssetId || "Wrong asset payment".throwErr()
+  ]
+
+  strict tradeRewardInternal = this.invoke(
+    "tradeRewardInternal",
+    [
+      paymentAmount,
+      userAddresses,
+      rewards,
+      0
+    ],
+    []
+  )
+
+  (nil, tradeRewardInternal)
 }
 
 @Callable(i)
-func confirmManager() = {
-  let pm = pendingManagerPublicKeyOrUnit()
-  strict hasPM = pm.isDefined() || throw("No pending manager")
-  strict checkPM = i.callerPublicKey == pm.value() || throw("You are not pending manager")
+func claimTradingReward() = {
+  let userAddress = i.caller
+  let userAddressString = userAddress.toString()
+  let reward = userAddressString.getTradingReward()
+  if (reward > 0) then {
+    ([
+      ScriptTransfer(userAddress, reward, wxAssetId),
+      IntegerEntry(keyTradingReward(userAddressString), 0)
+    ], reward)
+  } else "nothing to claim".throwErr()
+}
 
-  [
-    StringEntry(keyManagerPublicKey(), pm.value().toBase58String()),
-    DeleteEntry(keyPendingManagerPublicKey())
-  ]
+@Callable(i)
+func claimTradingRewardREADONLY(userAddress: String) = {
+  (nil, userAddress.getTradingReward())
 }
 
 @Verifier(tx)
