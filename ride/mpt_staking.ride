@@ -2,7 +2,7 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-let contractFile = "mrt_staking.ride"
+let contractFile = "mpt_staking.ride"
 let SEP = "__"
 let scale8 = 1_0000_0000
 let ADDRESS_BYTES_SIZE = 26
@@ -40,10 +40,12 @@ func calcTotalProfit() = {
 func getTotalAssetAmountWithProfitOrMaxAvailable() = {
     let totalAssetAmountWithProfit = totalAssetAmount + calcTotalProfit()
 
-    match(assetIdBytes) {
+    let totalAmount = match(assetIdBytes) {
         case u: Unit => min([totalAssetAmountWithProfit, this.wavesBalance().available])
         case b: ByteVector => min([totalAssetAmountWithProfit, this.assetBalance(b)])
     }
+
+    if (totalLpAmount == 0) then 0 else totalAmount
 }
 
 func getCurrentPrice() = {
