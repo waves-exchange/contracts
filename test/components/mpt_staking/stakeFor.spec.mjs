@@ -1,0 +1,68 @@
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import {
+  api, apiBase, chainId, waitForTx,
+} from '../../utils/api.mjs';
+
+chai.use(chaiAsPromised);
+const { expect } = chai;
+
+describe('mrt_staking: staking for another user', /** @this {MochaSuiteModified} */() => {
+  it(
+    'should be able to stake token for another user',
+    async function () {
+      const stakeAmount1 = 10e8;
+      const price = 1;
+      const expectedLpAmount1 = stakeAmount1 * price;
+
+      const stakeTx = invokeScript({
+        dApp: this.accounts.mptStaking.addr,
+        call: {
+          function: 'stakeFor',
+          args: [{
+            type: 'string',
+            value: this.accounts.user2.addr,
+          }],
+        },
+        payment: [
+          { assetId: this.mptAssetId, amount: stakeAmount1 },
+        ],
+        additionalFee: 4e5,
+        chainId,
+      }, this.accounts.user1.seed);
+
+      const currentHeight = await ni.currentHeight(apiBase);
+      await api.transactions.broadcast(stakeTx, {});
+      const { stateChanges } = await waitForTx(stakeTx.id);
+
+      expect(stateChanges.data).to.be.deep.equal([
+        {
+          key: '%s__totalLpAmount',
+          type: 'integer',
+          value: expectedLpAmount1,
+        },
+        {
+          key: '%s__totalAssetAmount',
+          type: 'integer',
+          value: stakeAmount1,
+        },
+        {
+          key: `%s%s__userLpAmount__${this.accounts.user2.addr}`,
+          type: 'integer',
+          value: expectedLpAmount1,
+        },
+        {
+          key: `%s%s__totalAssetStaked__${this.accounts.user2.addr}`,
+          type: 'integer',
+          value: stakeAmount1,
+        },
+        {
+          key: '%s__startBlock',
+          type: 'integer',
+          value: currentHeight,
+        },
+      ]);
+    },
+  );
+});
