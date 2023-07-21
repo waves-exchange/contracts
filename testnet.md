@@ -1,5 +1,5 @@
 # Testnet environment
-[**suggestAddWxPaymentAmountCheckFix**](https://github.com/waves-exchange/contracts/tree/suggestAddWxPaymentAmountCheckFix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **12:00 21.07.2023** (GMT+4)
+[**suggestAddWxPaymentAmountCheckFix**](https://github.com/waves-exchange/contracts/tree/suggestAddWxPaymentAmountCheckFix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **12:20 21.07.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
