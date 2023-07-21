@@ -10,7 +10,7 @@ const { expect } = chai;
 
 describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => {
   // There are 2 stakers
-  const emissionPerBlock = 6e6;
+  const emissionPerBlock = 5e6;
   const stakeAmount = 10e8;
   const expectedLpAmount = 10e8;
   const blocksCount = 2;
@@ -81,12 +81,9 @@ describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => 
           function: 'withdraw',
           args: [{
             type: 'integer',
-            value: stakeAmount,
+            value: expectedWithdrawAmount,
           }],
         },
-        payment: [
-          { assetId: this.mptAssetId, amount: stakeAmount },
-        ],
         additionalFee: 4e5,
         chainId,
       }, this.accounts.user1.seed);

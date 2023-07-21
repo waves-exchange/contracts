@@ -1,8 +1,8 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import { invokeScript } from '@waves/waves-transactions';
 import {
-  api, apiBase, chainId, waitForTx,
+  api, chainId, waitForTx,
 } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
@@ -28,9 +28,8 @@ describe('mrt_staking: staking', /** @this {MochaSuiteModified} */() => {
         chainId,
       }, this.accounts.user1.seed);
 
-      const currentHeight = await ni.currentHeight(apiBase);
       await api.transactions.broadcast(stakeTx, {});
-      const { stateChanges } = await waitForTx(stakeTx.id);
+      const { stateChanges, height } = await waitForTx(stakeTx.id);
 
       expect(stateChanges.data).to.be.deep.equal([
         {
@@ -56,7 +55,7 @@ describe('mrt_staking: staking', /** @this {MochaSuiteModified} */() => {
         {
           key: '%s__startBlock',
           type: 'integer',
-          value: currentHeight,
+          value: height,
         },
       ]);
     },

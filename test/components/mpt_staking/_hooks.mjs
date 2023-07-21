@@ -83,6 +83,11 @@ export const mochaHooks = {
           type: 'string',
           value: this.mptAssetId,
         },
+        {
+          key: '%s__emissionPeriodInBlocks',
+          type: 'integer',
+          value: 1,
+        },
       ],
       chainId,
     }, this.accounts.mptStaking.seed);

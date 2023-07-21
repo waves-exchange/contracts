@@ -6,6 +6,7 @@ let contractFile = "mpt_staking.ride"
 let SEP = "__"
 let scale8 = 1_0000_0000
 let ADDRESS_BYTES_SIZE = 26
+let BLOCKS_IN_DAY = 1440
 
 func throwErr(msg: String) = {
     throw(contractFile + ": " + msg)
@@ -13,10 +14,11 @@ func throwErr(msg: String) = {
 
 let keyAssetId = ["%s", "assetId"].makeString(SEP)
 
-let keyEmissionPerBlock = ["%s", "emissionPerBlock"].makeString(SEP)
-let keyStartBlock       = ["%s", "startBlock"].makeString(SEP)
-let keyTotalLpAmount    = ["%s", "totalLpAmount"].makeString(SEP)
-let keyTotalAssetAmount = ["%s", "totalAssetAmount"].makeString(SEP)
+let keyEmissionPerBlock       = ["%s", "emissionPerBlock"].makeString(SEP)
+let keyEmissionPeriodInBlocks = ["%s", "emissionPeriodInBlocks"].makeString(SEP)
+let keyStartBlock             = ["%s", "startBlock"].makeString(SEP)
+let keyTotalLpAmount          = ["%s", "totalLpAmount"].makeString(SEP)
+let keyTotalAssetAmount       = ["%s", "totalAssetAmount"].makeString(SEP)
 
 func keyUserLpAmount(userAddress: String)            = ["%s%s", "userLpAmount", userAddress].makeString(SEP)
 func keyUserTotalAssetWithdrawn(userAddress: String) = ["%s%s", "totalAssetWithdrawn", userAddress].makeString(SEP)
@@ -26,8 +28,9 @@ let totalLpAmount = this.getInteger(keyTotalLpAmount).valueOrElse(0)
 let totalAssetAmount = this.getInteger(keyTotalAssetAmount).valueOrElse(0)
 let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
 let assetIdBytes = if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
-
-func getUserLpAmount(userAddress: String) = this.getInteger(keyUserLpAmount(userAddress)).valueOrElse(0)
+let emissionPeriodInBlocks = this.getInteger(keyEmissionPeriodInBlocks).valueOrElse(BLOCKS_IN_DAY)
+let emissionPerPeriod = this.getInteger(keyEmissionPerBlock).valueOrElse(0) * emissionPeriodInBlocks
+let heightInPeriods = fraction(height, 1, emissionPeriodInBlocks)
 
 ######################
 # MULTISIG FUNCTIONS #
@@ -117,11 +120,11 @@ func voteINTERNAL(
 ##########################
 
 func calcTotalProfit() = {
-    let emissionPerBlock = this.getInteger(keyEmissionPerBlock).valueOrElse(0)
     let startBlock = this.getInteger(keyStartBlock).valueOrElse(0)
-    let elapsedBlocks = height - startBlock
+    let startPeriod = fraction(startBlock, 1, emissionPeriodInBlocks)
+    let elapsedPeriods = heightInPeriods - startPeriod
 
-    max([0, emissionPerBlock * elapsedBlocks])
+    max([0, emissionPerPeriod * elapsedPeriods])
 }
 
 func getTotalAssetAmountWithProfitOrMaxAvailable() = {
@@ -141,6 +144,15 @@ func getCurrentPrice() = {
     } else {
         1 * scale8
     }
+}
+
+func getUserLpAmount(userAddress: String) = this.getInteger(keyUserLpAmount(userAddress)).valueOrElse(0)
+
+func getUserAvailableAssetsToWithdraw(userAddress: String) = {
+  let userLpAmount = getUserLpAmount(userAddress)
+  let userAvailableAssetToWithdraw = fraction(userLpAmount, getCurrentPrice(), scale8)
+
+  if (userAvailableAssetToWithdraw * scale8 < getCurrentPrice()) then 0 else userAvailableAssetToWithdraw
 }
 
 func getStakeActions(i: Invocation, userAddress: String) = {
@@ -170,6 +182,32 @@ func getStakeActions(i: Invocation, userAddress: String) = {
     ] ++ updateStartHeightAction
 }
 
+func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
+    let userAddress = i.caller.toString()
+    let userLpAmount = getUserLpAmount(userAddress)
+    strict check = [
+        lpAssetWithdrawAmount > 0 || "LP amount should be more than 0".throwErr(),
+        lpAssetWithdrawAmount <= userLpAmount || ("cannot withdraw more than available LP (" + userLpAmount.toString() + ")").throwErr()
+    ]
+
+    let newUserLpAmount = userLpAmount - lpAssetWithdrawAmount
+    let withdrawAssetAmount = fraction(lpAssetWithdrawAmount, getCurrentPrice(), scale8)
+    let newTotalLpAmount = totalLpAmount - lpAssetWithdrawAmount
+    let newTotalAssetAmount = fraction(newTotalLpAmount, getCurrentPrice(), scale8)
+    
+    let userTotalAssetWithdrawn = this.getInteger(keyUserTotalAssetWithdrawn(userAddress)).valueOrElse(0)
+    let newUserTotalAssetWithdrawn = userTotalAssetWithdrawn + withdrawAssetAmount
+
+    [
+        IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
+        IntegerEntry(keyTotalAssetAmount, newTotalAssetAmount),
+        IntegerEntry(keyUserLpAmount(userAddress), newUserLpAmount),
+        IntegerEntry(keyUserTotalAssetWithdrawn(userAddress), newUserTotalAssetWithdrawn),
+        IntegerEntry(keyStartBlock, height),
+        ScriptTransfer(i.caller, withdrawAssetAmount, assetIdBytes)
+    ]
+}
+
 @Callable(i)
 func setEmissionPerBlock(emissionPerBlock: Int) = {
     strict check = [
@@ -197,30 +235,17 @@ func stakeFor(userAddress: String) = {
 }
 
 @Callable(i)
-func withdraw(lpAssetWithdrawAmount: Int) = {
-    let userAddress = i.caller.toString()
-    let userLpAmount = getUserLpAmount(userAddress)
-    strict check = [
-        lpAssetWithdrawAmount > 0 || "amount should be more than 0".throwErr(),
-        lpAssetWithdrawAmount <= userLpAmount || ("cannot withdraw more than available (" + userLpAmount.toString() + ")").throwErr()
-    ]
+func withdraw(withdrawAssetAmount: Int) = {
+  let userAddress = i.caller.toString()
+  let userLpAmount = getUserLpAmount(userAddress)
+  let lpAmountToWithdraw = fraction(withdrawAssetAmount, scale8, getCurrentPrice())
+  let userAvailableAssetToWithdraw = getUserAvailableAssetsToWithdraw(userAddress)
+  strict check = [
+      withdrawAssetAmount > 0 || "withdraw amount should be more than 0".throwErr(),
+      withdrawAssetAmount <= userAvailableAssetToWithdraw || ("cannot withdraw more than available (" + userAvailableAssetToWithdraw.toString() + ")").throwErr()
+  ]
 
-    let newUserLpAmount = userLpAmount - lpAssetWithdrawAmount
-    let withdrawAssetAmount = fraction(lpAssetWithdrawAmount, getCurrentPrice(), scale8)
-    let newTotalLpAmount = totalLpAmount - lpAssetWithdrawAmount
-    let newTotalAssetAmount = fraction(newTotalLpAmount, getCurrentPrice(), scale8)
-    
-    let userTotalAssetWithdrawn = this.getInteger(keyUserTotalAssetWithdrawn(userAddress)).valueOrElse(0)
-    let newUserTotalAssetWithdrawn = userTotalAssetWithdrawn + withdrawAssetAmount
-
-    [
-        IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
-        IntegerEntry(keyTotalAssetAmount, newTotalAssetAmount),
-        IntegerEntry(keyUserLpAmount(userAddress), newUserLpAmount),
-        IntegerEntry(keyUserTotalAssetWithdrawn(userAddress), newUserTotalAssetWithdrawn),
-        IntegerEntry(keyStartBlock, height),
-        ScriptTransfer(i.caller, withdrawAssetAmount, assetIdBytes)
-    ]
+  getWithdrawActions(i, lpAmountToWithdraw)
 }
 
 # Return tuple: 
@@ -232,7 +257,7 @@ func withdraw(lpAssetWithdrawAmount: Int) = {
 @Callable(i)
 func getUserAssetsREADONLY(userAddress: String) = {
     let userLpAmount = getUserLpAmount(userAddress)
-    let userAvailableAssetToWithdraw = fraction(userLpAmount, getCurrentPrice(), scale8)
+    let userAvailableAssetToWithdraw = getUserAvailableAssetsToWithdraw(userAddress)
     let userTotalStakedAmount = this.getInteger(keyUserTotalAssetStaked(userAddress)).valueOrElse(0)
     let userTotalAssetWithdrawn = this.getInteger(keyUserTotalAssetWithdrawn(userAddress)).valueOrElse(0)
 
