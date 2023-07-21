@@ -27,6 +27,7 @@
     "test-lp-staking-pools": "mocha -r dotenv/config --parallel --require components/lp_staking_pools/_hooks.mjs components/lp_staking_pools",
     "test-staking-boosting": "mocha -r dotenv/config --parallel --require components/staking_boosting/_hooks.mjs components/staking_boosting",
     "test-gwx-reward": "mocha -r dotenv/config --parallel --require components/gwx_reward/_hooks.mjs components/gwx_reward",
+    "test-mpt-staking": "mocha -r dotenv/config --parallel --require components/mpt_staking/_hooks.mjs components/mpt_staking",
     "ci-test": "node_modules/.bin/concurrently --max-processes 8 --timings npm:test-*",
     "exchange-test": "mocha -r dotenv/config --parallel --require components/exchange/_hooks.mjs components/exchange",
     "test": "API_NODE_URL=http://localhost:6869 npm run ci-test",
