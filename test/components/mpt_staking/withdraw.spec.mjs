@@ -12,7 +12,7 @@ describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => 
   it(
     'should be able to withdraw with profit',
     async function () {
-      // There is 2 Stakers
+      // There are 2 stakers
 
       const stakeAmount = 10e8;
       const expectedLpAmount = 10e8;
@@ -46,11 +46,9 @@ describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => 
         chainId,
       }, this.accounts.user1.seed);
 
+      const startHeight = await ni.currentHeight(apiBase);
       await api.transactions.broadcast(stakeForTx, {});
       await api.transactions.broadcast(stakeTx, {});
-      const startHeight = await ni.currentHeight(apiBase);
-      await waitForTx(stakeForTx.id);
-      await waitForTx(stakeTx.id);
 
       await waitForHeight(startHeight + 1);
 
