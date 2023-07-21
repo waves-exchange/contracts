@@ -250,7 +250,7 @@ func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
   strict checks = [
     periodLength >= minPeriodLength && periodLength <= maxPeriodLength || "invalid periodLength".throwErr(),
     tokenIsVerified == false || "token already verified".throwErr(),
-    wxPaymentAmount > periodLength * feePerBlock || "not enough wx for given period".throwErr(),
+    wxPaymentAmount >= periodLength * feePerBlock || "not enough wx for given period".throwErr(),
     wxPaymentAmount >= keyMinWxMinForSuggestAddAmountRequired.getIntegerValue() ||
       "payment less then min for suggest".throwErr()
   ]
