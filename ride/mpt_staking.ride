@@ -240,9 +240,11 @@ func withdraw(withdrawAssetAmount: Int) = {
   let userLpAmount = getUserLpAmount(userAddress)
   let lpAmountToWithdraw = fraction(withdrawAssetAmount, scale8, getCurrentPrice())
   let userAvailableAssetToWithdraw = getUserAvailableAssetsToWithdraw(userAddress)
+  let minWithdrawAssetAmount = fraction(getCurrentPrice(), 1, scale8, CEILING)
   strict check = [
       withdrawAssetAmount > 0 || "withdraw amount should be more than 0".throwErr(),
-      withdrawAssetAmount <= userAvailableAssetToWithdraw || ("cannot withdraw more than available (" + userAvailableAssetToWithdraw.toString() + ")").throwErr()
+      withdrawAssetAmount <= userAvailableAssetToWithdraw || ("cannot withdraw more than available (" + userAvailableAssetToWithdraw.toString() + ")").throwErr(),
+      withdrawAssetAmount >= minWithdrawAssetAmount || ("withdraw amount is too small. Min: (" + minWithdrawAssetAmount.toString() + ")").throwErr()
   ]
 
   getWithdrawActions(i, lpAmountToWithdraw)
