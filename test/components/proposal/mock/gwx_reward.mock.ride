@@ -1,0 +1,19 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let SEP = "__"
+
+func keyUserGwxAmountTotal(userAddress: Address) = makeString(["%s%s__gwxAmountTotal", userAddress.toString()], SEP)
+
+@Callable(i)
+func getUserGwxAmountAtHeightREADONLY(
+  userAddressStr: String,
+  targetHeightUnused: Int
+) = {
+  let userAddress = userAddressStr.addressFromString()
+    .valueOrErrorMessage("invalid user address")
+  let gwxAmount = this.getInteger(keyUserGwxAmountTotal(userAddress)).valueOrElse(0)
+
+  ([], gwxAmount)
+}

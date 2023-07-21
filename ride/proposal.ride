@@ -3,6 +3,10 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 
 let SEP = "__"
+let contractFilename = "proposal.ride"
+
+func wrapErr(msg: String) = [contractFilename, ": ", msg].makeString("")
+func throwErr(msg: String) = msg.wrapErr().throw()
 
 func blockHeightError() = "The block's height is too big for this proposal".throw()
 func alreadyVoteError() = "You have already voted".throw()
@@ -19,6 +23,12 @@ func keyUserVoteOnProposal(number: Int, user: String) = {
   ["%s%d%s", "userVoteOnProposal", number.toString(), user].makeString(SEP)
 }
 
+func keyActiveVotingList() = ["%s", "activeVotingList"].makeString(SEP)
+func getActiveVotingList() = match this.getString(keyActiveVotingList()) {
+  case s: String => s.split(SEP)
+  case _: Unit => []
+}
+
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
@@ -29,6 +39,13 @@ func getManagerVaultAddressOrThis() = {
     case _=> this
   }
 }
+
+let idxProposalInfoName = 1
+let idxProposalInfoEnd = 2
+let idxProposalInfoQuorumNumber = 3
+let idxProposalInfoPositiveVotes = 4
+let idxProposalInfoNegativeVotes = 5
+
 func formatProposalInfo(
   name: String,
   end: String,
@@ -46,6 +63,9 @@ func formatProposalInfo(
   ],
   SEP)
 }
+
+let idxUserVoteOnProposalVote = 1
+let idxUserVoteOnProposalGwxNumber = 2
 
 func formatUserVoteOnProposal(vote: String, gwxNumber: String) = {
   makeString([
@@ -88,6 +108,7 @@ func startNewVote(name: String, description: String, expirationHeight: Int, quor
     i.mustManager()
   ]
   let theIndex = getCurrentIndex()
+  let newActiveVotingList = theIndex.toString() :: getActiveVotingList()
   
   [
     IntegerEntry(keyCurrentIndex(), theIndex + 1),
@@ -102,10 +123,12 @@ func startNewVote(name: String, description: String, expirationHeight: Int, quor
         "0"
       )
     ),
-    StringEntry(keyProposalDescription(theIndex), description)
+    StringEntry(keyProposalDescription(theIndex), description),
+    StringEntry(keyActiveVotingList(), newActiveVotingList.makeString(SEP))
   ]
 }
 
+# TODO: refresh active voting list
 @Callable(i)
 func voteFor(proposalIndex: Int, choice: Boolean) = {
   let EMPTY = "EMPTY"
@@ -170,6 +193,7 @@ func voteFor(proposalIndex: Int, choice: Boolean) = {
   ]
 }
 
+# TODO: refresh active voting list
 @Callable(i)
 func deleteVote(proposalIndex: Int) = {
   let EMPTY = "EMPTY"
@@ -212,6 +236,7 @@ func deleteVote(proposalIndex: Int) = {
   ]
 }
 
+# TODO: refresh active voting list
 @Callable(i)
 func changeVote(proposalIndex: Int, choice: Boolean) = {
   let EMPTY = "EMPTY"
@@ -293,6 +318,42 @@ func getResultREADONLY(proposalIndex: Int) = {
   let negativeVotes = voteInfoArray[5]
 
   ([], [positiveVotes, negativeVotes, quorumNumber])
+}
+
+@Callable(i)
+func getLockedGwxAmount(userAddressStr: String) = {
+  let userAddress = addressFromString(userAddressStr)
+    .valueOrErrorMessage(wrapErr("invalid address"))
+  let activeVotingList = getActiveVotingList()
+  func map(acc: List[Int], proposalIndexStr: String) = {
+    let proposalIndex = proposalIndexStr.parseInt().value()
+    let votingInfo = this.getString(keyProposalInfo(proposalIndex))
+      .valueOrErrorMessage(wrapErr("invalid proposal index in active voting list"))
+    let votingInfoArray = votingInfo.split(SEP)
+    let votingEndHeight = votingInfoArray[idxProposalInfoEnd].parseInt().value()
+    let votingIsOver = lastBlock.height > votingEndHeight
+    let userVoteInfoOption = this.getString(
+      keyUserVoteOnProposal(proposalIndex, userAddressStr)
+    )
+    let userVoteGwxAmount = match userVoteInfoOption {
+      case userVoteInfo: String => {
+        let userVoteInfoArray = userVoteInfo.split(SEP)
+        userVoteInfoArray[idxUserVoteOnProposalGwxNumber].parseInt().value()
+      }
+      case _: Unit => 0
+    }
+    let activeVoteValue = if (votingIsOver) then {
+      0
+    } else {
+      userVoteGwxAmount
+    }
+
+    activeVoteValue :: acc
+  }
+  let userVotes = FOLD<30>(activeVotingList, [], map)
+  let maxUserVote = max(userVotes)
+
+  (nil, maxUserVote)
 }
 
 @Verifier(tx)
