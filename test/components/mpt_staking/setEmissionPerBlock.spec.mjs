@@ -1,8 +1,8 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import { invokeScript } from '@waves/waves-transactions';
 import {
-  api, apiBase, chainId, waitForHeight, waitForTx,
+  api, chainId, waitForTx,
 } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);

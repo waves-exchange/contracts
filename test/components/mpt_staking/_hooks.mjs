@@ -18,8 +18,6 @@ const mptStakingPath = format({ dir: ridePath, base: 'mpt_staking.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
-    this.emissionPerBlock = 5e6;
-
     const names = [
       'mptStaking',
       'admin1',
@@ -84,11 +82,6 @@ export const mochaHooks = {
           key: '%s__assetId',
           type: 'string',
           value: this.mptAssetId,
-        },
-        {
-          key: '%s__emissionPerBlock',
-          type: 'integer',
-          value: this.emissionPerBlock,
         },
       ],
       chainId,

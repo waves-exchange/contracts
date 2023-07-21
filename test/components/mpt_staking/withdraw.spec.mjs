@@ -9,15 +9,36 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => {
+  // There are 2 stakers
+  const emissionPerBlock = 6e6;
+  const stakeAmount = 10e8;
+  const expectedLpAmount = 10e8;
+  const blocksCount = 2;
+  const expectedWithdrawAmount = stakeAmount + ((emissionPerBlock / 2) * blocksCount);
+
+  before(
+    async function () {
+      const setEmissionTx = invokeScript({
+        dApp: this.accounts.mptStaking.addr,
+        call: {
+          function: 'setEmissionPerBlock',
+          args: [{
+            type: 'integer',
+            value: emissionPerBlock,
+          }],
+        },
+        additionalFee: 4e5,
+        chainId,
+      }, this.accounts.mptStaking.seed);
+
+      await api.transactions.broadcast(setEmissionTx, {});
+      await waitForTx(setEmissionTx.id);
+    },
+  );
+
   it(
     'should be able to withdraw with profit',
     async function () {
-      // There are 2 stakers
-
-      const stakeAmount = 10e8;
-      const expectedLpAmount = 10e8;
-      const expectedWithdrawAmount = stakeAmount + (this.emissionPerBlock / 2);
-
       const stakeTx = invokeScript({
         dApp: this.accounts.mptStaking.addr,
         call: {
@@ -49,8 +70,10 @@ describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => 
       const startHeight = await ni.currentHeight(apiBase);
       await api.transactions.broadcast(stakeForTx, {});
       await api.transactions.broadcast(stakeTx, {});
+      // const a = await waitForTx(stakeTx.id);
 
-      await waitForHeight(startHeight + 1);
+      // const startHeight = a.height;
+      await waitForHeight(startHeight + blocksCount);
 
       const withdrawTx = invokeScript({
         dApp: this.accounts.mptStaking.addr,
@@ -103,7 +126,7 @@ describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => 
         {
           key: '%s__startBlock',
           type: 'integer',
-          value: startHeight + 1,
+          value: startHeight + blocksCount,
         },
       ]);
     },
