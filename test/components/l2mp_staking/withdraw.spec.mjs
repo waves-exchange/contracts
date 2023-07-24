@@ -8,7 +8,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => {
+describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => {
   // There are 2 stakers
   const emissionPerBlock = 5e6;
   const stakeAmount = 10e8;

@@ -8,7 +8,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('mrt_staking: get staked info', /** @this {MochaSuiteModified} */() => {
+describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() => {
   const stakeAmount1 = 12345678;
   const stakeAmount2 = 2e8;
 

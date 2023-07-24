@@ -8,7 +8,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('mrt_staking: staking', /** @this {MochaSuiteModified} */() => {
+describe('l2mp_staking: staking', /** @this {MochaSuiteModified} */() => {
   it(
     'should be able to stake token',
     async function () {

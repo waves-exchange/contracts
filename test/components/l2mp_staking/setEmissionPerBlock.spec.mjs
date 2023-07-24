@@ -8,7 +8,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('mrt_staking: set emission per block', /** @this {MochaSuiteModified} */() => {
+describe('l2mp_staking: set emission per block', /** @this {MochaSuiteModified} */() => {
   it(
     'should be rejected if caller is not a contract',
     async function () {
