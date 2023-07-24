@@ -76,6 +76,17 @@ func getAccBalance(assetId: String) = {
   if(assetId == "WAVES") then wavesBalance(this).available else assetBalance(this, fromBase58String(assetId))
 }
 
+# %d%d__poolFee__protocolFee
+func getSwapFees(poolAddressStr: String) = {
+  let poolFeeDefault = this.getInteger(poolFee()).value()
+  let protocolFeeDefault = this.getInteger(protocolFee()).value()
+
+  match factoryContract.invoke("getSwapFeeREADONLY", [poolAddressStr], []) {
+    case (_poolFee: Int, _protocolFee: Int) => (_poolFee, _protocolFee)
+    case _ => (poolFeeDefault, protocolFeeDefault)
+  }
+}
+
 func getPoolAddressAndCheckPoolStatus(
   assetIn: String,
   assetOut: String
@@ -130,9 +141,10 @@ func swapCalculateREADONLY(
   assetIn: String,
   assetOut: String
 ) = {
-  let prFee = getInteger(protocolFee()).value()
+  let (poolAdr, isReverse) = getPoolAddressAndCheckPoolStatus(assetIn, assetOut)
+
+  let (plFee, prFee) = getSwapFees(poolAdr.toString())
   let feeProtocolAmountCalc = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
-  let plFee = getInteger(poolFee()).value()
   let feePoolAmountCalc = fraction(amountIn.toBigInt(), plFee.toBigInt(), feeScale)
 
   let feeProtocolAmount = if (feeProtocolAmountCalc.toInt() == 0) then {
@@ -146,8 +158,6 @@ func swapCalculateREADONLY(
     feePoolAmountCalc
   }
   let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount - feePoolAmount
-
-  let (poolAdr, isReverse) = getPoolAddressAndCheckPoolStatus(assetIn, assetOut)
 
   let res = invoke(
     poolAdr,
@@ -170,9 +180,9 @@ func swap(
   let pmt = i.payments[0].value()
   let assetIn = if(pmt.assetId == unit) then "WAVES" else pmt.assetId.value().toBase58String()
   let amountIn = pmt.amount.value()
-  let prFee = getInteger(protocolFee()).value()
+  let (poolAdr, isReverse) = getPoolAddressAndCheckPoolStatus(assetIn, assetOut)
+  let (plFee, prFee) = getSwapFees(poolAdr.toString())
   let feeProtocolAmountCalc = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
-  let plFee = getInteger(poolFee()).value()
   let feePoolAmountCalc = fraction(amountIn.toBigInt(), plFee.toBigInt(), feeScale)
 
   let feeProtocolAmount = if (feeProtocolAmountCalc.toInt() == 0) then {
@@ -190,8 +200,6 @@ func swap(
   strict checks = [
     i.payments.size() == 1 || "exactly 1 payment are expected".throw()
   ]
-
-  let (poolAdr, isReverse) = getPoolAddressAndCheckPoolStatus(assetIn, assetOut)
 
   let assetInAttachedPayment = if (assetIn == "WAVES") then unit else assetIn.fromBase58String()
 
