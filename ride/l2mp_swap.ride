@@ -9,8 +9,6 @@ let scale18 = 1_000_000_000_000_000_000
 let ADDRESS_BYTES_SIZE = 26
 let BLOCKS_IN_DAY = 1440
 
-# И желательно писать тотал обменов total => in out, и историю Адрес -> число In, число out 
-
 func wrapErr(msg: String) = {
   contractFile + ": " + msg
 }
