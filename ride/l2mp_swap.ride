@@ -51,7 +51,7 @@ let assetOutInfo = assetInfo(assetOutId)
   .valueOrErrorMessage(wrapErr("invalid assetOutInfo"))
 let assetOutPrice = this.getInteger(keyAssetOutPrice)
   .valueOrErrorMessage(wrapErr("invalid assetOutPrice"))
-let stakingAddressOption = match this.getString(keyAssetOutPrice) {
+let stakingAddressOption = match this.getString(keyStakingAddress) {
   case s: String => addressFromString(s)
   case _: Unit => unit
 }
@@ -139,6 +139,7 @@ func voteINTERNAL(
   }
 }
 
+# TODO: check balance
 @Callable(i)
 func swap(stake: Boolean) = {
   let userAddress = i.caller
