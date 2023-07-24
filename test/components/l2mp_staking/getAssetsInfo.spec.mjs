@@ -15,24 +15,24 @@ describe('mrt_staking: get staked info', /** @this {MochaSuiteModified} */() => 
   before(
     async function () {
       const stakeTx1 = invokeScript({
-        dApp: this.accounts.mptStaking.addr,
+        dApp: this.accounts.l2mpStaking.addr,
         call: {
           function: 'stake',
         },
         payment: [
-          { assetId: this.mptAssetId, amount: stakeAmount1 },
+          { assetId: this.l2mpAssetId, amount: stakeAmount1 },
         ],
         additionalFee: 4e5,
         chainId,
       }, this.accounts.user1.seed);
 
       const stakeTx2 = invokeScript({
-        dApp: this.accounts.mptStaking.addr,
+        dApp: this.accounts.l2mpStaking.addr,
         call: {
           function: 'stake',
         },
         payment: [
-          { assetId: this.mptAssetId, amount: stakeAmount2 },
+          { assetId: this.l2mpAssetId, amount: stakeAmount2 },
         ],
         additionalFee: 4e5,
         chainId,
@@ -50,7 +50,7 @@ describe('mrt_staking: get staked info', /** @this {MochaSuiteModified} */() => 
     async function () {
       const expr = `getUserAssetsREADONLY(\"${this.accounts.user1.addr}\")`; /* eslint-disable-line */
       const response = await api.utils.fetchEvaluate(
-        this.accounts.mptStaking.addr,
+        this.accounts.l2mpStaking.addr,
         expr,
       );
       const checkData = response.result.value._2; /* eslint-disable-line */
@@ -73,7 +73,7 @@ describe('mrt_staking: get staked info', /** @this {MochaSuiteModified} */() => 
     async function () {
       const expr = 'getTotalAssetsREADONLY()'; /* eslint-disable-line */
       const response = await api.utils.fetchEvaluate(
-        this.accounts.mptStaking.addr,
+        this.accounts.l2mpStaking.addr,
         expr,
       );
       const checkData = response.result.value._2; /* eslint-disable-line */

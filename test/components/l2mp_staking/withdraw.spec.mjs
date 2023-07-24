@@ -19,7 +19,7 @@ describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => 
   before(
     async function () {
       const setEmissionTx = invokeScript({
-        dApp: this.accounts.mptStaking.addr,
+        dApp: this.accounts.l2mpStaking.addr,
         call: {
           function: 'setEmissionPerBlock',
           args: [{
@@ -29,7 +29,7 @@ describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => 
         },
         additionalFee: 4e5,
         chainId,
-      }, this.accounts.mptStaking.seed);
+      }, this.accounts.l2mpStaking.seed);
 
       await api.transactions.broadcast(setEmissionTx, {});
       await waitForTx(setEmissionTx.id);
@@ -40,19 +40,19 @@ describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => 
     'should be able to withdraw with profit',
     async function () {
       const stakeTx = invokeScript({
-        dApp: this.accounts.mptStaking.addr,
+        dApp: this.accounts.l2mpStaking.addr,
         call: {
           function: 'stake',
         },
         payment: [
-          { assetId: this.mptAssetId, amount: stakeAmount },
+          { assetId: this.l2mpAssetId, amount: stakeAmount },
         ],
         additionalFee: 4e5,
         chainId,
       }, this.accounts.user1.seed);
 
       const stakeForTx = invokeScript({
-        dApp: this.accounts.mptStaking.addr,
+        dApp: this.accounts.l2mpStaking.addr,
         call: {
           function: 'stakeFor',
           args: [{
@@ -61,7 +61,7 @@ describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => 
           }],
         },
         payment: [
-          { assetId: this.mptAssetId, amount: stakeAmount },
+          { assetId: this.l2mpAssetId, amount: stakeAmount },
         ],
         additionalFee: 4e5,
         chainId,
@@ -76,7 +76,7 @@ describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => 
       await waitForHeight(startHeight + blocksCount);
 
       const withdrawTx = invokeScript({
-        dApp: this.accounts.mptStaking.addr,
+        dApp: this.accounts.l2mpStaking.addr,
         call: {
           function: 'withdraw',
           args: [{
@@ -94,7 +94,7 @@ describe('mrt_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => 
       expect(stateChanges.transfers).to.be.deep.equal([
         {
           address: this.accounts.user1.addr,
-          asset: this.mptAssetId,
+          asset: this.l2mpAssetId,
           amount: expectedWithdrawAmount,
         },
       ]);

@@ -13,7 +13,7 @@ describe('mrt_staking: set emission per block', /** @this {MochaSuiteModified} *
     'should be rejected if caller is not a contract',
     async function () {
       const invokeTx = invokeScript({
-        dApp: this.accounts.mptStaking.addr,
+        dApp: this.accounts.l2mpStaking.addr,
         call: {
           function: 'setEmissionPerBlock',
           args: [{
@@ -35,7 +35,7 @@ describe('mrt_staking: set emission per block', /** @this {MochaSuiteModified} *
       const newEmissionPerBlock = 777777;
 
       const invokeTx = invokeScript({
-        dApp: this.accounts.mptStaking.addr,
+        dApp: this.accounts.l2mpStaking.addr,
         call: {
           function: 'setEmissionPerBlock',
           args: [{
@@ -45,7 +45,7 @@ describe('mrt_staking: set emission per block', /** @this {MochaSuiteModified} *
         },
         additionalFee: 4e5,
         chainId,
-      }, this.accounts.mptStaking.seed);
+      }, this.accounts.l2mpStaking.seed);
 
       await api.transactions.broadcast(invokeTx, {});
       const { stateChanges, height } = await waitForTx(invokeTx.id);

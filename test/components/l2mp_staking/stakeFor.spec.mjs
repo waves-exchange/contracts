@@ -17,7 +17,7 @@ describe('mrt_staking: staking for another user', /** @this {MochaSuiteModified}
       const expectedLpAmount1 = stakeAmount1 * price;
 
       const stakeTx = invokeScript({
-        dApp: this.accounts.mptStaking.addr,
+        dApp: this.accounts.l2mpStaking.addr,
         call: {
           function: 'stakeFor',
           args: [{
@@ -26,7 +26,7 @@ describe('mrt_staking: staking for another user', /** @this {MochaSuiteModified}
           }],
         },
         payment: [
-          { assetId: this.mptAssetId, amount: stakeAmount1 },
+          { assetId: this.l2mpAssetId, amount: stakeAmount1 },
         ],
         additionalFee: 4e5,
         chainId,

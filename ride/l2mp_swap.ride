@@ -2,7 +2,7 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-let contractFile = "mpt_swap.ride"
+let contractFile = "l2mp_swap.ride"
 let SEP = "__"
 let scale8 = 100_000_000
 let scale18 = 1_000_000_000_000_000_000

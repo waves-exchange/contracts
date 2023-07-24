@@ -14,12 +14,12 @@ import {
 const seed = 'waves private node seed with waves tokens';
 const seedWordsCount = 5;
 const ridePath = '../ride';
-const mptStakingPath = format({ dir: ridePath, base: 'mpt_staking.ride' });
+const l2mpStakingPath = format({ dir: ridePath, base: 'l2mp_staking.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
     const names = [
-      'mptStaking',
+      'l2mpStaking',
       'admin1',
       'admin2',
       'admin3',
@@ -44,12 +44,12 @@ export const mochaHooks = {
     const issueAsset = issue({
       quantity: 1000000_0000_0000,
       decimals: 8,
-      name: 'MPT2',
-      description: 'MPT asset',
+      name: 'L2MP',
+      description: 'Mining Power Token for WAVES EVM L2 bootstrapping.',
       chainId,
-    }, this.accounts.mptStaking.seed);
+    }, this.accounts.l2mpStaking.seed);
 
-    this.mptAssetId = issueAsset.id;
+    this.l2mpAssetId = issueAsset.id;
 
     await api.transactions.broadcast(issueAsset, {});
     await waitForTx(issueAsset.id, { apiBase });
@@ -58,11 +58,11 @@ export const mochaHooks = {
       transfers: Object.values(this.accounts).map((item) => ({ recipient: item.addr, amount })),
       chainId,
       assetId: issueAsset.id,
-    }, this.accounts.mptStaking.seed);
+    }, this.accounts.l2mpStaking.seed);
     await api.transactions.broadcast(massTransferAssetTx, {});
     await waitForTx(massTransferAssetTx.id, { apiBase });
 
-    await setScriptFromFile(mptStakingPath, this.accounts.mptStaking.seed);
+    await setScriptFromFile(l2mpStakingPath, this.accounts.l2mpStaking.seed);
 
     // const adminsListString = [
     //   this.accounts.admin1.addr,
@@ -81,7 +81,7 @@ export const mochaHooks = {
         {
           key: '%s__assetId',
           type: 'string',
-          value: this.mptAssetId,
+          value: this.l2mpAssetId,
         },
         {
           key: '%s__emissionPeriodInBlocks',
@@ -90,7 +90,7 @@ export const mochaHooks = {
         },
       ],
       chainId,
-    }, this.accounts.mptStaking.seed);
+    }, this.accounts.l2mpStaking.seed);
 
     await api.transactions.broadcast(dataTx, {});
     await waitForTx(dataTx.id, { apiBase });
