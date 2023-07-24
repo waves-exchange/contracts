@@ -200,7 +200,7 @@ func getGwxRewardAddressOrFail(factoryCfg: List[String])  = factoryCfg[IdxFactor
 
 func getPriceAssets() = {
   match keyPriceAssets().getString() {
-    case s: String => if (s.size() == 0) then nil else s.split(SEP)
+    case s: String => if (s.size() == 0) then nil else s.split_4C(SEP)
     case _ => nil
   }
 }
