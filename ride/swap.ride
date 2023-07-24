@@ -82,7 +82,7 @@ func getSwapFees(poolAddressStr: String) = {
   let protocolFeeDefault = this.getInteger(protocolFee()).value()
 
   match factoryContract.invoke("getSwapFeeREADONLY", [poolAddressStr], []) {
-    case (_poolFee: Int, _protocolFee: Int) => (_poolFee, _protocolFee)
+    case fees: (Int, Int) => (fees._1, fees._2)
     case _ => (poolFeeDefault, protocolFeeDefault)
   }
 }
