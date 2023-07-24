@@ -2,7 +2,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { invokeScript } from '@waves/waves-transactions';
 import {
-  api, chainId, waitForTx,
+  chainId, broadcastAndWait,
 } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
@@ -25,7 +25,7 @@ describe('l2mp_staking: set emission per block', /** @this {MochaSuiteModified} 
         chainId,
       }, this.accounts.user1.seed);
 
-      return expect(api.transactions.broadcast(invokeTx, {})).to.be.rejectedWith('permission denied');
+      return expect(broadcastAndWait(invokeTx)).to.be.rejectedWith('permission denied');
     },
   );
 
@@ -47,8 +47,7 @@ describe('l2mp_staking: set emission per block', /** @this {MochaSuiteModified} 
         chainId,
       }, this.accounts.l2mpStaking.seed);
 
-      await api.transactions.broadcast(invokeTx, {});
-      const { stateChanges, height } = await waitForTx(invokeTx.id);
+      const { stateChanges, height } = await broadcastAndWait(invokeTx);
 
       return expect(stateChanges.data).to.be.deep.equal([
         { key: '%s__totalAssetAmount', type: 'integer', value: 0 },

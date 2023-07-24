@@ -8,10 +8,9 @@ import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
 
 import {
-  api, apiBase, waitForTx, chainId,
+  broadcastAndWait, chainId, baseSeed,
 } from '../../utils/api.mjs';
 
-const seed = 'waves private node seed with waves tokens';
 const seedWordsCount = 5;
 const ridePath = '../ride';
 const l2mpStakingPath = format({ dir: ridePath, base: 'l2mp_staking.ride' });
@@ -37,9 +36,8 @@ export const mochaHooks = {
     const massTransferTx = massTransfer({
       transfers: Object.values(this.accounts).map((item) => ({ recipient: item.addr, amount })),
       chainId,
-    }, seed);
-    await api.transactions.broadcast(massTransferTx, {});
-    await waitForTx(massTransferTx.id, { apiBase });
+    }, baseSeed);
+    await broadcastAndWait(massTransferTx);
 
     const issueAsset = issue({
       quantity: 1000000_0000_0000,
@@ -51,16 +49,14 @@ export const mochaHooks = {
 
     this.l2mpAssetId = issueAsset.id;
 
-    await api.transactions.broadcast(issueAsset, {});
-    await waitForTx(issueAsset.id, { apiBase });
+    await broadcastAndWait(issueAsset);
 
     const massTransferAssetTx = massTransfer({
       transfers: Object.values(this.accounts).map((item) => ({ recipient: item.addr, amount })),
       chainId,
       assetId: issueAsset.id,
     }, this.accounts.l2mpStaking.seed);
-    await api.transactions.broadcast(massTransferAssetTx, {});
-    await waitForTx(massTransferAssetTx.id, { apiBase });
+    await broadcastAndWait(massTransferAssetTx);
 
     await setScriptFromFile(l2mpStakingPath, this.accounts.l2mpStaking.seed);
 
@@ -92,7 +88,6 @@ export const mochaHooks = {
       chainId,
     }, this.accounts.l2mpStaking.seed);
 
-    await api.transactions.broadcast(dataTx, {});
-    await waitForTx(dataTx.id, { apiBase });
+    await broadcastAndWait(dataTx);
   },
 };

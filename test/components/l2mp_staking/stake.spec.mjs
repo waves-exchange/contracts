@@ -2,7 +2,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { invokeScript } from '@waves/waves-transactions';
 import {
-  api, chainId, waitForTx,
+  chainId, broadcastAndWait,
 } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
@@ -28,8 +28,7 @@ describe('l2mp_staking: staking', /** @this {MochaSuiteModified} */() => {
         chainId,
       }, this.accounts.user1.seed);
 
-      await api.transactions.broadcast(stakeTx, {});
-      const { stateChanges, height } = await waitForTx(stakeTx.id);
+      const { stateChanges, height } = await broadcastAndWait(stakeTx);
 
       expect(stateChanges.data).to.be.deep.equal([
         {

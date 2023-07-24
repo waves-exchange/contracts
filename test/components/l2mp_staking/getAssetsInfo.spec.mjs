@@ -2,7 +2,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { invokeScript } from '@waves/waves-transactions';
 import {
-  api, chainId, waitForTx,
+  api, chainId, broadcastAndWait,
 } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
@@ -38,22 +38,20 @@ describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() =>
         chainId,
       }, this.accounts.user2.seed);
 
-      await api.transactions.broadcast(stakeTx1, {});
-      await api.transactions.broadcast(stakeTx2, {});
-      await waitForTx(stakeTx1.id);
-      await waitForTx(stakeTx2.id);
+      await broadcastAndWait(stakeTx1);
+      await broadcastAndWait(stakeTx2);
     },
   );
 
   it(
     'getUserAssetsREADONLY should return correct values',
     async function () {
-      const expr = `getUserAssetsREADONLY(\"${this.accounts.user1.addr}\")`; /* eslint-disable-line */
+      const expr = `getUserAssetsREADONLY("${this.accounts.user1.addr}")`;
       const response = await api.utils.fetchEvaluate(
         this.accounts.l2mpStaking.addr,
         expr,
       );
-      const checkData = response.result.value._2; /* eslint-disable-line */
+      const checkData = response.result.value._2;
 
       expect(checkData).to.eql({
         type: 'Tuple',
@@ -71,12 +69,12 @@ describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() =>
   it(
     'getTotalAssetsREADONLY should return correct values',
     async function () {
-      const expr = 'getTotalAssetsREADONLY()'; /* eslint-disable-line */
+      const expr = 'getTotalAssetsREADONLY()';
       const response = await api.utils.fetchEvaluate(
         this.accounts.l2mpStaking.addr,
         expr,
       );
-      const checkData = response.result.value._2; /* eslint-disable-line */
+      const checkData = response.result.value._2;
 
       expect(checkData).to.eql({
         type: 'Tuple',

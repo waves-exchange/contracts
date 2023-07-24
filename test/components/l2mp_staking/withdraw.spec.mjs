@@ -1,8 +1,8 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
+import { invokeScript } from '@waves/waves-transactions';
 import {
-  api, apiBase, chainId, waitForHeight, waitForTx,
+  chainId, waitForHeight, broadcastAndWait,
 } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
@@ -14,6 +14,7 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
   const stakeAmount = 10e8;
   const expectedLpAmount = 10e8;
   const blocksCount = 2;
+  // TODO: sometimes contract returns 1004999999 instead of 1005000000
   const expectedWithdrawAmount = stakeAmount + ((emissionPerBlock / 2) * blocksCount);
 
   before(
@@ -31,8 +32,7 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
         chainId,
       }, this.accounts.l2mpStaking.seed);
 
-      await api.transactions.broadcast(setEmissionTx, {});
-      await waitForTx(setEmissionTx.id);
+      await broadcastAndWait(setEmissionTx);
     },
   );
 
@@ -67,12 +67,11 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
         chainId,
       }, this.accounts.user1.seed);
 
-      const startHeight = await ni.currentHeight(apiBase);
-      await api.transactions.broadcast(stakeForTx, {});
-      await api.transactions.broadcast(stakeTx, {});
-      // const a = await waitForTx(stakeTx.id);
+      const [{ height: startHeight }] = await Promise.all([
+        broadcastAndWait(stakeTx),
+        broadcastAndWait(stakeForTx),
+      ]);
 
-      // const startHeight = a.height;
       await waitForHeight(startHeight + blocksCount);
 
       const withdrawTx = invokeScript({
@@ -88,8 +87,7 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
         chainId,
       }, this.accounts.user1.seed);
 
-      await api.transactions.broadcast(withdrawTx, {});
-      const { stateChanges } = await waitForTx(withdrawTx.id);
+      const { stateChanges } = await broadcastAndWait(withdrawTx);
 
       expect(stateChanges.transfers).to.be.deep.equal([
         {
