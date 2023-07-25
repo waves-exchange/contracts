@@ -152,7 +152,7 @@ func getUserAvailableAssetsToWithdraw(userAddress: String) = {
   let userLpAmount = getUserLpAmount(userAddress)
   let userAvailableAssetToWithdraw = fraction(userLpAmount, getCurrentPrice(), scale8)
 
-  if (userAvailableAssetToWithdraw * scale8 < getCurrentPrice()) then 0 else userAvailableAssetToWithdraw
+  if (userAvailableAssetToWithdraw < 0) then 0 else userAvailableAssetToWithdraw
 }
 
 func getStakeActions(i: Invocation, userAddress: String) = {
