@@ -137,7 +137,6 @@ func voteINTERNAL(
   }
 }
 
-# TODO: check balance
 @Callable(i)
 func swap(stake: Boolean) = {
   let userAddress = i.caller
