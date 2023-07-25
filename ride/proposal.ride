@@ -102,6 +102,32 @@ func mustManager(i: Invocation) = {
   i.isManager() || "permission denied".throw()
 }
 
+func updateActiveVotingListActions() = {
+  func map(acc: (List[String], Boolean), proposalIndexStr: String) = {
+    let (activeVotingListNew, shouldBeUpdated) = acc
+    let proposalIndex = proposalIndexStr.parseInt().value()
+    let votingInfo = this.getString(keyProposalInfo(proposalIndex))
+      .valueOrErrorMessage(wrapErr("invalid proposal index in active voting list"))
+    let votingInfoArray = votingInfo.split(SEP)
+    let votingEndHeight = votingInfoArray[idxProposalInfoEnd].parseInt().value()
+    let votingIsOver = lastBlock.height > votingEndHeight
+
+    if (votingIsOver) then {
+      (activeVotingListNew, true)
+    } else {
+      (activeVotingListNew :+ proposalIndexStr, shouldBeUpdated)
+    }
+  }
+
+  let activeVotingList = getActiveVotingList()
+  let (activeVotingListNew, shouldBeUpdated) = FOLD<30>(activeVotingList, ([], false), map)
+
+  if (shouldBeUpdated) then [
+    StringEntry(keyActiveVotingList(), activeVotingListNew.makeString(SEP))
+  ] else []
+}
+
+# TODO: add active voting list size limit
 @Callable(i)
 func startNewVote(name: String, description: String, expirationHeight: Int, quorumNumber: Int) = {
   strict checks = [
@@ -128,7 +154,6 @@ func startNewVote(name: String, description: String, expirationHeight: Int, quor
   ]
 }
 
-# TODO: refresh active voting list
 @Callable(i)
 func voteFor(proposalIndex: Int, choice: Boolean) = {
   let EMPTY = "EMPTY"
@@ -190,10 +215,9 @@ func voteFor(proposalIndex: Int, choice: Boolean) = {
   [
     action1,
     action2
-  ]
+  ] ++ updateActiveVotingListActions()
 }
 
-# TODO: refresh active voting list
 @Callable(i)
 func deleteVote(proposalIndex: Int) = {
   let EMPTY = "EMPTY"
@@ -233,10 +257,9 @@ func deleteVote(proposalIndex: Int) = {
   [
     action,
     DeleteEntry(keyUserVoteOnProposal(proposalIndex, i.caller.toString()))
-  ]
+  ] ++ updateActiveVotingListActions()
 }
 
-# TODO: refresh active voting list
 @Callable(i)
 func changeVote(proposalIndex: Int, choice: Boolean) = {
   let EMPTY = "EMPTY"
@@ -301,7 +324,7 @@ func changeVote(proposalIndex: Int, choice: Boolean) = {
         gwxNumber.toString()
       )
     )
-  ]
+  ] ++ updateActiveVotingListActions()
 }
 
 @Callable(i)
