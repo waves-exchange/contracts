@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **19:03 26.07.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **19:09 26.07.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -14,6 +14,8 @@ factory_v2 | [`3PCuHsTU58WKhCqotbcSwABvdPzqqVAbbTv`](https://wavesexplorer.com/a
 gwx_reward | [`3PH83bJCZraJoEzFefz4p8UXZD9YazNnj1n`](https://wavesexplorer.com/addresses/3PH83bJCZraJoEzFefz4p8UXZD9YazNnj1n) | `4Uv4fNGxmwhwHRipWuYvZe87BazB9H19nVEac9pguorM` | [gwx_reward.ride](https://github.com/waves-exchange/contracts/blob/main/ride/gwx_reward.ride) 
 ido | [`3PKpsc1TNquw4HAF62pWK8ka1DBz9vyEBkt`](https://wavesexplorer.com/addresses/3PKpsc1TNquw4HAF62pWK8ka1DBz9vyEBkt) | `8ZLAVkwG8sZ97hmBdGRkQpYTp5En9xgEYX4PeupqxpFw` | [ido.ride](https://github.com/waves-exchange/contracts/blob/main/ride/ido.ride) 
 investor | [`3P841c8NzAnFHMzBjQhsnYHnevTu5X2CtpT`](https://wavesexplorer.com/addresses/3P841c8NzAnFHMzBjQhsnYHnevTu5X2CtpT) | `G83ncUgXtNY6aBquKgqmPJeNujm473h3XVcDtXZVhP1Z` | [investor.ride](https://github.com/waves-exchange/contracts/blob/main/ride/investor.ride) 
+l2mp_staking | [`3PEV7YB8caXLgQPCuKHtWtFSDTjgtbAxgqZ`](https://wavesexplorer.com/addresses/3PEV7YB8caXLgQPCuKHtWtFSDTjgtbAxgqZ) | `5erVrXGwDf4uTNPpGnGNKjHcwFUTztTpFTvj8ZBrLq57` | [l2mp_staking.ride](https://github.com/waves-exchange/contracts/blob/main/ride/l2mp_staking.ride) 
+l2mp_swap | [`3PANnmCGrufT8SZY5u6BZUgZq4QTh5XdPMa`](https://wavesexplorer.com/addresses/3PANnmCGrufT8SZY5u6BZUgZq4QTh5XdPMa) | `EfRKQWb1FWaWmo9fkorRwMA4BrSzUWNAVhXqB9vLmv7g` | [l2mp_swap.ride](https://github.com/waves-exchange/contracts/blob/main/ride/l2mp_swap.ride) 
 lambo | [`3P3hCvE9ZfeMnZE6kXzR6YBzxhxM8J6PE7K`](https://wavesexplorer.com/addresses/3P3hCvE9ZfeMnZE6kXzR6YBzxhxM8J6PE7K) | `EM7EfoVTgHtLuphbMD4o1z2Br9abQALk5fCGoMLeKTfX` | [lambo.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lambo.ride) 
 EAST/USDN pool | [`3PHxdxsgxNwEjVRt45sjeUfNZZ8uHzYVpvH`](https://wavesexplorer.com/addresses/3PHxdxsgxNwEjVRt45sjeUfNZZ8uHzYVpvH) | `Fnpu7cenvaaJPhSK6tbBrMJJLvoLs775ph5QJB7HiQpa` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 WAVES/USDN pool | [`3PPZWgFNRKHLvM51pwS934C8VZ7d2F4Z58g`](https://wavesexplorer.com/addresses/3PPZWgFNRKHLvM51pwS934C8VZ7d2F4Z58g) | `7JeravxHejNM5QqFiU1URLXYHueuDGzjdGucMBFJe5nz` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
@@ -154,8 +156,8 @@ BTCB-BSC-PPT | [`EW1uGLVo21Wd9i2Rhq8o4VKDTCQTGCGXE8DqayHGrLg8`](https://wavesexp
 BUSD | [`8DLiYZjo3UUaRBTHU7Ayoqg4ihwb6YH1AfXrrhdjQ7K1`](https://wavesexplorer.com/assets/8DLiYZjo3UUaRBTHU7Ayoqg4ihwb6YH1AfXrrhdjQ7K1) | Wrapped BUSD token 
 Curve DAO Token | [`3KhNcHo4We1G5EWps7b1e5DTdLgWDzctc8S6ynu37KAb`](https://wavesexplorer.com/assets/3KhNcHo4We1G5EWps7b1e5DTdLgWDzctc8S6ynu37KAb) | Curve Finance DAO Token 
 Duck Egg | [`C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS`](https://wavesexplorer.com/assets/C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS) | Utility and Reward token @ WavesDucks.com game. The duckiest token in the world. 
-EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
 EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.com/assets/3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK) | Enterprise Algorithmic Stable Token 
+EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
 ENNO | [`7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg`](https://wavesexplorer.com/assets/7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg) | Native utility and governance token of Enno Wallet 
 ETH-Ethereum-PPT | [`3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13`](https://wavesexplorer.com/assets/3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
 LINK | [`2bbGhKo5C31iEiB4CwGuqMYwjD7gCA9eXmm51fe2v8vT`](https://wavesexplorer.com/assets/2bbGhKo5C31iEiB4CwGuqMYwjD7gCA9eXmm51fe2v8vT) | Wrapped LINK token 
