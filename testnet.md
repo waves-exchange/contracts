@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-421-delete-pool**](https://github.com/waves-exchange/contracts/tree/wxdefi-421-delete-pool) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **17:10 26.07.2023** (GMT+4)
+[**wxdefi-421-delete-pool**](https://github.com/waves-exchange/contracts/tree/wxdefi-421-delete-pool) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **18:18 26.07.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -11,6 +11,8 @@ factory_v2 | [`3MsMP2pb2p8MDd6Rxb7XEXqqwEhE8ATfyai`](https://wavesexplorer.com/a
 gwx_reward | [`3Mp5kisFrqESzrXxAMEPk2k69zpeF41czEE`](https://wavesexplorer.com/addresses/3Mp5kisFrqESzrXxAMEPk2k69zpeF41czEE?network=testnet) | `G349Uq3FTox7dRNLeAfAQeoACvwZ9iEnVSaHcEYn6j8J` | [gwx_reward.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/gwx_reward.ride) 
 ido | [`3MptKi7f3jwXjzqhHpvLLzsSpEQdZiwAo5c`](https://wavesexplorer.com/addresses/3MptKi7f3jwXjzqhHpvLLzsSpEQdZiwAo5c?network=testnet) | `44kjsoExo76qSrM51NMhbG8FtdLkcPtyJxEDrwDyT8kz` | [ido.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/ido.ride) 
 investor | [`3N3sjhLSBU5duySKvnNuKe5S2YNebk2Pxye`](https://wavesexplorer.com/addresses/3N3sjhLSBU5duySKvnNuKe5S2YNebk2Pxye?network=testnet) | `Cm17BFEPG286HnXKy3BbrJ8QYz8AbCqoWfUi8rKwHo12` | [investor.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/investor.ride) 
+l2mp_staking | [`3Mvsbd5G4Xoyy4ib7gLCVSix21CyMr4K7jb`](https://wavesexplorer.com/addresses/3Mvsbd5G4Xoyy4ib7gLCVSix21CyMr4K7jb?network=testnet) | `8fnW16MobFGpeokNqZLUEqPaJUXn5zaSGf4ch9A3Ctk7` | [l2mp_staking.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/l2mp_staking.ride) 
+l2mp_swap | [`3MyXFjhxofZUKbHj3p8TUgZwDEPNzq7YNo3`](https://wavesexplorer.com/addresses/3MyXFjhxofZUKbHj3p8TUgZwDEPNzq7YNo3?network=testnet) | `GMSDsb2uuChLYT3PeuzaUNyxyxCVWUKaV6Y5dP7xWxUV` | [l2mp_swap.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/l2mp_swap.ride) 
 BTC/ETH pool | [`3N8iNNRC4UfDK4aJctSvHajiZ81fzSumCeP`](https://wavesexplorer.com/addresses/3N8iNNRC4UfDK4aJctSvHajiZ81fzSumCeP?network=testnet) | `F7NZd812aXMUyDcj1XaB3wgMJXJfUsq3RhPhrEZ9b6ND` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/lp.ride) 
 PCBT/WAVES pool | [`3Mqo3c7G5qkBfvMMLhriequKQFofhJSP9ip`](https://wavesexplorer.com/addresses/3Mqo3c7G5qkBfvMMLhriequKQFofhJSP9ip?network=testnet) | `5A4c5wG6NUWakcEewdfBkkZSvSdZRqo9onS5bqQrv3x1` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/lp.ride) 
 ETH/WAVES pool | [`3N74GDduMoMAhHk7dApH6P9VDWKhFZ417FD`](https://wavesexplorer.com/addresses/3N74GDduMoMAhHk7dApH6P9VDWKhFZ417FD?network=testnet) | `C94AxUmoNDGMx49Ry1Q3s6UNv8WgGMUeBb6zhLbfFk8v` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-421-delete-pool/ride/lp.ride) 
