@@ -51,10 +51,10 @@ let big2 = 2.toBigInt()
 let wavesString = "WAVES"
 
 let SEP = "__"
-let PoolActive               = 1   # ACTIVE, pool without restrictions
-let PoolPutDisabled          = 2   # PUT DISABLED, pool with put operation disabled
-let PoolMatcherDisabled      = 3   # MATCHER DISABLED, pool with matcher operations disabled
-let PoolShutdown             = 4   # SHUTDOWN, pool operations halted
+let PoolActive                = 1   # ACTIVE, pool without restrictions
+let PoolPutDisabled           = 2   # PUT DISABLED, pool with put operation disabled
+let PoolPutAndMatcherDisabled = 3   # PUT AND MATCHER DISABLED, pool with put and matcher operations disabled
+let PoolShutdown              = 4   # SHUTDOWN, pool operations halted
 # data indexes from pool config stored in factory
 let idxPoolAddress                              = 1
 let idxPoolStatus                               = 2
@@ -686,7 +686,11 @@ func validateMatcherOrderAllowed(order: Order) = {
   }
 
   # validate status
-  if (isGlobalShutdown() || cfgPoolStatus == PoolMatcherDisabled || cfgPoolStatus == PoolShutdown) then throw("Exchange operations disabled") else
+  if (
+    isGlobalShutdown() ||
+    cfgPoolStatus == PoolPutAndMatcherDisabled ||
+    cfgPoolStatus == PoolShutdown
+  ) then throw("Exchange operations disabled") else
 
   # validate pairs
   if (order.assetPair.amountAsset != cfgAmountAssetId ||  order.assetPair.priceAsset != cfgPriceAssetId) then throw("Wrong order assets.") else
@@ -752,7 +756,12 @@ func commonPut(i: Invocation, slippageTolerance: Int, emitLp: Boolean) = {
                       emitLp)
 
     let poolStatus  = estPut._8.parseIntValue()
-    if(isGlobalShutdown() || poolStatus == PoolPutDisabled || poolStatus == PoolShutdown) then throw("Put operation is blocked by admin. Status = " + poolStatus.toString()) else
+    if(
+      isGlobalShutdown() ||
+      poolStatus == PoolPutDisabled ||
+      poolStatus == PoolPutAndMatcherDisabled ||
+      poolStatus == PoolShutdown
+    ) then throw("Put operation is blocked by admin. Status = " + poolStatus.toString()) else
 
     estPut
 }
@@ -1133,7 +1142,12 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
     [this.toString()],
     []
   ).exactAs[Boolean]
-  let isPutDisabled = isGlobalShutdown() || cfgPoolStatus == PoolPutDisabled || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  let isPutDisabled = 
+    isGlobalShutdown() ||
+    cfgPoolStatus == PoolPutDisabled ||
+    cfgPoolStatus == PoolPutAndMatcherDisabled ||
+    cfgPoolStatus == PoolShutdown ||
+    isPoolOneTokenOperationsDisabled
 
   strict checks = [
     !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr(),

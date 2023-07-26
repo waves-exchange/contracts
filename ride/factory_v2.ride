@@ -23,10 +23,10 @@ let wavesString = "WAVES"
 let decimalsMultPrice = 100 * 1000 * 1000 # 10^8
 let SEP = "__"
 let EMPTY = ""
-let PoolActive               = 1   # ACTIVE, pool without restrictions
-let PoolPutDisabled          = 2   # PUT DISABLED, pool with put operation disabled
-let PoolMatcherDisabled      = 3   # MATCHER DISABLED, pool with matcher operations disabled
-let PoolShutdown             = 4   # SHUTDOWN, pool operations halted
+let PoolActive                = 1   # ACTIVE, pool without restrictions
+let PoolPutDisabled           = 2   # PUT DISABLED, pool with put operation disabled
+let PoolPutAndMatcherDisabled = 3   # PUT AND MATCHER DISABLED, pool with put and matcher operations disabled
+let PoolShutdown              = 4   # SHUTDOWN, pool operations halted
 
 let idxInternalAssetId                        = 1
 let idxResutActions                           = 2
