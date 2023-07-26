@@ -131,6 +131,8 @@ func keyInFee(poolAddress: String)
       = "%s%s__inFee__" + poolAddress
 func keyInFeeDefault()
       = "%s__inFeeDefault"
+# %d%d__poolFee__protocolFee
+func keySwapFee(poolAddress: String) = "%s%s__swapFee__" + poolAddress
 
 func keyOutFee(poolAddress: String)
       = "%s%s__outFee__" + poolAddress
@@ -203,7 +205,7 @@ func getGwxRewardAddressOrFail(factoryCfg: List[String])  = factoryCfg[IdxFactor
 
 func getPriceAssets() = {
   match keyPriceAssets().getString() {
-    case s: String => if (s.size() == 0) then nil else s.split(SEP)
+    case s: String => if (s.size() == 0) then nil else s.split_4C(SEP)
     case _ => nil
   }
 }
@@ -845,7 +847,7 @@ func onVerificationLoss(assetId: String) = {
     unit
     
   }
-  strict actions = FOLD<11>(priceAssets, unit, cb)
+  strict actions = FOLD<13>(priceAssets, unit, cb)
 
   (nil, unit)
 }
@@ -870,6 +872,22 @@ func getInFeeREADONLY(poolAddress: String) = {
 func getOutFeeREADONLY(poolAddress: String) = {
   let fee = intOrDefaultOrFallback(keyOutFee(poolAddress), keyOutFeeDefault(), fraction(10, MULT8, 10_000))
   ([], fee)
+}
+
+# %d%d__poolFee__protocolFee
+@Callable(i)
+func getSwapFeeREADONLY(poolAddressStr: String) = {
+  let feeOption = match this.getString(keySwapFee(poolAddressStr)) {
+    case s: String => {
+      let parts = s.split(SEP)
+      let poolFee = parts[1].parseIntValue()
+      let protocolFee = parts[2].parseIntValue()
+
+      (poolFee, protocolFee)
+    }
+    case _: Unit => unit
+  }
+  ([], feeOption)
 }
 
 @Callable(i)

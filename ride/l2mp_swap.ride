@@ -1,0 +1,214 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let contractFile = "l2mp_swap.ride"
+let SEP = "__"
+let scale8 = 100_000_000
+let scale18 = 1_000_000_000_000_000_000
+let ADDRESS_BYTES_SIZE = 26
+let BLOCKS_IN_DAY = 1440
+
+func wrapErr(msg: String) = {
+  contractFile + ": " + msg
+}
+
+func throwErr(msg: String) = {
+  throw(wrapErr(msg))
+}
+
+let keyAssetInId = ["%s", "assetInId"].makeString(SEP)
+let keyAssetOutId = ["%s", "assetOutId"].makeString(SEP)
+let keyAssetOutPrice = ["%s", "assetOutPrice"].makeString(SEP)
+let keyStakingAddress = ["%s", "stakingAddress"].makeString(SEP)
+let keyStatsTotalIn = ["%s%s", "stats", "totalIn"].makeString(SEP)
+let keyStatsTotalOut = ["%s%s", "stats", "totalOut"].makeString(SEP)
+
+func keyStatsTotalInByAddress(address: Address) = {
+  ["%s%s%s", "stats", "totalIn", address.toString()].makeString(SEP)
+}
+func keyStatsTotalOutByAddress(address: Address) = {
+  ["%s%s%s", "stats", "totalOut", address.toString()].makeString(SEP)
+}
+func keyHistory(address: Address, txId: ByteVector) = {
+  ["%s%s%s", "history", address.toString(), txId.toBase58String()].makeString(SEP)
+}
+func formatHistory(amountIn: Int, amountOut: Int, stake: Boolean) = {
+  ["%d%d%d", amountIn.toString(), amountOut.toString(), stake.toString()].makeString(SEP)
+}
+
+let assetInId = this.getString(keyAssetInId)
+  .valueOrErrorMessage(wrapErr("invalid assetInId"))
+  .fromBase58String()
+let assetInInfo = assetInfo(assetInId)
+  .valueOrErrorMessage(wrapErr("invalid assetInInfo"))
+let assetOutId = this.getString(keyAssetOutId)
+  .valueOrErrorMessage(wrapErr("invalid assetInId"))
+  .fromBase58String()
+let assetOutInfo = assetInfo(assetOutId)
+  .valueOrErrorMessage(wrapErr("invalid assetOutInfo"))
+let assetOutPrice = this.getInteger(keyAssetOutPrice)
+  .valueOrErrorMessage(wrapErr("invalid assetOutPrice"))
+let stakingAddressOption = match this.getString(keyStakingAddress) {
+  case s: String => addressFromString(s)
+  case _: Unit => unit
+}
+let stakingAddress = stakingAddressOption
+  .valueOrErrorMessage(wrapErr("invalid stakingAddress"))
+
+let ADMIN_LIST_SIZE = 5
+let QUORUM = 3
+let TXID_BYTES_LENGTH = 32
+
+func keyAllowedTxIdVotePrefix(txId: String) = makeString(["%s%s%s", "allowTxId", txId], SEP)
+# Make Admin vote key 
+func keyFullAdminVote(prefix: String, adminAddress: String) = makeString([prefix, adminAddress], SEP)
+# Admin List key
+func keyAdminAddressList() = makeString(["%s", "adminAddressList"], SEP)
+# Allowed TXID key
+func keyAllowedTxId() = makeString(["%s", "txId"], SEP)
+
+func getAdminVote(prefix: String, admin: String) = {
+  let voteKey = keyFullAdminVote(prefix, admin)
+  getInteger(voteKey).valueOrElse(0)
+}
+
+func getAdminsList() = {
+  match (this.getString(keyAdminAddressList())) {
+    case s:String => s.split(SEP)
+    case _ => []
+  }
+}
+
+func isInAdminList(address: String) = {
+  getAdminsList().containsElement(address)
+}
+
+# Generate List of keys with same prefix for all admins
+func genVotesKeysHelper(a: (List[String], String), adminAddress: String) = {
+  let (result, prefix) = a
+  (result :+ keyFullAdminVote(prefix, adminAddress), prefix)
+}
+func genVotesKeys(keyPrefix: String) = {
+  let adminList = keyAdminAddressList()
+  let (result, prefix) = FOLD<5>(getAdminsList(), ([], keyPrefix), genVotesKeysHelper)
+  result
+}
+
+# Count all votes for Prefix
+func countVotesHelper(result: Int, voteKey: String) = {
+  result + getInteger(voteKey).valueOrElse(0)
+}
+func countVotes(prefix: String) = {
+  let votes = genVotesKeys(prefix)
+  FOLD<5>(votes, 0, countVotesHelper)
+}
+
+# Generate DeleteEntry for all votes with Prefix
+func clearVotesHelper(result: List[DeleteEntry], key: String) = {
+  result :+ DeleteEntry(key) 
+}
+func getClearVoteEntries(prefix: String) = {
+  let votes = genVotesKeys(prefix)
+  FOLD<5>(votes, [], clearVotesHelper)
+}
+
+func voteINTERNAL(
+  callerAddressString: String, 
+  keyPrefix: String, 
+  minVotes: Int, 
+  voteResult: List[StringEntry|IntegerEntry|DeleteEntry]
+) = {
+  let voteKey = keyFullAdminVote(keyPrefix, callerAddressString)
+  let adminCurrentVote = getAdminVote(keyPrefix, callerAddressString)
+
+  strict err = if (!isInAdminList(callerAddressString)) then {
+    throwErr("Address: " + callerAddressString + " not in Admin list")
+  } else if (adminCurrentVote == 1) then {
+    throwErr(voteKey + " you already voted")
+  } else { unit }
+
+  let votes = countVotes(keyPrefix)
+  if (votes + 1 >= minVotes) then {
+    let clearVoteEntries = getClearVoteEntries(keyPrefix)
+    clearVoteEntries ++ voteResult
+  } else {
+    [ IntegerEntry(voteKey, 1) ]
+  }
+}
+
+@Callable(i)
+func swap(stake: Boolean) = {
+  let userAddress = i.caller
+  let paymentSizeExpected = 1
+  if (i.payments.size() != paymentSizeExpected) then throwErr("invalid payments") else
+  let payment = i.payments[0]
+  if (payment.assetId != assetInId) then throwErr("invalid payment assetId") else
+  if (assetOutPrice == 0) then throwErr("invalid assetOutPrice") else
+  let assetInAmount = payment.amount
+  let assetOutAmount = fraction(assetInAmount, scale8, assetOutPrice)
+  if (assetOutAmount == 0) then throwErr("invalid assetOutAmount") else
+
+  strict stakeInv = if (stake) then stakingAddress.invoke(
+    "stakeFor",
+    [userAddress.toString()],
+    [AttachedPayment(assetOutId, assetOutAmount)]
+  ) else unit
+
+  (
+    [
+      Burn(assetInId, assetInAmount),
+      IntegerEntry(
+        keyStatsTotalIn,
+        this.getInteger(keyStatsTotalIn).valueOrElse(0) + assetInAmount
+      ),
+      IntegerEntry(
+        keyStatsTotalOut,
+        this.getInteger(keyStatsTotalOut).valueOrElse(0) + assetOutAmount
+      ),
+      IntegerEntry(
+        keyStatsTotalInByAddress(userAddress),
+        this.getInteger(keyStatsTotalInByAddress(userAddress)).valueOrElse(0) + assetInAmount
+      ),
+      IntegerEntry(
+        keyStatsTotalOutByAddress(userAddress),
+        this.getInteger(keyStatsTotalOutByAddress(userAddress)).valueOrElse(0) + assetOutAmount
+      ),
+      StringEntry(
+        keyHistory(userAddress, i.transactionId),
+        formatHistory(assetInAmount, assetOutAmount, stake)
+      )
+    ] ++ if (stake) then [] else [
+      ScriptTransfer(userAddress, assetOutAmount, assetOutId)
+    ],
+    assetOutAmount
+  )
+}
+
+# Vote for txId that is allowed in Verifier
+@Callable(i)
+func voteForTxId(txId: String) = {
+  let callerAddressString = toBase58String(i.caller.bytes)
+  let keyPrefix = keyAllowedTxIdVotePrefix(txId)
+  let result = [ StringEntry(keyAllowedTxId(), txId) ]
+  let allowedTxIdOption = this.getString(keyAllowedTxId())
+  
+  strict err = [
+    txId.fromBase58String().size() == TXID_BYTES_LENGTH || throwErr(txId + " is not valid txId"),
+    allowedTxIdOption == unit || allowedTxIdOption.value() != txId || throwErr(txId + " is already allowed")
+  ]
+
+  voteINTERNAL(callerAddressString, keyPrefix, QUORUM, result)
+}
+
+@Verifier(tx)
+func verify() = {
+  let byAdmins = tx.id == this.getString(keyAllowedTxId()).valueOrElse("").fromBase58String()
+  let byOwner = if (getAdminsList().size() >= QUORUM) then {
+    false
+  } else {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+  }
+
+  byAdmins || byOwner
+}

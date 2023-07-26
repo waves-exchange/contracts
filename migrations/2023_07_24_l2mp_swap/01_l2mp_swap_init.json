@@ -1,0 +1,33 @@
+{
+  "type": 12,
+  "fee": 500000,
+  "version": 2,
+  "senderPublicKey": "EfRKQWb1FWaWmo9fkorRwMA4BrSzUWNAVhXqB9vLmv7g",
+  "data": [
+    {
+      "key": "%s__assetInId",
+      "type": "string",
+      "value": "DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p"
+    },
+    {
+      "key": "%s__assetOutId",
+      "type": "string",
+      "value": "7scqyYoVsNrpWbTAc78eRqNVcYLxMPzZs8EQfX7ruJAg"
+    },
+    {
+      "key": "%s__assetOutPrice",
+      "type": "integer",
+      "value": 1000000
+    },
+    {
+      "key": "%s__stakingAddress",
+      "type": "string",
+      "value": "3PEV7YB8caXLgQPCuKHtWtFSDTjgtbAxgqZ"
+    },
+    {
+      "key": "%s__adminAddressList",
+      "type": "string",
+      "value": "3PBUguU83ccjXz7NBbR3vn67fVHawbxwaTH__3PLU2bd4CDhHC35bf5qsQxYLpkEkpgkrcvc__3PF3AgB3cEE8F9ZUxuA9aLyM2PBjKrrszZQ__3PHdaP2BLUXFacnqZm6WoFjidvzqZZMbb8j__3P33RBZUXcdx5JW918DqFfrscEuEZpAPUPz"
+    }
+  ]
+}
