@@ -5,6 +5,8 @@
 let contractFile = "l2mp_staking.ride"
 let SEP = "__"
 let scale8 = 1_0000_0000
+let scale18 = 1_000_000_000_000_000_000
+let scale18BigInt = scale18.toBigInt()
 let ADDRESS_BYTES_SIZE = 26
 let BLOCKS_IN_DAY = 1440
 
@@ -140,9 +142,13 @@ func getTotalAssetAmountWithProfitOrMaxAvailable() = {
 
 func getCurrentPrice() = {
     if (totalLpAmount != 0) then {
-        fraction(getTotalAssetAmountWithProfitOrMaxAvailable(), scale8, totalLpAmount)
+        fraction(
+          getTotalAssetAmountWithProfitOrMaxAvailable().toBigInt(),
+          scale18BigInt,
+          totalLpAmount.toBigInt()
+        )
     } else {
-        1 * scale8
+        scale18BigInt
     }
 }
 
@@ -150,7 +156,7 @@ func getUserLpAmount(userAddress: String) = this.getInteger(keyUserLpAmount(user
 
 func getUserAvailableAssetsToWithdraw(userAddress: String) = {
   let userLpAmount = getUserLpAmount(userAddress)
-  let userAvailableAssetToWithdraw = fraction(userLpAmount, getCurrentPrice(), scale8)
+  let userAvailableAssetToWithdraw = fraction(userLpAmount.toBigInt(), getCurrentPrice(), scale18BigInt).toInt()
 
   if (userAvailableAssetToWithdraw < 0) then 0 else userAvailableAssetToWithdraw
 }
@@ -163,7 +169,7 @@ func getStakeActions(i: Invocation, userAddress: String) = {
     ]
 
     let paymentAmount = i.payments[0].amount
-    let paymentLpAmount = fraction(paymentAmount, scale8, getCurrentPrice())
+    let paymentLpAmount = fraction(paymentAmount.toBigInt(), scale18BigInt, getCurrentPrice()).toInt()
     let userLpAmount = getUserLpAmount(userAddress)
     let userTotalStakedAmount = this.getInteger(keyUserTotalAssetStaked(userAddress)).valueOrElse(0)
 
@@ -191,9 +197,9 @@ func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
     ]
 
     let newUserLpAmount = userLpAmount - lpAssetWithdrawAmount
-    let withdrawAssetAmount = fraction(lpAssetWithdrawAmount, getCurrentPrice(), scale8)
+    let withdrawAssetAmount = fraction(lpAssetWithdrawAmount.toBigInt(), getCurrentPrice(), scale18BigInt).toInt()
     let newTotalLpAmount = totalLpAmount - lpAssetWithdrawAmount
-    let newTotalAssetAmount = fraction(newTotalLpAmount, getCurrentPrice(), scale8)
+    let newTotalAssetAmount = fraction(newTotalLpAmount.toBigInt(), getCurrentPrice(), scale18BigInt).toInt()
     
     let userTotalAssetWithdrawn = this.getInteger(keyUserTotalAssetWithdrawn(userAddress)).valueOrElse(0)
     let newUserTotalAssetWithdrawn = userTotalAssetWithdrawn + withdrawAssetAmount
@@ -238,9 +244,9 @@ func stakeFor(userAddress: String) = {
 func withdraw(withdrawAssetAmount: Int) = {
   let userAddress = i.caller.toString()
   let userLpAmount = getUserLpAmount(userAddress)
-  let lpAmountToWithdraw = fraction(withdrawAssetAmount, scale8, getCurrentPrice())
+  let lpAmountToWithdraw = fraction(withdrawAssetAmount.toBigInt(), scale18BigInt, getCurrentPrice()).toInt()
   let userAvailableAssetToWithdraw = getUserAvailableAssetsToWithdraw(userAddress)
-  let minWithdrawAssetAmount = fraction(getCurrentPrice(), 1, scale8, CEILING)
+  let minWithdrawAssetAmount = fraction(getCurrentPrice(), 1.toBigInt(), scale18BigInt, CEILING).toInt()
   strict check = [
       withdrawAssetAmount > 0 || "withdraw amount should be more than 0".throwErr(),
       withdrawAssetAmount <= userAvailableAssetToWithdraw || ("cannot withdraw more than available (" + userAvailableAssetToWithdraw.toString() + ")").throwErr(),
