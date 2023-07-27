@@ -32,7 +32,6 @@ let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
 let assetIdBytes = if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
 let emissionPeriodInBlocks = this.getInteger(keyEmissionPeriodInBlocks).valueOrElse(BLOCKS_IN_DAY)
 let emissionPerPeriod = this.getInteger(keyEmissionPerBlock).valueOrElse(0) * emissionPeriodInBlocks
-let heightInPeriods = fraction(height, 1, emissionPeriodInBlocks)
 
 ######################
 # MULTISIG FUNCTIONS #
@@ -121,12 +120,16 @@ func voteINTERNAL(
 # MULTISIG FUNCTIONS END #
 ##########################
 
-func calcTotalProfit() = {
-    let startBlock = this.getInteger(keyStartBlock).valueOrElse(0)
-    let startPeriod = fraction(startBlock, 1, emissionPeriodInBlocks)
-    let elapsedPeriods = heightInPeriods - startPeriod
+func calcTotalProfitForHeight(h: Int) = {
+  let startBlock = this.getInteger(keyStartBlock).valueOrElse(0)
+  let startPeriod = fraction(startBlock, 1, emissionPeriodInBlocks)
+  let elapsedPeriods = h / emissionPeriodInBlocks - startPeriod
 
-    max([0, emissionPerPeriod * elapsedPeriods])
+  max([0, emissionPerPeriod * elapsedPeriods])
+}
+
+func calcTotalProfit() = {
+  calcTotalProfitForHeight(height)
 }
 
 func getTotalAssetAmountWithProfitOrMaxAvailable() = {
