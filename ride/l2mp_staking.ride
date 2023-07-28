@@ -26,6 +26,19 @@ func keyUserLpAmount(userAddress: String)            = ["%s%s", "userLpAmount", 
 func keyUserTotalAssetWithdrawn(userAddress: String) = ["%s%s", "totalAssetWithdrawn", userAddress].makeString(SEP)
 func keyUserTotalAssetStaked(userAddress: String)    = ["%s%s", "totalAssetStaked", userAddress].makeString(SEP)
 
+func keyHistory(type: String, userAddress: String, txId: ByteVector) = [
+  "%s%s%s",
+  type,
+  userAddress,
+  txId.toBase58String()
+].makeString(SEP)
+
+func formatHistory(totalProfit: Int, price: BigInt) = [
+  "%d%d",
+  totalProfit.toString(),
+  price.toString()
+].makeString(SEP)
+
 let totalLpAmount = this.getInteger(keyTotalLpAmount).valueOrElse(0)
 let totalAssetAmount = this.getInteger(keyTotalAssetAmount).valueOrElse(0)
 let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
@@ -184,6 +197,10 @@ func getStakeActions(i: Invocation, userAddress: String) = {
     let updateStartHeightAction = if (totalLpAmount == 0) then [ IntegerEntry(keyStartBlock, height) ] else []
 
     [
+        StringEntry(
+          keyHistory("stake", userAddress, i.transactionId),
+          formatHistory(calcTotalProfit(), getCurrentPrice())
+        ),
         IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
         IntegerEntry(keyTotalAssetAmount, newTotalAssetAmount),
         IntegerEntry(keyUserLpAmount(userAddress), newUserLpAmount),
@@ -208,6 +225,10 @@ func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
     let newUserTotalAssetWithdrawn = userTotalAssetWithdrawn + withdrawAssetAmount
 
     [
+        StringEntry(
+          keyHistory("withdraw", userAddress, i.transactionId),
+          formatHistory(calcTotalProfit(), getCurrentPrice())
+        ),
         IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
         IntegerEntry(keyTotalAssetAmount, newTotalAssetAmount),
         IntegerEntry(keyUserLpAmount(userAddress), newUserLpAmount),
