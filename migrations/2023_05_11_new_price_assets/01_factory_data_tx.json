@@ -1,0 +1,13 @@
+{
+    "type": 12,
+    "version": 2,
+    "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+    "fee": 500000,
+    "data": [
+        {
+            "key": "%s__priceAssets",
+            "type": "string",
+            "value": "Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on__WAVES__9wc3LXNA4TEBsXyKtoLE9mrbDD7WMHXvXrCjZvabLAsi__HGgabTqUS8WtVFUJzfmrTDMgEccJuZLBPhFgQFxvnsoW__EW1uGLVo21Wd9i2Rhq8o4VKDTCQTGCGXE8DqayHGrLg8__A81p1LTRyoq2rDR2TNxB2dWYxsiNwCSSi8sXef2SEkwb__4BKKSp6NoNcrFHyorZogDyctq1fq6w7114Ym1pw6HUtC__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p__66a1br3BrkoaJgP7yEar9hJcSTvJPoH6PYBLqscXcMGo"
+        }
+    ]
+}
