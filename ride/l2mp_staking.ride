@@ -242,8 +242,8 @@ func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
           formatHistory(
             calcTotalProfit(),
             getCurrentPrice(),
-            totalAssetAmount,
-            totalLpAmount
+            totalLpAmount,
+            totalAssetAmount
           )
         ),
         IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
@@ -266,6 +266,20 @@ func setEmissionPerBlock(emissionPerBlock: Int) = {
         IntegerEntry(keyStartBlock, height),
         IntegerEntry(keyEmissionPerBlock, max([0, emissionPerBlock]))
     ]
+}
+
+@Callable(i)
+func setEmissionPeriodInBlocks(p: Int) = {
+  strict check = [
+    p > 0 || "emission period should be greater than 0".throwErr(),
+    i.caller == this || "permission denied".throwErr()
+  ]
+
+  [
+    IntegerEntry(keyTotalAssetAmount, getTotalAssetAmountWithProfitOrMaxAvailable()),
+    IntegerEntry(keyStartBlock, height),
+    IntegerEntry(keyEmissionPeriodInBlocks, p)
+  ]
 }
 
 @Callable(i)
