@@ -267,16 +267,12 @@ func getGwxAmountTotal() = {
 
 func getLockedGwxAmount(userAddress: Address) = {
   # TODO: get locked amount for userAddress (invoke or state)
-  let lockedProposal = 0
   let lockedVotingEmissionRate = 0
   let lockedVotingEmission = 0
-  let lockedVotingVerified = 0
 
   let locked = max([
-    lockedProposal,
     lockedVotingEmissionRate,
-    lockedVotingEmission,
-    lockedVotingVerified
+    lockedVotingEmission
   ])
 
   locked
