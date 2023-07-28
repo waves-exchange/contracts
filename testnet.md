@@ -1,5 +1,5 @@
 # Testnet environment
-[**l2mp-staking-math-fix**](https://github.com/waves-exchange/contracts/tree/l2mp-staking-math-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **12:01 28.07.2023** (GMT+4)
+[**l2mp-staking-math-fix**](https://github.com/waves-exchange/contracts/tree/l2mp-staking-math-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:04 28.07.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -29,6 +29,7 @@ Kekenger/USDT pool | [`3N3LtGiBDqDjfHpd7WnTCTKXB3gPWqUrDLL`](https://wavesexplor
 WX/WAVES pool | [`3MqGtuaL3yJbKHqUxnSihJmYroyPf6QDp1x`](https://wavesexplorer.com/addresses/3MqGtuaL3yJbKHqUxnSihJmYroyPf6QDp1x?network=testnet) | `HNMWjb4Vq8JwETf7kHV57gaKXLvsdCS5KPTaHKa4XKa6` | [lp.ride](https://github.com/waves-exchange/contracts/blob/l2mp-staking-math-fix/ride/lp.ride) 
 APPLE/TESTEAST pool | [`3MwgVcc26F1kRAfYdaHr3ZXkWCmRi3bPcAY`](https://wavesexplorer.com/addresses/3MwgVcc26F1kRAfYdaHr3ZXkWCmRi3bPcAY?network=testnet) | `aiasL8zA6M6XjqL4Vj6VQ6QMxp2YjUzvCmd7mfAT9oS` | [lp.ride](https://github.com/waves-exchange/contracts/blob/l2mp-staking-math-fix/ride/lp.ride) 
 MYCOIN/TESTEAST pool | [`3N9gee8G3PpYacSwKwjCq4FCoEHrsgupsdA`](https://wavesexplorer.com/addresses/3N9gee8G3PpYacSwKwjCq4FCoEHrsgupsdA?network=testnet) | `BC48B3Axpv2LvE7A2JPYR77mgwDkigKqtKZh5352WZmJ` | [lp.ride](https://github.com/waves-exchange/contracts/blob/l2mp-staking-math-fix/ride/lp.ride) 
+WX/Nigga Hope pool | [`3MyF6FrSHK3ikwhoNEWEw8EGGURTGYsLfAj`](https://wavesexplorer.com/addresses/3MyF6FrSHK3ikwhoNEWEw8EGGURTGYsLfAj?network=testnet) | `mjXzoQNvEPehcF5Zp5ycTQRjAZqnfFUnHNoH6DNtmSg` | [lp.ride](https://github.com/waves-exchange/contracts/blob/l2mp-staking-math-fix/ride/lp.ride) 
 USDC/USDT pool | [`3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA`](https://wavesexplorer.com/addresses/3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA?network=testnet) | `35yd3qw1gxKDxKwGAykHN9fANbXNWwseaUwbWDj24o3x` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/l2mp-staking-math-fix/ride/lp_stable.ride) 
 USDT/USDN pool | [`3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT`](https://wavesexplorer.com/addresses/3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT?network=testnet) | `D1BL65meykxFZTCuq7jq9HSGLLnWvQamQPUNrguW5w39` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/l2mp-staking-math-fix/ride/lp_stable.ride) 
 lp_staking | [`3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL`](https://wavesexplorer.com/addresses/3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL?network=testnet) | `ER6eHxtBYJ4JakpeheRtGgvT5AeP1S4g44VxoNJo14kd` | [lp_staking.ride](https://github.com/waves-exchange/contracts/blob/l2mp-staking-math-fix/ride/lp_staking.ride) 
@@ -62,6 +63,7 @@ EAST | [`6dtQJDYyQxjngoY5QKVMQxkxeNeExdetWugQMfrfFk47`](https://wavesexplorer.co
 ETH-Ethereum-PPT | [`EGo1BQqGxHsc4nFCi5uzpd8eSbH22xGR8hiw9P44Uviw`](https://wavesexplorer.com/assets/EGo1BQqGxHsc4nFCi5uzpd8eSbH22xGR8hiw9P44Uviw?network=testnet) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
 Ethereum | [`BrmjyAWT5jjr3Wpsiyivyvg5vDuzoX2s93WgiexXetB3`](https://wavesexplorer.com/assets/BrmjyAWT5jjr3Wpsiyivyvg5vDuzoX2s93WgiexXetB3?network=testnet) | Ethereum Token 
 MYCOIN | [`6B1HUt9VTUa2x9Rg8EwfY9u6RYsWag1A6GiRrjKxneNH`](https://wavesexplorer.com/assets/6B1HUt9VTUa2x9Rg8EwfY9u6RYsWag1A6GiRrjKxneNH?network=testnet) | Test MYCOIN 
+Nigga Hope | [`9457rs52YU52oEYySuFYztNBaFkEMyXuknZF4kDx79qC`](https://wavesexplorer.com/assets/9457rs52YU52oEYySuFYztNBaFkEMyXuknZF4kDx79qC?network=testnet) | — 
 PCBT | [`AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8`](https://wavesexplorer.com/assets/AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8?network=testnet) | PepeTeam Crosschain Bridge Token 
 sWAVES | [`FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm`](https://wavesexplorer.com/assets/FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm?network=testnet) | sWAVES is the tokenized form of staked WAVES powered by PepeTeam. See details at https://swaves.pepe.team 
 TESTEAST | [`Ago2eaFkPqiiDnHej9NzMfqYEA7Y9qsAdqJhSWvmwtfQ`](https://wavesexplorer.com/assets/Ago2eaFkPqiiDnHej9NzMfqYEA7Y9qsAdqJhSWvmwtfQ?network=testnet) | Stable token 
@@ -92,3 +94,4 @@ WAVESUSDNWXLP | [`FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V`](https://wavesex
 WBTCWETHWXLP | [`BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT`](https://wavesexplorer.com/assets/BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT?network=testnet) | WX WBTC/WETH pool liquidity provider token 
 WXUSDNWXLP | [`2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib`](https://wavesexplorer.com/assets/2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib?network=testnet) | WX WX/Usdn pool liquidity provider token 
 WXUSDTLP | [`7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8`](https://wavesexplorer.com/assets/7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8?network=testnet) | WX/USDT pool liquidity provider token 
+WX~Nigga HopeLP | [`3uZF4wey4sicH6SLhEEcHuJnwsfdnvShMacSsyS7bzG1`](https://wavesexplorer.com/assets/3uZF4wey4sicH6SLhEEcHuJnwsfdnvShMacSsyS7bzG1?network=testnet) | WX/~Nigga Hope pool liquidity provider token 
