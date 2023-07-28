@@ -23,12 +23,6 @@ func keyUserVoteOnProposal(number: Int, user: String) = {
   ["%s%d%s", "userVoteOnProposal", number.toString(), user].makeString(SEP)
 }
 
-func keyActiveVotingList() = ["%s", "activeVotingList"].makeString(SEP)
-func getActiveVotingList() = match this.getString(keyActiveVotingList()) {
-  case s: String => s.split(SEP)
-  case _: Unit => []
-}
-
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
@@ -102,39 +96,12 @@ func mustManager(i: Invocation) = {
   i.isManager() || "permission denied".throw()
 }
 
-func updateActiveVotingListActions() = {
-  func map(acc: (List[String], Boolean), proposalIndexStr: String) = {
-    let (activeVotingListNew, shouldBeUpdated) = acc
-    let proposalIndex = proposalIndexStr.parseInt().value()
-    let votingInfo = this.getString(keyProposalInfo(proposalIndex))
-      .valueOrErrorMessage(wrapErr("invalid proposal index in active voting list"))
-    let votingInfoArray = votingInfo.split(SEP)
-    let votingEndHeight = votingInfoArray[idxProposalInfoEnd].parseInt().value()
-    let votingIsOver = lastBlock.height > votingEndHeight
-
-    if (votingIsOver) then {
-      (activeVotingListNew, true)
-    } else {
-      (activeVotingListNew :+ proposalIndexStr, shouldBeUpdated)
-    }
-  }
-
-  let activeVotingList = getActiveVotingList()
-  let (activeVotingListNew, shouldBeUpdated) = FOLD<30>(activeVotingList, ([], false), map)
-
-  if (shouldBeUpdated) then [
-    StringEntry(keyActiveVotingList(), activeVotingListNew.makeString(SEP))
-  ] else []
-}
-
-# TODO: add active voting list size limit
 @Callable(i)
 func startNewVote(name: String, description: String, expirationHeight: Int, quorumNumber: Int) = {
   strict checks = [
     i.mustManager()
   ]
   let theIndex = getCurrentIndex()
-  let newActiveVotingList = theIndex.toString() :: getActiveVotingList()
   
   [
     IntegerEntry(keyCurrentIndex(), theIndex + 1),
@@ -149,8 +116,7 @@ func startNewVote(name: String, description: String, expirationHeight: Int, quor
         "0"
       )
     ),
-    StringEntry(keyProposalDescription(theIndex), description),
-    StringEntry(keyActiveVotingList(), newActiveVotingList.makeString(SEP))
+    StringEntry(keyProposalDescription(theIndex), description)
   ]
 }
 
@@ -215,7 +181,7 @@ func voteFor(proposalIndex: Int, choice: Boolean) = {
   [
     action1,
     action2
-  ] ++ updateActiveVotingListActions()
+  ]
 }
 
 @Callable(i)
@@ -257,7 +223,7 @@ func deleteVote(proposalIndex: Int) = {
   [
     action,
     DeleteEntry(keyUserVoteOnProposal(proposalIndex, i.caller.toString()))
-  ] ++ updateActiveVotingListActions()
+  ]
 }
 
 @Callable(i)
@@ -324,7 +290,7 @@ func changeVote(proposalIndex: Int, choice: Boolean) = {
         gwxNumber.toString()
       )
     )
-  ] ++ updateActiveVotingListActions()
+  ]
 }
 
 @Callable(i)
@@ -341,42 +307,6 @@ func getResultREADONLY(proposalIndex: Int) = {
   let negativeVotes = voteInfoArray[5]
 
   ([], [positiveVotes, negativeVotes, quorumNumber])
-}
-
-@Callable(i)
-func getLockedGwxAmount(userAddressStr: String) = {
-  let userAddress = addressFromString(userAddressStr)
-    .valueOrErrorMessage(wrapErr("invalid address"))
-  let activeVotingList = getActiveVotingList()
-  func map(acc: List[Int], proposalIndexStr: String) = {
-    let proposalIndex = proposalIndexStr.parseInt().value()
-    let votingInfo = this.getString(keyProposalInfo(proposalIndex))
-      .valueOrErrorMessage(wrapErr("invalid proposal index in active voting list"))
-    let votingInfoArray = votingInfo.split(SEP)
-    let votingEndHeight = votingInfoArray[idxProposalInfoEnd].parseInt().value()
-    let votingIsOver = lastBlock.height > votingEndHeight
-    let userVoteInfoOption = this.getString(
-      keyUserVoteOnProposal(proposalIndex, userAddressStr)
-    )
-    let userVoteGwxAmount = match userVoteInfoOption {
-      case userVoteInfo: String => {
-        let userVoteInfoArray = userVoteInfo.split(SEP)
-        userVoteInfoArray[idxUserVoteOnProposalGwxNumber].parseInt().value()
-      }
-      case _: Unit => 0
-    }
-    let activeVoteValue = if (votingIsOver) then {
-      0
-    } else {
-      userVoteGwxAmount
-    }
-
-    activeVoteValue :: acc
-  }
-  let userVotes = FOLD<30>(activeVotingList, [], map)
-  let maxUserVote = max(userVotes)
-
-  (nil, maxUserVote)
 }
 
 @Verifier(tx)
