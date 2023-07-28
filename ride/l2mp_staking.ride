@@ -33,10 +33,17 @@ func keyHistory(type: String, userAddress: String, txId: ByteVector) = [
   txId.toBase58String()
 ].makeString(SEP)
 
-func formatHistory(totalProfit: Int, price: BigInt) = [
+func formatHistory(
+  totalProfit: Int,
+  price: BigInt,
+  totalAssetAmount: Int,
+  totalLpAmount: Int
+) = [
   "%d%d",
   totalProfit.toString(),
-  price.toString()
+  price.toString(),
+  totalAssetAmount.toString(),
+  totalLpAmount.toString()
 ].makeString(SEP)
 
 let totalLpAmount = this.getInteger(keyTotalLpAmount).valueOrElse(0)
@@ -199,7 +206,12 @@ func getStakeActions(i: Invocation, userAddress: String) = {
     [
         StringEntry(
           keyHistory("stake", userAddress, i.transactionId),
-          formatHistory(calcTotalProfit(), getCurrentPrice())
+          formatHistory(
+            calcTotalProfit(),
+            getCurrentPrice(),
+            totalLpAmount,
+            totalAssetAmount
+          )
         ),
         IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
         IntegerEntry(keyTotalAssetAmount, newTotalAssetAmount),
@@ -227,7 +239,12 @@ func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
     [
         StringEntry(
           keyHistory("withdraw", userAddress, i.transactionId),
-          formatHistory(calcTotalProfit(), getCurrentPrice())
+          formatHistory(
+            calcTotalProfit(),
+            getCurrentPrice(),
+            totalAssetAmount,
+            totalLpAmount
+          )
         ),
         IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
         IntegerEntry(keyTotalAssetAmount, newTotalAssetAmount),
