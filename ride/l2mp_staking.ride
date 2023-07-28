@@ -192,7 +192,7 @@ func getStakeActions(i: Invocation, userAddress: String) = {
     ]
 
     let paymentAmount = i.payments[0].amount
-    let paymentLpAmount = fraction(paymentAmount.toBigInt(), scale18BigInt, getCurrentPrice()).toInt()
+    strict paymentLpAmount = fraction(paymentAmount.toBigInt(), scale18BigInt, getCurrentPrice()).toInt()
     let userLpAmount = getUserLpAmount(userAddress)
     let userTotalStakedAmount = this.getInteger(keyUserTotalAssetStaked(userAddress)).valueOrElse(0)
 
