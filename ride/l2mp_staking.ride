@@ -39,7 +39,7 @@ func formatHistory(
   totalAssetAmount: Int,
   totalLpAmount: Int
 ) = [
-  "%d%d",
+  "%d%d%d%d",
   totalProfit.toString(),
   price.toString(),
   totalAssetAmount.toString(),
