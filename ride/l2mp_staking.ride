@@ -308,7 +308,7 @@ func withdraw(withdrawAssetAmount: Int) = {
       withdrawAssetAmount >= minWithdrawAssetAmount || ("withdraw amount is too small. Min: (" + minWithdrawAssetAmount.toString() + ")").throwErr()
   ]
 
-  getWithdrawActions(i, lpAmountToWithdraw)
+  getWithdrawActions(i, min([userLpAmount, lpAmountToWithdraw + 1]))
 }
 
 # Return tuple: 
