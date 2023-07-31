@@ -58,7 +58,7 @@ describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() =>
         value: {
           _1: { type: 'Int', value: stakeAmount1 },
           _2: { type: 'Int', value: stakeAmount1 },
-          _3: { type: 'Int', value: 100000000 },
+          _3: { type: 'BigInt', value: `${10e17}` },
           _4: { type: 'Int', value: stakeAmount1 },
           _5: { type: 'Int', value: 0 },
         },
@@ -81,7 +81,7 @@ describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() =>
         value: {
           _1: { type: 'Int', value: stakeAmount1 + stakeAmount2 },
           _2: { type: 'Int', value: stakeAmount1 + stakeAmount2 },
-          _3: { type: 'Int', value: 100000000 },
+          _3: { type: 'BigInt', value: `${10e17}` },
         },
       });
     },
