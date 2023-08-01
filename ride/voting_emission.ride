@@ -768,6 +768,19 @@ func isFinalizationInProgress() = {
   (nil, finalizationInProgress)
 }
 
+@Callable(i)
+func getLockedGwxAmount(userAddressStr: String) = {
+  let userAddress = userAddressStr.addressFromString()
+    .valueOrErrorMessage(wrapErr("invalid user address"))
+  let epoch = this.getInteger(keyCurrentEpoch).valueOrElse(0)
+  let gwxAmount = match this.getInteger(keyUsed(userAddress, epoch)) {
+    case _: Unit => 0
+    case n: Int => n
+  }
+
+  (nil, gwxAmount)
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
