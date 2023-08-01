@@ -2,7 +2,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { invokeScript } from '@waves/waves-transactions';
 import {
-  chainId, waitForHeight, broadcastAndWait,
+  chainId, waitForHeight, broadcastAndWait, broadcast,
 } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
@@ -69,11 +69,8 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
         chainId,
       }, this.accounts.user1.seed);
 
-      const [{ height: startHeight }] = await Promise.all([
-        broadcastAndWait(stakeTx),
-        broadcastAndWait(stakeForTx),
-      ]);
-
+      const { height: startHeight } = await broadcastAndWait(stakeTx);
+      await broadcast(stakeForTx);
       await waitForHeight(startHeight + blocksCount);
 
       const withdrawTx = invokeScript({
