@@ -251,6 +251,8 @@ let lpStakingPoolsContract = ["%s", "lpStakingPoolsContract"].makeString(SEP)
 
 let keyVotingEmissionContract = ["%s", "votingEmissionContract"].makeString(SEP)
 let votingEmissionContract = factoryContract.getStringValue(keyVotingEmissionContract).addressFromStringValue()
+# in voting emission contract storage
+let keyVotingEmissionRateContract = ["%s", "votingEmissionRateContract"].makeString(SEP)
 
 let boostCoeff = emissionContract.invoke("getBoostCoeffREADONLY", [], []).exactAs[Int]
 
@@ -266,9 +268,15 @@ func getGwxAmountTotal() = {
 }
 
 func getLockedGwxAmount(userAddress: Address) = {
-  # TODO: get locked amount for userAddress (invoke or state)
-  let lockedVotingEmissionRate = 0
-  let lockedVotingEmission = 0
+  let functionName = "getLockedGwxAmount"
+  let votingEmissionRateContract = {
+    match votingEmissionContract.getString(keyVotingEmissionRateContract) {
+      case _: Unit => unit
+      case s: String => addressFromString(s)
+    }
+  }.valueOrErrorMessage(wrapErr("invalid voting emission rate address"))
+  let lockedVotingEmissionRate = votingEmissionContract.invoke(functionName, [userAddress.toString()], []).exactAs[Int]
+  let lockedVotingEmission = votingEmissionRateContract.invoke(functionName, [userAddress.toString()], []).exactAs[Int]
 
   let locked = max([
     lockedVotingEmissionRate,
