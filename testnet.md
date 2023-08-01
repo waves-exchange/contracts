@@ -1,5 +1,5 @@
 # Testnet environment
-[**l2mp-staking-math-fix**](https://github.com/waves-exchange/contracts/tree/l2mp-staking-math-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:42 01.08.2023** (GMT+4)
+[**l2mp-staking-math-fix**](https://github.com/waves-exchange/contracts/tree/l2mp-staking-math-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **14:05 01.08.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
