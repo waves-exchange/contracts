@@ -14,6 +14,8 @@ export const largeNumbeConvertHeader = {
 
 export const separator = '__';
 
+export const broadcast = async (tx) => api.transactions.broadcast(tx, {});
+
 export const broadcastAndWait = async (tx) => {
   await api.transactions.broadcast(tx, {});
   await nodeInteraction.waitForTx(tx.id, { apiBase });

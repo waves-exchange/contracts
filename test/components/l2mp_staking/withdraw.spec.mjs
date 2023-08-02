@@ -2,7 +2,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { invokeScript } from '@waves/waves-transactions';
 import {
-  chainId, waitForHeight, broadcastAndWait,
+  chainId, waitForHeight, broadcastAndWait, broadcast,
 } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
@@ -14,8 +14,10 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
   const stakeAmount = 10e8;
   const expectedLpAmount = 10e8;
   const blocksCount = 2;
+  const totalProfit = emissionPerBlock * blocksCount;
   // TODO: sometimes contract returns 1004999999 instead of 1005000000
-  const expectedWithdrawAmount = stakeAmount + ((emissionPerBlock / 2) * blocksCount);
+  const expectedWithdrawAmount = stakeAmount + (totalProfit / 2);
+  const expectedPrice = expectedWithdrawAmount * 10e8;
 
   before(
     async function () {
@@ -67,11 +69,8 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
         chainId,
       }, this.accounts.user1.seed);
 
-      const [{ height: startHeight }] = await Promise.all([
-        broadcastAndWait(stakeTx),
-        broadcastAndWait(stakeForTx),
-      ]);
-
+      const { height: startHeight } = await broadcastAndWait(stakeTx);
+      await broadcast(stakeForTx);
       await waitForHeight(startHeight + blocksCount);
 
       const withdrawTx = invokeScript({
@@ -87,7 +86,7 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
         chainId,
       }, this.accounts.user1.seed);
 
-      const { stateChanges } = await broadcastAndWait(withdrawTx);
+      const { stateChanges, id } = await broadcastAndWait(withdrawTx);
 
       expect(stateChanges.transfers).to.be.deep.equal([
         {
@@ -98,6 +97,11 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
       ]);
 
       expect(stateChanges.data).to.be.deep.equal([
+        {
+          key: `%s%s%s__withdraw__${this.accounts.user1.addr}__${id}`,
+          type: 'string',
+          value: `%d%d%d%d__${totalProfit}__${expectedPrice}__${stakeAmount * 2}__${expectedLpAmount * 2}`,
+        },
         {
           key: '%s__totalLpAmount',
           type: 'integer',
