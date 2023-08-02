@@ -6,7 +6,7 @@
 # * "%s%s__config__referralsContractAddress": String
 # * "%s__nextUserNum": Int
 # * "%s%s__config__factoryAddress": String
-# * "%s__config": String ("%s%d%d%d__<assetId__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>")
+# * "%s__config": String ("%s%d%d%d%s__<assetId>__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>")
 # * "%s__lpStakingPoolsContract": String
 
 let SEP = "__"
@@ -103,7 +103,7 @@ let mathContract = cfgArray[IdxCfgMathContract].addressFromString().valueOrError
 
 func formatConfigS(assetId: String, minLockAmount: String, minLockDuration: String, maxLockDuration: String, mathContract: String) = {
   makeString([
-      "%s%d%d%d",
+      "%s%d%d%d%s",
       assetId, # 1
       minLockAmount, # 2
       minLockDuration, # 3
