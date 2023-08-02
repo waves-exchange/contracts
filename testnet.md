@@ -1,5 +1,5 @@
 # Testnet environment
-[**l2mp-staking-math-fix**](https://github.com/waves-exchange/contracts/tree/l2mp-staking-math-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **14:05 01.08.2023** (GMT+4)
+[**l2mp-staking-math-fix**](https://github.com/waves-exchange/contracts/tree/l2mp-staking-math-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:05 02.08.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -57,7 +57,41 @@ voting_verified_v2 | [`3N1BEXuoepNEwqkbeZYKviaLQfvBQV3ibYE`](https://wavesexplor
 ## Pool assets
 | Name | AssetID | Description |
 |------|---------|-------------|
+Apple Coin | [`2CjLFYkp4W4sEAxCjFG9oD3smfhvV6yQnNmiJyexbLdu`](https://wavesexplorer.com/assets/2CjLFYkp4W4sEAxCjFG9oD3smfhvV6yQnNmiJyexbLdu?network=testnet) | Apple coin 
+Bitcoin | [`DWgwcZTMhSvnyYCoWLRUXXSH1RSkzThXLJhww9gwkqdn`](https://wavesexplorer.com/assets/DWgwcZTMhSvnyYCoWLRUXXSH1RSkzThXLJhww9gwkqdn?network=testnet) | Bitcoin Token 
+EAST | [`6dtQJDYyQxjngoY5QKVMQxkxeNeExdetWugQMfrfFk47`](https://wavesexplorer.com/assets/6dtQJDYyQxjngoY5QKVMQxkxeNeExdetWugQMfrfFk47?network=testnet) | Enterprise Algorithmic Stable Token 
+ETH-Ethereum-PPT | [`EGo1BQqGxHsc4nFCi5uzpd8eSbH22xGR8hiw9P44Uviw`](https://wavesexplorer.com/assets/EGo1BQqGxHsc4nFCi5uzpd8eSbH22xGR8hiw9P44Uviw?network=testnet) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
+Ethereum | [`BrmjyAWT5jjr3Wpsiyivyvg5vDuzoX2s93WgiexXetB3`](https://wavesexplorer.com/assets/BrmjyAWT5jjr3Wpsiyivyvg5vDuzoX2s93WgiexXetB3?network=testnet) | Ethereum Token 
+MYCOIN | [`6B1HUt9VTUa2x9Rg8EwfY9u6RYsWag1A6GiRrjKxneNH`](https://wavesexplorer.com/assets/6B1HUt9VTUa2x9Rg8EwfY9u6RYsWag1A6GiRrjKxneNH?network=testnet) | Test MYCOIN 
+Nigga Hope | [`9457rs52YU52oEYySuFYztNBaFkEMyXuknZF4kDx79qC`](https://wavesexplorer.com/assets/9457rs52YU52oEYySuFYztNBaFkEMyXuknZF4kDx79qC?network=testnet) | — 
+PCBT | [`AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8`](https://wavesexplorer.com/assets/AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8?network=testnet) | PepeTeam Crosschain Bridge Token 
+sWAVES | [`FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm`](https://wavesexplorer.com/assets/FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm?network=testnet) | sWAVES is the tokenized form of staked WAVES powered by PepeTeam. See details at https://swaves.pepe.team 
+TESTEAST | [`Ago2eaFkPqiiDnHej9NzMfqYEA7Y9qsAdqJhSWvmwtfQ`](https://wavesexplorer.com/assets/Ago2eaFkPqiiDnHej9NzMfqYEA7Y9qsAdqJhSWvmwtfQ?network=testnet) | Stable token 
+Tether USD | [`5Sh9KghfkZyhjwuodovDhB6PghDUGBHiAPZ4MkrPgKtX`](https://wavesexplorer.com/assets/5Sh9KghfkZyhjwuodovDhB6PghDUGBHiAPZ4MkrPgKtX?network=testnet) | — 
+TXW-DEVa4f6df | [`EMAMLxDnv3xiz8RXg8Btj33jcEw3wLczL3JKYYmuubpc`](https://wavesexplorer.com/assets/EMAMLxDnv3xiz8RXg8Btj33jcEw3wLczL3JKYYmuubpc?network=testnet) | TXW-DEVa4f6df Test Token 
+USD Coin | [`A7Ksh7fXyqm1KhKAiK3bAB2aiPSitQQF6v1pyu9SS3FR`](https://wavesexplorer.com/assets/A7Ksh7fXyqm1KhKAiK3bAB2aiPSitQQF6v1pyu9SS3FR?network=testnet) | USD Coin is an ERC-20 stablecoin brought to you by Circle and Coinbase. It is issued by regulated and licensed financial institutions that maintain full reserves of the equivalent fiat currency. 
+USD-Nea272c | [`25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT`](https://wavesexplorer.com/assets/25FEqEjRkqK6yCkiT7Lz6SAYz7gUFCtxfCChnrVFD5AT?network=testnet) | USD-Nea272c Test Token 
+USDCLP | [`4w8zNfwKgUzJKR5jS7NCnpxdgQzk2Mt92njjrhML79Bv`](https://wavesexplorer.com/assets/4w8zNfwKgUzJKR5jS7NCnpxdgQzk2Mt92njjrhML79Bv?network=testnet) | USD Liquidity Provider token 
+USDNLP | [`5qszSSs21VZoyFt8jQZQjBK1AEm4HaiE4Gwt9iju3aCq`](https://wavesexplorer.com/assets/5qszSSs21VZoyFt8jQZQjBK1AEm4HaiE4Gwt9iju3aCq?network=testnet) | USDN Liquidity Provider token 
+USDTLP | [`2dDC3B3V9FhNeEqrdEU85boguWxwyPYRSv5jpJn6VhQG`](https://wavesexplorer.com/assets/2dDC3B3V9FhNeEqrdEU85boguWxwyPYRSv5jpJn6VhQG?network=testnet) | USDT Liquidity Provider token 
 
 ## Pool LP assets
 | Name | AssetID | Description |
 |------|---------|-------------|
+APPLE~TESTEASTLP | [`83dEDMQtLA1Q1V4H15AKqgRCk6mmGeuQ35XaJuWMotfc`](https://wavesexplorer.com/assets/83dEDMQtLA1Q1V4H15AKqgRCk6mmGeuQ35XaJuWMotfc?network=testnet) | APPLE~/TESTEAST pool liquidity provider token 
+EASTUSDNLP | [`6tJ1PwMyq942TaFxmgid215YqDucmvg4bXrixNteYbQt`](https://wavesexplorer.com/assets/6tJ1PwMyq942TaFxmgid215YqDucmvg4bXrixNteYbQt?network=testnet) | WX EAST/USDN pool liquidity provider token 
+ETHWAVESLP | [`5u5YKfNXUuefZSjKncQgvLWkMsMYkPN5HFXMQR3sH7ZS`](https://wavesexplorer.com/assets/5u5YKfNXUuefZSjKncQgvLWkMsMYkPN5HFXMQR3sH7ZS?network=testnet) | ETH/WAVES pool liquidity provider token 
+ETHWXLP | [`D7qTknoXn5iQMiUeQvx33kFGiR6zmjTsuAmwB8KxgCz2`](https://wavesexplorer.com/assets/D7qTknoXn5iQMiUeQvx33kFGiR6zmjTsuAmwB8KxgCz2?network=testnet) | ETH/WX pool liquidity provider token 
+MYCOI~TESTEASTLP | [`3HhsydweErB43KJTW7K7X66G2rZ2mxte9TiQdnSruUtc`](https://wavesexplorer.com/assets/3HhsydweErB43KJTW7K7X66G2rZ2mxte9TiQdnSruUtc?network=testnet) | MYCOI~/TESTEAST pool liquidity provider token 
+PCBTWAVESLP | [`5SHBveQyZVVMvL7jaDqtkT6bH1gpPPJaiMgMnZjp724s`](https://wavesexplorer.com/assets/5SHBveQyZVVMvL7jaDqtkT6bH1gpPPJaiMgMnZjp724s?network=testnet) | PCBT/WAVES pool liquidity provider token 
+sWAVESWAVESLP | [`6oXgVr7nAK1uCjfttUSonPxcyfM6NyV7tQ8nC4zFvcX3`](https://wavesexplorer.com/assets/6oXgVr7nAK1uCjfttUSonPxcyfM6NyV7tQ8nC4zFvcX3?network=testnet) | sWAVES/WAVES pool liquidity provider token 
+TXW-DEVa~WAVESLP | [`GKxF718hhjSNscZmJUfTd4ovuQNLAkTU7zf3Y14UzTTh`](https://wavesexplorer.com/assets/GKxF718hhjSNscZmJUfTd4ovuQNLAkTU7zf3Y14UzTTh?network=testnet) | TXW-DEVa~/WAVES pool liquidity provider token 
+USDCLPUSDNLPLP | [`CRWBM5DWeTq1K8A5Ea976WU5WupDmkgawe8F4Lphjvqb`](https://wavesexplorer.com/assets/CRWBM5DWeTq1K8A5Ea976WU5WupDmkgawe8F4Lphjvqb?network=testnet) | USDCLP/USDNLP pool liquidity provider token 
+USDCUSDTWXLP | [`47g1VsrcouxNYMZDdzCvtoJcnAvom8Fo9QQrCoMYx4Ed`](https://wavesexplorer.com/assets/47g1VsrcouxNYMZDdzCvtoJcnAvom8Fo9QQrCoMYx4Ed?network=testnet) | WX USDC/USDT pool liquidity provider token 
+USDTLPUSDCLPLP | [`D55Lg1n9YVUQ4jmutFiuwkcbWMDKCBehw96LjNPe4UQy`](https://wavesexplorer.com/assets/D55Lg1n9YVUQ4jmutFiuwkcbWMDKCBehw96LjNPe4UQy?network=testnet) | USDTLP/USDCLP pool liquidity provider token 
+USDTUSDNWXLP | [`Fm4qczu6Pepz8KUhh3Heb6LeTVfpSMX5vvNgw3x764CS`](https://wavesexplorer.com/assets/Fm4qczu6Pepz8KUhh3Heb6LeTVfpSMX5vvNgw3x764CS?network=testnet) | WX Usdt/Usdn pool liquidity provider token 
+WAVESUSDNWXLP | [`FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V`](https://wavesexplorer.com/assets/FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V?network=testnet) | WX Waves/Usdn pool liquidity provider token 
+WBTCWETHWXLP | [`BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT`](https://wavesexplorer.com/assets/BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT?network=testnet) | WX WBTC/WETH pool liquidity provider token 
+WXUSDNWXLP | [`2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib`](https://wavesexplorer.com/assets/2sEBVcyDFK2LupCf7MeA4vzHhGK4DC1WjbKGQCLYDqib?network=testnet) | WX WX/Usdn pool liquidity provider token 
+WXUSDTLP | [`7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8`](https://wavesexplorer.com/assets/7w9bBGt8Xk176nneatF8GpLseGkR18p8gsnW7fdQCqP8?network=testnet) | WX/USDT pool liquidity provider token 
+WX~Nigga HopeLP | [`3uZF4wey4sicH6SLhEEcHuJnwsfdnvShMacSsyS7bzG1`](https://wavesexplorer.com/assets/3uZF4wey4sicH6SLhEEcHuJnwsfdnvShMacSsyS7bzG1?network=testnet) | WX/~Nigga Hope pool liquidity provider token 
