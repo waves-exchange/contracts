@@ -505,28 +505,23 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
   let stakingContract = this.getStrOrFail(keyStakingContract).addressFromStringValue()
 
   let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
-  strict r = stakingContract.invoke("usersListTraversal", [lpAssetId], []).exactAs[Boolean]
-  if (r) then {
-    ([], true)
-  } else {
-    let wxEmission = pool.checkWxEmissionPoolLabel()
-    let totalVotes = this.getInteger(targetEpoch.keyTotalVotes()).valueOrElse(0)
-    let votingResult = this.getInteger(pool.keyVotingResult(targetEpoch)).valueOrElse(0)
-    let share = if (totalVotes == 0 || !wxEmission) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
-    strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, share], [])
-    let poolsListActions = if (wxEmission || force) then [] else {
-      [
-        DeleteEntry(pool.keyInList())
-      ] ++ poolsListName.deleteNodeActions(poolStr)
-    }
-
-    (
-      [
-        IntegerEntry(pool.keyPoolShare(targetEpoch), share)
-      ] ++ poolsListActions,
-      false
-    )
+  let wxEmission = pool.checkWxEmissionPoolLabel()
+  let totalVotes = this.getInteger(targetEpoch.keyTotalVotes()).valueOrElse(0)
+  let votingResult = this.getInteger(pool.keyVotingResult(targetEpoch)).valueOrElse(0)
+  let share = if (totalVotes == 0 || !wxEmission) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
+  strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, share], [])
+  let poolsListActions = if (wxEmission || force) then [] else {
+    [
+      DeleteEntry(pool.keyInList())
+    ] ++ poolsListName.deleteNodeActions(poolStr)
   }
+
+  (
+    [
+      IntegerEntry(pool.keyPoolShare(targetEpoch), share)
+    ] ++ poolsListActions,
+    false
+  )
 }
 
 # Может вызвать любой
