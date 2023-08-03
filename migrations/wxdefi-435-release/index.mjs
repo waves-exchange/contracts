@@ -1,11 +1,5 @@
 import { create } from '@waves/node-api-js';
-import { BigNumber } from '@waves/bignumber';
-import {
-  data,
-  reissue,
-  invokeScript,
-  transfer,
-} from '@waves/waves-transactions';
+import { data } from '@waves/waves-transactions';
 import fs from 'fs/promises';
 import path from 'path';
 import * as dotenv from 'dotenv';
