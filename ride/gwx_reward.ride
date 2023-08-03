@@ -9,6 +9,8 @@
 # * "%s%s__config__referralsContractAddress": String
 # * "%s__latestPeriod": Integer
 
+# TODO: seems like we can use keyGwxRewardEmissionStartHeight for integral start height
+
 let SEP = "__"
 let SCALE = 1000
 let MULT8 = 1_0000_0000
@@ -491,17 +493,33 @@ func deposit() = {
 @Callable(i)
 func claimReward() = {
   let cfgArray = readConfigArrayOrFail()
-  let address = i.caller.toString()
-  let (amount, actions) = commonClaimReward(address)
-  strict checkAmount = amount > 0 || "Nothing to claim".throw()
-  # remove if unused
-  let amountFromEmission = 0
-  let claimedReferral = referralsContractAddressOrFail.invoke("claim", [referralProgramName], []).exactAs[Int]
+  let userAddress = i.caller
+  let userAddressStr = userAddress.toString()
+  let (amountLegacy, actionsLegacy) = commonClaimReward(userAddressStr)
+  # TODO: calculate using integrals
+  let amount = 0
+  strict checkAmount = amount + amountLegacy > 0 || "nothing to claim".throw()
+
+  let userGwxAmount = boostingContractOrFail().invoke("getUserGwxAmount", [userAddressStr], []).exactAs[Int]
+  let referrer = referralsContractAddressOrFail.getString(userAddressStr.keyReferrer())
+  strict activeReferralInv = if (referrer == unit) then unit else {
+    referralsContractAddressOrFail.invoke("updateReferralActivity", [referralProgramName, userAddress, userGwxAmount >= referralMinGWxAmount], [])
+  }
+  strict referralInv = if (referrer == unit || userGwxAmount < referralMinGWxAmount) then unit else {
+    let referrerReward = amount.fraction(referrerRewardPermille, SCALE)
+    let referralReward = amount.fraction(referralRewardPermille, SCALE)
+    referralsContractAddressOrFail.invoke("incUnclaimed", [referralProgramName, userAddress, referrerReward, referralReward], [])
+  }
+
+  strict claimedReferral = referralsContractAddressOrFail.invoke("claim", [referralProgramName], []).exactAs[Int]
   let totalAmount = amount + claimedReferral
-  ([
-    ScriptTransfer(i.caller, totalAmount, cfgArray[IdxCfgAssetId].fromBase58String()),
-    HistoryEntry("claim", address, amount, i)
-  ] ++ actions, [totalAmount, amountFromEmission])
+  (
+    [
+      ScriptTransfer(i.caller, amount, cfgArray[IdxCfgAssetId].fromBase58String()),
+      HistoryEntry("claim", userAddressStr, totalAmount, i)
+    ] ++ actionsLegacy,
+    totalAmount
+  )
 }
 
 # returns total claimable reward by user address
@@ -555,60 +573,6 @@ func onEmissionForGwxStart() = {
 func latestPeriodEmissionRewardsREADONLY(address: String) = {
   let period = nextPeriod()
   ([], [getNumberByKey(keyAuxEmissionRewardForPeriod(period))])
-}
-
-# LP Math
-
-# D invariant calculation iteratively for 2 tokens
-#
-# A * sum(x_i) * n^n + D = A * D * n^n + D^(n+1) / (n^n * prod(x_i))
-#
-# Converging solution:
-# D[j+1] = (A * n^n * sum(x_i) - D[j]^(n+1) / (n^n prod(x_i))) / (A * n^n - 1)
-@Callable(i)
-func calcD(
-  x1BigIntStr: String,
-  x2BigIntStr: String,
-  ampBigIntStr: String,
-  aPrecisionBigIntStr: String,
-  targetPrecisionBigIntStr: String
-) = {
-  let nCoins = 2.toBigInt()
-  let aPrecision = aPrecisionBigIntStr.parseBigIntValue()
-  let targetPrecision = targetPrecisionBigIntStr.parseBigIntValue()
-  let x1 = x1BigIntStr.parseBigIntValue()
-  let x2 = x2BigIntStr.parseBigIntValue()
-  let amp = ampBigIntStr.parseBigIntValue() * aPrecision
-  let s = x1 + x2
-  if (s == zeroBigInt) then {
-    ([], zeroBigInt.toString())
-  } else {
-    let ann = amp * nCoins
-    let arr = [0, 1, 2, 3, 4, 5, 6]
-    func calc(acc: (BigInt, BigInt|Unit, Int|Unit), cur: Int) = {
-      let (d, dPrev, found) = acc
-      if (found != unit) then acc else {
-        # dp0 = d
-        # dp1 = dp0 * d / (x1 * nCoins)
-        # dp2 = dp1 * d / (x2 * nCoins) = (dp0 * d / (x1 * nCoins)) * d / (x2 * nCoins) = d^3 / (x1 * x2 * nCoins^2)
-        let dp = d * d * d / (x1 * x2 * nCoins * nCoins)
-        let dNext = (ann * s / aPrecision + dp * nCoins) * d / ((ann - aPrecision) * d / aPrecision + (nCoins + 1.toBigInt()) * dp)
-        let dDiff = absBigInt(dNext - d.value())
-        if (dDiff <= targetPrecision) then {
-          (dNext, d, cur)
-        } else {
-          (dNext, d, unit)
-        }
-      }
-    }
-    let (dNext, dPrev, found) = FOLD<7>(arr, (s, unit, unit), calc)
-    if (found != unit) then {
-      ([], dNext.toString())
-    } else {
-      let dDiff = { dNext - dPrev.value() }.absBigInt()
-      { "D calculation error, dDiff = " + dDiff.toString() }.throw()
-    }
-  }
 }
 
 @Callable(i)

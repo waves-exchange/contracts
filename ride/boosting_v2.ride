@@ -755,6 +755,15 @@ func getUserGwxAmountAtHeightREADONLY(userAddressStr: String, targetHeight: Int)
 }
 
 @Callable(i)
+func getUserGwxAmount(userAddressStr: String) = {
+  let userAddress = userAddressStr.addressFromString()
+    .valueOrErrorMessage(wrapErr("invalid user address"))
+  let gwxAmount = userAddress.getUserGwxAmountTotal()
+
+  ([], gwxAmount)
+}
+
+@Callable(i)
 func getGwxTotalREADONLY() = {
   ([], getGwxAmountTotal())
 }
