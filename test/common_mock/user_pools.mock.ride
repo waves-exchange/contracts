@@ -10,6 +10,7 @@ let statusDeclined = "declined"
 let statusActive = "active"
 
 func keyStatus(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "status", amountAssetId, priceAssetId].makeString(separator)
+func keyCreateCaller(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "createCaller", amountAssetId, priceAssetId].makeString(separator)
 
 @Callable(i)
 func priceAssetsREADONLY() = {
@@ -29,4 +30,20 @@ func statusREADONLY(amountAssetId: String, priceAssetId: String) = {
   }
 
   (nil, status)
+}
+
+@Callable(i)
+func deletePool(amountId: String, priceId: String) = {
+    let key = makeString([amountId, priceId], "__")
+
+    [
+        DeleteEntry(key)
+    ]
+}
+
+@Callable(i)
+func getPoolCreatorREADONLY(amountAssetId: String, priceAssetId: String) = {
+  let creator = keyCreateCaller(amountAssetId, priceAssetId).getString().valueOrElse("")
+  
+  (nil, creator)
 }

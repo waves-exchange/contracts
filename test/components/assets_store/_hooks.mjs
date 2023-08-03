@@ -18,7 +18,7 @@ const userPoolsMockPath = format({ dir: testPath, base: 'user_pools.mock.ride' }
 export const mochaHooks = {
   async beforeAll() {
     // setup accounts
-    const names = ['store', 'pools', 'user'];
+    const names = ['store', 'pools', 'user', 'factory'];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;

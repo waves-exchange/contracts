@@ -2,7 +2,18 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+let separator = "__"
+
 @Callable(i)
 func create(amountAssetId: String, priceAssetId: String) = {
   (nil, unit)
+}
+
+@Callable(i)
+func deletePool(amountId: String, priceId: String) = {
+    let keyPoolPair = makeString([amountId, priceId], separator)
+
+    [
+        DeleteEntry(keyPoolPair)
+    ]
 }
