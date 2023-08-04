@@ -17,6 +17,8 @@ let MULT8 = 1_0000_0000
 let zeroBigInt = 0.toBigInt()
 let processingStageTotal = 0
 let processingStageShares = 1
+let MULT18 = 1_000_000_000_000_000_000
+let MULT18BI = MULT18.toBigInt()
 
 let wavesString = "WAVES"
 
@@ -256,6 +258,43 @@ func mustManager(i: Invocation) = {
     case pk: ByteVector => i.callerPublicKey == pk || pd
     case _: Unit => i.caller == this || pd
   }
+}
+
+func keyRewardPerGwxIntegral() = ["%s", "rewardPerGwxIntegral"].makeString(SEP)
+
+# call when reward or total gwx amount are changed
+func refreshRewardPerGwxIntegral() = {
+  # rewardPerGwx = dh * emissionPerBlock / totalGwxAmount + rewardPerGwxPrevious
+  let rewardPerGwxIntegralPrevious = {
+    match this.getString(keyRewardPerGwxIntegral()) {
+      case s: String => s.parseBigInt()
+      case _: Unit => unit
+    }
+  }.valueOrElse(zeroBigInt)
+  let rewardPerGwxIntegralLastHeight = this.getInteger(keyGwxRewardEmissionStartHeight())
+    .valueOrErrorMessage(wrapErr("invalid " + keyGwxRewardEmissionStartHeight()))
+  let emissionRate = emissionContract.getInteger(keyRatePerBlockCurrent())
+    .valueOrErrorMessage(wrapErr("invalid " + keyRatePerBlockCurrent()))
+  let gwxHoldersRewardCurrent = emissionContract.getInteger(keyGwxHoldersRewardCurrent())
+    .valueOrElse(0)
+  let gwxAmountTotal = boostingContractOrFail().invoke("getGwxTotalREADONLY", [], []).exactAs[Int]
+  let dh = { height - rewardPerGwxIntegralLastHeight }.toBigInt()
+  let rewardPerGwxIntegral = rewardPerGwxIntegralPrevious + fraction(
+    dh,
+    emissionRate.toBigInt() * gwxHoldersRewardCurrent.toBigInt() * MULT18BI,
+    gwxAmountTotal.toBigInt()
+  )
+
+  [
+    IntegerEntry(keyGwxRewardEmissionStartHeight(), height),
+    StringEntry(keyRewardPerGwxIntegral(), rewardPerGwxIntegral.toString())
+  ]
+}
+
+func refreshUserReward() = {
+  # userReward = userGwxAmount * rewardPerGwxIntegral + userRewardPrevious - userRewardClaimed
+
+  unit
 }
 
 # user's weight = k * height + b, scaled by 10^8
