@@ -285,14 +285,27 @@ func refreshRewardPerGwxIntegral() = {
     gwxAmountTotal.toBigInt()
   )
 
-  [
-    IntegerEntry(keyGwxRewardEmissionStartHeight(), height),
-    StringEntry(keyRewardPerGwxIntegral(), rewardPerGwxIntegral.toString())
-  ]
+  (
+    [
+      IntegerEntry(keyGwxRewardEmissionStartHeight(), height),
+      StringEntry(keyRewardPerGwxIntegral(), rewardPerGwxIntegral.toString())
+    ],
+    rewardPerGwxIntegral
+  )
 }
 
-func refreshUserReward() = {
-  # userReward = userGwxAmount * rewardPerGwxIntegral + userRewardPrevious - userRewardClaimed
+func keyRewardPerGwxIntegralUserLast(userAddress: Address) = ["%s%s", "rewardPerGwxIntegralUserLast", userAddress.toString()].makeString(SEP)
+
+# call when user total gwx amount is changed
+func refreshUserReward(userAddress: Address) = {
+  let rewardPerGwxIntegralUserLast = {
+    match this.getString(keyRewardPerGwxIntegralUserLast(userAddress)) {
+      case s: String => s.parseBigInt()
+      case _: Unit => unit
+    }
+  }.valueOrElse(zeroBigInt)
+
+  # userReward = userGwxAmount * (rewardPerGwxIntegral - rewardPerGwxIntegralUserLast) + userRewardPrevious - userRewardClaimed
 
   unit
 }
