@@ -358,10 +358,8 @@ func claimReward() = {
   let cfgArray = readConfigArrayOrFail()
   let userAddress = i.caller
   let userAddressStr = userAddress.toString()
-  let (amountLegacy, actionsLegacy) = commonClaimReward(userAddressStr)
-  # TODO: calculate using integrals
-  let amount = 0
-  strict checkAmount = amount + amountLegacy > 0 || "nothing to claim".throw()
+  let (amount, actions) = commonClaimReward(userAddressStr)
+  strict checkAmount = amount > 0 || "nothing to claim".throw()
 
   let userGwxAmount = boostingContractOrFail().invoke("getUserGwxAmount", [userAddressStr], []).exactAs[Int]
   let referrer = referralsContractAddressOrFail.getString(userAddressStr.keyReferrer())
@@ -380,7 +378,7 @@ func claimReward() = {
     [
       ScriptTransfer(i.caller, amount, cfgArray[IdxCfgAssetId].fromBase58String()),
       HistoryEntry("claim", userAddressStr, totalAmount, i)
-    ] ++ actionsLegacy,
+    ] ++ actions,
     totalAmount
   )
 }
