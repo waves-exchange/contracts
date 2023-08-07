@@ -226,7 +226,7 @@ func getTradingReward(userAddress: String) = {
 func keyRewardPerGwxIntegral() = ["%s", "rewardPerGwxIntegral"].makeString(SEP)
 
 # call when reward or total gwx amount are changed
-func refreshRewardPerGwxIntegral() = {
+func _refreshRewardPerGwxIntegral() = {
   # rewardPerGwx = dh * emissionPerBlock / totalGwxAmount + rewardPerGwxPrevious
   let rewardPerGwxIntegralPrevious = {
     match this.getString(keyRewardPerGwxIntegral()) {
@@ -260,7 +260,7 @@ func refreshRewardPerGwxIntegral() = {
 func keyRewardPerGwxIntegralUserLast(userAddress: Address) = ["%s%s", "rewardPerGwxIntegralUserLast", userAddress.toString()].makeString(SEP)
 
 # call when user total gwx amount is changed
-func refreshUserReward(userAddress: Address) = {
+func _refreshUserReward(userAddress: Address) = {
   let rewardPerGwxIntegralUserLast = {
     match this.getString(keyRewardPerGwxIntegralUserLast(userAddress)) {
       case s: String => s.parseBigInt()
@@ -274,7 +274,7 @@ func refreshUserReward(userAddress: Address) = {
   )
   let userUnclaimed = userIdxOrFail.keyUserUnclaimed().getInteger().valueOrElse(0)
 
-  let (rewardPerGwxIntegralActions, rewardPerGwxIntegral) = refreshRewardPerGwxIntegral()
+  let (rewardPerGwxIntegralActions, rewardPerGwxIntegral) = _refreshRewardPerGwxIntegral()
 
   # userReward = userGwxAmount * (rewardPerGwxIntegral - rewardPerGwxIntegralUserLast) + userRewardPrevious - userRewardClaimed
   let userGwxAmount = boostingContractOrFail().invoke("getUserGwxAmount", [userAddress.toString()], []).exactAs[Int]
@@ -289,6 +289,13 @@ func refreshUserReward(userAddress: Address) = {
     ] ++ rewardPerGwxIntegralActions,
     userReward
   )
+}
+
+@Callable(i)
+func refreshUserReward(userAddressBytes: ByteVector) = {
+  strict checkCaller = i.caller == boostingContractOrFail() || throwErr("permission denied")
+
+  _refreshUserReward(Address(userAddressBytes))
 }
 
 @Callable(i)
