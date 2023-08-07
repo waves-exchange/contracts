@@ -121,13 +121,6 @@ func checkWxEmissionPoolLabel(pool: (String, String)) = {
   factoryContract.invoke("checkWxEmissionPoolLabel", [amountAssetId, priceAssetId], []).exactAs[Boolean]
 }
 
-func gwxRewardDeposit() = {
-  let factoryCfg = factoryContract.readFactoryCfgOrFail()
-  let gwxRewardsContract = factoryCfg.getGwxRewardAddressOrFail()
-
-  gwxRewardsContract.invoke("deposit", [], [])
-}
-
 # Doubly linked list ->
 let poolsListName = "pools"
 func getVotesListName(pool: (String, String)) = {
@@ -658,7 +651,6 @@ func finalizeHelper() = {
                 IntegerEntry(keyStartHeightUi, startHeight)
               ]
             }
-            strict gwxRewardDepositInv = gwxRewardDeposit()
             (actions, true)
           }
           case nextPoolStr: String => {
@@ -689,7 +681,6 @@ func finalizeHelper() = {
                   DeleteEntry(keyNextPool)
                 ]
               }
-              strict gwxRewardDepositInv = gwxRewardDeposit()
               (actions, true)
             }
             case nextPoolStr: String => {
