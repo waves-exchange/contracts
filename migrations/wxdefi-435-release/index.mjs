@@ -166,3 +166,4 @@ await Promise.all(
     );
   })
 );
+console.log(`Done. ${txs.length} txs created.`)
