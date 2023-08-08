@@ -687,7 +687,7 @@ func unlock(txIdStr: String, amount: Int) = {
   let txId = txIdStr.fromBase58String()
   let userRecordArray = readLockParamsRecordOrFail(
     userAddress,
-    if (txIdStr == "") then txId else unit
+    if (txIdStr == "") then unit else txId
   )
 
   let userAmount = userRecordArray[IdxLockAmount].parseIntValue()
