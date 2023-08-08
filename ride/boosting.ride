@@ -734,7 +734,7 @@ func unlock(txIdStr: String, amount: Int) = {
   let gwxAmountTotal = getGwxAmountTotal()
   let userGwxAmountTotal = getUserGwxAmountTotal(userAddress)
 
-  strict gwxRewardInv = gwxRewardContract.invoke("refreshUserReward", [userAddress.bytes], [])
+  strict gwxRewardInv = gwxRewardContract.reentrantInvoke("refreshUserReward", [userAddress.bytes], [])
 
   LockParamsEntry(userAddress, txId, userAmount, lockStart, lockDuration, gwxRemaining, wxClaimed + amount)
     ++ StatsEntry(-userAmount, 0, 0, -1) # fixme: -1 only if single lock from user existed
