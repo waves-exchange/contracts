@@ -37,7 +37,7 @@ const keyLockParamsRecordOld = (userAddress) =>
   `%s%s__lock__${userAddress}`;
 
 const keyLockParamsRecord = (userAddress, txId) =>
-  `%s%s__lock__${userAddress}__${txId}`;
+  `%s%s%s__lock__${userAddress}__${txId}`;
 
 const keyUserGwxAmountTotal = (userAddress) =>
   `%s%s__gwxAmountTotal__${userAddress}`;
