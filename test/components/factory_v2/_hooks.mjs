@@ -1,5 +1,7 @@
 import { address, randomSeed } from '@waves/ts-lib-crypto';
-import { issue, massTransfer, nodeInteraction } from '@waves/waves-transactions';
+import {
+  data, issue, massTransfer, nodeInteraction,
+} from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 import { format } from 'path';
 import ora from 'ora';
@@ -16,12 +18,14 @@ const testPath = 'common_mock';
 const factoryV2Path = format({ dir: ridePath, base: 'factory_v2.ride' });
 const assetsStoreMockPath = format({ dir: testPath, base: 'assets_store.mock.ride' });
 const lpMockPath = format({ dir: testPath, base: 'lp.mock.ride' });
+const userpoolsMockPath = format({ dir: testPath, base: 'user_pools.mock.ride' });
+const votingEmissionMockPath = format({ dir: testPath, base: 'voting_emission.mock.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
     const spinner = ora('Initializing').start();
     // setup accounts
-    const names = ['factory', 'store', 'lp', 'matcher', 'user'];
+    const names = ['factory', 'store', 'lp', 'matcher', 'user', 'userpools', 'voting_emission'];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
@@ -31,10 +35,32 @@ export const mochaHooks = {
     }, seed);
     await api.transactions.broadcast(massTransferTx, {});
     await waitForTx(massTransferTx.id, { apiBase });
+
+    const dataTx = data({
+      data: [
+        {
+          key: '%s__userPoolsContract',
+          type: 'string',
+          value: address(this.accounts.userpools, chainId),
+        },
+        {
+          key: '%s__votingEmissionContract',
+          type: 'string',
+          value: address(this.accounts.voting_emission, chainId),
+        },
+      ],
+      chainId,
+    }, this.accounts.factory);
+
+    await api.transactions.broadcast(dataTx, {});
+    await waitForTx(dataTx.id, { apiBase });
+
     // set scripts
     await setScriptFromFile(factoryV2Path, this.accounts.factory);
     await setScriptFromFile(assetsStoreMockPath, this.accounts.store);
     await setScriptFromFile(lpMockPath, this.accounts.lp);
+    await setScriptFromFile(userpoolsMockPath, this.accounts.userpools);
+    await setScriptFromFile(votingEmissionMockPath, this.accounts.voting_emission);
 
     // issue USDN asset
     const usdnIssueTx = issue({

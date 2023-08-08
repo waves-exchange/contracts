@@ -349,6 +349,31 @@ func isVerifiedREADONLY(assetId: String) = {
   (nil, assetId.isVerified())
 }
 
+@Callable(i)
+func deletePool(amountAssetId: String, priceAssetId: String) = {
+  let factoryContract = keyFactoryContract().getStringValue().addressFromStringValue()
+  strict checkCaller = i.caller == factoryContract || i.mustManager()
+
+  let lpAssetId = keyAmountAndPriceAssetsToLpAsset(amountAssetId, priceAssetId).getString().valueOrElse("")
+
+  let poolKeysDeleteActions = if (lpAssetId == "") then [] 
+    else {
+      [
+        DeleteEntry(keyLpAssetToAmountAndPriceAssets(lpAssetId)),
+        DeleteEntry(keyAssetLabels(lpAssetId)),
+        DeleteEntry(keyAssetName(lpAssetId)),
+        DeleteEntry(keyAssetDescription(lpAssetId)),
+        DeleteEntry(keyCreated(lpAssetId)),
+        DeleteEntry(keyStatus(lpAssetId)),
+        DeleteEntry(keyLogo(lpAssetId)),
+        DeleteEntry(keyTicker(lpAssetId)),
+        DeleteEntry(keyAmountAndPriceAssetsToLpAsset(amountAssetId, priceAssetId))
+      ]
+    }
+
+  poolKeysDeleteActions
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
