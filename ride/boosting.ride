@@ -681,9 +681,9 @@ func claimWxBoostREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
 }
 
 @Callable(i)
-func unlock(userAddressStr: String, txIdStr: String, amount: Int) = {
-  let userAddress = userAddressStr.addressFromString()
-    .valueOrErrorMessage(wrapErr("invalid user address"))
+func unlock(txIdStr: String, amount: Int) = {
+  let userAddress = i.caller
+  let userAddressStr = userAddress.toString()
   let txId = txIdStr.fromBase58String()
   let userRecordArray = readLockParamsRecordOrFail(
     userAddress,
