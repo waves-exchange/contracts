@@ -39,6 +39,9 @@ const keyLockParamsRecordOld = (userAddress) =>
 const keyLockParamsRecord = (userAddress, txId) =>
   `%s%s__lock__${userAddress}__${txId}`;
 
+const keyUserGwxAmountTotal = (userAddress) =>
+  `%s%s__gwxAmountTotal__${userAddress}`;
+
 const lockParamsRecord = ({
   amount,
   start,
@@ -58,7 +61,7 @@ const lockParamsRecord = ({
 
 const lockParamsData = await api.addresses.data(boostingAddress, {
   matches: encodeURIComponent(
-    `%s%s__lock__.+`
+    `%s%s__lock__[^_]+`
   ),
 });
 
@@ -86,11 +89,18 @@ for (const { key, value } of lockParamsData) {
   if (amount <= 0) continue;
 
   gwxAmountTotal += parseInt(gwxAmount);
-  actions.push({
-    key: keyLockParamsRecord(userAddress, 'legacy'),
-    type: 'string',
-    value: lockParamsRecord({ amount, start, duration, timestamp, gwxAmount, wxClaimed: 0 }),
-  });
+  actions.push(
+    {
+      key: keyLockParamsRecord(userAddress, 'legacy'),
+      type: 'string',
+      value: lockParamsRecord({ amount, start, duration, timestamp, gwxAmount, wxClaimed: 0 }),
+    },
+    {
+      key: keyUserGwxAmountTotal(userAddress),
+      type: 'integer',
+      value: parseInt(gwxAmount),
+    },
+  );
 }
 const chunkSize = 100;
 const actionsChunks = Array.from(
