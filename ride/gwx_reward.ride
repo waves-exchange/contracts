@@ -14,6 +14,7 @@
 let SEP = "__"
 let SCALE = 1000
 let MULT8 = 1_0000_0000
+let MULT8BI = MULT8.toBigInt()
 let zeroBigInt = 0.toBigInt()
 let processingStageTotal = 0
 let processingStageShares = 1
@@ -245,7 +246,7 @@ func _refreshRewardPerGwxIntegral() = {
   let rewardPerGwxIntegral = rewardPerGwxIntegralPrevious + fraction(
     dh,
     emissionRate.toBigInt() * gwxHoldersRewardCurrent.toBigInt() * MULT18BI,
-    gwxAmountTotal.toBigInt()
+    gwxAmountTotal.toBigInt() * MULT8BI
   )
 
   (
