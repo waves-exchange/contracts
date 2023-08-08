@@ -157,8 +157,15 @@ let IdxLockLastUpdateTimestamp = 4
 let IdxLockGwxAmount = 5
 let IdxLockWxClaimed = 6
 
-func keyLockParamsRecord(userAddress: Address, txId: ByteVector) = makeString(["%s%s%s__lock", userAddress.toString(), txId.toBase58String()], SEP)
-func readLockParamsRecordOrFail(userAddress: Address, txId: ByteVector) = this.getStringOrFail(keyLockParamsRecord(userAddress, txId)).split(SEP)
+func keyLockParamsRecord(userAddress: Address, txId: ByteVector|Unit) = makeString([
+  "%s%s%s__lock",
+  userAddress.toString(),
+  match txId {
+    case b: ByteVector => b.toBase58String()
+    case _: Unit => "legacy"
+  }
+], SEP)
+func readLockParamsRecordOrFail(userAddress: Address, txId: ByteVector|Unit) = this.getStringOrFail(keyLockParamsRecord(userAddress, txId)).split(SEP)
 
 func keyUserGwxAmountTotal(userAddress: Address) = makeString(["%s%s__gwxAmountTotal", userAddress.toString()], SEP)
 
@@ -678,7 +685,10 @@ func unlock(userAddressStr: String, txIdStr: String, amount: Int) = {
   let userAddress = userAddressStr.addressFromString()
     .valueOrErrorMessage(wrapErr("invalid user address"))
   let txId = txIdStr.fromBase58String()
-  let userRecordArray = readLockParamsRecordOrFail(userAddress, txId)
+  let userRecordArray = readLockParamsRecordOrFail(
+    userAddress,
+    if (txIdStr == "") then txId else unit
+  )
 
   let userAmount = userRecordArray[IdxLockAmount].parseIntValue()
   let lockStart = userRecordArray[IdxLockStart].parseIntValue()
