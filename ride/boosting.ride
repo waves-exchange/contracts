@@ -737,9 +737,9 @@ func unlock(txIdStr: String, amount: Int) = {
   strict gwxRewardInv = gwxRewardContract.reentrantInvoke("refreshUserReward", [userAddress.bytes], [])
 
   LockParamsEntry(userAddress, txId, userAmount, lockStart, lockDuration, gwxRemaining, wxClaimed + amount)
-    ++ StatsEntry(-userAmount, 0, 0, -1) # fixme: -1 only if single lock from user existed
-    :+ HistoryEntry("unlock", userAddressStr, userAmount, lockStart, lockDuration, gwxBurned, i)
-    :+ ScriptTransfer(userAddress, userAmount, assetId)
+    ++ StatsEntry(-amount, 0, 0, 0)
+    :+ HistoryEntry("unlock", userAddressStr, amount, lockStart, lockDuration, gwxBurned, i)
+    :+ ScriptTransfer(userAddress, amount, assetId)
     ++ [
       IntegerEntry(keyGwxTotal(), ensurePositive(gwxAmountTotal - gwxBurned, "gwxTotal")),
       IntegerEntry(keyUserGwxAmountTotal(userAddress), ensurePositive(userGwxAmountTotal - gwxBurned, "userGwxAmountTotal"))
