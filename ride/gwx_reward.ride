@@ -208,18 +208,6 @@ func getUserIndexByAddress(boostingContractAddressStr: String, userAddress: Stri
     .valueOrErrorMessage("User address " + userAddress + " is not found in boosting contract data, key=" + key))
 }
 
-func commonClaimReward(userAddress: String) = {
-  let cfgArray = readConfigArrayOrFail()
-  let userIdx = getUserIndexByAddress(cfgArray[IdxCfgBoostingContract], userAddress) # will throw if no such user
-  let userUnclaimedOption = userIdx.keyUserUnclaimed().getInteger()
-  match userUnclaimedOption {
-    case _: Unit => (0, [])
-    case u: Int => (u, [
-      IntegerEntry(userIdx.keyUserUnclaimed(), 0)
-    ])
-  }
-}
-
 func getTradingReward(userAddress: String) = {
   this.getInteger(userAddress.keyTradingReward()).valueOrElse(0)
 }
@@ -289,6 +277,21 @@ func _refreshUserReward(userAddress: Address) = {
       )
     ] ++ rewardPerGwxIntegralActions,
     userReward
+  )
+}
+
+func commonClaimReward(userAddressStr: String) = {
+  let userAddress = addressFromString(userAddressStr).valueOrErrorMessage(wrapErr("invalid user address"))
+  let cfgArray = readConfigArrayOrFail()
+  let userIdx = getUserIndexByAddress(cfgArray[IdxCfgBoostingContract], userAddressStr) # will throw if no such user
+  let userUnclaimedOption = userIdx.keyUserUnclaimed().getInteger()
+  let reward = _refreshUserReward(userAddress)._2
+  
+  (
+    reward,
+    [
+      IntegerEntry(userIdx.keyUserUnclaimed(), 0)
+    ]
   )
 }
 
