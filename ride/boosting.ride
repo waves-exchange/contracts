@@ -616,7 +616,7 @@ func lockActions(i: Invocation, durationMonths: Int) = {
 
   let userGwxAmountTotal = getUserGwxAmountTotal(userAddress)
 
-  strict gwxRewardInv = gwxRewardContract.invoke("refreshUserReward", [userAddress.bytes], [])
+  strict gwxRewardInv = gwxRewardContract.reentrantInvoke("refreshUserReward", [userAddress.bytes], [])
 
   let arr = if (userIsExisting) then [] else [
     IntegerEntry(nextUserNumKEY, userNum + 1),
