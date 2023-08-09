@@ -285,13 +285,13 @@ func commonClaimReward(userAddressStr: String) = {
   let cfgArray = readConfigArrayOrFail()
   let userIdx = getUserIndexByAddress(cfgArray[IdxCfgBoostingContract], userAddressStr) # will throw if no such user
   let userUnclaimedOption = userIdx.keyUserUnclaimed().getInteger()
-  let reward = _refreshUserReward(userAddress)._2
+  let (actions, reward) = _refreshUserReward(userAddress)
   
   (
     reward,
     [
       IntegerEntry(userIdx.keyUserUnclaimed(), 0)
-    ]
+    ] ++ actions
   )
 }
 
