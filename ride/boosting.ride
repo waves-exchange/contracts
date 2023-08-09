@@ -633,6 +633,39 @@ func lockActions(i: Invocation, durationMonths: Int) = {
   ], gWxAmountStart)
 }
 
+func getWxWithdrawable(userAddress: Address, txIdOption: ByteVector|Unit) = {
+  let userRecordArray = readLockParamsRecordOrFail(
+    userAddress,
+    txIdOption
+  )
+
+  let userAmount = userRecordArray[IdxLockAmount].parseIntValue()
+  let lockStart = userRecordArray[IdxLockStart].parseIntValue()
+  let lockDuration = userRecordArray[IdxLockDuration].parseIntValue()
+  let lockEnd = lockStart + lockDuration
+  let wxClaimed = userRecordArray[IdxLockWxClaimed].parseIntValue()
+  let gwxAmount = userRecordArray[IdxLockGwxAmount].parseIntValue()
+
+  let t = (height - lockStart) / blocksInDay
+
+  let exponent = fraction(
+    t.toBigInt(),
+    { 8 * blocksInDay }.toBigInt() * MULT18BI,
+    lockDuration.toBigInt()
+  )
+  let wxWithdrawable = if (height > lockEnd) then {
+    userAmount - wxClaimed
+  } else {
+    fraction(
+      userAmount.toBigInt(),
+      MULT18BI - pow(5.toBigInt(), 1, exponent, SCALE18, SCALE18, DOWN),
+      MULT18BI
+    ).toInt()
+  }
+
+  wxWithdrawable
+}
+
 @Callable(i)
 func constructor(factoryAddressStr: String, lockAssetIdStr: String, minLockAmount: Int, minDuration: Int, maxDuration: Int, mathContract: String) = {
   strict checkCaller = i.mustManager()
@@ -699,20 +732,10 @@ func unlock(txIdStr: String, amount: Int) = {
 
   let t = (height - lockStart) / blocksInDay
 
-  let exponent = fraction(
-    t.toBigInt(),
-    { 8 * blocksInDay }.toBigInt() * MULT18BI,
-    lockDuration.toBigInt()
+  let wxWithdrawable = getWxWithdrawable(
+    userAddress,
+    if (txIdStr == "") then unit else txId
   )
-  let wxWithdrawable = if (height > lockEnd) then {
-    userAmount - wxClaimed
-  } else {
-    fraction(
-      userAmount.toBigInt(),
-      MULT18BI - pow(5.toBigInt(), 1, exponent, SCALE18, SCALE18, DOWN),
-      MULT18BI
-    ).toInt()
-  }
 
   if (amount > wxWithdrawable)
     then throwErr("maximum amount to unlock: " + wxWithdrawable.toString())
@@ -750,6 +773,7 @@ func unlock(txIdStr: String, amount: Int) = {
 func gwxUserInfoREADONLY(userAddressStr: String) = {
   let userAddress = userAddressStr.addressFromString()
     .valueOrErrorMessage(wrapErr("invalid user address"))
+
   let gwxAmount = getUserGwxAmountTotal(userAddress)
 
   ([], [gwxAmount])
