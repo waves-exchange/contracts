@@ -716,7 +716,7 @@ func claimWxBoostREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
 }
 
 @Callable(i)
-func unlock(txIdStr: String, amount: Int) = {
+func unlock(txIdStr: String) = {
   let userAddress = i.caller
   let userAddressStr = userAddress.toString()
   let txId = txIdStr.fromBase58String()
@@ -738,15 +738,14 @@ func unlock(txIdStr: String, amount: Int) = {
     userAddress,
     if (txIdStr == "") then unit else txId
   )
-
-  if (amount > wxWithdrawable)
-    then throwErr("maximum amount to unlock: " + wxWithdrawable.toString())
-    else
   
   let coeffX8 = fraction(lockDuration, MULT8, maxLockDuration)
   let gWxAmountStart = fraction(userAmount, coeffX8, MULT8)
 
-  let gwxBurned = fraction(t * blocksInPeriod, gWxAmountStart, maxLockDuration)
+  let gwxBurned = min([
+    fraction(t * blocksInPeriod, gWxAmountStart, maxLockDuration),
+    gwxAmount
+  ])
   let gwxRemaining = ensurePositive(gwxAmount - gwxBurned, "gwxRemaining")
   let lockedGwxAmount = getLockedGwxAmount(userAddress)
 
@@ -762,10 +761,10 @@ func unlock(txIdStr: String, amount: Int) = {
 
   strict gwxRewardInv = gwxRewardContract.reentrantInvoke("refreshUserReward", [userAddress.bytes], [])
 
-  LockParamsEntry(userAddress, txId, userAmount, lockStart, lockDuration, gwxRemaining, wxClaimed + amount)
-    ++ StatsEntry(-amount, 0, 0, 0)
-    :+ HistoryEntry("unlock", userAddressStr, amount, lockStart, lockDuration, gwxBurned, i)
-    :+ ScriptTransfer(userAddress, amount, assetId)
+  LockParamsEntry(userAddress, txId, userAmount, lockStart, lockDuration, gwxRemaining, wxClaimed + wxWithdrawable)
+    ++ StatsEntry(-wxWithdrawable, 0, 0, 0)
+    :+ HistoryEntry("unlock", userAddressStr, wxWithdrawable, lockStart, lockDuration, gwxBurned, i)
+    :+ ScriptTransfer(userAddress, wxWithdrawable, assetId)
     ++ [
       IntegerEntry(keyGwxTotal(), ensurePositive(gwxAmountTotal - gwxBurned, "gwxTotal")),
       IntegerEntry(keyUserGwxAmountTotal(userAddress), userGwxAmountTotalNew)
