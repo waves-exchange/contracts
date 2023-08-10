@@ -742,11 +742,11 @@ func unlock(txIdStr: String, amount: Int) = {
   if (amount > wxWithdrawable)
     then throwErr("maximum amount to unlock: " + wxWithdrawable.toString())
     else
+  
+  let coeffX8 = fraction(lockDuration, MULT8, maxLockDuration)
+  let gWxAmountStart = fraction(userAmount, coeffX8, MULT8)
 
-  let gwxBurned = max([
-    amount,
-    fraction(t * blocksInPeriod, userAmount, maxLockDuration)
-  ])
+  let gwxBurned = fraction(t * blocksInPeriod, gWxAmountStart, maxLockDuration)
   let gwxRemaining = ensurePositive(gwxAmount - gwxBurned, "gwxRemaining")
   let lockedGwxAmount = getLockedGwxAmount(userAddress)
 
