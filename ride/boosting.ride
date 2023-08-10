@@ -750,14 +750,15 @@ func unlock(txIdStr: String, amount: Int) = {
   let gwxRemaining = ensurePositive(gwxAmount - gwxBurned, "gwxRemaining")
   let lockedGwxAmount = getLockedGwxAmount(userAddress)
 
-  if (gwxRemaining < lockedGwxAmount)
-    then throwErr("locked gwx amount: " + lockedGwxAmount.toString())
-    else
-
   if (userAmount <= 0) then throwErr("nothing to unlock") else
 
   let gwxAmountTotal = getGwxAmountTotal()
   let userGwxAmountTotal = getUserGwxAmountTotal(userAddress)
+  let userGwxAmountTotalNew = ensurePositive(userGwxAmountTotal - gwxBurned, "userGwxAmountTotalNew")
+
+  if (userGwxAmountTotalNew < lockedGwxAmount)
+    then throwErr("locked gwx amount: " + lockedGwxAmount.toString())
+    else
 
   strict gwxRewardInv = gwxRewardContract.reentrantInvoke("refreshUserReward", [userAddress.bytes], [])
 
@@ -767,7 +768,7 @@ func unlock(txIdStr: String, amount: Int) = {
     :+ ScriptTransfer(userAddress, amount, assetId)
     ++ [
       IntegerEntry(keyGwxTotal(), ensurePositive(gwxAmountTotal - gwxBurned, "gwxTotal")),
-      IntegerEntry(keyUserGwxAmountTotal(userAddress), ensurePositive(userGwxAmountTotal - gwxBurned, "userGwxAmountTotal"))
+      IntegerEntry(keyUserGwxAmountTotal(userAddress), userGwxAmountTotalNew)
     ]
 }
 
