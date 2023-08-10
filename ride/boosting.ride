@@ -656,14 +656,14 @@ func getWxWithdrawable(userAddress: Address, txIdOption: ByteVector|Unit) = {
     lockDuration.toBigInt()
   )
   let wxWithdrawable = if (height > lockEnd) then {
-    userAmount - wxClaimed
+    userAmount
   } else {
     fraction(
       userAmount.toBigInt(),
       MULT18BI - pow(5.toBigInt(), 1, exponent, SCALE18, SCALE18, DOWN),
       MULT18BI
     ).toInt()
-  }
+  } - wxClaimed
 
   wxWithdrawable
 }
