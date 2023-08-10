@@ -6,7 +6,7 @@
 # * "%s%s__config__referralsContractAddress": String
 # * "%s__nextUserNum": Int
 # * "%s%s__config__factoryAddress": String
-# * "%s__config": String ("%s%d%d%d%s__<assetId>__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>")
+# * "%s__config": String ("%s%d%d%d%s%d__<assetId>__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>__<blocksInPeriod>")
 # * "%s__lpStakingPoolsContract": String
 
 let SEP = "__"
@@ -94,6 +94,7 @@ let IdxCfgMinLockAmount = 2
 let IdxCfgMinLockDuration = 3
 let IdxCfgMaxLockDuration = 4
 let IdxCfgMathContract = 5
+let IdxCfgBlocksInPeriod = 6
 
 func keyConfig() = {"%s__config"}
 func readConfigArrayOrFail() = this.getStringOrFail(keyConfig()).split(SEP)
@@ -103,6 +104,7 @@ let minLockAmount = cfgArray[IdxCfgMinLockAmount].parseInt().valueOrErrorMessage
 let minLockDuration = cfgArray[IdxCfgMinLockDuration].parseInt().valueOrErrorMessage(wrapErr("invalid min lock duration"))
 let maxLockDuration = cfgArray[IdxCfgMaxLockDuration].parseInt().valueOrErrorMessage(wrapErr("invalid max lock duration"))
 let mathContract = cfgArray[IdxCfgMathContract].addressFromString().valueOrErrorMessage(wrapErr("invalid math contract address"))
+let blocksInPeriod = cfgArray[IdxCfgBlocksInPeriod].parseInt().valueOrErrorMessage(wrapErr("invalid blocks in period"))
 
 func formatConfigS(assetId: String, minLockAmount: String, minLockDuration: String, maxLockDuration: String, mathContract: String) = {
   makeString([
@@ -646,11 +648,11 @@ func getWxWithdrawable(userAddress: Address, txIdOption: ByteVector|Unit) = {
   let wxClaimed = userRecordArray[IdxLockWxClaimed].parseIntValue()
   let gwxAmount = userRecordArray[IdxLockGwxAmount].parseIntValue()
 
-  let t = (height - lockStart) / blocksInDay
+  let t = (height - lockStart) / blocksInPeriod
 
   let exponent = fraction(
     t.toBigInt(),
-    { 8 * blocksInDay }.toBigInt() * MULT18BI,
+    { 8 * blocksInPeriod }.toBigInt() * MULT18BI,
     lockDuration.toBigInt()
   )
   let wxWithdrawable = if (height > lockEnd) then {
@@ -730,7 +732,7 @@ func unlock(txIdStr: String, amount: Int) = {
   let wxClaimed = userRecordArray[IdxLockWxClaimed].parseIntValue()
   let gwxAmount = userRecordArray[IdxLockGwxAmount].parseIntValue()
 
-  let t = (height - lockStart) / blocksInDay
+  let t = (height - lockStart) / blocksInPeriod
 
   let wxWithdrawable = getWxWithdrawable(
     userAddress,
@@ -743,7 +745,7 @@ func unlock(txIdStr: String, amount: Int) = {
 
   let gwxBurned = max([
     amount,
-    fraction(t * blocksInDay, userAmount, maxLockDuration)
+    fraction(t * blocksInPeriod, userAmount, maxLockDuration)
   ])
   let gwxRemaining = ensurePositive(gwxAmount - gwxBurned, "gwxRemaining")
   let lockedGwxAmount = getLockedGwxAmount(userAddress)

@@ -20,6 +20,7 @@ const {
   MIN_LOCK_AMOUNT,
   MIN_LOCK_DURATION,
   MAX_LOCK_DURATION,
+  BLOCKS_IN_PERIOD,
 } = process.env;
 const api = create(NODE_URL);
 
@@ -141,12 +142,13 @@ txs.push({
         key: '%s__config',
         type: 'string',
         value: [
-          '%s%d%d%d%s',
+          '%s%d%d%d%s%d',
           WX_ASSET_ID,
           MIN_LOCK_AMOUNT.toString(),
           MIN_LOCK_DURATION.toString(),
           MAX_LOCK_DURATION.toString(),
           gwxRewardAddress,
+          BLOCKS_IN_PERIOD.toString(),
         ].join(separator),
       }
     ],
