@@ -17,6 +17,7 @@ let contractFilename = "boosting.ride"
 let SCALE18 = 18
 let MULT18 = 1_000_000_000_000_000_000
 let MULT18BI = MULT18.toBigInt()
+let durationMonthsAllowed = [1, 3, 6, 12, 24, 48]
 
 # 24 * 60
 let blocksInDay = 1440
@@ -581,7 +582,6 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
 }
 
 func lockActions(i: Invocation, durationMonths: Int) = {
-  let durationMonthsAllowed = [1, 3, 6, 12, 24, 48]
   if (!durationMonthsAllowed.containsElement(durationMonths)) then throwErr("invalid duration") else
   let duration = durationMonths * blocksInMonth
   let assetIdStr = assetId.toBase58String()
@@ -608,8 +608,7 @@ func lockActions(i: Invocation, durationMonths: Int) = {
   if (duration < minLockDuration) then throwErr("passed duration is less then minLockDuration=" + minLockDuration.toString()) else
   if (duration > maxLockDuration) then throwErr("passed duration is greater then maxLockDuration=" + maxLockDuration.toString()) else
 
-  let coeffX8 = fraction(duration, MULT8, maxLockDuration)
-  let gWxAmountStart = fraction(pmtAmount, coeffX8, MULT8)
+  let gWxAmountStart = fraction(pmtAmount, duration, maxLockDuration)
 
   let gwxAmountTotal = getGwxAmountTotal()
 
@@ -646,7 +645,6 @@ func getWxWithdrawable(userAddress: Address, txIdOption: ByteVector|Unit) = {
   let lockDuration = userRecordArray[IdxLockDuration].parseIntValue()
   let lockEnd = lockStart + lockDuration
   let wxClaimed = userRecordArray[IdxLockWxClaimed].parseIntValue()
-  let gwxAmount = userRecordArray[IdxLockGwxAmount].parseIntValue()
 
   let t = (height - lockStart) / blocksInPeriod
 
@@ -728,7 +726,6 @@ func unlock(txIdStr: String) = {
   let userAmount = userRecordArray[IdxLockAmount].parseIntValue()
   let lockStart = userRecordArray[IdxLockStart].parseIntValue()
   let lockDuration = userRecordArray[IdxLockDuration].parseIntValue()
-  let lockEnd = lockStart + lockDuration
   let wxClaimed = userRecordArray[IdxLockWxClaimed].parseIntValue()
   let gwxAmount = userRecordArray[IdxLockGwxAmount].parseIntValue()
 
@@ -738,9 +735,8 @@ func unlock(txIdStr: String) = {
     userAddress,
     if (txIdStr == "") then unit else txId
   )
-  
-  let coeffX8 = fraction(lockDuration, MULT8, maxLockDuration)
-  let gWxAmountStart = fraction(userAmount, coeffX8, MULT8)
+
+  let gWxAmountStart = fraction(userAmount, lockDuration, maxLockDuration)
 
   let gwxBurned = min([
     fraction(t * blocksInPeriod, gWxAmountStart, maxLockDuration),
