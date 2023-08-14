@@ -85,10 +85,6 @@ func keyBoostingV2Integral() = "%s%s__boostingV2__integral"
 func keyEmissionDurationInBlocks() = "%s%s__emission__duration"
 func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 
-# GWX REWARD (MATH) API
-func keyNextPergetIntOrDefault() = "%s__nextPeriod"
-func keyGwxRewardEmissionStartHeight() = "%s%s__gwxRewardEmissionPart__startHeight"
-
 # OWN KEYS
 let IdxCfgAssetId = 1
 let IdxCfgMinLockAmount = 2
