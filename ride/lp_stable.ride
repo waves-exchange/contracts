@@ -1061,11 +1061,13 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   }
   let newD = newXp.getD()
   strict checkD = newD >= D || "new D is fewer error".throw()
+
+  strict refreshDLpActions = refreshDLpInternal(0, 0, 0)._1
   
   (
     [
       ScriptTransfer(addressTo.addressFromStringValue(), totalGetRaw, assetOut.parseAssetId())
-    ],
+    ] ++ refreshDLpActions,
     totalGetRaw
   )
 }
