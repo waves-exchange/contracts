@@ -776,7 +776,7 @@ func gwxUserInfoREADONLY(userAddressStr: String) = {
 # for lp_staking_pools
 @Callable(i)
 func userMaxDurationREADONLY(userAddressStr: String) = {
-  ([], ("increaseLock", maxLockDuration))
+  ([], ("lock", maxLockDuration))
 }
 
 # targetHeight is unused
