@@ -55,7 +55,7 @@ describe('boosting: claimWxBoostRejectIfUnsupportedLpAsset.mjs', /** @this {Moch
       const { height: lockStartHeight } = await boosting.lock({
         dApp: this.accounts.boosting.addr,
         caller: this.accounts.user0.seed,
-        duration: this.maxLockDuration,
+        duration: 1,
         payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
       });
       await waitForHeight(lockStartHeight + 1);
