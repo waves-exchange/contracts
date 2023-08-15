@@ -578,7 +578,6 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
 }
 
 func lockActions(i: Invocation, durationMonths: Int) = {
-  if (!durationMonthsAllowed.containsElement(durationMonths)) then throwErr("invalid duration") else
   let duration = durationMonths * blocksInMonth
   let assetIdStr = assetId.toBase58String()
   if (i.payments.size() != 1) then throwErr("invalid payment - exact one payment must be attached") else
@@ -586,6 +585,7 @@ func lockActions(i: Invocation, durationMonths: Int) = {
   let pmtAmount = pmt.amount
 
   if (assetId != pmt.assetId.value()) then throwErr("invalid asset is in payment - " + assetIdStr + " is expected") else
+  if (!durationMonthsAllowed.containsElement(durationMonths)) then throwErr("invalid duration") else
 
   let nextUserNumKEY = keyNextUserNum()
   let userAddress = i.caller
