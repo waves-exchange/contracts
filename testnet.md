@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-457-fix-swap**](https://github.com/waves-exchange/contracts/tree/wxdefi-457-fix-swap) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:58 15.08.2023** (GMT+4)
+[**wxdefi-457-fix-swap**](https://github.com/waves-exchange/contracts/tree/wxdefi-457-fix-swap) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **17:59 15.08.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
