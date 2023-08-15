@@ -23,17 +23,17 @@ let MULT18BI = MULT18.toBigInt()
 
 let wavesString = "WAVES"
 
+func wrapErr(msg: String) = ["gwx_reward.ride:", msg].makeString(" ")
+func throwErr(msg: String) = msg.wrapErr().throw()
+
 func getNumberByKey(key: String) = this.getInteger(key).valueOrElse(0)
-func getNumberOrFail(key: String) = this.getInteger(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+func getNumberOrFail(key: String) = this.getInteger(key).valueOrErrorMessage(wrapErr("mandatory this." + key + " is not defined"))
 func getStringByKey(key: String) = this.getString(key).valueOrElse("")
-func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage("mandatory this." + key + " is not defined")
+func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage(wrapErr("mandatory this." + key + " is not defined"))
 
 func parseAssetId(input: String) = {
   if (input == wavesString) then unit else input.fromBase58String()
 }
-
-func wrapErr(msg: String) = ["gwx_reward.ride:", msg].makeString(" ")
-func throwErr(msg: String) = msg.wrapErr().throw()
 
 func abs(val: Int) = if (val < 0) then -val else val
 func absBigInt(val: BigInt) = if (val < zeroBigInt) then -val else val
@@ -139,6 +139,7 @@ func keyGwxRewardEmissionStartHeight() = "%s%s__gwxRewardEmissionPart__startHeig
 
 # boosting contract state key, increments every lock() of unique user
 func keyUsersCount() = "%s__nextUserNum"
+func keyUser2NumMapping(userAddress: Address) = makeString(["%s%s%s__mapping__user2num", userAddress.toString()], SEP)
 
 # emission contract key
 func keyRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
@@ -231,10 +232,11 @@ func _refreshRewardPerGwxIntegral() = {
     .valueOrElse(0)
   let gwxAmountTotal = boostingContractOrFail().invoke("getGwxTotalREADONLY", [], []).exactAs[Int]
   let dh = { height - rewardPerGwxIntegralLastHeight }.toBigInt()
-  let rewardPerGwxIntegral = rewardPerGwxIntegralPrevious + fraction(
+  let gwxAmountTotalBI = gwxAmountTotal.toBigInt()
+  let rewardPerGwxIntegral = rewardPerGwxIntegralPrevious + if (gwxAmountTotalBI == zeroBigInt) then zeroBigInt else fraction(
     dh,
     emissionRate.toBigInt() * gwxHoldersRewardCurrent.toBigInt() * MULT18BI,
-    gwxAmountTotal.toBigInt() * MULT8BI
+    gwxAmountTotalBI * MULT8BI
   )
 
   (
@@ -249,21 +251,18 @@ func _refreshRewardPerGwxIntegral() = {
 func keyRewardPerGwxIntegralUserLast(userAddress: Address) = ["%s%s", "rewardPerGwxIntegralUserLast", userAddress.toString()].makeString(SEP)
 
 # call when user total gwx amount is changed
-func _refreshUserReward(userAddress: Address) = {
+func _refreshUserReward(userAddress: Address, userNum: Int) = {
+  let (rewardPerGwxIntegralActions, rewardPerGwxIntegral) = _refreshRewardPerGwxIntegral()
+
   let rewardPerGwxIntegralUserLast = {
     match this.getString(keyRewardPerGwxIntegralUserLast(userAddress)) {
-      case s: String => s.parseBigInt()
-      case _: Unit => unit
+      case s: String => s.parseBigInt().valueOrErrorMessage(wrapErr("invalid user last integral"))
+      case _: Unit => rewardPerGwxIntegral
     }
-  }.valueOrElse(zeroBigInt)
+  }
 
-  let userIdxOrFail = getUserIndexByAddress(
-    boostingContractOrFail().toString(),
-    userAddress.toString()
-  )
-  let userUnclaimed = userIdxOrFail.keyUserUnclaimed().getInteger().valueOrElse(0)
-
-  let (rewardPerGwxIntegralActions, rewardPerGwxIntegral) = _refreshRewardPerGwxIntegral()
+  let userIdxOption = boostingContractOrFail().getString(keyUser2NumMapping(userAddress))
+  let userUnclaimed = keyUserUnclaimed(userNum).getInteger().valueOrElse(0)
 
   # userReward = userGwxAmount * (rewardPerGwxIntegral - rewardPerGwxIntegralUserLast) + userRewardPrevious - userRewardClaimed
   let userGwxAmount = boostingContractOrFail().invoke("getUserGwxAmount", [userAddress.toString()], []).exactAs[Int]
@@ -283,23 +282,26 @@ func _refreshUserReward(userAddress: Address) = {
 func commonClaimReward(userAddressStr: String) = {
   let userAddress = addressFromString(userAddressStr).valueOrErrorMessage(wrapErr("invalid user address"))
   let cfgArray = readConfigArrayOrFail()
-  let userIdx = getUserIndexByAddress(cfgArray[IdxCfgBoostingContract], userAddressStr) # will throw if no such user
-  let userUnclaimedOption = userIdx.keyUserUnclaimed().getInteger()
-  let (actions, reward) = _refreshUserReward(userAddress)
+  let userNum = getUserIndexByAddress(cfgArray[IdxCfgBoostingContract], userAddressStr) # will throw if no such user
+  let (actions, reward) = _refreshUserReward(userAddress, userNum)
   
   (
     reward,
     [
-      IntegerEntry(userIdx.keyUserUnclaimed(), 0)
+      IntegerEntry(userNum.keyUserUnclaimed(), 0)
     ] ++ actions
   )
 }
 
 @Callable(i)
-func refreshUserReward(userAddressBytes: ByteVector) = {
+func refreshUserReward(userAddressBytes: ByteVector, userNum: Int) = {
   strict checkCaller = i.caller == boostingContractOrFail() || throwErr("permission denied")
 
-  _refreshUserReward(Address(userAddressBytes))
+  let (actions, reward) = _refreshUserReward(Address(userAddressBytes), userNum)
+
+  ([
+    IntegerEntry(userNum.keyUserUnclaimed(), reward)
+  ] ++ actions, reward)
 }
 
 @Callable(i)

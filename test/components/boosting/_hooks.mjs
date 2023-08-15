@@ -8,7 +8,9 @@ import {
 import { table, getBorderCharacters } from 'table';
 import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
-import { api, broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
+import {
+  api, broadcastAndWait, waitForHeight, chainId, baseSeed,
+} from '../../utils/api.mjs';
 import { staking } from './contract/staking.mjs';
 import { boosting } from './contract/boosting.mjs';
 import { emission } from './contract/emission.mjs';
@@ -18,7 +20,6 @@ import { gwx } from './contract/gwx.mjs';
 import { votingEmission } from './contract/votingEmission.mjs';
 import { managerVault } from './contract/managerVault.mjs';
 
-const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 const nonceLength = 3;
 
 const ridePath = '../ride';
@@ -156,6 +157,11 @@ export const mochaHooks = {
     await gwx.init({
       caller: this.accounts.gwx.seed,
       referralAddress: this.accounts.referral.addr,
+      wxAssetId: this.wxAssetId,
+      matcherPacemakerAddress: '',
+      boostingContractAddress: this.accounts.boosting.addr,
+      gwxRewardEmissionPartStartHeight: 1,
+      emissionContractAddress: this.accounts.emission.addr,
     });
 
     await assetsStore.init({
