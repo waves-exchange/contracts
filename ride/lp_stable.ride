@@ -1061,6 +1061,18 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   }
   let newD = newXp.getD()
   strict checkD = newD >= D || "new D is fewer error".throw()
+
+  let amountAssetBalanceDelta = if (isReverse) then {
+    -totalGetRaw
+  } else {
+    feePoolAmount
+  }
+  let priceAssetBalanceDelta = if (isReverse) then {
+    feePoolAmount
+  } else {
+    -totalGetRaw
+  }
+  strict refreshDLpActions = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)._1
   
   (
     [

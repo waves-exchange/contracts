@@ -1021,6 +1021,18 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   strict checkK = newK >= oldK || "new K is fewer error".throw()
   strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
 
+  let amountAssetBalanceDelta = if (isReverse) then {
+    -amountOut
+  } else {
+    feePoolAmount
+  }
+  let priceAssetBalanceDelta = if (isReverse) then {
+    feePoolAmount
+  } else {
+    -amountOut
+  }
+  strict refreshKLpActions = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)._1
+
   strict rebalanceState = rebalanceAsset(assetIn)
   strict withdrawState = withdrawAndRebalanceAsset(assetOut, amountOut)
   ( withdrawState ++
