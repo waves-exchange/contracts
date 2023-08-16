@@ -1077,7 +1077,7 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   (
     [
       ScriptTransfer(addressTo.addressFromStringValue(), totalGetRaw, assetOut.parseAssetId())
-    ] ++ refreshDLpActions,
+    ],
     totalGetRaw
   )
 }
@@ -1770,3 +1770,4 @@ func verify() = {
     }
   }
 }
+
