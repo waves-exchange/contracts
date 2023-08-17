@@ -215,6 +215,19 @@ func getTradingReward(userAddress: String) = {
 
 func keyRewardPerGwxIntegral() = ["%s", "rewardPerGwxIntegral"].makeString(SEP)
 
+func getGwxAmountTotalOption() = {
+  let keyGwxTotal = "%s%s__gwx__total"
+  boostingContractOrFail().getInteger(keyGwxTotal)
+}
+
+func getUserGwxAmountTotalOption(userAddress: Address) = {
+  func keyUserGwxAmountTotal(userAddress: Address) = makeString([
+    "%s%s__gwxAmountTotal",
+    userAddress.toString()
+  ], SEP)
+  boostingContractOrFail().getInteger(keyUserGwxAmountTotal(userAddress))
+}
+
 # call when reward or total gwx amount are changed
 func _refreshRewardPerGwxIntegral() = {
   # rewardPerGwx = dh * emissionPerBlock / totalGwxAmount + rewardPerGwxPrevious
@@ -230,7 +243,7 @@ func _refreshRewardPerGwxIntegral() = {
     .valueOrErrorMessage(wrapErr("invalid " + keyRatePerBlockCurrent()))
   let gwxHoldersRewardCurrent = emissionContract.getInteger(keyGwxHoldersRewardCurrent())
     .valueOrElse(0)
-  let gwxAmountTotal = boostingContractOrFail().invoke("getGwxTotalREADONLY", [], []).exactAs[Int]
+  let gwxAmountTotal = getGwxAmountTotalOption().valueOrElse(0)
   let dh = { height - rewardPerGwxIntegralLastHeight }.toBigInt()
   let gwxAmountTotalBI = gwxAmountTotal.toBigInt()
   let rewardPerGwxIntegral = rewardPerGwxIntegralPrevious + if (gwxAmountTotalBI == zeroBigInt) then zeroBigInt else fraction(
@@ -265,7 +278,7 @@ func _refreshUserReward(userAddress: Address, userNum: Int) = {
   let userUnclaimed = keyUserUnclaimed(userNum).getInteger().valueOrElse(0)
 
   # userReward = userGwxAmount * (rewardPerGwxIntegral - rewardPerGwxIntegralUserLast) + userRewardPrevious - userRewardClaimed
-  let userGwxAmount = boostingContractOrFail().invoke("getUserGwxAmount", [userAddress.toString()], []).exactAs[Int]
+  let userGwxAmount = getUserGwxAmountTotalOption(userAddress).valueOrElse(0)
   let userReward = fraction(userGwxAmount.toBigInt(), rewardPerGwxIntegral - rewardPerGwxIntegralUserLast, MULT18BI).toInt() + userUnclaimed
 
   (

@@ -1,4 +1,5 @@
 import { data, invokeScript } from '@waves/waves-transactions';
+import { base58Decode, base64Encode } from '@waves/ts-lib-crypto';
 import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 
 export const gwxReward = {
@@ -7,9 +8,12 @@ export const gwxReward = {
     emissionAddress,
     wxAssetId,
     maxRecipients,
+    matcherPacemakerAddress = '',
+    boostingContractAddress,
   }) => {
     const dataTx = data({
       data: [
+        { key: '%s__config', type: 'string', value: `%s%s%s__${wxAssetId}__${matcherPacemakerAddress}__${boostingContractAddress}` },
         { key: '%s%s__config__emissionAddress', type: 'string', value: emissionAddress },
         { key: '%s__wxAssetId', type: 'string', value: wxAssetId },
         { key: '%s__maxRecipients', type: 'integer', value: maxRecipients },
@@ -79,4 +83,24 @@ export const gwxReward = {
     );
     return broadcastAndWait(invokeTx);
   },
+
+  refreshUserReward: async ({
+    caller,
+    gwxRewardAddress,
+    userAddress,
+    userNum,
+  }) => broadcastAndWait(
+    invokeScript({
+      dApp: gwxRewardAddress,
+      call: {
+        function: 'refreshUserReward',
+        args: [
+          { type: 'binary', value: base64Encode(base58Decode(userAddress)) },
+          { type: 'integer', value: userNum },
+        ],
+      },
+      additionalFee: 4e5,
+      chainId,
+    }, caller),
+  ),
 };

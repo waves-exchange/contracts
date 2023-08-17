@@ -24,6 +24,7 @@ export const mochaHooks = {
     const contractNames = [
       'gwxReward',
       'emission',
+      'boosting',
     ];
     const userNames = Array.from({ length: 3 }, (_, k) => `user${k}`);
     const names = [...contractNames, ...userNames, 'pacemaker'];
@@ -73,6 +74,7 @@ export const mochaHooks = {
 
     await gwxReward.init({
       caller: this.accounts.gwxReward.seed,
+      boostingContractAddress: this.accounts.boosting.addr,
       emissionAddress: this.accounts.emission.addr,
       wxAssetId: this.wxAssetId,
       maxRecipients: 90,
