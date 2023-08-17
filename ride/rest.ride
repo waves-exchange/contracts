@@ -366,7 +366,7 @@ func poolStatsREADONLY(lpAsset: String) = {
   let poolAddress = factoryDapp.getStringByAddressOrFail(lpAsset.keyFactoryLpAssetToPoolContractAddress()).addressFromStringValue()
   # data from pool config
   let status = factoryDapp.invoke("getPoolStatusREADONLY", [poolAddress.toString()], []).exactAs[Int]
-  let tpl = "%d%d%d%d%d%d%d%d%d%s%s"
+  let tpl = "%d%d%d%d%d%d%d%d%d%s"
   if (status == 4) then {
     (
       [],
