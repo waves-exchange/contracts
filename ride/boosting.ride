@@ -328,7 +328,7 @@ func StatsEntry(totalLockedInc: Int, durationInc: Int, lockCountInc: Int, usersC
 
 func LockParamsEntry(
   userAddress: Address,
-  txId: ByteVector,
+  txId: ByteVector|Unit,
   amount: Int,
   start: Int,
   duration: Int,
@@ -713,10 +713,10 @@ func claimWxBoostREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
 func unlock(txIdStr: String) = {
   let userAddress = i.caller
   let userAddressStr = userAddress.toString()
-  let txId = txIdStr.fromBase58String()
+  let txIdOption = if (txIdStr == "") then unit else txIdStr.fromBase58String()
   let userRecordArray = readLockParamsRecordOrFail(
     userAddress,
-    if (txIdStr == "") then unit else txId
+    txIdOption
   )
 
   let userAmount = userRecordArray[IdxLockAmount].parseIntValue()
@@ -729,7 +729,7 @@ func unlock(txIdStr: String) = {
 
   let wxWithdrawable = getWxWithdrawable(
     userAddress,
-    if (txIdStr == "") then unit else txId
+    txIdOption
   )
 
   let gWxAmountStart = fraction(userAmount, lockDuration, maxLockDuration)
@@ -754,7 +754,7 @@ func unlock(txIdStr: String) = {
     .valueOrErrorMessage(wrapErr("invalid user number")).parseIntValue()
   strict gwxRewardInv = gwxRewardContract.reentrantInvoke("refreshUserReward", [userAddress.bytes, userNum], [])
 
-  LockParamsEntry(userAddress, txId, userAmount, lockStart, lockDuration, gwxRemaining, wxClaimed + wxWithdrawable)
+  LockParamsEntry(userAddress, txIdOption, userAmount, lockStart, lockDuration, gwxRemaining, wxClaimed + wxWithdrawable)
     ++ StatsEntry(-wxWithdrawable, 0, 0, 0)
     :+ HistoryEntry("unlock", userAddressStr, wxWithdrawable, lockStart, lockDuration, gwxBurned, i)
     :+ ScriptTransfer(userAddress, wxWithdrawable, assetId)
