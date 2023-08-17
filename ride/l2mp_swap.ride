@@ -152,7 +152,7 @@ func swap(stake: Boolean) = {
   strict stakeInv = if (stake) then stakingAddress.invoke(
     "stakeFor",
     [userAddress.toString()],
-    [AttachedPayment(assetOutId, assetOutAmount)]
+    [(assetOutId, assetOutAmount)]
   ) else unit
 
   (
