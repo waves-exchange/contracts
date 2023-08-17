@@ -412,6 +412,8 @@ func poolStatsREADONLY(lpAsset: String) = {
 
     let poolOneTokenOperationsDisabled = factoryDapp.invoke("isPoolOneTokenOperationsDisabledREADONLY", [poolAddress.toString()], []).exactAs[Boolean]
     let poolOneTokenOperationsEnabled = !poolOneTokenOperationsDisabled
+
+    let poolSwapEnabled = !factoryDapp.invoke("isPoolSwapDisabledREADONLY", [poolAddress.toString()], []).exactAs[Boolean]
     (
       [],
       makeString([
@@ -425,7 +427,8 @@ func poolStatsREADONLY(lpAsset: String) = {
         poolWeight.toString(),
         inFee.toString(),
         outFee.toString(),
-        poolOneTokenOperationsEnabled.toString()
+        poolOneTokenOperationsEnabled.toString(),
+        poolSwapEnabled.toString()
       ],
       SEP)
     )

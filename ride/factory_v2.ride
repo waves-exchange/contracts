@@ -107,6 +107,16 @@ func keyPoolOneTokenOperationsDisabled(assetsInternal: (Int, Int)) = {
 func keyAllPoolsOneTokenOperationsDisabled() = {
   ["%s", "oneTokenOperationsDisabled"].makeString(SEP)
 }
+
+
+func keyPoolSwapDisabled(assetsInternal: (Int, Int)) = {
+  let (amountAssetInternal, priceAssetInternal) = assetsInternal
+  ["%d%d%s", amountAssetInternal.toString(), priceAssetInternal.toString(), "swapDisabled"].makeString(SEP)
+}
+func keyAllPoolsSwapDisabled() = {
+  ["%s", "swapDisabled"].makeString(SEP)
+}
+
 func keyMappingLpAssetToPoolAssets(lpAssetStr: String)
        = "%s%s%s__" + lpAssetStr + "__mappings__lpAsset2Pool"
 func keyMappingPoolAssetsToLpasset(internalAmountAssetIdStr: String, internalPriceAssetIdStr: String)
@@ -860,6 +870,16 @@ func isPoolOneTokenOperationsDisabledREADONLY(poolAddress: String) = {
   let allPoolsOneTokenOperationsDisabled = keyAllPoolsOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
 
   ([], allPoolsOneTokenOperationsDisabled || poolOneTokenOperationsDisabled)
+}
+
+@Callable(i)
+func isPoolSwapDisabledREADONLY(poolAddress: String) = {
+  let poolConfig = poolAddress.getPoolConfig()
+  let assetsInternal = (poolConfig[idxIAmtAssetId].parseIntValue(), poolConfig[idxIPriceAssetId].parseIntValue())
+  let poolSwapDisabled = assetsInternal.keyPoolSwapDisabled().getBoolean().valueOrElse(false)
+  let allPoolsSwapDisabled = keyAllPoolsSwapDisabled().getBoolean().valueOrElse(false)
+
+  ([], allPoolsSwapDisabled || poolSwapDisabled)
 }
 
 @Callable(i)

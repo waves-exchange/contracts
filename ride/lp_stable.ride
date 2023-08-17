@@ -1020,7 +1020,16 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
     [], 
     []
   ).exactAs[String]
+
+  let isPoolSwapDisabled = fca.invoke(
+    "isPoolSwapDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean]
+  let isSwapDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolSwapDisabled
+
   strict checks = [
+    !isSwapDisabled || i.isManager() || "swap operation is blocked by admin".throwErr(),
     i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
     i.caller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
   ]
