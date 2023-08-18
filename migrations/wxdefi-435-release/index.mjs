@@ -21,6 +21,7 @@ const {
   MIN_LOCK_DURATION,
   MAX_LOCK_DURATION,
   BLOCKS_IN_PERIOD,
+  LOCK_STEP_BLOCKS,
 } = process.env;
 const api = create(NODE_URL);
 
@@ -33,9 +34,6 @@ const gwxRewardAddress = address(
   { publicKey: GWX_REWARD_PUBLIC_KEY },
   CHAIN_ID
 );
-
-const keyLockParamsRecordOld = (userAddress) =>
-  `%s%s__lock__${userAddress}`;
 
 const keyLockParamsRecord = (userAddress, txId) =>
   `%s%s%s__lock__${userAddress}__${txId}`;
@@ -149,6 +147,7 @@ txs.push({
           MAX_LOCK_DURATION.toString(),
           gwxRewardAddress,
           BLOCKS_IN_PERIOD.toString(),
+          LOCK_STEP_BLOCKS.toString(),
         ].join(separator),
       }
     ],

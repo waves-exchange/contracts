@@ -6,7 +6,8 @@
 # * "%s%s__config__referralsContractAddress": String
 # * "%s__nextUserNum": Int
 # * "%s%s__config__factoryAddress": String
-# * "%s__config": String ("%s%d%d%d%s%d__<assetId>__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>__<blocksInPeriod>")
+# * "%s__config": String
+# ("%s%d%d%d%s%d%d__<assetId>__<minLockAmount>__<minLockDuration>__<maxLockDuration>__<mathContract>__<blocksInPeriod>__<lockStepBlocks>")
 # * "%s__lpStakingPoolsContract": String
 
 let SEP = "__"
@@ -17,12 +18,6 @@ let contractFilename = "boosting.ride"
 let SCALE18 = 18
 let MULT18 = 1_000_000_000_000_000_000
 let MULT18BI = MULT18.toBigInt()
-let durationMonthsAllowed = [1, 3, 6, 12, 24, 48]
-
-# 24 * 60
-let blocksInDay = 1440
-# 365 * 24 * 60 / 12
-let blocksInMonth = 43800
 
 func wrapErr(msg: String) = [contractFilename, ": ", msg].makeString("")
 func throwErr(msg: String) = msg.wrapErr().throw()
@@ -92,6 +87,7 @@ let IdxCfgMinLockDuration = 3
 let IdxCfgMaxLockDuration = 4
 let IdxCfgMathContract = 5
 let IdxCfgBlocksInPeriod = 6
+let IdxCfgLockStepBlocks = 7
 
 func keyConfig() = {"%s__config"}
 func readConfigArrayOrFail() = this.getStringOrFail(keyConfig()).split(SEP)
@@ -102,28 +98,7 @@ let minLockDuration = cfgArray[IdxCfgMinLockDuration].parseInt().valueOrErrorMes
 let maxLockDuration = cfgArray[IdxCfgMaxLockDuration].parseInt().valueOrErrorMessage(wrapErr("invalid max lock duration"))
 let mathContract = cfgArray[IdxCfgMathContract].addressFromString().valueOrErrorMessage(wrapErr("invalid math contract address"))
 let blocksInPeriod = cfgArray[IdxCfgBlocksInPeriod].parseInt().valueOrErrorMessage(wrapErr("invalid blocks in period"))
-
-func formatConfigS(assetId: String, minLockAmount: String, minLockDuration: String, maxLockDuration: String, mathContract: String) = {
-  makeString([
-      "%s%d%d%d%s",
-      assetId, # 1
-      minLockAmount, # 2
-      minLockDuration, # 3
-      maxLockDuration, # 4
-      mathContract # 5
-      ],
-  SEP)
-}
-
-func formatConfig(assetId: String, minLockAmount: Int, minLockDuration: Int, maxLockDuration: Int, mathContract: String) = {
-  formatConfigS(
-    assetId, # 1
-    minLockAmount.toString(), # 2
-    minLockDuration.toString(), # 3
-    maxLockDuration.toString(), # 4
-    mathContract # 5
-  )
-}
+let lockStepBlocks = cfgArray[IdxCfgLockStepBlocks].parseInt().valueOrErrorMessage(wrapErr("invalid lock step blocks"))
 
 func getManagerVaultAddressOrThis() = {
   match keyManagerVaultAddress().getString() {
@@ -577,15 +552,13 @@ func internalClaimWxBoost(lpAssetIdStr: String, userAddressStr: String, readOnly
   (userBoostAvaliableToClaimTotalNew, dataState, debug)
 }
 
-func lockActions(i: Invocation, durationMonths: Int) = {
-  let duration = durationMonths * blocksInMonth
+func lockActions(i: Invocation, duration: Int) = {
   let assetIdStr = assetId.toBase58String()
   if (i.payments.size() != 1) then throwErr("invalid payment - exact one payment must be attached") else
   let pmt = i.payments[0]
   let pmtAmount = pmt.amount
 
   if (assetId != pmt.assetId.value()) then throwErr("invalid asset is in payment - " + assetIdStr + " is expected") else
-  if (!durationMonthsAllowed.containsElement(durationMonths)) then throwErr("invalid duration") else
 
   let nextUserNumKEY = keyNextUserNum()
   let userAddress = i.caller
@@ -603,6 +576,7 @@ func lockActions(i: Invocation, durationMonths: Int) = {
   if ((pmtAmount < minLockAmount) && userAddress != lpStakingPoolsContract) then throwErr("amount is less then minLockAmount=" + minLockAmount.toString()) else
   if (duration < minLockDuration) then throwErr("passed duration is less then minLockDuration=" + minLockDuration.toString()) else
   if (duration > maxLockDuration) then throwErr("passed duration is greater then maxLockDuration=" + maxLockDuration.toString()) else
+  if (duration % lockStepBlocks != 0) then throwErr("duration must be multiple of lockStepBlocks=" + lockStepBlocks.toString()) else
 
   let gWxAmountStart = fraction(pmtAmount, duration, maxLockDuration)
 
@@ -660,19 +634,6 @@ func getWxWithdrawable(userAddress: Address, txIdOption: ByteVector|Unit) = {
   } - wxClaimed
 
   wxWithdrawable
-}
-
-@Callable(i)
-func constructor(factoryAddressStr: String, lockAssetIdStr: String, minLockAmount: Int, minDuration: Int, maxDuration: Int, mathContract: String) = {
-  strict checkCaller = i.mustManager()
-
-  [IntegerEntry(keyNextUserNum(), 0),
-    StringEntry(
-        keyConfig(),
-        formatConfig(lockAssetIdStr, minLockAmount, minDuration, maxDuration, mathContract)),
-    StringEntry(keyFactoryAddress(), factoryAddressStr)
-  ]
-    ++ StatsEntry(0, 0, 0, 0)
 }
 
 @Callable(i)
