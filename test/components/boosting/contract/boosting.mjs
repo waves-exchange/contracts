@@ -1,5 +1,30 @@
 import { data, invokeScript } from '@waves/waves-transactions';
-import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
+import { broadcastAndWait, chainId, separator } from '../../../utils/api.mjs';
+
+export const keyLock = (userAddress, txId) => ['%s%s%s', 'lock', userAddress, txId].join(separator);
+export const keyUserGwxAmountTotal = (userAddress) => ['%s%s', 'gwxAmountTotal', userAddress].join(separator);
+
+export const parseLockParams = (s) => {
+  const [
+    meta,
+    wxAmount,
+    startHeight,
+    duration,
+    lastUpdateTimestamp,
+    gwxAmount,
+    wxClaimed,
+  ] = s.split(separator);
+
+  return {
+    meta,
+    wxAmount: parseInt(wxAmount, 10),
+    startHeight: parseInt(startHeight, 10),
+    duration: parseInt(duration, 10),
+    gwxAmount: parseInt(gwxAmount, 10),
+    wxClaimed: parseInt(wxClaimed, 10),
+    lastUpdateTimestamp: parseInt(lastUpdateTimestamp, 10),
+  };
+};
 
 export const boosting = {
   init: async ({
@@ -60,19 +85,19 @@ export const boosting = {
     return broadcastAndWait(invokeTx);
   },
 
-  increaseLock: async ({
-    dApp, caller, deltaDuration, payments = [],
+  unlock: async ({
+    dApp, caller, txId,
   }) => {
     const invokeTx = invokeScript(
       {
         dApp,
         call: {
-          function: 'increaseLock',
+          function: 'unlock',
           args: [
-            { type: 'integer', value: deltaDuration },
+            { type: 'string', value: txId },
           ],
         },
-        payment: payments,
+        payment: [],
         additionalFee: 4e5,
         chainId,
       },

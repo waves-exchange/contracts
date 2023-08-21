@@ -10,6 +10,7 @@ export const votingEmission = {
     boostingAddress,
     stakingAddress,
     epochLength,
+    votingEmissionRateAddress,
   }) => {
     const dataTx = data(
       {
@@ -20,6 +21,7 @@ export const votingEmission = {
           { key: '%s__boostingContract', type: 'string', value: boostingAddress },
           { key: '%s__stakingContract', type: 'string', value: stakingAddress },
           { key: '%s__epochLength', type: 'integer', value: epochLength },
+          { key: '%s__votingEmissionRateContract', type: 'string', value: votingEmissionRateAddress },
         ],
         additionalFee: 4e5,
         chainId,

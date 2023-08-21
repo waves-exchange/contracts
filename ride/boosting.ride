@@ -702,7 +702,7 @@ func unlock(txIdStr: String) = {
   let gwxRemaining = ensurePositive(gwxAmount - gwxBurned, "gwxRemaining")
   let lockedGwxAmount = getLockedGwxAmount(userAddress)
 
-  if (userAmount <= 0) then throwErr("nothing to unlock") else
+  if (wxWithdrawable <= 0) then throwErr("nothing to unlock") else
 
   let gwxAmountTotal = getGwxAmountTotal()
   let userGwxAmountTotal = getUserGwxAmountTotal(userAddress)

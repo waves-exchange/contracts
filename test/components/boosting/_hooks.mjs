@@ -19,6 +19,7 @@ import { assetsStore } from './contract/assetsStore.mjs';
 import { gwx } from './contract/gwx.mjs';
 import { votingEmission } from './contract/votingEmission.mjs';
 import { managerVault } from './contract/managerVault.mjs';
+import { votingEmissionRate } from './contract/votingEmissionRate.mjs';
 
 const nonceLength = 3;
 
@@ -35,6 +36,7 @@ const assetsStorePath = format({ dir: ridePath, base: 'assets_store.ride' });
 const lpPath = format({ dir: ridePath, base: 'lp.ride' });
 const votingEmissionCandidate = format({ dir: ridePath, base: 'voting_emission_candidate.ride' });
 const referralPath = format({ dir: ridePath, base: 'referral.ride' });
+const votingEmissionRatePath = format({ dir: ridePath, base: 'voting_emission_rate.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -50,6 +52,7 @@ export const mochaHooks = {
       'lp',
       'factory',
       'votingEmission',
+      'votingEmisisonRate',
       'referral',
       'votingEmissionCandidate',
       'manager',
@@ -96,6 +99,7 @@ export const mochaHooks = {
       setScriptFromFile(lpPath, this.accounts.lp.seed),
       setScriptFromFile(votingEmissionCandidate, this.accounts.votingEmissionCandidate.seed),
       setScriptFromFile(referralPath, this.accounts.referral.seed),
+      setScriptFromFile(votingEmissionRatePath, this.accounts.votingEmisisonRate.seed),
     ]);
 
     this.minLockAmount = 500000000;
@@ -187,6 +191,7 @@ export const mochaHooks = {
         boostingAddress: this.accounts.boosting.addr,
         stakingAddress: this.accounts.staking.addr,
         epochLength: this.epochLength,
+        votingEmissionRateAddress: this.accounts.votingEmisisonRate.addr,
       }),
 
       factory.setWxEmissionPoolLabel({
@@ -207,6 +212,12 @@ export const mochaHooks = {
         caller: this.accounts.votingEmission.seed,
         epochUiKey: height + 10,
         epochStartHeight: height,
+      }),
+
+      votingEmissionRate.init({
+        dApp: this.accounts.votingEmisisonRate.addr,
+        caller: this.accounts.votingEmisisonRate.seed,
+        startHeight: height,
       }),
     ]);
 
