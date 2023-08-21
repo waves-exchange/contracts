@@ -587,7 +587,7 @@ func lockActions(i: Invocation, duration: Int) = {
 
   let userGwxAmountTotal = getUserGwxAmountTotal(userAddress)
 
-  strict gwxRewardInv = gwxRewardContract.reentrantInvoke("refreshUserReward", [userAddress.bytes, userNum], [])
+  strict gwxRewardInv = gwxRewardContract.invoke("refreshUserReward", [userAddress.bytes, userNum], [])
 
   let arr = if (userIsExisting) then [] else [
     IntegerEntry(nextUserNumKEY, userNum + 1),
@@ -713,7 +713,7 @@ func unlock(txIdStr: String) = {
     else
   let userNum = getString(keyUser2NumMapping(userAddressStr))
     .valueOrErrorMessage(wrapErr("invalid user number")).parseIntValue()
-  strict gwxRewardInv = gwxRewardContract.reentrantInvoke("refreshUserReward", [userAddress.bytes, userNum], [])
+  strict gwxRewardInv = gwxRewardContract.invoke("refreshUserReward", [userAddress.bytes, userNum], [])
 
   LockParamsEntry(userAddress, txIdOption, userAmount, lockStart, lockDuration, gwxRemaining, wxClaimed + wxWithdrawable)
     ++ StatsEntry(-wxWithdrawable, 0, 0, 0)
