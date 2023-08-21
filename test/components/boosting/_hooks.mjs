@@ -112,6 +112,8 @@ export const mochaHooks = {
     });
 
     this.maxLockDuration = 2102400;
+    this.blocksInPeriod = 1;
+    this.lockStepBlocks = 1;
     await boosting.init({
       caller: this.accounts.boosting.seed,
       factoryAddress: this.accounts.factory.addr,
@@ -124,6 +126,8 @@ export const mochaHooks = {
       minLockDuration: this.minDuration,
       maxLockDuration: this.maxLockDuration,
       mathContract: this.accounts.gwx.addr,
+      blocksInPeriod: this.blocksInPeriod,
+      lockStepBlocks: this.lockStepBlocks,
     });
 
     const { height } = await api.blocks.fetchHeight();

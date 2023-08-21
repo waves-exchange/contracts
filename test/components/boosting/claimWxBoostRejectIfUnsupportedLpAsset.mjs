@@ -52,10 +52,11 @@ describe('boosting: claimWxBoostRejectIfUnsupportedLpAsset.mjs', /** @this {Moch
       }, this.accounts.factory.seed);
       await broadcastAndWait(lpAssetTransferTx);
 
+      const duration = 10;
       const { height: lockStartHeight } = await boosting.lock({
         dApp: this.accounts.boosting.addr,
         caller: this.accounts.user0.seed,
-        duration: 1,
+        duration,
         payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
       });
       await waitForHeight(lockStartHeight + 1);

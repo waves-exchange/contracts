@@ -15,6 +15,8 @@ export const boosting = {
     maxLockDuration,
     mathContract,
     nextUserNum = 0,
+    blocksInPeriod,
+    lockStepBlocks,
   }) => {
     const dataTx = data({
       data: [
@@ -25,7 +27,7 @@ export const boosting = {
         {
           key: '%s__config',
           type: 'string',
-          value: `%s%d%d%d__${lockAssetId}__${minLockAmount}__${minLockDuration}__${maxLockDuration}__${mathContract}`,
+          value: `%s%d%d%d%s%d%d__${lockAssetId}__${minLockAmount}__${minLockDuration}__${maxLockDuration}__${mathContract}__${blocksInPeriod}__${lockStepBlocks}`,
         },
         { key: '%s__votingEmissionContract', type: 'string', value: votingEmissionAddress },
         { key: '%s__managerVaultAddress', type: 'string', value: managerVaultAddress },

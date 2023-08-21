@@ -43,11 +43,11 @@ describe('boosting: gwxUserInfoREADONLY.mjs', /** @this {MochaSuiteModified} */(
       }, this.accounts.factory.seed);
       await broadcastAndWait(lpAssetTransferTx);
 
-      const durationInMonths = 1;
+      const duration = 10;
       const { height: lockStartHeight } = await boosting.lock({
         dApp: this.accounts.boosting.addr,
         caller: this.accounts.user0.seed,
-        duration: durationInMonths,
+        duration,
         payments: [{ assetId: this.wxAssetId, amount: wxAmount }],
       });
       await waitForHeight(lockStartHeight + 1);
@@ -59,9 +59,8 @@ describe('boosting: gwxUserInfoREADONLY.mjs', /** @this {MochaSuiteModified} */(
       );
       const checkData = response.result.value._2.value;
 
-      const blocksInMonth = 43800;
       const expectedGwxAmount = Math.floor((
-        wxAmount * durationInMonths * blocksInMonth
+        wxAmount * duration
       ) / this.maxLockDuration);
 
       // TODO: check all checkData
