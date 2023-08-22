@@ -18,6 +18,7 @@ let contractFilename = "boosting.ride"
 let SCALE18 = 18
 let MULT18 = 1_000_000_000_000_000_000
 let MULT18BI = MULT18.toBigInt()
+let DECAY_CONSTANT = 8
 
 func wrapErr(msg: String) = [contractFilename, ": ", msg].makeString("")
 func throwErr(msg: String) = msg.wrapErr().throw()
@@ -620,7 +621,7 @@ func getWxWithdrawable(userAddress: Address, txIdOption: ByteVector|Unit) = {
 
   let exponent = fraction(
     t.toBigInt(),
-    { 8 * blocksInPeriod }.toBigInt() * MULT18BI,
+    { DECAY_CONSTANT * blocksInPeriod }.toBigInt() * MULT18BI,
     lockDuration.toBigInt()
   )
   let wxWithdrawable = if (height > lockEnd) then {
