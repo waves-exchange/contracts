@@ -24,7 +24,7 @@ import { votingEmissionRate } from './contract/votingEmissionRate.mjs';
 const nonceLength = 3;
 
 const ridePath = '../ride';
-const mockPath = './components/staking_boosting/mock';
+const mockPath = './components/boosting/mock';
 const stakingPath = format({ dir: ridePath, base: 'staking.ride' });
 const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
 const gwxPath = format({ dir: ridePath, base: 'gwx_reward.ride' });
@@ -35,7 +35,6 @@ const factoryPath = format({ dir: ridePath, base: 'factory_v2.ride' });
 const assetsStorePath = format({ dir: ridePath, base: 'assets_store.ride' });
 const lpPath = format({ dir: ridePath, base: 'lp.ride' });
 const votingEmissionCandidate = format({ dir: ridePath, base: 'voting_emission_candidate.ride' });
-const referralPath = format({ dir: ridePath, base: 'referral.ride' });
 const votingEmissionRatePath = format({ dir: ridePath, base: 'voting_emission_rate.ride' });
 
 export const mochaHooks = {
@@ -57,7 +56,6 @@ export const mochaHooks = {
       'votingEmissionCandidate',
       'manager',
       'managerVault',
-      'referral',
       'referrer',
       'lpStakingPools',
     ];
@@ -98,7 +96,6 @@ export const mochaHooks = {
       setScriptFromFile(assetsStorePath, this.accounts.store.seed),
       setScriptFromFile(lpPath, this.accounts.lp.seed),
       setScriptFromFile(votingEmissionCandidate, this.accounts.votingEmissionCandidate.seed),
-      setScriptFromFile(referralPath, this.accounts.referral.seed),
       setScriptFromFile(votingEmissionRatePath, this.accounts.votingEmisisonRate.seed),
     ]);
 
@@ -116,6 +113,7 @@ export const mochaHooks = {
     this.emissionStartBlock = 1806750;
     this.emissionEndBlock = 4434750;
     this.emissionDuration = this.emissionEndBlock - this.emissionStartBlock;
+    this.gwxHoldersReward = 0.2 * 1e8;
 
     this.epochLength = 7;
 
@@ -159,6 +157,7 @@ export const mochaHooks = {
         emissionDuration: this.emissionDuration,
         wxAssetId: this.wxAssetId,
         boostingV2StartHeight: height,
+        gwxHoldersReward: this.gwxHoldersReward,
       }),
 
       factory.init({

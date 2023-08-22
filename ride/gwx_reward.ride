@@ -391,11 +391,13 @@ func claimReward() = {
     referralsContractAddressOrFail.invoke("incUnclaimed", [referralProgramName, userAddress, referrerReward, referralReward], [])
   }
 
+  strict emit = emissionContract.invoke("emit", [amount], [])
+
   strict claimedReferral = referralsContractAddressOrFail.invoke("claim", [referralProgramName], []).exactAs[Int]
   let totalAmount = amount + claimedReferral
   (
     [
-      ScriptTransfer(i.caller, amount, cfgArray[IdxCfgAssetId].fromBase58String()),
+      ScriptTransfer(i.caller, amount, wxAssetId),
       HistoryEntry("claim", userAddressStr, totalAmount, i)
     ] ++ actions,
     totalAmount

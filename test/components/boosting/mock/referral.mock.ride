@@ -11,3 +11,17 @@ func createPair(
 ) = {
   ([], unit)
 }
+
+@Callable(i)
+func claim(programName: String) = {
+  ([], 0)
+}
+
+@Callable(i)
+func updateReferralActivity(
+  programName: String,
+  referralAddress: String,
+  isActive: Boolean
+) = {
+  (nil, unit)
+}

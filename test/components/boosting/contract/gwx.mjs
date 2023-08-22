@@ -1,4 +1,4 @@
-import { data } from '@waves/waves-transactions';
+import { data, invokeScript } from '@waves/waves-transactions';
 import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 
 export const gwx = {
@@ -24,4 +24,15 @@ export const gwx = {
 
     return broadcastAndWait(dataTx);
   },
+  claimReward: async ({
+    caller,
+    dApp,
+  }) => broadcastAndWait(invokeScript({
+    dApp,
+    call: {
+      function: 'claimReward',
+      args: [],
+    },
+    chainId,
+  }, caller)),
 };
