@@ -1,4 +1,5 @@
 import { data, invokeScript } from '@waves/waves-transactions';
+import wc from '@waves/ts-lib-crypto';
 import { broadcastAndWait, chainId, separator } from '../../../utils/api.mjs';
 
 export const keyLock = (userAddress, txId) => ['%s%s%s', 'lock', userAddress, txId].join(separator);
@@ -26,9 +27,46 @@ export const parseLockParams = (s) => {
   };
 };
 
-export const boosting = {
-  init: async ({
-    caller,
+const decayConstant = 8;
+class Boosting {
+  maxLockDuration = 0;
+
+  blocksInPeriod = 0;
+
+  seed = '';
+
+  address() {
+    return wc.address(this.seed, chainId);
+  }
+
+  calcGwxAmountStart({ wxAmount, duration }) {
+    return Math.floor((wxAmount * duration) / this.maxLockDuration);
+  }
+
+  calcWxWithdrawable({
+    lockWxAmount, lockDuration, passedPeriods,
+  }) {
+    const exponent = (passedPeriods * decayConstant * this.blocksInPeriod) / lockDuration;
+    // TODO: if height > lockEnd then userAmount
+    const wxWithdrawable = Math.floor(lockWxAmount * (1 - 0.5 ** exponent));
+
+    return wxWithdrawable;
+  }
+
+  calcGwxAmountBurned({
+    gwxAmountStart, gwxAmountPrev, passedPeriods,
+  }) {
+    const gwxBurned = Math.min(
+      Math.floor(
+        (passedPeriods * this.blocksInPeriod * gwxAmountStart) / this.maxLockDuration,
+      ),
+      gwxAmountPrev,
+    );
+
+    return gwxBurned;
+  }
+
+  async init({
     factoryAddress,
     referralsAddress,
     votingEmissionAddress,
@@ -42,7 +80,7 @@ export const boosting = {
     nextUserNum = 0,
     blocksInPeriod,
     lockStepBlocks,
-  }) => {
+  }) {
     const dataTx = data({
       data: [
         { key: '%s%s__config__factoryAddress', type: 'string', value: factoryAddress },
@@ -59,17 +97,17 @@ export const boosting = {
       ],
       additionalFee: 4e5,
       chainId,
-    }, caller);
+    }, this.seed);
 
     return broadcastAndWait(dataTx);
-  },
+  }
 
-  lock: async ({
-    dApp, caller, duration, payments = [],
-  }) => {
+  async lock({
+    caller, duration, payments = [],
+  }) {
     const invokeTx = invokeScript(
       {
-        dApp,
+        dApp: this.address(),
         call: {
           function: 'lock',
           args: [
@@ -83,14 +121,14 @@ export const boosting = {
       caller,
     );
     return broadcastAndWait(invokeTx);
-  },
+  }
 
-  unlock: async ({
-    dApp, caller, txId,
-  }) => {
+  async unlock({
+    caller, txId,
+  }) {
     const invokeTx = invokeScript(
       {
-        dApp,
+        dApp: this.address(),
         call: {
           function: 'unlock',
           args: [
@@ -104,5 +142,7 @@ export const boosting = {
       caller,
     );
     return broadcastAndWait(invokeTx);
-  },
-};
+  }
+}
+
+export const boosting = new Boosting();

@@ -119,6 +119,10 @@ export const mochaHooks = {
 
     this.epochLength = 7;
 
+    boosting.seed = this.accounts.boosting.seed;
+    boosting.maxLockDuration = this.maxLockDuration;
+    boosting.blocksInPeriod = this.blocksInPeriod;
+
     await Promise.all([
       managerVault.init({
         caller: this.accounts.managerVault.seed,
@@ -132,7 +136,6 @@ export const mochaHooks = {
       }),
 
       boosting.init({
-        caller: this.accounts.boosting.seed,
         factoryAddress: this.accounts.factory.addr,
         referralsAddress: this.accounts.referral.addr,
         votingEmissionAddress: this.accounts.votingEmission.addr,

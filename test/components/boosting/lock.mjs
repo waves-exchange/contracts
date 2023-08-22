@@ -25,7 +25,6 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
     }, this.accounts.emission.seed));
 
     const { stateChanges, id: lockTxId } = await boosting.lock({
-      dApp: this.accounts.boosting.addr,
       caller: this.accounts.user0.seed,
       duration: lockDuration,
       payments: [
@@ -42,7 +41,10 @@ describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
       boostingDataChanges[lockKey],
     );
 
-    const expectedGwxAmount = Math.floor((lockWxAmount * lockDuration) / this.maxLockDuration);
+    const expectedGwxAmount = boosting.calcGwxAmountStart({
+      wxAmount: lockWxAmount,
+      duration: lockDuration,
+    });
     expect(lockParams.wxAmount).to.equal(lockWxAmount);
     expect(lockParams.gwxAmount).to.equal(expectedGwxAmount);
     expect(
