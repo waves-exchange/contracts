@@ -18,6 +18,7 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
   const lockWxAmount = 1e3 * 1e8;
   let lockTxId;
   let lockHeight;
+  let lockParamsPrev;
 
   before(async function () {
     await broadcastAndWait(transfer({
@@ -27,7 +28,8 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
       additionalFee: 4e5,
     }, this.accounts.emission.seed));
 
-    ({ id: lockTxId, height: lockHeight } = await boosting.lock({
+    let stateChanges;
+    ({ id: lockTxId, height: lockHeight, stateChanges } = await boosting.lock({
       dApp: this.accounts.boosting.addr,
       caller: this.accounts.user0.seed,
       duration: lockDuration,
@@ -36,6 +38,15 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
       ],
       chainId,
     }));
+
+    const boostingDataChanges = Object.fromEntries(
+      stateChanges.data.map(({ key, value }) => [key, value]),
+    );
+
+    const lockKey = keyLock(this.accounts.user0.addr, lockTxId);
+    lockParamsPrev = parseLockParams(
+      boostingDataChanges[lockKey],
+    );
   });
 
   it('should successfully unlock', async function () {
@@ -63,7 +74,16 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
     const exponent = (t * 8 * this.blocksInPeriod) / lockDuration;
     // if height > lockEnd then userAmount
     const wxWithdrawable = Math.floor(lockWxAmount * (1 - 0.5 ** exponent));
+    const gwxAmountStart = Math.floor((lockWxAmount * lockDuration) / this.maxLockDuration);
+    const gwxAmountPrev = lockParamsPrev.gwxAmount;
+    const gwxBurned = Math.min(
+      Math.floor(
+        (t * this.blocksInPeriod * gwxAmountStart) / this.maxLockDuration,
+      ),
+      gwxAmountPrev,
+    );
 
-    expect(lockParams.wxClaimed).to.equal(wxWithdrawable);
+    expect(lockParams.wxClaimed).to.equal(wxWithdrawable, 'wxClaimed');
+    expect(lockParams.gwxAmount).to.equal(gwxAmountPrev - gwxBurned, 'gwxAmount');
   });
 });
