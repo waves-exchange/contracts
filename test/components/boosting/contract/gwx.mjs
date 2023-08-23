@@ -1,16 +1,32 @@
 import { data, invokeScript } from '@waves/waves-transactions';
+import wc from '@waves/ts-lib-crypto';
 import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 
-export const gwx = {
-  init: async ({
-    caller,
+export class GwxReward {
+  seed = '';
+
+  get address() {
+    return wc.address(this.seed, chainId);
+  }
+
+  static calcReward({
+    releaseRate, gwxHoldersReward, dh, userGwxAmount, totalGwxAmount,
+  }) {
+    const reward = Math.floor((
+      releaseRate * gwxHoldersReward * dh * userGwxAmount
+    ) / (totalGwxAmount * 1e8));
+
+    return reward;
+  }
+
+  init({
     referralAddress,
     wxAssetId,
     matcherPacemakerAddress,
     boostingContractAddress,
     gwxRewardEmissionPartStartHeight,
     emissionContractAddress,
-  }) => {
+  }) {
     const dataTx = data({
       data: [
         { key: '%s__config', type: 'string', value: `%s%s%s__${wxAssetId}__${matcherPacemakerAddress}__${boostingContractAddress}` },
@@ -20,19 +36,23 @@ export const gwx = {
       ],
       additionalFee: 4e5,
       chainId,
-    }, caller);
+    }, this.seed);
 
     return broadcastAndWait(dataTx);
-  },
-  claimReward: async ({
+  }
+
+  claimReward({
     caller,
-    dApp,
-  }) => broadcastAndWait(invokeScript({
-    dApp,
-    call: {
-      function: 'claimReward',
-      args: [],
-    },
-    chainId,
-  }, caller)),
-};
+  }) {
+    return broadcastAndWait(invokeScript({
+      dApp: this.address,
+      call: {
+        function: 'claimReward',
+        args: [],
+      },
+      chainId,
+    }, caller));
+  }
+}
+
+export const gwx = new GwxReward();

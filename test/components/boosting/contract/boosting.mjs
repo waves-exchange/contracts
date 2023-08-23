@@ -35,7 +35,7 @@ class Boosting {
 
   seed = '';
 
-  address() {
+  get address() {
     return wc.address(this.seed, chainId);
   }
 
@@ -107,7 +107,7 @@ class Boosting {
   }) {
     const invokeTx = invokeScript(
       {
-        dApp: this.address(),
+        dApp: this.address,
         call: {
           function: 'lock',
           args: [
@@ -128,7 +128,7 @@ class Boosting {
   }) {
     const invokeTx = invokeScript(
       {
-        dApp: this.address(),
+        dApp: this.address,
         call: {
           function: 'unlock',
           args: [

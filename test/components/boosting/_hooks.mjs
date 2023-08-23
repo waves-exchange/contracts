@@ -121,6 +121,8 @@ export const mochaHooks = {
     boosting.maxLockDuration = this.maxLockDuration;
     boosting.blocksInPeriod = this.blocksInPeriod;
 
+    gwx.seed = this.accounts.gwx.seed;
+
     await Promise.all([
       managerVault.init({
         caller: this.accounts.managerVault.seed,

@@ -9,7 +9,7 @@ import {
   broadcastAndWait, chainId, waitForHeight,
 } from '../../utils/api.mjs';
 import { boosting } from './contract/boosting.mjs';
-import { gwx } from './contract/gwx.mjs';
+import { GwxReward, gwx } from './contract/gwx.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -62,9 +62,18 @@ describe('boosting: claimReward.mjs', /** @this {MochaSuiteModified} */() => {
       caller: this.accounts.user0.seed,
     });
     const transferToUser = stateChanges.transfers[0];
-    const expectedAmount = Math.floor((
-      this.releaseRate * this.gwxHoldersReward * (claimHeight - lockHeight)
-    ) / (2 * 1e8));
+    const userGwxAmount = boosting.calcGwxAmountStart({
+      wxAmount: lockWxAmount,
+      duration: lockDuration,
+    });
+    const totalGwxAmount = 2 * userGwxAmount;
+    const expectedAmount = GwxReward.calcReward({
+      releaseRate: this.releaseRate,
+      gwxHoldersReward: this.gwxHoldersReward,
+      dh: claimHeight - lockHeight,
+      userGwxAmount,
+      totalGwxAmount,
+    });
 
     expect(transferToUser.amount).to.equal(expectedAmount);
   });
