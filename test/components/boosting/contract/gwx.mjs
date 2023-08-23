@@ -10,11 +10,19 @@ export class GwxReward {
   }
 
   static calcReward({
-    releaseRate, gwxHoldersReward, dh, userGwxAmount, totalGwxAmount,
+    releaseRateList, gwxHoldersRewardList, dhList, userGwxAmountList, totalGwxAmountList,
   }) {
-    const reward = Math.floor((
-      releaseRate * gwxHoldersReward * dh * userGwxAmount
-    ) / (totalGwxAmount * 1e8));
+    if (
+      dhList.length !== userGwxAmountList.length
+      || dhList.length !== totalGwxAmountList.length
+    ) throw new Error('invalid input data');
+    let rewardRaw = 0;
+    for (let i = 0; i < dhList.length; i += 1) {
+      rewardRaw += (
+        releaseRateList[i] * gwxHoldersRewardList[i] * dhList[i] * userGwxAmountList[i]
+      ) / (totalGwxAmountList[i] * 1e8);
+    }
+    const reward = Math.floor(rewardRaw);
 
     return reward;
   }

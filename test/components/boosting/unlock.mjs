@@ -6,7 +6,7 @@ import {
 } from '@waves/waves-transactions';
 
 import {
-  broadcastAndWait, chainId, waitNBlocks, api,
+  broadcastAndWait, chainId, waitForHeight, api,
 } from '../../utils/api.mjs';
 import { boosting, parseLockParams, keyLock } from './contract/boosting.mjs';
 
@@ -52,7 +52,7 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
     const { height: currentHeight } = await api.blocks.fetchHeight();
     let heightDiff = currentHeight - lockHeight;
     if (heightDiff === 0) {
-      await waitNBlocks(1);
+      await waitForHeight(currentHeight + 1);
       heightDiff += 1;
     }
     const { stateChanges, height: unlockHeight } = await boosting.unlock({

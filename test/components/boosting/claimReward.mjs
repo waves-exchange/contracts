@@ -30,6 +30,10 @@ describe('boosting: claimReward.mjs', /** @this {MochaSuiteModified} */() => {
           recipient: this.accounts.user1.addr,
           amount: lockWxAmount,
         },
+        {
+          recipient: this.accounts.user2.addr,
+          amount: lockWxAmount,
+        },
       ],
       assetId: this.wxAssetId,
       additionalFee: 4e5,
@@ -55,7 +59,7 @@ describe('boosting: claimReward.mjs', /** @this {MochaSuiteModified} */() => {
     ]));
   });
 
-  it('should successfully claim reward', async function () {
+  it('should successfully claim reward (simple)', async function () {
     await waitForHeight(lockHeight + 1);
     const { stateChanges, height: claimHeight } = await gwx.claimReward({
       dApp: this.accounts.gwx.addr,
@@ -68,11 +72,41 @@ describe('boosting: claimReward.mjs', /** @this {MochaSuiteModified} */() => {
     });
     const totalGwxAmount = 2 * userGwxAmount;
     const expectedAmount = GwxReward.calcReward({
-      releaseRate: this.releaseRate,
-      gwxHoldersReward: this.gwxHoldersReward,
-      dh: claimHeight - lockHeight,
-      userGwxAmount,
-      totalGwxAmount,
+      releaseRateList: [this.releaseRate],
+      gwxHoldersRewardList: [this.gwxHoldersReward],
+      dhList: [claimHeight - lockHeight],
+      userGwxAmountList: [userGwxAmount],
+      totalGwxAmountList: [totalGwxAmount],
+    });
+
+    expect(transferToUser.amount).to.equal(expectedAmount);
+  });
+
+  it('should successfully claim reward (2 parts)', async function () {
+    const { height: user2LockHeight } = await boosting.lock({
+      caller: this.accounts.user2.seed,
+      duration: lockDuration,
+      payments: [
+        { assetId: this.wxAssetId, amount: lockWxAmount },
+      ],
+      chainId,
+    });
+    await waitForHeight(user2LockHeight + 1);
+    const { stateChanges, height: claimHeight } = await gwx.claimReward({
+      dApp: this.accounts.gwx.addr,
+      caller: this.accounts.user1.seed,
+    });
+    const transferToUser = stateChanges.transfers[0];
+    const userGwxAmount = boosting.calcGwxAmountStart({
+      wxAmount: lockWxAmount,
+      duration: lockDuration,
+    });
+    const expectedAmount = GwxReward.calcReward({
+      releaseRateList: [this.releaseRate, this.releaseRate],
+      gwxHoldersRewardList: [this.gwxHoldersReward, this.gwxHoldersReward],
+      dhList: [user2LockHeight - lockHeight, claimHeight - user2LockHeight],
+      userGwxAmountList: [userGwxAmount, userGwxAmount],
+      totalGwxAmountList: [2 * userGwxAmount, 3 * userGwxAmount],
     });
 
     expect(transferToUser.amount).to.equal(expectedAmount);
