@@ -6,7 +6,7 @@ import {
 } from '@waves/waves-transactions';
 
 import {
-  broadcastAndWait, chainId, waitNBlocks, api,
+  broadcastAndWait, chainId, waitForHeight,
 } from '../../utils/api.mjs';
 import { boosting, parseLockParams, keyLock } from './contract/boosting.mjs';
 import { gwx } from './contract/gwx.mjs';
@@ -18,6 +18,8 @@ describe('boosting: claimReward.mjs', /** @this {MochaSuiteModified} */() => {
   const lockDuration = 3;
   const lockWxAmount = 1e3 * 1e8;
   let lockTxId;
+  let lockHeight;
+  let lockParamsPrev;
 
   before(async function () {
     await broadcastAndWait(transfer({
@@ -48,11 +50,16 @@ describe('boosting: claimReward.mjs', /** @this {MochaSuiteModified} */() => {
   });
 
   it('should successfully claim reward', async function () {
-    await waitNBlocks(1);
-    const { stateChanges } = await gwx.claimReward({
+    await waitForHeight(lockHeight + 1);
+    const { stateChanges, height: claimHeight } = await gwx.claimReward({
       dApp: this.accounts.gwx.addr,
       caller: this.accounts.user0.seed,
     });
-    // TODO: check stateChanges
+    const transferToUser = stateChanges.transfers[0];
+    const expectedAmount = Math.floor((
+      this.releaseRate * this.gwxHoldersReward * (claimHeight - lockHeight)
+    ) / 1e8);
+
+    expect(transferToUser.amount).to.equal(expectedAmount);
   });
 });
