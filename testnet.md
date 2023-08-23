@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-435-wx-unlock**](https://github.com/waves-exchange/contracts/tree/wxdefi-435-wx-unlock) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **18:29 22.08.2023** (GMT+4)
+[**wxdefi-435-wx-unlock**](https://github.com/waves-exchange/contracts/tree/wxdefi-435-wx-unlock) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **14:09 23.08.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
