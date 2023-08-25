@@ -14,7 +14,7 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
-  const lockDuration = 3;
+  const lockDuration = 4;
   const lockWxAmount = 1e3 * 1e8;
   let lockTxId;
   let lockHeight;
@@ -46,6 +46,17 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
     lockParamsPrev = parseLockParams(
       boostingDataChanges[lockKey],
     );
+  });
+
+  it('nothing to unlock', async function () {
+    const { height: currentHeight } = await api.blocks.fetchHeight();
+
+    expect(currentHeight - lockHeight).to.equal(0);
+
+    return expect(boosting.unlock({
+      caller: this.accounts.user0.seed,
+      txId: lockTxId,
+    })).to.be.rejectedWith('nothing to unlock');
   });
 
   it('should successfully unlock', async function () {

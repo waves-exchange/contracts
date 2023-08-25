@@ -100,12 +100,11 @@ export const mochaHooks = {
     ]);
 
     this.minLockAmount = 500000000;
-    this.minDuration = 2;
-    this.maxDuration = 2102400;
 
+    this.minLockDuration = 2;
     this.maxLockDuration = 2102400;
     this.blocksInPeriod = 1;
-    this.lockStepBlocks = 1;
+    this.lockStepBlocks = 2;
 
     const { height } = await api.blocks.fetchHeight();
     this.releaseRate = 3805175038;
@@ -143,7 +142,7 @@ export const mochaHooks = {
         managerVaultAddress: this.accounts.managerVault.addr,
         lockAssetId: this.wxAssetId,
         minLockAmount: this.minLockAmount,
-        minLockDuration: this.minDuration,
+        minLockDuration: this.minLockDuration,
         maxLockDuration: this.maxLockDuration,
         mathContract: this.accounts.gwx.addr,
         blocksInPeriod: this.blocksInPeriod,

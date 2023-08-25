@@ -15,7 +15,7 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 describe('boosting: claimReward.mjs', /** @this {MochaSuiteModified} */() => {
-  const lockDuration = 3;
+  const lockDuration = 4;
   const lockWxAmount = 1e3 * 1e8;
   let lockHeight;
 

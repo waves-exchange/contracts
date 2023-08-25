@@ -575,8 +575,8 @@ func lockActions(i: Invocation, duration: Int) = {
   let lockStart = height
 
   if ((pmtAmount < minLockAmount) && userAddress != lpStakingPoolsContract) then throwErr("amount is less then minLockAmount=" + minLockAmount.toString()) else
-  if (duration < minLockDuration) then throwErr("passed duration is less then minLockDuration=" + minLockDuration.toString()) else
-  if (duration > maxLockDuration) then throwErr("passed duration is greater then maxLockDuration=" + maxLockDuration.toString()) else
+  if (duration < minLockDuration) then throwErr("passed duration is less than minLockDuration=" + minLockDuration.toString()) else
+  if (duration > maxLockDuration) then throwErr("passed duration is greater than maxLockDuration=" + maxLockDuration.toString()) else
   if (duration % lockStepBlocks != 0) then throwErr("duration must be multiple of lockStepBlocks=" + lockStepBlocks.toString()) else
 
   let gWxAmountStart = fraction(pmtAmount, duration, maxLockDuration)

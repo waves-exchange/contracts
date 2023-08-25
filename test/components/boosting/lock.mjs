@@ -12,8 +12,71 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 describe('boosting: lock.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should successfully lock', async function () {
+  it('lock step blocks error', async function () {
     const lockDuration = 3;
+
+    const lockWxAmount = 1e3 * 1e8;
+
+    await broadcastAndWait(transfer({
+      recipient: this.accounts.user0.addr,
+      amount: lockWxAmount,
+      assetId: this.wxAssetId,
+      additionalFee: 4e5,
+    }, this.accounts.emission.seed));
+
+    return expect(boosting.lock({
+      caller: this.accounts.user0.seed,
+      duration: lockDuration,
+      payments: [
+        { assetId: this.wxAssetId, amount: lockWxAmount },
+      ],
+    })).to.be.rejectedWith(`duration must be multiple of lockStepBlocks=${this.lockStepBlocks}`);
+  });
+
+  it('min lock duration error', async function () {
+    const lockDuration = this.minLockDuration - 1;
+
+    const lockWxAmount = 1e3 * 1e8;
+
+    await broadcastAndWait(transfer({
+      recipient: this.accounts.user0.addr,
+      amount: lockWxAmount,
+      assetId: this.wxAssetId,
+      additionalFee: 4e5,
+    }, this.accounts.emission.seed));
+
+    return expect(boosting.lock({
+      caller: this.accounts.user0.seed,
+      duration: lockDuration,
+      payments: [
+        { assetId: this.wxAssetId, amount: lockWxAmount },
+      ],
+    })).to.be.rejectedWith(`passed duration is less than minLockDuration=${this.minLockDuration}`);
+  });
+
+  it('max lock duration error', async function () {
+    const lockDuration = this.maxLockDuration + 1;
+
+    const lockWxAmount = 1e3 * 1e8;
+
+    await broadcastAndWait(transfer({
+      recipient: this.accounts.user0.addr,
+      amount: lockWxAmount,
+      assetId: this.wxAssetId,
+      additionalFee: 4e5,
+    }, this.accounts.emission.seed));
+
+    return expect(boosting.lock({
+      caller: this.accounts.user0.seed,
+      duration: lockDuration,
+      payments: [
+        { assetId: this.wxAssetId, amount: lockWxAmount },
+      ],
+    })).to.be.rejectedWith(`passed duration is greater than maxLockDuration=${this.maxLockDuration}`);
+  });
+
+  it('should successfully lock', async function () {
+    const lockDuration = 4;
 
     const lockWxAmount = 1e3 * 1e8;
 
