@@ -681,16 +681,16 @@ func managePool(poolAddress: String, newStatus: Int) = {
 
   let poolConfig = getPoolConfig(poolAddress)
 
-  let poolStatus = poolConfig[idxPoolStatus]
-  let lpAssetIdStr = poolConfig[idxPoolLPAssetId]
-  let amountAssetStr =   poolConfig[idxAmtAssetId]
-  let priceAssetStr  = poolConfig[idxPriceAssetId]
-  let amountAssetsDecimals    = poolConfig[idxAmtAssetDcm].parseIntValue()
-  let priceAssetsDecimals  = poolConfig[idxPriceAssetDcm].parseIntValue()
-  let internalAmountAssetId    = poolConfig[idxIAmtAssetId].parseIntValue()
-  let internalPriceAssetId   = poolConfig[idxIPriceAssetId].parseIntValue()
-  let lpAssetDcm      = poolConfig[idxLPAssetDcm].parseIntValue()
-  let poolType      = poolConfig[idxPoolType]
+  let poolStatus            = poolConfig[idxPoolStatus]
+  let lpAssetIdStr          = poolConfig[idxPoolLPAssetId]
+  let amountAssetStr        = poolConfig[idxAmtAssetId]
+  let priceAssetStr         = poolConfig[idxPriceAssetId]
+  let amountAssetsDecimals  = poolConfig[idxAmtAssetDcm].parseIntValue()
+  let priceAssetsDecimals   = poolConfig[idxPriceAssetDcm].parseIntValue()
+  let internalAmountAssetId = poolConfig[idxIAmtAssetId].parseIntValue()
+  let internalPriceAssetId  = poolConfig[idxIPriceAssetId].parseIntValue()
+  let lpAssetDcm            = poolConfig[idxLPAssetDcm].parseIntValue()
+  let poolType              = poolConfig[idxPoolType]
 
   [StringEntry(keyPoolConfig(internalAmountAssetId.toString(),internalPriceAssetId.toString()),
                 dataPoolCfg(
@@ -704,7 +704,8 @@ func managePool(poolAddress: String, newStatus: Int) = {
                   internalAmountAssetId,
                   internalPriceAssetId,
                   lpAssetDcm,
-                  poolType))]
+                  poolType
+                ))]
 }
 
 @Callable(i)
@@ -810,7 +811,8 @@ func modifyWeights(btcPoolAddress: String, ethPoolAddress: String, ethBtcPoolAdd
    strict onModifyWeightEthBtc = stakingDapp.invoke("onModifyWeight", [ethBtcLpAssetIdStr, ethBtcPoolAddress], [])
    strict onModifyWeightUsdcUsdt = stakingDapp.invoke("onModifyWeight", [usdcUsdtLpAssetIdStr, usdcUsdtPoolAddress], [])
 
-   [IntegerEntry(btcWeightKEY, btcWeightNew),
+   [
+    IntegerEntry(btcWeightKEY, btcWeightNew),
     IntegerEntry(ethWeightKEY, ethWeightNew),
     IntegerEntry(ethBtcWeightKEY, ethBtcWeightNew),
     IntegerEntry(usdcUsdtWeightKEY, usdcUsdtWeightNew),
@@ -818,7 +820,7 @@ func modifyWeights(btcPoolAddress: String, ethPoolAddress: String, ethBtcPoolAdd
     IntegerEntry(keyPoolToWeightHistory(ethPoolAddress, 0), ethWeight),
     IntegerEntry(keyPoolToWeightHistory(ethBtcPoolAddress, 0), ethBtcWeightNew),
     IntegerEntry(keyPoolToWeightHistory(usdcUsdtPoolAddress, 0), usdcUsdtWeightNew)
-    ]
+   ]
 }
 
 @Callable(i)
@@ -1027,6 +1029,25 @@ func deletePool(poolContractAddress: String) = {
     DeleteEntry(keyChangeAmpDelay(poolContractAddress)),
     DeleteEntry(keyChangeAmpDelta(poolContractAddress)),
     DeleteEntry(keyChangeAmpTarget(poolContractAddress))
+  ]
+}
+
+@Callable(i)
+func setPoolFees(poolAddress: String, feeInValue: Int, feeOutValue: Int, swapFeeValue: Int, spreadValue: Int) = {
+  strict checks = [
+    i.mustAdmin(),
+    feeInValue >= 0   || "feeInValue must be greater than zero".throwErr(),
+    feeOutValue >= 0  || "feeOutValue must be greater than zero".throwErr(),
+    swapFeeValue >= 0 || "swapFeeValue must be greater than zero".throwErr(),
+    spreadValue >= 0  || "spreadValue must be greater than zero".throwErr()
+  ]
+
+  let key = keyInFee(poolAddress)
+  [
+    IntegerEntry(keyInFee(poolAddress), feeInValue),
+    IntegerEntry(keyOutFee(poolAddress), feeOutValue),
+    IntegerEntry(keySwapFee(poolAddress), swapFeeValue),
+    IntegerEntry(keyPoolSpread(poolAddress), spreadValue)
   ]
 }
 
