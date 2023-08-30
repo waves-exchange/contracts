@@ -624,7 +624,7 @@ func getWxWithdrawable(userAddress: Address, txIdOption: ByteVector|Unit) = {
     { DECAY_CONSTANT * blocksInPeriod }.toBigInt() * MULT18BI,
     lockDuration.toBigInt()
   )
-  let wxWithdrawable = if (height > lockEnd) then {
+  let wxWithdrawableTotal = if (height > lockEnd) then {
     userAmount
   } else {
     fraction(
@@ -632,7 +632,8 @@ func getWxWithdrawable(userAddress: Address, txIdOption: ByteVector|Unit) = {
       MULT18BI - pow(5.toBigInt(), 1, exponent, SCALE18, SCALE18, DOWN),
       MULT18BI
     ).toInt()
-  } - wxClaimed
+  }
+  let wxWithdrawable = wxWithdrawableTotal - wxClaimed
 
   wxWithdrawable
 }
