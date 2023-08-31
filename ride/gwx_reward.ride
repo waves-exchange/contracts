@@ -135,6 +135,10 @@ func boostingContractOrFail() = {
 # KEYS
 # ***********************
 
+let keySuspension = "%s__suspension"
+let isSuspended = this.getBoolean(keySuspension).valueOrElse(false)
+func throwIfSuspended() = !isSuspended || throwErr("suspended")
+
 func keyGwxRewardEmissionStartHeight() = "%s%s__gwxRewardEmissionPart__startHeight"
 
 # boosting contract state key, increments every lock() of unique user
@@ -308,6 +312,7 @@ func commonClaimReward(userAddressStr: String) = {
 
 @Callable(i)
 func refreshUserReward(userAddressBytes: ByteVector, userNum: Int) = {
+  strict suspensionCheck = throwIfSuspended()
   strict checkCaller = i.caller == boostingContractOrFail() || throwErr("permission denied")
 
   let (actions, reward) = _refreshUserReward(Address(userAddressBytes), userNum)
@@ -324,6 +329,7 @@ func tradeRewardInternal(
   rewards: List[Int],
   currentIter: Int
 ) = {
+  strict suspensionCheck = throwIfSuspended()
   if (currentIter == userAddresses.size()) then ([]) else
 
   strict checks = [
@@ -357,6 +363,7 @@ func tradeRewardInternal(
 
 @Callable(i)
 func updateReferralActivity(userAddress: String, gWxAmountStart: Int) = {
+  strict suspensionCheck = throwIfSuspended()
   let referrer = referralsContractAddressOrFail.getString(userAddress.keyReferrer())
   strict activeReferralInv = if (referrer == unit) then unit else {
     referralsContractAddressOrFail.invoke("updateReferralActivity", [referralProgramName, userAddress, gWxAmountStart >= referralMinGWxAmount], [])
@@ -374,6 +381,7 @@ func processPendingPeriodsAndUsers() = {
 # called by user
 @Callable(i)
 func claimReward() = {
+  strict suspensionCheck = throwIfSuspended()
   let cfgArray = readConfigArrayOrFail()
   let userAddress = i.caller
   let userAddressStr = userAddress.toString()
@@ -417,12 +425,14 @@ func claimRewardREADONLY(address: String) = {
 # save starting height of reward from emission 5%
 @Callable(i)
 func onEmissionForGwxStart() = {
+  strict suspensionCheck = throwIfSuspended()
   if (i.caller != factoryContract) then throw("permissions denied") else
   [IntegerEntry(keyGwxRewardEmissionStartHeight(), height)]
 }
 
 @Callable(i)
 func tradeReward(userAddresses: List[String], rewards: List[Int]) = {
+  strict suspensionCheck = throwIfSuspended()
   let argsComparison = userAddresses.size() == rewards.size()
   let maxRecipients = keyMaxRecipients().getInteger().valueOrElse(0)
   let payment = i.payments[0]
@@ -451,6 +461,7 @@ func tradeReward(userAddresses: List[String], rewards: List[Int]) = {
 
 @Callable(i)
 func claimTradingReward() = {
+  strict suspensionCheck = throwIfSuspended()
   let userAddress = i.caller
   let userAddressString = userAddress.toString()
   let reward = userAddressString.getTradingReward()
@@ -465,6 +476,15 @@ func claimTradingReward() = {
 @Callable(i)
 func claimTradingRewardREADONLY(userAddress: String) = {
   (nil, userAddress.getTradingReward())
+}
+
+@Callable(i)
+func suspend(v: Boolean) = {
+  strict checkCaller = i.mustManager()
+
+  ([
+    BooleanEntry(keySuspension, v)
+  ], v)
 }
 
 @Verifier(tx)

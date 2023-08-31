@@ -101,6 +101,10 @@ let mathContract = cfgArray[IdxCfgMathContract].addressFromString().valueOrError
 let blocksInPeriod = cfgArray[IdxCfgBlocksInPeriod].parseInt().valueOrErrorMessage(wrapErr("invalid blocks in period"))
 let lockStepBlocks = cfgArray[IdxCfgLockStepBlocks].parseInt().valueOrErrorMessage(wrapErr("invalid lock step blocks"))
 
+let keySuspension = "%s__suspension"
+let isSuspended = this.getBoolean(keySuspension).valueOrElse(false)
+func throwIfSuspended() = !isSuspended || throwErr("suspended")
+
 func getManagerVaultAddressOrThis() = {
   match keyManagerVaultAddress().getString() {
     case s:String => s.addressFromStringValue()
@@ -640,6 +644,7 @@ func getWxWithdrawable(userAddress: Address, txIdOption: ByteVector|Unit) = {
 
 @Callable(i)
 func lockRef(duration: Int, referrerAddress: String, signature: ByteVector) = {
+  strict suspensionCheck = throwIfSuspended()
   let (lockActionsResult, gWxAmountStart) = i.lockActions(duration)
   let referralAddress = i.caller.toString()
   strict refInv = if (referrerAddress == "" || signature == base58'') then unit else {
@@ -652,6 +657,7 @@ func lockRef(duration: Int, referrerAddress: String, signature: ByteVector) = {
 
 @Callable(i)
 func lock(duration: Int) = {
+  strict suspensionCheck = throwIfSuspended()
   let (lockActionsResult, gWxAmountStart) = i.lockActions(duration)
   strict updateRefActivity = mathContract.invoke("updateReferralActivity", [i.caller.toString(), gWxAmountStart], [])
 
@@ -660,6 +666,7 @@ func lock(duration: Int) = {
 
 @Callable(i)
 func claimWxBoost(lpAssetIdStr: String, userAddressStr: String) = {
+  strict suspensionCheck = throwIfSuspended()
   if (stakingContract != i.caller) then throwErr("permissions denied") else
   let (userBoostAvailable, dataState, debug) = internalClaimWxBoost(lpAssetIdStr, userAddressStr, false)
 
@@ -674,6 +681,7 @@ func claimWxBoostREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
 
 @Callable(i)
 func unlock(txIdStr: String) = {
+  strict suspensionCheck = throwIfSuspended()
   let userAddress = i.caller
   let userAddressStr = userAddress.toString()
   let txIdOption = if (txIdStr == "") then unit else txIdStr.fromBase58String()
@@ -770,6 +778,7 @@ func getGwxTotalREADONLY() = {
 # call this function when wxEmissionRate or boostCoeff changes
 @Callable(i)
 func onBoostEmissionUpdate() = {
+  strict suspensionCheck = throwIfSuspended()
   strict checkCaller = i.caller == emissionContract || i.mustManager()
   refreshBoostEmissionIntegral()
 }
@@ -786,6 +795,7 @@ func onBoostEmissionUpdate() = {
 #                           ╰ edge = false (falling)
 @Callable(i)
 func onStakedVoteUpdate(lpAssetIdStr: String, userAddressStr: String, edge: Boolean) = {
+  strict suspensionCheck = throwIfSuspended()
   strict checkCaller = i.caller == stakingContract || i.mustManager()
   let actions = lpAssetIdStr.refreshVoteStakedIntegral(userAddressStr, edge)
 
@@ -810,6 +820,15 @@ func getUserVoteFinalizedREADONLY(lpAssetIdStr: String, userAddressStr: String) 
 @Callable(i)
 func getUserVoteStakedIntegralREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
   ([], lpAssetIdStr.getUserVoteStakedIntegral(userAddressStr))
+}
+
+@Callable(i)
+func suspend(v: Boolean) = {
+  strict checkCaller = i.mustManager()
+
+  ([
+    BooleanEntry(keySuspension, v)
+  ], v)
 }
 
 @Verifier(tx)
