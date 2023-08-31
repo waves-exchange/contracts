@@ -85,13 +85,11 @@ describe('boosting: unlock.mjs', /** @this {MochaSuiteModified} */() => {
       lockDuration,
       passedPeriods,
     });
-    const gwxAmountStart = boosting.calcGwxAmountStart({
-      wxAmount: lockWxAmount,
-      duration: lockDuration,
-    });
     const gwxAmountPrev = lockParamsPrev.gwxAmount;
     const gwxBurned = boosting.calcGwxAmountBurned({
-      gwxAmountStart, gwxAmountPrev, passedPeriods,
+      wxWithdrawable,
+      lockDuration,
+      gwxAmountPrev,
     });
 
     expect(lockParams.wxClaimed).to.equal(wxWithdrawable, 'wxClaimed');

@@ -54,11 +54,11 @@ class Boosting {
   }
 
   calcGwxAmountBurned({
-    gwxAmountStart, gwxAmountPrev, passedPeriods,
+    wxWithdrawable, lockDuration, gwxAmountPrev,
   }) {
     const gwxBurned = Math.min(
       Math.floor(
-        (passedPeriods * this.blocksInPeriod * gwxAmountStart) / this.maxLockDuration,
+        (wxWithdrawable * lockDuration) / this.maxLockDuration,
       ),
       gwxAmountPrev,
     );

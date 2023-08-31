@@ -703,10 +703,8 @@ func unlock(txIdStr: String) = {
     txIdOption
   )
 
-  let gWxAmountStart = fraction(userAmount, lockDuration, maxLockDuration)
-
   let gwxBurned = min([
-    fraction(t * blocksInPeriod, gWxAmountStart, maxLockDuration),
+    fraction(wxWithdrawable, lockDuration, maxLockDuration),
     gwxAmount
   ])
   let gwxRemaining = ensurePositive(gwxAmount - gwxBurned, "gwxRemaining")
