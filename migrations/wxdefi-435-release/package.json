@@ -9,7 +9,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "dotenv": "^16.0.3"
-  }
+  "dependencies": {}
 }

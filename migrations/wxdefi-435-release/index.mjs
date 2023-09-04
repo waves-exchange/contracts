@@ -2,10 +2,7 @@ import { create } from '@waves/node-api-js';
 import { data } from '@waves/waves-transactions';
 import fs from 'fs/promises';
 import path from 'path';
-import * as dotenv from 'dotenv';
 import { address } from '@waves/ts-lib-crypto';
-
-dotenv.config();
 
 const separator = '__';
 const scriptedSenderFee = 4e5;
@@ -22,6 +19,7 @@ const {
   MAX_LOCK_DURATION,
   BLOCKS_IN_PERIOD,
   LOCK_STEP_BLOCKS,
+  UNLOCK_START_HEIGHT,
 } = process.env;
 const api = create(NODE_URL);
 
@@ -76,23 +74,37 @@ for (const { key, value } of lockParamsData) {
   const [
     /* meta */,
     /* userNum */,
-    amount,
-    start,
-    duration,
+    lockAmount,
+    lockStart,
+    lockDuration,
     /* paramK */,
     /* paramB */,
-    timestamp, // last update timestamp
-    gwxAmount
+    lockTimestamp, // last update timestamp
+    /* gwxAmount */
   ] = value.split(separator)
 
-  if (amount <= 0) continue;
+  if (lockAmount <= 0) continue;
+  const lockEnd = lockStart + lockDuration;
+  let gwxAmount = 0, duration = lockDuration, start = lockStart;
+  if (lockEnd > UNLOCK_START_HEIGHT) {
+    start = UNLOCK_START_HEIGHT;
+    duration = lockEnd - start;
+    gwxAmount = Math.floor((lockAmount * duration) / MAX_LOCK_DURATION);
+  }
 
   gwxAmountTotal += parseInt(gwxAmount);
   actions.push(
     {
       key: keyLockParamsRecord(userAddress, 'legacy'),
       type: 'string',
-      value: lockParamsRecord({ amount, start, duration, timestamp, gwxAmount, wxClaimed: 0 }),
+      value: lockParamsRecord({
+        amount: lockAmount,
+        start,
+        duration,
+        timestamp: lockTimestamp,
+        gwxAmount,
+        wxClaimed: 0,
+      }),
     },
     {
       key: keyUserGwxAmountTotal(userAddress),
