@@ -61,9 +61,13 @@ const lockParamsData = await api.addresses.data(boostingAddress, {
     `%s%s__lock__[^_]+`
   ),
 });
-
+let locks = {
+  empty: 0,
+  nonEmpty: 0,
+  unlocked: 0,
+};
 const actions = [];
-let gwxAmountTotal = 0;
+let gwxAmountTotal = 0n;
 for (const { key, value } of lockParamsData) {
   const [
     /* meta */,
@@ -74,25 +78,37 @@ for (const { key, value } of lockParamsData) {
   const [
     /* meta */,
     /* userNum */,
-    lockAmount,
-    lockStart,
-    lockDuration,
+    lockAmountStr,
+    lockStartStr,
+    lockDurationStr,
     /* paramK */,
     /* paramB */,
-    lockTimestamp, // last update timestamp
+    lockTimestampStr, // last update timestamp
     /* gwxAmount */
   ] = value.split(separator)
+  const lockAmount = Number(lockAmountStr);
+  const lockStart = Number(lockStartStr);
+  const lockDuration = Number(lockDurationStr);
+  const lockTimestamp = Number(lockTimestampStr);
 
-  if (lockAmount <= 0) continue;
+  if (lockAmount <= 0) {
+    locks.unlocked += 1;
+    continue;
+  }
   const lockEnd = lockStart + lockDuration;
   let gwxAmount = 0, duration = lockDuration, start = lockStart;
-  if (lockEnd > UNLOCK_START_HEIGHT) {
-    start = UNLOCK_START_HEIGHT;
+  if (lockEnd > Number(UNLOCK_START_HEIGHT)) {
+    start = Number(UNLOCK_START_HEIGHT);
     duration = lockEnd - start;
-    gwxAmount = Math.floor((lockAmount * duration) / MAX_LOCK_DURATION);
+    gwxAmount = Math.floor((lockAmount * duration) / Number(MAX_LOCK_DURATION));
   }
 
-  gwxAmountTotal += parseInt(gwxAmount);
+  if (gwxAmount > 0) {
+    locks.nonEmpty += 1;
+  } else {
+    locks.empty += 1;
+  }
+  gwxAmountTotal += BigInt(gwxAmount);
   actions.push(
     {
       key: keyLockParamsRecord(userAddress, 'legacy'),
@@ -146,7 +162,7 @@ txs.push({
       {
         key: '%s%s__gwx__total',
         type: 'integer',
-        value: gwxAmountTotal,
+        value: gwxAmountTotal.toString(),
       },
       {
         key: '%s__config',
@@ -154,12 +170,12 @@ txs.push({
         value: [
           '%s%d%d%d%s%d',
           WX_ASSET_ID,
-          MIN_LOCK_AMOUNT.toString(),
-          MIN_LOCK_DURATION.toString(),
-          MAX_LOCK_DURATION.toString(),
+          MIN_LOCK_AMOUNT,
+          MIN_LOCK_DURATION,
+          MAX_LOCK_DURATION,
           gwxRewardAddress,
-          BLOCKS_IN_PERIOD.toString(),
-          LOCK_STEP_BLOCKS.toString(),
+          BLOCKS_IN_PERIOD,
+          LOCK_STEP_BLOCKS,
         ].join(separator),
       }
     ],
@@ -190,3 +206,4 @@ await Promise.all(
   })
 );
 console.log(`Done. ${txs.length} txs created.`)
+console.log({ locks });
