@@ -80,11 +80,11 @@ export const mochaHooks = {
         type: 'string',
         value: this.usdnAssetId,
       }, {
-        key: '%s__amountAssetMinAmount',
+        key: '%s__poolAssetDefaultMinAmount',
         type: 'integer',
         value: 100,
       }, {
-        key: `%s%s__priceAssetsMinAmount__${this.usdnAssetId}`,
+        key: `%s%s__poolAssetMinAmount__${this.usdnAssetId}`,
         type: 'integer',
         value: 1000,
       }],

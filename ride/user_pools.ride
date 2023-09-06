@@ -56,9 +56,8 @@ func keyPoolType(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "pool
 
 func keyFeeAssetId() = ["%s", "feeAssetId"].makeString(SEP)
 func keyFeeAmount() = ["%s", "feeAmount"].makeString(SEP)
-func keyAmountAssetMinAmount() = ["%s", "amountAssetMinAmount"].makeString(SEP)
-func keyPriceAssetsMinAmount() = ["%s", "priceAssetsMinAmount"].makeString(SEP)
-func keyAssetsMinAmount(assetId: String) = ["%s%s", "priceAssetsMinAmount", assetId].makeString(SEP)
+func keyPoolAssetDefaultMinAmount() = ["%s", "poolAssetDefaultMinAmount"].makeString(SEP)
+func keyPoolAssetsMinAmount(assetId: String) = ["%s%s", "poolAssetMinAmount", assetId].makeString(SEP)
 func keyPriceAssets() = ["%s", "priceAssets"].makeString(SEP)
 
 func getManagerVaultAddressOrThis() = {
@@ -156,9 +155,9 @@ func _create(i: Invocation, poolType: String) = {
 
   let priceAssetsList = factoryContract.getString(keyPriceAssets()).stringOptionToList()
 
-  let assetMinAmountDefault = factoryContract.getIntegerValue(keyAmountAssetMinAmount())
-  let amountAssetMinAmount = factoryContract.getInteger(keyAssetsMinAmount(amountAssetId)).valueOrElse(assetMinAmountDefault)
-  let priceAssetMinAmount = factoryContract.getInteger(keyAssetsMinAmount(priceAssetId)).valueOrElse(assetMinAmountDefault)
+  let assetMinAmountDefault = factoryContract.getIntegerValue(keyPoolAssetDefaultMinAmount())
+  let amountAssetMinAmount = factoryContract.getInteger(keyPoolAssetsMinAmount(amountAssetId)).valueOrElse(assetMinAmountDefault)
+  let priceAssetMinAmount = factoryContract.getInteger(keyPoolAssetsMinAmount(priceAssetId)).valueOrElse(assetMinAmountDefault)
 
   let lastIndex = keyLastIndex().getInteger().valueOrElse(0)
   let curIndex = lastIndex + 1
