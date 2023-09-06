@@ -79,6 +79,14 @@ export const mochaHooks = {
         key: '%s__priceAssets',
         type: 'string',
         value: this.usdnAssetId,
+      }, {
+        key: '%s__amountAssetMinAmount',
+        type: 'integer',
+        value: 100,
+      }, {
+        key: `%s%s__priceAssetsMinAmount__${this.usdnAssetId}`,
+        type: 'integer',
+        value: 1000,
       }],
       chainId,
     }, this.accounts.factory);
