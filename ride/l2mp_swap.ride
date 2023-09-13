@@ -157,7 +157,6 @@ func swap(stake: Boolean) = {
 
   (
     [
-      Burn(assetInId, assetInAmount),
       IntegerEntry(
         keyStatsTotalIn,
         this.getInteger(keyStatsTotalIn).valueOrElse(0) + assetInAmount
