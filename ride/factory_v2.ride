@@ -176,6 +176,15 @@ func keyMinBalance(poolAddress: String, assetId: String)
 func keyMinBalanceDefault(assetId: String)
       = makeString(["%s%s", "minBalanceDefault", assetId], SEP)
 
+# keyAmplification
+func amp(poolAddress: String) 
+      = makeString(["%s%s", "amp", poolAddress], SEP)
+func keyAmpHistory(poolAddress: String, heightBlocks: Int) 
+      = makeString(["%s%s%d", "amp", poolAddress, heightBlocks.toString()], SEP)
+func keyChangeAmpLastCall(poolAddress: String) 
+      = makeString(["%s%s", "changeAmpLastCall", poolAddress], SEP)
+let ampInitial = 50
+
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------
@@ -661,7 +670,9 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
                   StringEntry(keyMappingPoolLPAssetToPoolContractAddress(lpAssetIdStr), poolAddress),
                   StringEntry(keyMappingPoolContractToLPAsset(poolAddress), lpAssetIdStr),
                   IntegerEntry(keyPoolToWeight(poolAddress),poolWeight),
-                  IntegerEntry(keyPoolSpread(poolAddress),defaultSpread)
+                  IntegerEntry(keyPoolSpread(poolAddress),defaultSpread),
+                  StringEntry(amp(poolAddress), ampInitial.toString()),
+                  StringEntry(keyAmpHistory(poolAddress, height), ampInitial.toString())
               ]
               , lpAssetIdStr
             )
@@ -860,6 +871,36 @@ func onVerificationLoss(assetId: String) = {
   strict actions = FOLD<13>(priceAssets, unit, cb)
 
   (nil, unit)
+}
+
+@Callable(i)
+func changeAmp(poolAddress: String) = {
+  let delay = keyChangeAmpDelay(poolAddress).getIntegerValue()
+  let delta = keyChangeAmpDelta(poolAddress).getIntegerValue()
+  let target = keyChangeAmpTarget(poolAddress).getIntegerValue()
+
+  let curAmp = amp(poolAddress).getStringValue().parseIntValue()
+  let newAmpRaw = curAmp + delta
+  # to not increment/decrement too much
+  let newAmp = if (delta < 0) then {
+    if (newAmpRaw < target) then target else newAmpRaw
+  } else {
+    if (newAmpRaw > target) then target else newAmpRaw
+  }
+
+  let lastCall = keyChangeAmpLastCall(poolAddress).getInteger().valueOrElse(0)
+  let wait = lastCall+delay
+
+  strict checks = [
+    height > wait || "try again in few blocks".throwErr(),
+    curAmp != newAmp || "already reached target".throwErr()
+  ]
+
+  [
+    IntegerEntry(keyChangeAmpLastCall(poolAddress), height),
+    StringEntry(amp(poolAddress), newAmp.toString()),
+    StringEntry(keyAmpHistory(poolAddress, height), newAmp.toString())
+  ]
 }
 
 @Callable(i)
