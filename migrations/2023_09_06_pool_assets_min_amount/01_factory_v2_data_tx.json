@@ -1,0 +1,79 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "feeAssetId": null,
+    "version": 2,
+    "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+    "data": [
+        {
+            "key": "%s__poolAssetDefaultMinAmount",
+            "type": "integer",
+            "value": 1000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on",
+            "type": "integer",
+            "value": 10000000000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__WAVES",
+            "type": "integer",
+            "value": 50000000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__9wc3LXNA4TEBsXyKtoLE9mrbDD7WMHXvXrCjZvabLAsi",
+            "type": "integer",
+            "value": 1000000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__HGgabTqUS8WtVFUJzfmrTDMgEccJuZLBPhFgQFxvnsoW",
+            "type": "integer",
+            "value": 1000000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__G5WWWzzVsWRyzGf32xojbnfp7gXbWrgqJT8RcVWEfLmC",
+            "type": "integer",
+            "value": 500000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__A81p1LTRyoq2rDR2TNxB2dWYxsiNwCSSi8sXef2SEkwb",
+            "type": "integer",
+            "value": 1000000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__4BKKSp6NoNcrFHyorZogDyctq1fq6w7114Ym1pw6HUtC",
+            "type": "integer",
+            "value": 1000000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p",
+            "type": "integer",
+            "value": 10000000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__66a1br3BrkoaJgP7yEar9hJcSTvJPoH6PYBLqscXcMGo",
+            "type": "integer",
+            "value": 320000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13",
+            "type": "integer",
+            "value": 50000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq",
+            "type": "integer",
+            "value": 500000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS",
+            "type": "integer",
+            "value": 20000000000
+        },
+        {
+            "key": "%s%s__poolAssetMinAmount__GAzAEjApmjMYZKPzri2g2VUXNvTiQGF7KDYZFFsP3AEq",
+            "type": "integer",
+            "value": 100000
+        }
+    ]
+}
