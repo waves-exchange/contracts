@@ -56,8 +56,8 @@ func keyPoolType(amountAssetId: String, priceAssetId: String) = ["%s%s%s", "pool
 
 func keyFeeAssetId() = ["%s", "feeAssetId"].makeString(SEP)
 func keyFeeAmount() = ["%s", "feeAmount"].makeString(SEP)
-func keyAmountAssetMinAmount() = ["%s", "amountAssetMinAmount"].makeString(SEP)
-func keyPriceAssetsMinAmount() = ["%s", "priceAssetsMinAmount"].makeString(SEP)
+func keyPoolAssetDefaultMinAmount() = ["%s", "poolAssetDefaultMinAmount"].makeString(SEP)
+func keyPoolAssetsMinAmount(assetId: String) = ["%s%s", "poolAssetMinAmount", assetId].makeString(SEP)
 func keyPriceAssets() = ["%s", "priceAssets"].makeString(SEP)
 
 func getManagerVaultAddressOrThis() = {
@@ -155,18 +155,9 @@ func _create(i: Invocation, poolType: String) = {
 
   let priceAssetsList = factoryContract.getString(keyPriceAssets()).stringOptionToList()
 
-  let assetMinAmountDefault = keyAmountAssetMinAmount().getIntegerValue()
-  let allowedAssetsMinAmounts = keyPriceAssetsMinAmount().getString().stringOptionToList()
-
-  let amountAssetMinAmount = if (priceAssetsList.containsElement(amountAssetId)) then {
-    let priceAssetsIndex = priceAssetsList.indexOf(amountAssetId).valueOrErrorMessage(invalidPriceAsset)
-    allowedAssetsMinAmounts[priceAssetsIndex].parseInt().value()
-  } else assetMinAmountDefault
-
-  let priceAssetMinAmount = if (priceAssetsList.containsElement(priceAssetId)) then {
-    let priceAssetsIndex = priceAssetsList.indexOf(priceAssetId).valueOrErrorMessage(invalidPriceAsset)
-    allowedAssetsMinAmounts[priceAssetsIndex].parseInt().value()
-  } else assetMinAmountDefault
+  let assetMinAmountDefault = factoryContract.getIntegerValue(keyPoolAssetDefaultMinAmount())
+  let amountAssetMinAmount = factoryContract.getInteger(keyPoolAssetsMinAmount(amountAssetId)).valueOrElse(assetMinAmountDefault)
+  let priceAssetMinAmount = factoryContract.getInteger(keyPoolAssetsMinAmount(priceAssetId)).valueOrElse(assetMinAmountDefault)
 
   let lastIndex = keyLastIndex().getInteger().valueOrElse(0)
   let curIndex = lastIndex + 1
@@ -184,7 +175,7 @@ func _create(i: Invocation, poolType: String) = {
     i.isManager() || (amountAssetId.isVerified() && priceAssetId.isVerified()) || throwInvalidAssetPair(),
     priceAssetsList.containsElement(amountAssetId) || priceAssetsList.containsElement(priceAssetId) || throwInvalidAssetPair(),
     i.isManager() || keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
-    i.isManager() || amountAssetAmount >= keyAmountAssetMinAmount().getIntegerValue() || throwInvalidAmountAsset(),
+    i.isManager() || amountAssetAmount >= amountAssetMinAmount || throwInvalidAmountAsset(),
     i.isManager() || priceAssetAmount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
     i.isManager() || feeAssetAmount == keyFeeAmount().getInteger() || throwInvalidFee()
   ]
@@ -208,15 +199,13 @@ func _create(i: Invocation, poolType: String) = {
 }
 
 @Callable(i)
-func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionAddress: String, priceAssetsMinAmount: List[String], amountAssetMinAmount: Int, feeAssetId: String, feeAmount: Int) = {
+func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionAddress: String, feeAssetId: String, feeAmount: Int) = {
   strict checkCaller = i.mustManager()
 
   [
     StringEntry(keyFactoryContract(), factoryV2Address),
     StringEntry(keyAssetsStoreContract(), assetsStoreAddress),
     StringEntry(keyEmissionContract(), emissionAddress),
-    StringEntry(keyPriceAssetsMinAmount(), priceAssetsMinAmount.makeString(SEP)),
-    IntegerEntry(keyAmountAssetMinAmount(), amountAssetMinAmount),
     StringEntry(keyFeeAssetId(), feeAssetId),
     IntegerEntry(keyFeeAmount(), feeAmount)
   ]
