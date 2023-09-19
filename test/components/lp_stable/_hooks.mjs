@@ -205,7 +205,7 @@ export const mochaHooks = {
         type: 'integer',
         value: '100000',
       }, {
-        key: '$s__outFeeDefault',
+        key: '%s__outFeeDefault',
         type: 'integer',
         value: '100000',
       }],
@@ -277,12 +277,13 @@ export const mochaHooks = {
     const setAmpTx = data({
       additionalFee: 4e5,
       data: [{
-        key: '%s__amp',
+        key: `%s%s__amp__${address(this.accounts.lpStable, chainId)}`,
         type: 'string',
         value: '250',
       }],
       chainId,
-    }, this.accounts.lpStable);
+      senderPublicKey: publicKey(this.accounts.factoryV2),
+    }, this.accounts.manager);
     await api.transactions.broadcast(setAmpTx, {});
     await waitForTx(setAmpTx.id, { apiBase });
 

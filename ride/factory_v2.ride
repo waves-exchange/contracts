@@ -177,7 +177,7 @@ func keyMinBalanceDefault(assetId: String)
       = makeString(["%s%s", "minBalanceDefault", assetId], SEP)
 
 # keyAmplification
-func amp(poolAddress: String) 
+func keyAmp(poolAddress: String) 
       = makeString(["%s%s", "amp", poolAddress], SEP)
 func keyAmpHistory(poolAddress: String, heightBlocks: Int) 
       = makeString(["%s%s%d", "amp", poolAddress, heightBlocks.toString()], SEP)
@@ -671,7 +671,7 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
                   StringEntry(keyMappingPoolContractToLPAsset(poolAddress), lpAssetIdStr),
                   IntegerEntry(keyPoolToWeight(poolAddress),poolWeight),
                   IntegerEntry(keyPoolSpread(poolAddress),defaultSpread),
-                  StringEntry(amp(poolAddress), ampInitial.toString()),
+                  StringEntry(keyAmp(poolAddress), ampInitial.toString()),
                   StringEntry(keyAmpHistory(poolAddress, height), ampInitial.toString())
               ]
               , lpAssetIdStr
@@ -879,7 +879,7 @@ func changeAmp(poolAddress: String) = {
   let delta = keyChangeAmpDelta(poolAddress).getIntegerValue()
   let target = keyChangeAmpTarget(poolAddress).getIntegerValue()
 
-  let curAmp = amp(poolAddress).getStringValue().parseIntValue()
+  let curAmp = keyAmp(poolAddress).getStringValue().parseIntValue()
   let newAmpRaw = curAmp + delta
   # to not increment/decrement too much
   let newAmp = if (delta < 0) then {
@@ -898,7 +898,7 @@ func changeAmp(poolAddress: String) = {
 
   [
     IntegerEntry(keyChangeAmpLastCall(poolAddress), height),
-    StringEntry(amp(poolAddress), newAmp.toString()),
+    StringEntry(keyAmp(poolAddress), newAmp.toString()),
     StringEntry(keyAmpHistory(poolAddress, height), newAmp.toString())
   ]
 }
@@ -1067,7 +1067,10 @@ func deletePool(poolContractAddress: String) = {
     
     DeleteEntry(keyChangeAmpDelay(poolContractAddress)),
     DeleteEntry(keyChangeAmpDelta(poolContractAddress)),
-    DeleteEntry(keyChangeAmpTarget(poolContractAddress))
+    DeleteEntry(keyChangeAmpTarget(poolContractAddress)),
+
+    DeleteEntry(keyAmp(poolContractAddress)),
+    DeleteEntry(keyChangeAmpLastCall(poolContractAddress))
   ]
 }
 
