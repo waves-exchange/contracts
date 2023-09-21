@@ -770,17 +770,42 @@ func isFinalizationInProgress() = {
 
 @Callable(i)
 func deletePool(amountAssetId: String, priceAssetId: String) = {
-  strict checkCaller = i.caller == factoryContract || i.mustManager() || "Permission denied".throwErr()
+  strict checkCaller = i.caller == factoryContract || i.caller == this || i.mustManager() || "Permission denied".throwErr()
   
   let listName = "pools"
   let pool = (amountAssetId, priceAssetId)
   let id = makeString([amountAssetId, priceAssetId], separator)
 
-  let actions = if (containsNode(listName, id)) then deleteNodeActions(listName, id) else []
+  let exists = containsNode(listName, id)
+  let actions = if (exists) then deleteNodeActions(listName, id) else []
 
-  [
-    DeleteEntry(keyInList(pool))
-  ] ++ actions
+  (
+    [
+      DeleteEntry(keyInList(pool))
+    ] ++ actions,
+    exists
+  )
+}
+
+@Callable(i)
+func invert(amountAssetId: String, priceAssetId: String) = {
+  strict checks = [
+    i.caller == factoryContract || throwErr("invalid caller")
+  ]
+
+  strict existed = this.invoke("deletePool", [amountAssetId, priceAssetId], []).exactAs[Boolean]
+
+  let pool = (priceAssetId, amountAssetId)
+  let inListActions = if (existed) then {
+    [
+      BooleanEntry(pool.keyInList(), true)
+    ] ++ poolsListName.insertNodeActions(pool.poolToString())
+  } else []
+
+  (
+    inListActions,
+    unit
+  )
 }
 
 @Verifier(tx)

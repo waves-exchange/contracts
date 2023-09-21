@@ -1030,6 +1030,89 @@ func deletePool(poolContractAddress: String) = {
   ]
 }
 
+# USE WITH CAUTION
+@Callable(i)
+func invert(poolAddressStr: String) = {
+  strict checks = [
+    i.mustManager()
+  ]
+
+  let userPoolsContract = keyUserPoolsContract().getStringValue().addressFromStringValue()
+  let votingEmissionContract = keyVotingEmissionContract().getStringValue().addressFromStringValue()
+  let poolAddress = poolAddressStr.addressFromStringValue()
+
+  let poolConfig = getPoolConfig(poolAddressStr)
+
+  let poolStatus = poolConfig[idxPoolStatus]
+  let lpAssetIdStr = poolConfig[idxPoolLPAssetId]
+  let amountAssetStr = poolConfig[idxAmtAssetId]
+  let priceAssetStr = poolConfig[idxPriceAssetId]
+  let amountAssetsDecimals = poolConfig[idxAmtAssetDcm].parseIntValue()
+  let priceAssetsDecimals = poolConfig[idxPriceAssetDcm].parseIntValue()
+  let internalAmountAssetId = poolConfig[idxIAmtAssetId].parseIntValue()
+  let internalPriceAssetId = poolConfig[idxIPriceAssetId].parseIntValue()
+  let lpAssetDcm = poolConfig[idxLPAssetDcm].parseIntValue()
+  let poolType = poolConfig[idxPoolType]
+
+  strict invs = [
+    poolAddress.invoke("invert", [], []),
+    votingEmissionContract.invoke("invert", [amountAssetStr, priceAssetStr], [])
+  ]
+
+  let wxEmission = this.getBoolean(keyWxEmission(amountAssetStr, priceAssetStr)).valueOrElse(false)
+  let wxEmissionActions = if (wxEmission) then [
+    DeleteEntry(keyWxEmission(amountAssetStr, priceAssetStr)),
+    BooleanEntry(keyWxEmission(priceAssetStr, amountAssetStr), wxEmission)
+  ] else []
+
+  (
+    [
+      StringEntry(
+        keyPoolConfig(internalPriceAssetId.toString(), internalAmountAssetId.toString()),
+        dataPoolCfg(
+          poolAddressStr,
+          poolStatus,
+          lpAssetIdStr,
+          priceAssetStr,
+          amountAssetStr,
+          priceAssetsDecimals,
+          amountAssetsDecimals,
+          internalPriceAssetId,
+          internalAmountAssetId,
+          lpAssetDcm,
+          poolType
+        )
+      ),
+      DeleteEntry(keyPoolConfig(internalAmountAssetId.toString(), internalPriceAssetId.toString())),
+      StringEntry(
+        keyMappingLpAssetToPoolAssets(lpAssetIdStr),
+        dataMappingPoolAssets(
+          internalPriceAssetId,
+          internalAmountAssetId
+        )
+      ),
+      DeleteEntry(keyMappingPoolAssetsToLpasset(internalAmountAssetId.toString(), internalPriceAssetId.toString())),
+      StringEntry(
+        keyMappingPoolAssetsToLpasset(internalPriceAssetId.toString(), internalAmountAssetId.toString()),
+        "%s__" + lpAssetIdStr
+      ),
+      StringEntry(
+        keyMappingPoolContractAddressToPoolAssets(poolAddressStr),
+        dataMappingPoolAssets(
+          internalPriceAssetId,
+          internalAmountAssetId
+        )
+      ),
+      DeleteEntry(keyMappingPoolAssetsToPoolContractAddress(internalAmountAssetId, internalPriceAssetId)),
+      StringEntry(
+        keyMappingPoolAssetsToPoolContractAddress(internalPriceAssetId, internalAmountAssetId),
+        poolAddressStr
+      )
+    ] ++ wxEmissionActions,
+    unit
+  )
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {

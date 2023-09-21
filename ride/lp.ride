@@ -1495,6 +1495,18 @@ func activate(amtAssetStr: String, priceAssetStr: String) = {
 }
 
 @Callable(i)
+func invert() = {
+  strict checks = [
+    i.caller == factoryContract || throwErr("invalid caller")
+  ]
+
+  ([
+    StringEntry(aa(), cfgPriceAssetId.assetIdToString()),
+    StringEntry(pa(), cfgAmountAssetId.assetIdToString())
+  ], unit)
+}
+
+@Callable(i)
 func refreshKLp() = {
   let lastRefreshedBlockHeight = keyKLpRefreshedHeight.getInteger().valueOrElse(0)
   strict checkLastRefreshedBlockHeight = if (height - lastRefreshedBlockHeight >= kLpRefreshDelay) then unit else {

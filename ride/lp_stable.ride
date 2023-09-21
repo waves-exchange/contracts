@@ -1615,6 +1615,18 @@ func activate(amtAsStr: String, prAsStr: String) = {
     }
 }
 
+@Callable(i)
+func invert() = {
+  strict checks = [
+    i.caller == fca || throwErr("invalid caller")
+  ]
+
+  ([
+    StringEntry(aa(), cfgPriceAssetId.assetIdToString()),
+    StringEntry(pa(), cfgAmountAssetId.assetIdToString())
+  ], unit)
+}
+
 # API wrappers
 @Callable(i)
 func getPoolConfigWrapperREADONLY() = {
