@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **15:37 21.09.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **14:55 25.09.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -138,6 +138,9 @@ SBT/WX pool | [`3PN3yNCsoryAWQpRjnK8j9rEcsDERVmJ5a5`](https://wavesexplorer.com/
 PETE/Psinetika pool | [`3PQDdwAAyesm9j4g6SW6uMuk49dHXuTwJAw`](https://wavesexplorer.com/addresses/3PQDdwAAyesm9j4g6SW6uMuk49dHXuTwJAw) | `BXZvNHhq9JNVmdxa1rMv5SMjCLmM8FF2DUtqpKSkf9kV` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 AXLY/WAVES pool | [`3PEAsEgfif5B8YVy7PSyUtksp7N3b2ySNKS`](https://wavesexplorer.com/addresses/3PEAsEgfif5B8YVy7PSyUtksp7N3b2ySNKS) | `Epf6xnEWH5zda7Rv7HCBMYifiGBpc19674ovDxs8EMkg` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDC/WAVES pool | [`3P89rf5gMUpxqsnPikBW8mAiq5e6knB1t6z`](https://wavesexplorer.com/addresses/3P89rf5gMUpxqsnPikBW8mAiq5e6knB1t6z) | `FAyjtZ9E9FdtjxJgeMHZxhHKqw63XPsisaYbJaHQ7oGG` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+WAVES/USDC pool | [`3PBXhEZ8HGm5eZrVeyoTbyNydkCrWSrHrrj`](https://wavesexplorer.com/addresses/3PBXhEZ8HGm5eZrVeyoTbyNydkCrWSrHrrj) | `DCxk78JaWuWM4RpCQLBdg8LuwNhUTevhsudiNgbZipD3` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+PETE/Rebuild pool | [`3P7JGK5QvNKD3z7JfaZEiYoVHnRUsmjxaNC`](https://wavesexplorer.com/addresses/3P7JGK5QvNKD3z7JfaZEiYoVHnRUsmjxaNC) | `HFb4JV6EDxpnbZVtzD7ch1hhurjMFURhi7ai5WEX91Ds` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+PETE/gxWX pool | [`3PEuig7Yq14w3yTHs7joMrMcrdR2YKhta5y`](https://wavesexplorer.com/addresses/3PEuig7Yq14w3yTHs7joMrMcrdR2YKhta5y) | `7btkwGNQFJow9iX4FMR77Ns7jnRS8iTFqpwXiSGE3YD` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -192,6 +195,7 @@ EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.co
 EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
 ENNO | [`7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg`](https://wavesexplorer.com/assets/7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg) | Native utility and governance token of Enno Wallet 
 ETH-Ethereum-PPT | [`3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13`](https://wavesexplorer.com/assets/3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
+gxWX | [`3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii`](https://wavesexplorer.com/assets/3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii) | xWX - purpose of the token, increase the value and liquidity of the WX token.  The program will launch after the implementation of 15% of the emission of 1 xWX -1 WX with the support of the private capital community 
 InfinityCoin | [`7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF`](https://wavesexplorer.com/assets/7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF) | 
 InfinityCoin: la criptovaluta del futuro. Sicura, veloce e senza intermediari, ti consente di trasferire valore in tutto il mondo con un semplice clic. Con la sua piattaforma di contratti intelligenti, puoi creare token personalizzati e avviare la tua attività basata su blockchain. Partecipa attivamente alle decisioni del progetto e godi di un ecosistema inclusivo. Lasciati trasportare verso l'infinito con InfinityCoin, dove le possibilità sono illimitate e il potenziale è senza confini. Unisciti a noi nella rivoluzione criptovalutaria e scopri l'eccitante futuro della finanza decentralizzata. 
 L2MP | [`7scqyYoVsNrpWbTAc78eRqNVcYLxMPzZs8EQfX7ruJAg`](https://wavesexplorer.com/assets/7scqyYoVsNrpWbTAc78eRqNVcYLxMPzZs8EQfX7ruJAg) | Mining Power Token for WAVES EVM L2 bootstrapping. 
@@ -220,6 +224,12 @@ POWER | [`2thsACuHmzDMuNezPM32wg9a3BwUzBWDeSKakgz3cw21`](https://wavesexplorer.c
 Psinetika | [`FiKAykpjAFkiukke7ZpVX511HHumPZYKyu6GXokPEkcT`](https://wavesexplorer.com/assets/FiKAykpjAFkiukke7ZpVX511HHumPZYKyu6GXokPEkcT) | Psinetika...развитие своего естества и естества мироздания,с помощи методик, осознанных наработок, определённых и не определённых практик...Сопостроение соконструктивных металогических основ! И их развитие 
 Puzzle | [`HEB8Qaw9xrWpWs8tHsiATYGBWDBtP2S7kcPALrMu43AS`](https://wavesexplorer.com/assets/HEB8Qaw9xrWpWs8tHsiATYGBWDBtP2S7kcPALrMu43AS) | DeFi 2.0 is here. 
 RACE | [`D4TPjtzpsDEJFS1pUAkvh1tJJJMNWGcSrds9sveBoQka`](https://wavesexplorer.com/assets/D4TPjtzpsDEJFS1pUAkvh1tJJJMNWGcSrds9sveBoQka) | MetaRace.com utility token: GameFi project combining cyber sport and NFTs. 
+Rebuild | [`2ZNFaFYuHJP9Fuo5y6d6gMfYcBaNdV56KcmBPoR51ysN`](https://wavesexplorer.com/assets/2ZNFaFYuHJP9Fuo5y6d6gMfYcBaNdV56KcmBPoR51ysN) | Welcome to learn about 'Rebuild,' a virtual currency dedicated to the reconstruction and preservation of countries affected by wars and natural disasters. Its aim is to contribute to the repair of schools and hospitals devastated by conflicts, as well as the safeguarding of the severely impacted local ecosystem.
+
+Key features of Rebuild:
+Post-conflict reconstruction: A portion of the transactions will be used to fund projects for rebuilding damaged schools and hospitals, restoring essential services, providing access to education and healthcare, and preserving the environment. Additionally, part of the funds raised will be allocated to protecting the local flora and fauna affected by disasters, preserving biodiversity and ecological balance.
+
+Transparency and accountability: Blockchain technology will ensure the traceability and transparency of donations and the use of funds, ensuring that every contribution is utilized for its intended purposes. 
 SAND | [`8YyrMfuBdZ5gtMWkynLTveRvGb6LJ4Aff9rpz46UUMW`](https://wavesexplorer.com/assets/8YyrMfuBdZ5gtMWkynLTveRvGb6LJ4Aff9rpz46UUMW) | Wrapped SAND token 
 SBT  | [`vAYvjoLheNuvi2wRdQYK9NUjJ6ZQ5EkAtx7jy36rK13`](https://wavesexplorer.com/assets/vAYvjoLheNuvi2wRdQYK9NUjJ6ZQ5EkAtx7jy36rK13) | SBT is the native platform token for StakeBooster - https://stakebooster.com/
 
@@ -334,11 +344,13 @@ PCBT~USDT-PPTLP | [`CkrDxF4882mQoqruSfutqjbiAcemkov23rZzUxp6u5Lu`](https://waves
 PETEWAVESLP | [`CxQZw8ApLNgg6v3ttoTZWuoQ9RcUTNnfCuRUoWiDxC9G`](https://wavesexplorer.com/assets/CxQZw8ApLNgg6v3ttoTZWuoQ9RcUTNnfCuRUoWiDxC9G) | PETE/WAVES pool liquidity provider token 
 PETEXTNLP | [`Haw7ivNhsXXie8oyewvyPYp4K52PmBBdafuFLDjS4NzB`](https://wavesexplorer.com/assets/Haw7ivNhsXXie8oyewvyPYp4K52PmBBdafuFLDjS4NzB) | PETE/XTN pool liquidity provider token 
 PETE~EGGLP | [`66YNWhVQp26oxiQeA1bc38xCAcPCGHAkdJYvpLXpfRoo`](https://wavesexplorer.com/assets/66YNWhVQp26oxiQeA1bc38xCAcPCGHAkdJYvpLXpfRoo) | PETE~/EGG pool liquidity provider token 
+PETE~gxWXLP | [`Ar3JwNp1YFQdf6XGoj91NoKLsnVCmvTo5XTNEXgU3Rdw`](https://wavesexplorer.com/assets/Ar3JwNp1YFQdf6XGoj91NoKLsnVCmvTo5XTNEXgU3Rdw) | PETE/~gxWX pool liquidity provider token 
 PETE~InfinityCLP | [`3J9EvAkDJhaL3kkUUHW4XtQALZv5xePfW1c67NjGPASx`](https://wavesexplorer.com/assets/3J9EvAkDJhaL3kkUUHW4XtQALZv5xePfW1c67NjGPASx) | PETE/~InfinityC pool liquidity provider token 
 PETE~Money EneLP | [`58QRmnabKr1b1Wn7uHokH7QwKebLGjww73eo3ZvcuEvy`](https://wavesexplorer.com/assets/58QRmnabKr1b1Wn7uHokH7QwKebLGjww73eo3ZvcuEvy) | PETE/~Money Ene pool liquidity provider token 
 PETE~PESTLP | [`BypuMqGjWUKnKQ4kewAejUsof4a7sBveVmQC8GvZzFZE`](https://wavesexplorer.com/assets/BypuMqGjWUKnKQ4kewAejUsof4a7sBveVmQC8GvZzFZE) | PETE/~PEST pool liquidity provider token 
 PETE~PL-WAVESLP | [`B4cVaMYMrTteZ7gbAuH7YjXqZr3Kx5TcjbN43CuPrAM5`](https://wavesexplorer.com/assets/B4cVaMYMrTteZ7gbAuH7YjXqZr3Kx5TcjbN43CuPrAM5) | PETE/~PL-WAVES pool liquidity provider token 
 PETE~PsinetikaLP | [`GBXSTFae9qFFRLfgomjCB1ABbJEjEMCaVMewQpmqvw3H`](https://wavesexplorer.com/assets/GBXSTFae9qFFRLfgomjCB1ABbJEjEMCaVMewQpmqvw3H) | PETE/~Psinetika pool liquidity provider token 
+PETE~RebuildLP | [`CSKdSgjFHk89fJUGSuBzPAp5Znn8RcXefouuBrm4USsq`](https://wavesexplorer.com/assets/CSKdSgjFHk89fJUGSuBzPAp5Znn8RcXefouuBrm4USsq) | PETE/~Rebuild pool liquidity provider token 
 PETE~SBTLP | [`9LWwnNkGW8YzdP1c2bQKBRRHQWCAr5F1v41Kiq1TKjXQ`](https://wavesexplorer.com/assets/9LWwnNkGW8YzdP1c2bQKBRRHQWCAr5F1v41Kiq1TKjXQ) | PETE/~SBT pool liquidity provider token 
 PETE~TEAM STRELP | [`3zwuGf8RsF6tPdVg6aGJWkGF7f3kmdLGYuTz9ZqweFtm`](https://wavesexplorer.com/assets/3zwuGf8RsF6tPdVg6aGJWkGF7f3kmdLGYuTz9ZqweFtm) | PETE/~TEAM STRE pool liquidity provider token 
 PETE~WBriacashLP | [`7h7Q8s7u4HS83T9VUBrchXpyKUvGMjbeaPGjYU5DaaZP`](https://wavesexplorer.com/assets/7h7Q8s7u4HS83T9VUBrchXpyKUvGMjbeaPGjYU5DaaZP) | PETE/~WBriacash pool liquidity provider token 
@@ -374,7 +386,6 @@ USDCUSDTLP | [`EPhdEfmQaNcHyvDmRGhnLhgcJtKZ2a4k3ZBmKWtAEWyH`](https://wavesexplo
 USDCUSDTLP | [`rZMQ6g31Lr7sPAaAoYc4U2PHCVauTuKUSzUbJtUyPZN`](https://wavesexplorer.com/assets/rZMQ6g31Lr7sPAaAoYc4U2PHCVauTuKUSzUbJtUyPZN) | USDC/USDT pool liquidity provider token 
 USDCXTNLP | [`EK6N7S38xbtBT3SxAqoGdDLCiX6rojX6G169CnSyuE5`](https://wavesexplorer.com/assets/EK6N7S38xbtBT3SxAqoGdDLCiX6rojX6G169CnSyuE5) | WX USDC/XTN pool liquidity provider token 
 USDC~USDTLP | [`5hn5wxc941wJEqifwpvJ3DJjSHsu3rZhEbB1PFiRWyG2`](https://wavesexplorer.com/assets/5hn5wxc941wJEqifwpvJ3DJjSHsu3rZhEbB1PFiRWyG2) | USDC~/USDT pool liquidity provider token 
-USDC~WAVESLP | [`DBE3nzHRJfH75MjiY3TjgZ18n59PmEwBDBCiqT1VGpRn`](https://wavesexplorer.com/assets/DBE3nzHRJfH75MjiY3TjgZ18n59PmEwBDBCiqT1VGpRn) | USDC~/WAVES pool liquidity provider token 
 USDT-BEP2~USDTLP | [`2N8wDDfftkEqy6rRQJuG7kFdygnsmAkga7wne1FHntCp`](https://wavesexplorer.com/assets/2N8wDDfftkEqy6rRQJuG7kFdygnsmAkga7wne1FHntCp) | USDT-BEP2~/USDT pool liquidity provider token 
 USDTUSDNWXLP | [`97zHFp1C3cB7qfvx8Xv5f2rWp9nUSG5UnAamfPcW6txf`](https://wavesexplorer.com/assets/97zHFp1C3cB7qfvx8Xv5f2rWp9nUSG5UnAamfPcW6txf) | WX Usdt/Usdn pool liquidity provider token 
 USDTXTNLP | [`C7gsMmZorBKcTYCHB1GMUyVrCAT3g7vC3K39h67uBSCW`](https://wavesexplorer.com/assets/C7gsMmZorBKcTYCHB1GMUyVrCAT3g7vC3K39h67uBSCW) | USDT/XTN pool liquidity provider token 
@@ -391,6 +402,7 @@ WAVESUSDCLP | [`BoXuf9ewJSE1UMrKibZmigzC6tBzv8RFTeZmofEos2ZJ`](https://wavesexpl
 WAVESUSDNWXLP | [`7KZbJrVopwJhkdwbe1eFDBbex4dkY63MxjTNjqXtrzj1`](https://wavesexplorer.com/assets/7KZbJrVopwJhkdwbe1eFDBbex4dkY63MxjTNjqXtrzj1) | WX Waves/Usdn pool liquidity provider token 
 WAVESUSDTLP | [`ByJtVuYi58CtdjtasDuTqtgev8qWkdJybF7rY1xosmhE`](https://wavesexplorer.com/assets/ByJtVuYi58CtdjtasDuTqtgev8qWkdJybF7rY1xosmhE) | WAVES/USDT pool liquidity provider token 
 WAVESUSDTLP | [`6KWpnpLk6GNh5HG9ct9pNDCYFWJBoAAshZsp4D8jcFpV`](https://wavesexplorer.com/assets/6KWpnpLk6GNh5HG9ct9pNDCYFWJBoAAshZsp4D8jcFpV) | WAVES/USDT pool liquidity provider token 
+WAVES~USDCLP | [`BjtNGVuniinP4bhS6KEhEckMgq6N8HxErguo9vnifEkt`](https://wavesexplorer.com/assets/BjtNGVuniinP4bhS6KEhEckMgq6N8HxErguo9vnifEkt) | WAVES/~USDC pool liquidity provider token 
 WAVES~USDT-PPTLP | [`E4zu2YxX1Tq8Y2nBcXZhh9gG1jctZitisnt6pyQhUBYH`](https://wavesexplorer.com/assets/E4zu2YxX1Tq8Y2nBcXZhh9gG1jctZitisnt6pyQhUBYH) | WAVES/~USDT-PPT pool liquidity provider token 
 WAVES~WBTCLP | [`DJ3xgSEJ7buBqDuZgxvhRiwQREGEsbUctwoALjCZ4a5G`](https://wavesexplorer.com/assets/DJ3xgSEJ7buBqDuZgxvhRiwQREGEsbUctwoALjCZ4a5G) | WAVES/~WBTC pool liquidity provider token 
 WAV~USDC-BEP20LP | [`2Ayi918GWUAGqrWMnJpyntQLE7meMoxv3jT67g94gNvz`](https://wavesexplorer.com/assets/2Ayi918GWUAGqrWMnJpyntQLE7meMoxv3jT67g94gNvz) | WAV~/USDC-BEP20 pool liquidity provider token 
