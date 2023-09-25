@@ -1,0 +1,28 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+# withdraw from investment account to specified address
+@Callable(i)
+func withdraw(args: List[String]) = {
+  let recipient = addressFromStringValue(args[0])
+  let amount = parseIntValue(args[1])
+  let result = i.caller.invoke("transferWaves", [recipient.bytes, amount], [])
+
+  (nil, result)
+}
+
+# set param example
+@Callable(i)
+func setIntParam(args: List[String]) = {
+  let key = args[0]
+  let val = parseIntValue(args[1])
+  let result = i.caller.invoke("integerEntry", [key, val], [])
+
+  (nil, result)
+}
+
+@Verifier(tx)
+func verify() = {
+  false
+}

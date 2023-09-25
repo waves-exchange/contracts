@@ -1,0 +1,6 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+# can be updated by voting
+let serviceAddress = Address(this.getBinaryValue("serviceAddress"))

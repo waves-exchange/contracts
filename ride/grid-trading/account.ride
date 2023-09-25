@@ -1,0 +1,61 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let factoryAddress = Address(this.getBinaryValue("factoryAddress"))
+let serviceAddress = Address(factoryAddress.getBinaryValue("serviceAddress"))
+let ownerAddress = Address(this.getBinaryValue("ownerAddress"))
+
+func onlyAddress(i: Invocation, address: Address) = {
+  i.caller == address || throw()
+}
+
+func onlyThis(i: Invocation) = {
+  onlyAddress(i, this)
+}
+
+func onlyService(i: Invocation) = {
+  onlyAddress(i, serviceAddress)
+}
+
+func onlyOwner(i: Invocation) = {
+  onlyAddress(i, ownerAddress)
+}
+
+@Callable(i)
+func stringEntry(key: String, val: String) =
+  if (i.onlyService()) then ([StringEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func integerEntry(key: String, val: Int) =
+  if (i.onlyService()) then ([IntegerEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 
+  if (i.onlyService()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
+
+@Callable(i)
+func transferWaves(recipientBytes: ByteVector, amount: Int) = 
+  if (i.onlyService()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
+
+# owner can call only this function
+# service address should be replaced to change logic
+@Callable(i)
+func call(function: String, args: List[String]) = {
+  if (i.onlyOwner()) then {
+    let result = serviceAddress.reentrantInvoke(function, args, i.payments)
+    (nil, result)
+  } else {
+    ([], unit)
+  }
+}
+
+# bot can trade
+@Verifier(tx)
+func verify() = {
+  let botPublicKey = this.getBinaryValue("botPublicKey")
+  match tx {
+    case _: Order => sigVerify(tx.bodyBytes, tx.proofs[0], botPublicKey)
+    case _ => throw()
+  }
+}
