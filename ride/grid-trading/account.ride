@@ -53,7 +53,7 @@ func call(function: String, args: List[String]) = {
 # bot can trade
 @Verifier(tx)
 func verify() = {
-  let botPublicKey = this.getBinaryValue("botPublicKey")
+  let botPublicKey = factoryAddress.getBinaryValue("botPublicKey")
   match tx {
     case _: Order => sigVerify(tx.bodyBytes, tx.proofs[0], botPublicKey)
     case _ => throw()

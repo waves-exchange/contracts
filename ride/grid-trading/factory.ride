@@ -4,3 +4,4 @@
 
 # can be updated by voting
 let serviceAddress = Address(this.getBinaryValue("serviceAddress"))
+let botPublicKey = this.getBinaryValue("botPublicKey")
