@@ -2,9 +2,9 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-let factoryAddress = Address(this.getBinaryValue("factoryAddress"))
-let serviceAddress = Address(factoryAddress.getBinaryValue("serviceAddress"))
-let ownerAddress = Address(this.getBinaryValue("ownerAddress"))
+let factoryAddress = addressFromPublicKey(this.getBinaryValue("factoryPublicKey"))
+let serviceAddress = addressFromPublicKey(factoryAddress.getBinaryValue("servicePublicKey"))
+let ownerAddress = addressFromPublicKey(this.getBinaryValue("ownerPublicKey"))
 
 func onlyAddress(i: Invocation, address: Address) = {
   i.caller == address || throw()
@@ -43,7 +43,7 @@ func transferWaves(recipientBytes: ByteVector, amount: Int) =
 @Callable(i)
 func call(function: String, args: List[String]) = {
   if (i.onlyOwner()) then {
-    let result = serviceAddress.reentrantInvoke(function, args, i.payments)
+    let result = serviceAddress.reentrantInvoke(function, [args], i.payments)
     (nil, result)
   } else {
     ([], unit)

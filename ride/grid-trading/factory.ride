@@ -3,5 +3,5 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 
 # can be updated by voting
-let serviceAddress = Address(this.getBinaryValue("serviceAddress"))
+let serviceAddress = addressFromPublicKey(this.getBinaryValue("servicePublicKey"))
 let botPublicKey = this.getBinaryValue("botPublicKey")
