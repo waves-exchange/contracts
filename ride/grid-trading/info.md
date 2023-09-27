@@ -1,4 +1,5 @@
-### Participants:
+### Participants
+
 - factory
   - service address in storage can be changed by the voting
 - owner
@@ -13,7 +14,29 @@
   - script can't be updated
   - functions for account
 
-### Account creation:
+### Storage
+
+#### Factory
+
+| key                            | type         | description                 |
+| ------------------------------ | ------------ | --------------------------- |
+| `%s__servicePublicKey`         | `ByteVector` | Service public key          |
+| `%s__botPublicKey`             | `ByteVector` | Bot public key              |
+| `%s__accountScriptHash`        | `ByteVector` | Allowed account script hash |
+| `%s__rewardAmount`             | `Int`        | Reward amount               |
+| `%s%s__<requestId>__completed` | `Boolean`    | Request completed           |
+| `%s%s__<requestId>__owner`     | `ByteVector` | Request owner public key    |
+
+#### Account
+
+| key                    | type         | description         |
+| ---------------------- | ------------ | ------------------- |
+| `%s__verified`         | `Boolean`    | Verified by factory |
+| `%s__factoryPublicKey` | `ByteVector` | Factory public key  |
+| `%s__ownerPublicKey`   | `ByteVector` | Owner public key    |
+
+### Account creation
+
 ```mermaid
 sequenceDiagram
   User ->> Factory: request account
@@ -26,7 +49,8 @@ sequenceDiagram
   Factory ->>- Creator: transfer reward to creator
 ```
 
-### Withdraw:
+### Withdraw
+
 ```mermaid
 sequenceDiagram
   User ->> Account: call(withdraw, recipient, amount)
