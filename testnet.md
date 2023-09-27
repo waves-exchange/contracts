@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-469-lp-stable-amp-keys**](https://github.com/waves-exchange/contracts/tree/wxdefi-469-lp-stable-amp-keys) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:54 27.09.2023** (GMT+4)
+[**wxdefi-469-lp-stable-amp-keys**](https://github.com/waves-exchange/contracts/tree/wxdefi-469-lp-stable-amp-keys) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **17:01 27.09.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
