@@ -2,6 +2,27 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+func mustAddress(i: Invocation, address: Address) = {
+  i.caller == address || throw()
+}
+
+func mustThis(i: Invocation) = {
+  mustAddress(i, this)
+}
+
+let kServicePublicKey = "%s__servicePublicKey"
+let kBotPublicKey = "%s__botPublicKey"
+
 # can be updated by voting
-let serviceAddress = addressFromPublicKey(this.getBinaryValue("servicePublicKey"))
-let botPublicKey = this.getBinaryValue("botPublicKey")
+let serviceAddress = addressFromPublicKey(this.getBinaryValue(kServicePublicKey))
+let botPublicKey = this.getBinaryValue(kBotPublicKey)
+
+@Callable(i)
+func init(servicePublicKey: ByteVector, botPublicKey: ByteVector) = {
+  strict checkCaller = i.mustThis()
+
+  ([
+    BinaryEntry(kServicePublicKey, servicePublicKey),
+    BinaryEntry(kBotPublicKey, botPublicKey)
+  ], unit)
+}

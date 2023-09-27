@@ -2,47 +2,64 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-let factoryAddress = addressFromPublicKey(this.getBinaryValue("factoryPublicKey"))
-let serviceAddress = addressFromPublicKey(factoryAddress.getBinaryValue("servicePublicKey"))
-let ownerAddress = addressFromPublicKey(this.getBinaryValue("ownerPublicKey"))
+let kFactoryPublicKey = "%s__factoryPublicKey"
+let kServicePublicKey = "%s__servicePublicKey"
+let kOwnerPublicKey = "%s__ownerPublicKey"
+let kBotPublicKey = "%s__botPublicKey"
 
-func onlyAddress(i: Invocation, address: Address) = {
+let factoryAddress = addressFromPublicKey(this.getBinaryValue(kFactoryPublicKey))
+let serviceAddress = addressFromPublicKey(factoryAddress.getBinaryValue(kServicePublicKey))
+let ownerAddress = addressFromPublicKey(this.getBinaryValue(kOwnerPublicKey))
+
+let isReady = this.getBinary(kFactoryPublicKey).isDefined() && this.getBinary(kOwnerPublicKey).isDefined()
+
+func mustAddress(i: Invocation, address: Address) = {
   i.caller == address || throw()
 }
 
-func onlyThis(i: Invocation) = {
-  onlyAddress(i, this)
+func mustThis(i: Invocation) = {
+  mustAddress(i, this)
 }
 
-func onlyService(i: Invocation) = {
-  onlyAddress(i, serviceAddress)
+func mustService(i: Invocation) = {
+  mustAddress(i, serviceAddress)
 }
 
-func onlyOwner(i: Invocation) = {
-  onlyAddress(i, ownerAddress)
+func mustOwner(i: Invocation) = {
+  mustAddress(i, ownerAddress)
 }
 
 @Callable(i)
 func stringEntry(key: String, val: String) =
-  if (i.onlyService()) then ([StringEntry(key, val)], key) else ([], unit)
+  if (i.mustService()) then ([StringEntry(key, val)], key) else ([], unit)
 
 @Callable(i)
 func integerEntry(key: String, val: Int) =
-  if (i.onlyService()) then ([IntegerEntry(key, val)], key) else ([], unit)
+  if (i.mustService()) then ([IntegerEntry(key, val)], key) else ([], unit)
 
 @Callable(i)
 func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 
-  if (i.onlyService()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
+  if (i.mustService()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
 
 @Callable(i)
 func transferWaves(recipientBytes: ByteVector, amount: Int) = 
-  if (i.onlyService()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
+  if (i.mustService()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
+
+@Callable(i)
+func init(factoryPublicKey: ByteVector, ownerPublicKey: ByteVector) = {
+  strict checkCaller = i.mustThis()
+
+  ([
+    BinaryEntry(kFactoryPublicKey, factoryPublicKey),
+    BinaryEntry(kOwnerPublicKey, ownerPublicKey)
+  ], unit)
+}
 
 # owner can call only this function
 # service address should be replaced to change logic
 @Callable(i)
 func call(function: String, args: List[String]) = {
-  if (i.onlyOwner()) then {
+  if (i.mustOwner()) then {
     let result = serviceAddress.reentrantInvoke(function, [args], i.payments)
     (nil, result)
   } else {
@@ -53,9 +70,12 @@ func call(function: String, args: List[String]) = {
 # bot can trade
 @Verifier(tx)
 func verify() = {
-  let botPublicKey = factoryAddress.getBinaryValue("botPublicKey")
+  let botPublicKey = factoryAddress.getBinaryValue(kBotPublicKey)
   match tx {
     case _: Order => sigVerify(tx.bodyBytes, tx.proofs[0], botPublicKey)
+    case _: InvokeScriptTransaction => if (isReady) then throw() else {
+      sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+    }
     case _ => throw()
   }
 }
