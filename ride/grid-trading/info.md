@@ -40,7 +40,7 @@
 ```mermaid
 sequenceDiagram
   User ->> Factory: request account
-  Note over Factory: save owner, reward id
+  Note over Factory: save owner, request id, reward amount
   Factory -->> Creator: new request
   Creator ->> Account: set script, init
   Note over Account: save creator, owner
