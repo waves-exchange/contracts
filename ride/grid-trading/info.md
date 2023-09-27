@@ -40,15 +40,22 @@
 ```mermaid
 sequenceDiagram
   User ->> Factory: request account
-  Note over Factory: save owner, request id, reward amount
+  activate Factory
+  Note over User, Factory: payment = reward amount
+  Note over Factory: save owner, request id
   Factory -->> Creator: new request
+  deactivate Factory
+  activate Creator
   Creator ->> Account: set script, init
   Note over Account: save creator, owner
-  Creator ->>+ Factory: complete request with account
+  Creator ->> Factory: complete request with account
+  activate Factory
+  deactivate Creator
   Note over Factory: check account script, owner, factory
   Factory ->> Account: approve
   Note over Account: lock script
-  Factory ->>- Creator: transfer reward to creator
+  Factory ->> Creator: transfer reward to creator
+  deactivate Factory
 ```
 
 ### Withdraw
