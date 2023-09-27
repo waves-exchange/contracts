@@ -2,6 +2,8 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+let separator = "__"
+
 func mustAddress(i: Invocation, address: Address) = {
   i.caller == address || throw()
 }
@@ -12,6 +14,41 @@ func mustThis(i: Invocation) = {
 
 let kServicePublicKey = "%s__servicePublicKey"
 let kBotPublicKey = "%s__botPublicKey"
+
+# account keys
+let kFactoryPublicKey = "%s__factoryPublicKey"
+let kOwnerPublicKey = "%s__ownerPublicKey"
+
+let kAccountScriptHash = "%s__accountScriptHash"
+let accountScriptHash = this.getBinary(
+  kAccountScriptHash
+).valueOrErrorMessage("account script hash is not set")
+
+let kCounter = "%s__counter"
+let counter = this.getInteger(kCounter).valueOrElse(0)
+
+let kRewardAmount = "%s__rewardAmount"
+let rewardAmount = this.getInteger(
+  kRewardAmount
+).valueOrErrorMessage("reward amount is not set")
+
+func kRequestCompleted(requestId: String) = {
+  ["%s%s", requestId, "completed"].makeString(separator)
+}
+func requestCompleted(requestId: String) = {
+  this.getBoolean(
+    kRequestCompleted(requestId)
+  ).valueOrErrorMessage("request is not found")
+}
+
+func kRequestOwner(requestId: String) = {
+  ["%s%s", requestId, "owner"].makeString(separator)
+}
+func requestOwner(requestId: String) = {
+  this.getBinary(
+    kRequestCompleted(requestId)
+  ).valueOrErrorMessage("request is not found")
+}
 
 # can be updated by voting
 let serviceAddress = addressFromPublicKey(this.getBinaryValue(kServicePublicKey))
@@ -25,4 +62,46 @@ func init(servicePublicKey: ByteVector, botPublicKey: ByteVector) = {
     BinaryEntry(kServicePublicKey, servicePublicKey),
     BinaryEntry(kBotPublicKey, botPublicKey)
   ], unit)
+}
+
+# called by user
+# additional fee in payment
+@Callable(i)
+func request() = {
+  strict checks = [
+    i.payments.size() == 1 || throw("1 payment is required"),
+    i.payments[0].assetId == unit || throw("invalid asset"),
+    i.payments[0].amount == rewardAmount || throw("invalid amount")
+  ]
+
+  let requestId = sha256(i.caller.bytes + counter.toBytes()).toBase58String()
+
+  ([
+    BooleanEntry(kRequestCompleted(requestId), false),
+    BinaryEntry(kRequestOwner(requestId), i.callerPublicKey)
+  ], unit)
+}
+
+# called by account script
+# additional fee is sent to recipient
+@Callable(i)
+func complete(requestId: String, recipientPublicKey: ByteVector) = {
+  strict checks = [
+    !requestCompleted(requestId) || throw("request is already completed"),
+    scriptHash(i.caller) == accountScriptHash || throw("invalid script"),
+    match i.caller.getBinary(kFactoryPublicKey) {
+      case b: ByteVector => addressFromPublicKey(b) == this
+      case _ => false
+    } || throw("invalid factory public key"),
+    match i.caller.getBinary(kOwnerPublicKey) {
+      case b: ByteVector => b == requestOwner(requestId)
+      case _ => false
+    } || throw("invalid owner public key")
+  ]
+
+  let result = i.caller.invoke("approve", [], [])
+
+  ([
+    BooleanEntry(kRequestCompleted(requestId), true)
+  ], result)
 }

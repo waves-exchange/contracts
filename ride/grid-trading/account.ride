@@ -6,12 +6,15 @@ let kFactoryPublicKey = "%s__factoryPublicKey"
 let kServicePublicKey = "%s__servicePublicKey"
 let kOwnerPublicKey = "%s__ownerPublicKey"
 let kBotPublicKey = "%s__botPublicKey"
+let kVerified = "%s__verified"
 
 let factoryAddress = addressFromPublicKey(this.getBinaryValue(kFactoryPublicKey))
 let serviceAddress = addressFromPublicKey(factoryAddress.getBinaryValue(kServicePublicKey))
 let ownerAddress = addressFromPublicKey(this.getBinaryValue(kOwnerPublicKey))
 
-let isReady = this.getBinary(kFactoryPublicKey).isDefined() && this.getBinary(kOwnerPublicKey).isDefined()
+let isReady = this.getBinary(kFactoryPublicKey).isDefined()
+  && this.getBinary(kOwnerPublicKey).isDefined()
+  && this.getBoolean(kVerified).valueOrElse(false)
 
 func mustAddress(i: Invocation, address: Address) = {
   i.caller == address || throw()
@@ -27,6 +30,10 @@ func mustService(i: Invocation) = {
 
 func mustOwner(i: Invocation) = {
   mustAddress(i, ownerAddress)
+}
+
+func mustFactory(i: Invocation) = {
+  mustAddress(i, factoryAddress)
 }
 
 @Callable(i)
@@ -55,16 +62,32 @@ func init(factoryPublicKey: ByteVector, ownerPublicKey: ByteVector) = {
   ], unit)
 }
 
+@Callable(i)
+func complete(requestId: String, recipientPublicKey: ByteVector) = {
+  strict checkCaller = i.mustThis()
+  let result = factoryAddress.reentrantInvoke("complete", [requestId, recipientPublicKey], [])
+
+  (nil, result)
+}
+
+# called by factory to close the contract
+@Callable(i)
+func approve() = {
+  strict checkCaller = i.mustFactory()
+
+  ([
+    BooleanEntry(kVerified, true)
+  ], unit)
+}
+
 # owner can call only this function
 # service address should be replaced to change logic
 @Callable(i)
 func call(function: String, args: List[String]) = {
-  if (i.mustOwner()) then {
-    let result = serviceAddress.reentrantInvoke(function, [args], i.payments)
-    (nil, result)
-  } else {
-    ([], unit)
-  }
+  strict checkCaller = i.mustOwner()
+  let result = serviceAddress.reentrantInvoke(function, [args], i.payments)
+
+  (nil, result)
 }
 
 # bot can trade
