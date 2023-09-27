@@ -46,6 +46,7 @@ sequenceDiagram
   Creator ->>+ Factory: complete request with account
   Note over Factory: check account script, owner, factory
   Factory ->> Account: approve
+  Note over Account: lock script
   Factory ->>- Creator: transfer reward to creator
 ```
 
