@@ -18,17 +18,18 @@ let kBotPublicKey = "%s__botPublicKey"
 # account keys
 let kFactoryPublicKey = "%s__factoryPublicKey"
 let kOwnerPublicKey = "%s__ownerPublicKey"
+let kCreatorPublicKey = "%s__creatorPublicKey"
 
 let kAccountScriptHash = "%s__accountScriptHash"
-let accountScriptHash = this.getBinary(
+func accountScriptHash() = this.getBinary(
   kAccountScriptHash
 ).valueOrErrorMessage("account script hash is not set")
 
 let kCounter = "%s__counter"
-let counter = this.getInteger(kCounter).valueOrElse(0)
+func counter() = this.getInteger(kCounter).valueOrElse(0)
 
 let kRewardAmount = "%s__rewardAmount"
-let rewardAmount = this.getInteger(
+func rewardAmount() = this.getInteger(
   kRewardAmount
 ).valueOrErrorMessage("reward amount is not set")
 
@@ -46,7 +47,7 @@ func kRequestOwner(requestId: String) = {
 }
 func requestOwner(requestId: String) = {
   this.getBinary(
-    kRequestCompleted(requestId)
+    kRequestOwner(requestId)
   ).valueOrErrorMessage("request is not found")
 }
 
@@ -55,12 +56,19 @@ let serviceAddress = addressFromPublicKey(this.getBinaryValue(kServicePublicKey)
 let botPublicKey = this.getBinaryValue(kBotPublicKey)
 
 @Callable(i)
-func init(servicePublicKey: ByteVector, botPublicKey: ByteVector) = {
+func init(
+  servicePublicKey: ByteVector,
+  botPublicKey: ByteVector,
+  accountScriptHash: ByteVector,
+  rewardAmount: Int
+) = {
   strict checkCaller = i.mustThis()
 
   ([
     BinaryEntry(kServicePublicKey, servicePublicKey),
-    BinaryEntry(kBotPublicKey, botPublicKey)
+    BinaryEntry(kBotPublicKey, botPublicKey),
+    BinaryEntry(kAccountScriptHash, accountScriptHash),
+    IntegerEntry(kRewardAmount, rewardAmount)
   ], unit)
 }
 
@@ -71,37 +79,45 @@ func request() = {
   strict checks = [
     i.payments.size() == 1 || throw("1 payment is required"),
     i.payments[0].assetId == unit || throw("invalid asset"),
-    i.payments[0].amount == rewardAmount || throw("invalid amount")
+    i.payments[0].amount == rewardAmount() || throw("invalid amount")
   ]
 
-  let requestId = sha256(i.caller.bytes + counter.toBytes()).toBase58String()
+  let requestId = sha256(i.caller.bytes + counter().toBytes()).toBase58String()
 
   ([
     BooleanEntry(kRequestCompleted(requestId), false),
-    BinaryEntry(kRequestOwner(requestId), i.callerPublicKey)
+    BinaryEntry(kRequestOwner(requestId), i.callerPublicKey),
+    IntegerEntry(kCounter, counter() + 1)
   ], unit)
 }
 
 # called by account script
 # additional fee is sent to recipient
 @Callable(i)
-func complete(requestId: String, recipientPublicKey: ByteVector) = {
+func complete(requestId: String, accountPublicKey: ByteVector) = {
+  let accountAddress = addressFromPublicKey(accountPublicKey)
+
   strict checks = [
     !requestCompleted(requestId) || throw("request is already completed"),
-    scriptHash(i.caller) == accountScriptHash || throw("invalid script"),
-    match i.caller.getBinary(kFactoryPublicKey) {
+    scriptHash(accountAddress) == accountScriptHash() || throw("invalid script"),
+    match accountAddress.getBinary(kFactoryPublicKey) {
       case b: ByteVector => addressFromPublicKey(b) == this
       case _ => false
     } || throw("invalid factory public key"),
-    match i.caller.getBinary(kOwnerPublicKey) {
+    match accountAddress.getBinary(kOwnerPublicKey) {
       case b: ByteVector => b == requestOwner(requestId)
       case _ => false
     } || throw("invalid owner public key")
   ]
 
-  let result = i.caller.invoke("approve", [], [])
+  let creatorPublicKey = accountAddress.getBinary(
+    kCreatorPublicKey
+  ).valueOrErrorMessage("creator public key is not set")
+  let creatorAddress = addressFromPublicKey(creatorPublicKey)
+  let result = accountAddress.invoke("approve", [], [])
 
   ([
-    BooleanEntry(kRequestCompleted(requestId), true)
+    BooleanEntry(kRequestCompleted(requestId), true),
+    ScriptTransfer(creatorAddress, rewardAmount(), unit)
   ], result)
 }

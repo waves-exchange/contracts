@@ -5,16 +5,15 @@
 let kFactoryPublicKey = "%s__factoryPublicKey"
 let kServicePublicKey = "%s__servicePublicKey"
 let kOwnerPublicKey = "%s__ownerPublicKey"
+let kCreatorPublicKey = "%s__creatorPublicKey"
 let kBotPublicKey = "%s__botPublicKey"
+
 let kVerified = "%s__verified"
+func verified() = this.getBoolean(kVerified).valueOrElse(false)
 
 let factoryAddress = addressFromPublicKey(this.getBinaryValue(kFactoryPublicKey))
 let serviceAddress = addressFromPublicKey(factoryAddress.getBinaryValue(kServicePublicKey))
 let ownerAddress = addressFromPublicKey(this.getBinaryValue(kOwnerPublicKey))
-
-let isReady = this.getBinary(kFactoryPublicKey).isDefined()
-  && this.getBinary(kOwnerPublicKey).isDefined()
-  && this.getBoolean(kVerified).valueOrElse(false)
 
 func mustAddress(i: Invocation, address: Address) = {
   i.caller == address || throw()
@@ -53,21 +52,14 @@ func transferWaves(recipientBytes: ByteVector, amount: Int) =
   if (i.mustService()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
 
 @Callable(i)
-func init(factoryPublicKey: ByteVector, ownerPublicKey: ByteVector) = {
+func init(factoryPublicKey: ByteVector, ownerPublicKey: ByteVector, creatorPublicKey: ByteVector) = {
   strict checkCaller = i.mustThis()
 
   ([
     BinaryEntry(kFactoryPublicKey, factoryPublicKey),
-    BinaryEntry(kOwnerPublicKey, ownerPublicKey)
+    BinaryEntry(kOwnerPublicKey, ownerPublicKey),
+    BinaryEntry(kCreatorPublicKey, creatorPublicKey)
   ], unit)
-}
-
-@Callable(i)
-func complete(requestId: String, recipientPublicKey: ByteVector) = {
-  strict checkCaller = i.mustThis()
-  let result = factoryAddress.reentrantInvoke("complete", [requestId, recipientPublicKey], [])
-
-  (nil, result)
 }
 
 # called by factory to close the contract
@@ -93,12 +85,15 @@ func call(function: String, args: List[String]) = {
 # bot can trade
 @Verifier(tx)
 func verify() = {
+  let testnet = this.bytes.drop(1).take(1) == base16'54'
   let botPublicKey = factoryAddress.getBinaryValue(kBotPublicKey)
   match tx {
     case _: Order => sigVerify(tx.bodyBytes, tx.proofs[0], botPublicKey)
-    case _: InvokeScriptTransaction => if (isReady) then throw() else {
+    case _: InvokeScriptTransaction => if (verified()) then false else {
       sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
     }
-    case _ => throw()
+    case _ => if (!testnet) then false else {
+      sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+    }
   }
 }

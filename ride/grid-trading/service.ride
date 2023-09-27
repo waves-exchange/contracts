@@ -33,5 +33,7 @@ func setStrParam(args: List[String]) = {
 
 @Verifier(tx)
 func verify() = {
-  false
+  let testnet = this.bytes.drop(1).take(1) == base16'54'
+
+  testnet
 }
