@@ -23,7 +23,7 @@ sequenceDiagram
   Creator ->>+ Factory: complete request with account
   Note over Factory: check account script, owner, factory
   Factory ->> Account: approve
-  Factory ->>- Creator: transfer reward
+  Factory ->>- Creator: transfer reward to creator
 ```
 
 ### Withdraw:
