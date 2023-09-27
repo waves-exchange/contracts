@@ -41,6 +41,7 @@
 sequenceDiagram
   User ->> Factory: request account
   Note over Factory: save owner, reward id
+  Factory -->> Creator: new request
   Creator ->> Account: set script, init
   Note over Account: save creator, owner
   Creator ->>+ Factory: complete request with account
