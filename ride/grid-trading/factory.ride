@@ -20,13 +20,10 @@ let kFactoryPublicKey = "%s__factoryPublicKey"
 let kOwnerPublicKey = "%s__ownerPublicKey"
 let kCreatorPublicKey = "%s__creatorPublicKey"
 
-let kAccountScriptHash = "%s__accountScriptHash"
-func accountScriptHash() = this.getBinary(
-  kAccountScriptHash
-).valueOrErrorMessage("account script hash is not set")
-
-let kCounter = "%s__counter"
-func counter() = this.getInteger(kCounter).valueOrElse(0)
+let kAccountScript = "%s__accountScriptHash"
+func accountScript() = this.getBinary(
+  kAccountScript
+).valueOrErrorMessage("account script is not set")
 
 let kRewardAmount = "%s__rewardAmount"
 func rewardAmount() = this.getInteger(
@@ -59,7 +56,7 @@ let botPublicKey = this.getBinaryValue(kBotPublicKey)
 func init(
   servicePublicKey: ByteVector,
   botPublicKey: ByteVector,
-  accountScriptHash: ByteVector,
+  accountScript: ByteVector,
   rewardAmount: Int
 ) = {
   strict checkCaller = i.mustThis()
@@ -67,7 +64,7 @@ func init(
   ([
     BinaryEntry(kServicePublicKey, servicePublicKey),
     BinaryEntry(kBotPublicKey, botPublicKey),
-    BinaryEntry(kAccountScriptHash, accountScriptHash),
+    BinaryEntry(kAccountScript, accountScript),
     IntegerEntry(kRewardAmount, rewardAmount)
   ], unit)
 }
@@ -75,19 +72,19 @@ func init(
 # called by user
 # additional fee in payment
 @Callable(i)
-func request() = {
+func request(amountAssetId: ByteVector, priceAssetId: ByteVector) = {
+  let requestId = sha256(i.caller.bytes + amountAssetId + priceAssetId).toBase58String()
+
   strict checks = [
     i.payments.size() == 1 || throw("1 payment is required"),
     i.payments[0].assetId == unit || throw("invalid asset"),
-    i.payments[0].amount == rewardAmount() || throw("invalid amount")
+    i.payments[0].amount == rewardAmount() || throw("invalid amount"),
+    this.getBoolean(kRequestCompleted(requestId)) == unit || throw("request exists")
   ]
-
-  let requestId = sha256(i.caller.bytes + counter().toBytes()).toBase58String()
 
   ([
     BooleanEntry(kRequestCompleted(requestId), false),
-    BinaryEntry(kRequestOwner(requestId), i.callerPublicKey),
-    IntegerEntry(kCounter, counter() + 1)
+    BinaryEntry(kRequestOwner(requestId), i.callerPublicKey)
   ], unit)
 }
 
@@ -99,7 +96,10 @@ func complete(requestId: String, accountPublicKey: ByteVector) = {
 
   strict checks = [
     !requestCompleted(requestId) || throw("request is already completed"),
-    scriptHash(accountAddress) == accountScriptHash() || throw("invalid script"),
+    match scriptHash(accountAddress) {
+      case b: ByteVector => b == blake2b256_32Kb(accountScript())
+      case _ => false
+    } || throw("invalid script"),
     match accountAddress.getBinary(kFactoryPublicKey) {
       case b: ByteVector => addressFromPublicKey(b) == this
       case _ => false
