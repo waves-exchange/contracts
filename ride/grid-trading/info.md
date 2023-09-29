@@ -42,21 +42,25 @@
 
 ```mermaid
 sequenceDiagram
-  User ->> Factory: request account
+  User ->> Factory: request(amount asset id, price asset id)
   activate Factory
   Note over User, Factory: payment = reward amount
-  Note over Factory: save owner, request id
+  Note over Factory: account id = sha256(owner + amount asset id + price asset id)
+  Note over Factory: status = 0, save owner, save assets ids
   Factory -->> Creator: new request
   deactivate Factory
   activate Creator
-  Creator ->> Account: set script, init
-  Note over Account: save creator, owner
-  Creator ->> Factory: complete request with account
-  activate Factory
+  Creator -->> Account: set script
   deactivate Creator
-  Note over Factory: check account script, owner, factory
-  Factory ->> Account: approve
-  Note over Account: lock script
+  Account ->> Account: init(requestId, factoryPublicKey, creatorPublicKey)
+  activate Account
+  Account ->> Factory: complete request with account
+  activate Factory
+  Note over Factory: check account script, status
+  Note over Factory: save creator, status = 1
+  Factory -->> Account: ok
+  Note over Account: save factory in state thus lock script
+  deactivate Account
   Factory ->> Creator: transfer reward to creator
   deactivate Factory
 ```
