@@ -55,6 +55,15 @@ func kAccountAddressToAccountId(accountAddress: Address) = {
   ["%s%s", accountAddress.toString(), "accountAddressToAccountId"].makeString(separator)
 }
 
+func kPairAllowed(amountAssetId: ByteVector, priceAssetId: ByteVector) = {
+  ["%s%s%s", amountAssetId.toBase58String(), priceAssetId.toBase58String(), "pairAllowed"].makeString(separator)
+}
+func pairAllowed(amountAssetId: ByteVector, priceAssetId: ByteVector) = {
+  this.getBoolean(
+    kPairAllowed(amountAssetId, priceAssetId)
+  ).valueOrElse(false)
+}
+
 # can be updated by voting
 let serviceAddress = addressFromPublicKey(this.getBinaryValue(kServicePublicKey))
 let botPublicKey = this.getBinaryValue(kBotPublicKey)
@@ -86,6 +95,7 @@ func request(amountAssetId: ByteVector, priceAssetId: ByteVector) = {
     i.payments.size() == 1 || throw("1 payment is required"),
     i.payments[0].assetId == unit || throw("invalid asset"),
     i.payments[0].amount == rewardAmount() || throw("invalid amount"),
+    pairAllowed(amountAssetId, priceAssetId) || throw("pair is not allowed"),
     this.getInteger(kAccountStatus(accountId)) == unit || throw("account already exists")
   ]
 

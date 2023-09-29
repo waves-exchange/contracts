@@ -18,25 +18,26 @@
 
 #### Factory
 
-| key                                                 | type         | description                           |
-| --------------------------------------------------- | ------------ | ------------------------------------- |
-| `%s__servicePublicKey`                              | `ByteVector` | Service public key                    |
-| `%s__botPublicKey`                                  | `ByteVector` | Bot public key                        |
-| `%s__accountScript`                                 | `ByteVector` | Allowed account script                |
-| `%s__rewardAmount`                                  | `Int`        | Reward amount                         |
-| `%s%s__<accountId>__status`                         | `Integer`    | Account status (0 - empty, 1 - ready) |
-| `%s%s__<accountId>__ownerPublicKey`                 | `ByteVector` | Account owner                         |
-| `%s%s__<accountId>__creatorPublicKey`               | `ByteVector` | Account creator                       |
-| `%s%s__<accountId>__amountAssetId`                  | `ByteVector` | Account amount asset id               |
-| `%s%s__<accountId>__priceAssetId`                   | `ByteVector` | Account price asset id                |
-| `%s%s__<accountId>__accountIdToAccountPublicKey`    | `ByteVector` | Account id → account public key       |
-| `%s%s__<accountAddress>__accountAddressToAccountId` | `String`     | Account address → account id          |
+| key                                                    | type         | description                           |
+| ------------------------------------------------------ | ------------ | ------------------------------------- |
+| `%s__servicePublicKey`                                 | `ByteVector` | Service public key                    |
+| `%s__botPublicKey`                                     | `ByteVector` | Bot public key                        |
+| `%s__accountScript`                                    | `ByteVector` | Allowed account script                |
+| `%s__rewardAmount`                                     | `Int`        | Reward amount                         |
+| `%s%s__<accountId>__status`                            | `Integer`    | Account status (0 - empty, 1 - ready) |
+| `%s%s__<accountId>__ownerPublicKey`                    | `ByteVector` | Account owner                         |
+| `%s%s__<accountId>__creatorPublicKey`                  | `ByteVector` | Account creator                       |
+| `%s%s__<accountId>__amountAssetId`                     | `ByteVector` | Account amount asset id               |
+| `%s%s__<accountId>__priceAssetId`                      | `ByteVector` | Account price asset id                |
+| `%s%s__<accountId>__accountIdToAccountPublicKey`       | `ByteVector` | Account id → account public key       |
+| `%s%s__<accountAddress>__accountAddressToAccountId`    | `String`     | Account address → account id          |
+| `%s%s%s__<amountAssetId>__<priceAssetId>__pairAllowed` | `Boolean`    | Pair allowed                          |
 
 #### Account
 
-| key                    | type         | description         |
-| ---------------------- | ------------ | ------------------- |
-| `%s__factoryPublicKey` | `ByteVector` | Factory public key  |
+| key                    | type         | description        |
+| ---------------------- | ------------ | ------------------ |
+| `%s__factoryPublicKey` | `ByteVector` | Factory public key |
 
 ### Account creation
 
