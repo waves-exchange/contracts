@@ -15,12 +15,7 @@ func mustThis(i: Invocation) = {
 let kServicePublicKey = "%s__servicePublicKey"
 let kBotPublicKey = "%s__botPublicKey"
 
-# account keys
-let kFactoryPublicKey = "%s__factoryPublicKey"
-let kOwnerPublicKey = "%s__ownerPublicKey"
-let kCreatorPublicKey = "%s__creatorPublicKey"
-
-let kAccountScript = "%s__accountScriptHash"
+let kAccountScript = "%s__accountScript"
 func accountScript() = this.getBinary(
   kAccountScript
 ).valueOrErrorMessage("account script is not set")
@@ -30,22 +25,34 @@ func rewardAmount() = this.getInteger(
   kRewardAmount
 ).valueOrErrorMessage("reward amount is not set")
 
-func kRequestCompleted(requestId: String) = {
-  ["%s%s", requestId, "completed"].makeString(separator)
+let ACCOUNT_STATUS_EMPTY = 0
+let ACCOUNT_STATUS_READY = 1
+func kAccountStatus(accountId: String) = {
+  ["%s%s", accountId, "status"].makeString(separator)
 }
-func requestCompleted(requestId: String) = {
-  this.getBoolean(
-    kRequestCompleted(requestId)
-  ).valueOrErrorMessage("request is not found")
+func accountStatus(accountId: String) = {
+  this.getInteger(
+    kAccountStatus(accountId)
+  ).valueOrErrorMessage("account is not found")
 }
 
-func kRequestOwner(requestId: String) = {
-  ["%s%s", requestId, "owner"].makeString(separator)
+func kAccountCreatorPublicKey(accountId: String) = {
+  ["%s%s", accountId, "creatorPublicKey"].makeString(separator)
 }
-func requestOwner(requestId: String) = {
-  this.getBinary(
-    kRequestOwner(requestId)
-  ).valueOrErrorMessage("request is not found")
+func kAccountOwnerPublicKey(accountId: String) = {
+  ["%s%s", accountId, "ownerPublicKey"].makeString(separator)
+}
+func kAccountAmountAssetId(accountId: String) = {
+  ["%s%s", accountId, "amountAssetId"].makeString(separator)
+}
+func kAccountPriceAssetId(accountId: String) = {
+  ["%s%s", accountId, "priceAssetId"].makeString(separator)
+}
+func kAccountIdToAccountPublicKey(accountId: String) = {
+  ["%s%s", accountId, "accountIdToAccountPublicKey"].makeString(separator)
+}
+func kAccountAddressToAccountId(accountAddress: Address) = {
+  ["%s%s", accountAddress.toString(), "accountAddressToAccountId"].makeString(separator)
 }
 
 # can be updated by voting
@@ -73,51 +80,45 @@ func init(
 # additional fee in payment
 @Callable(i)
 func request(amountAssetId: ByteVector, priceAssetId: ByteVector) = {
-  let requestId = sha256(i.caller.bytes + amountAssetId + priceAssetId).toBase58String()
+  let accountId = sha256(i.caller.bytes + amountAssetId + priceAssetId).toBase58String()
 
   strict checks = [
     i.payments.size() == 1 || throw("1 payment is required"),
     i.payments[0].assetId == unit || throw("invalid asset"),
     i.payments[0].amount == rewardAmount() || throw("invalid amount"),
-    this.getBoolean(kRequestCompleted(requestId)) == unit || throw("request exists")
+    this.getInteger(kAccountStatus(accountId)) == unit || throw("account already exists")
   ]
 
   ([
-    BooleanEntry(kRequestCompleted(requestId), false),
-    BinaryEntry(kRequestOwner(requestId), i.callerPublicKey)
+    IntegerEntry(kAccountStatus(accountId), 0),
+    BinaryEntry(kAccountOwnerPublicKey(accountId), i.callerPublicKey),
+    BinaryEntry(kAccountAmountAssetId(accountId), amountAssetId),
+    BinaryEntry(kAccountPriceAssetId(accountId), priceAssetId)
   ], unit)
 }
 
 # called by account script
 # additional fee is sent to recipient
 @Callable(i)
-func complete(requestId: String, accountPublicKey: ByteVector) = {
-  let accountAddress = addressFromPublicKey(accountPublicKey)
+func complete(accountId: String, creatorPublicKey: ByteVector) = {
+  let accountPublicKey = i.callerPublicKey
+  let accountAddress = i.caller
 
   strict checks = [
-    !requestCompleted(requestId) || throw("request is already completed"),
+    accountStatus(accountId) == ACCOUNT_STATUS_EMPTY || throw("account is already exists"),
     match scriptHash(accountAddress) {
       case b: ByteVector => b == blake2b256_32Kb(accountScript())
       case _ => false
-    } || throw("invalid script"),
-    match accountAddress.getBinary(kFactoryPublicKey) {
-      case b: ByteVector => addressFromPublicKey(b) == this
-      case _ => false
-    } || throw("invalid factory public key"),
-    match accountAddress.getBinary(kOwnerPublicKey) {
-      case b: ByteVector => b == requestOwner(requestId)
-      case _ => false
-    } || throw("invalid owner public key")
+    } || throw("invalid script")
   ]
 
-  let creatorPublicKey = accountAddress.getBinary(
-    kCreatorPublicKey
-  ).valueOrErrorMessage("creator public key is not set")
   let creatorAddress = addressFromPublicKey(creatorPublicKey)
-  let result = accountAddress.invoke("approve", [], [])
 
   ([
-    BooleanEntry(kRequestCompleted(requestId), true),
+    IntegerEntry(kAccountStatus(accountId), ACCOUNT_STATUS_READY),
+    BinaryEntry(kAccountCreatorPublicKey(accountId), creatorPublicKey),
+    BinaryEntry(kAccountIdToAccountPublicKey(accountId), accountPublicKey),
+    StringEntry(kAccountAddressToAccountId(accountAddress), accountId),
     ScriptTransfer(creatorAddress, rewardAmount(), unit)
-  ], result)
+  ], unit)
 }

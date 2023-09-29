@@ -18,22 +18,25 @@
 
 #### Factory
 
-| key                            | type         | description                 |
-| ------------------------------ | ------------ | --------------------------- |
-| `%s__servicePublicKey`         | `ByteVector` | Service public key          |
-| `%s__botPublicKey`             | `ByteVector` | Bot public key              |
-| `%s__accountScriptHash`        | `ByteVector` | Allowed account script hash |
-| `%s__rewardAmount`             | `Int`        | Reward amount               |
-| `%s%s__<requestId>__completed` | `Boolean`    | Request completed           |
-| `%s%s__<requestId>__owner`     | `ByteVector` | Request owner public key    |
+| key                                                 | type         | description                           |
+| --------------------------------------------------- | ------------ | ------------------------------------- |
+| `%s__servicePublicKey`                              | `ByteVector` | Service public key                    |
+| `%s__botPublicKey`                                  | `ByteVector` | Bot public key                        |
+| `%s__accountScript`                                 | `ByteVector` | Allowed account script                |
+| `%s__rewardAmount`                                  | `Int`        | Reward amount                         |
+| `%s%s__<accountId>__status`                         | `Integer`    | Account status (0 - empty, 1 - ready) |
+| `%s%s__<accountId>__ownerPublicKey`                 | `ByteVector` | Account owner                         |
+| `%s%s__<accountId>__creatorPublicKey`               | `ByteVector` | Account creator                       |
+| `%s%s__<accountId>__amountAssetId`                  | `ByteVector` | Account amount asset id               |
+| `%s%s__<accountId>__priceAssetId`                   | `ByteVector` | Account price asset id                |
+| `%s%s__<accountId>__accountIdToAccountPublicKey`    | `ByteVector` | Account id → account public key       |
+| `%s%s__<accountAddress>__accountAddressToAccountId` | `String`     | Account address → account id          |
 
 #### Account
 
 | key                    | type         | description         |
 | ---------------------- | ------------ | ------------------- |
-| `%s__verified`         | `Boolean`    | Verified by factory |
 | `%s__factoryPublicKey` | `ByteVector` | Factory public key  |
-| `%s__ownerPublicKey`   | `ByteVector` | Owner public key    |
 
 ### Account creation
 

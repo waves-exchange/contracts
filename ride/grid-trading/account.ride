@@ -2,18 +2,26 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+let separator = "__"
+
 let kFactoryPublicKey = "%s__factoryPublicKey"
 let kServicePublicKey = "%s__servicePublicKey"
 let kOwnerPublicKey = "%s__ownerPublicKey"
-let kCreatorPublicKey = "%s__creatorPublicKey"
 let kBotPublicKey = "%s__botPublicKey"
 
-let kVerified = "%s__verified"
-func verified() = this.getBoolean(kVerified).valueOrElse(false)
+func kAccountAddressToAccountId(accountAddress: Address) = {
+  ["%s%s", accountAddress.toString(), "accountAddressToAccountId"].makeString(separator)
+}
+func kAccountOwner(accountId: String) = {
+  ["%s%s", accountId, "owner"].makeString(separator)
+}
 
 let factoryAddress = addressFromPublicKey(this.getBinaryValue(kFactoryPublicKey))
 let serviceAddress = addressFromPublicKey(factoryAddress.getBinaryValue(kServicePublicKey))
-let ownerAddress = addressFromPublicKey(this.getBinaryValue(kOwnerPublicKey))
+
+let accountId = factoryAddress.getStringValue(kAccountAddressToAccountId(this))
+let ownerPublicKey = factoryAddress.getBinaryValue(kAccountOwner(accountId))
+let ownerAddress = addressFromPublicKey(ownerPublicKey)
 
 func mustAddress(i: Invocation, address: Address) = {
   i.caller == address || throw()
@@ -29,10 +37,6 @@ func mustService(i: Invocation) = {
 
 func mustOwner(i: Invocation) = {
   mustAddress(i, ownerAddress)
-}
-
-func mustFactory(i: Invocation) = {
-  mustAddress(i, factoryAddress)
 }
 
 @Callable(i)
@@ -52,23 +56,16 @@ func transferWaves(recipientBytes: ByteVector, amount: Int) =
   if (i.mustService()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
 
 @Callable(i)
-func init(factoryPublicKey: ByteVector, ownerPublicKey: ByteVector, creatorPublicKey: ByteVector) = {
+func init(requestId: String, factoryPublicKey: ByteVector, creatorPublicKey: ByteVector) = {
   strict checkCaller = i.mustThis()
 
-  ([
-    BinaryEntry(kFactoryPublicKey, factoryPublicKey),
-    BinaryEntry(kOwnerPublicKey, ownerPublicKey),
-    BinaryEntry(kCreatorPublicKey, creatorPublicKey)
-  ], unit)
-}
-
-# called by factory to close the contract
-@Callable(i)
-func approve() = {
-  strict checkCaller = i.mustFactory()
+  # throws if accounts is not ok
+  strict completeRequest = addressFromPublicKey(
+    factoryPublicKey
+  ).invoke("complete", [requestId, creatorPublicKey], [])
 
   ([
-    BooleanEntry(kVerified, true)
+    BinaryEntry(kFactoryPublicKey, factoryPublicKey)
   ], unit)
 }
 
@@ -89,7 +86,7 @@ func verify() = {
   let botPublicKey = factoryAddress.getBinaryValue(kBotPublicKey)
   match tx {
     case _: Order => sigVerify(tx.bodyBytes, tx.proofs[0], botPublicKey)
-    case _: InvokeScriptTransaction => if (verified()) then false else {
+    case _: InvokeScriptTransaction => if (this.getBinary(kFactoryPublicKey).isDefined()) then false else {
       sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
     }
     case _ => if (!testnet) then false else {
