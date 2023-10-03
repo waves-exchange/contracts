@@ -1,8 +1,7 @@
 {-# STDLIB_VERSION 7 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
-
-let separator = "__"
+{-# IMPORT common.lib.ride #-}
 
 let kFactoryPublicKey = "%s__factoryPublicKey"
 let kServicePublicKey = "%s__servicePublicKey"
@@ -22,14 +21,6 @@ let serviceAddress = addressFromPublicKey(factoryAddress.getBinaryValue(kService
 let accountId = factoryAddress.getStringValue(kAccountAddressToAccountId(this))
 let ownerPublicKey = factoryAddress.getBinaryValue(kAccountOwner(accountId))
 let ownerAddress = addressFromPublicKey(ownerPublicKey)
-
-func mustAddress(i: Invocation, address: Address) = {
-  i.caller == address || throw()
-}
-
-func mustThis(i: Invocation) = {
-  mustAddress(i, this)
-}
 
 func mustService(i: Invocation) = {
   mustAddress(i, serviceAddress)

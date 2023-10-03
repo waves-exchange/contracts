@@ -1,0 +1,13 @@
+{-# SCRIPT_TYPE  ACCOUNT #-}
+{-# CONTENT_TYPE LIBRARY #-}
+{-# STDLIB_VERSION 7 #-}
+
+let separator = "__"
+
+func mustAddress(i: Invocation, address: Address) = {
+  i.caller == address || throw()
+}
+
+func mustThis(i: Invocation) = {
+  mustAddress(i, this)
+}

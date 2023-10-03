@@ -1,16 +1,7 @@
 {-# STDLIB_VERSION 7 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
-
-let separator = "__"
-
-func mustAddress(i: Invocation, address: Address) = {
-  i.caller == address || throw()
-}
-
-func mustThis(i: Invocation) = {
-  mustAddress(i, this)
-}
+{-# IMPORT common.lib.ride #-}
 
 let kServicePublicKey = "%s__servicePublicKey"
 let kBotPublicKey = "%s__botPublicKey"
