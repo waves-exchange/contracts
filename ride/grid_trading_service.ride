@@ -1,6 +1,7 @@
 {-# STDLIB_VERSION 7 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
+{-# IMPORT common.lib.ride #-}
 
 # withdraw from investment account to specified address
 @Callable(i)
@@ -33,7 +34,5 @@ func setStrParam(args: List[String]) = {
 
 @Verifier(tx)
 func verify() = {
-  let testnet = this.bytes.drop(1).take(1) == base16'54'
-
-  testnet
+  chainId == chainIdT
 }

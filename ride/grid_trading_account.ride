@@ -73,14 +73,13 @@ func call(function: String, args: List[String]) = {
 # bot can trade
 @Verifier(tx)
 func verify() = {
-  let testnet = this.bytes.drop(1).take(1) == base16'54'
   let botPublicKey = factoryAddress.getBinaryValue(kBotPublicKey)
   match tx {
     case _: Order => sigVerify(tx.bodyBytes, tx.proofs[0], botPublicKey)
     case _: InvokeScriptTransaction => if (this.getBinary(kFactoryPublicKey).isDefined()) then false else {
       sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
     }
-    case _ => if (!testnet) then false else {
+    case _ => if (chainId == chainIdW) then false else {
       sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
     }
   }
