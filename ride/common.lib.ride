@@ -1,6 +1,4 @@
-{-# SCRIPT_TYPE  ACCOUNT #-}
 {-# CONTENT_TYPE LIBRARY #-}
-{-# STDLIB_VERSION 7 #-}
 
 let separator = "__"
 
