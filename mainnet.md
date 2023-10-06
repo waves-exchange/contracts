@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **18:52 05.10.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **16:39 06.10.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -144,6 +144,7 @@ PETE/gxWX pool | [`3PEuig7Yq14w3yTHs7joMrMcrdR2YKhta5y`](https://wavesexplorer.c
 gxWX/WX pool | [`3PQ5p12a5LogwzR7uASS3MLZiDmWTNzcATm`](https://wavesexplorer.com/addresses/3PQ5p12a5LogwzR7uASS3MLZiDmWTNzcATm) | `8bo83tWbBiWhbALYuMLSwGZBv83ubuFrDQZzKowfVx44` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 MATIC-POLY/USDT pool | [`3PDGCWZqK1FgiuyyFz6xfSmUPous6usynh9`](https://wavesexplorer.com/addresses/3PDGCWZqK1FgiuyyFz6xfSmUPous6usynh9) | `6gSK4n1ppWG3oFqvVaViBvXRyN2SeiLuKbMmkfsGVBBL` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 WUNCOIN/WAVES pool | [`3PAeANmMK3iBZ98rQCMxPy6z69waZgRbPQR`](https://wavesexplorer.com/addresses/3PAeANmMK3iBZ98rQCMxPy6z69waZgRbPQR) | `CxYExcyPfc65VP2gbnywVsorbFsQheF2wRbALW6Awevw` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+WUNCOIN/USDT pool | [`3PEB3yJQhCFSLMuDRtqDGPT2cCSFyVvFRJ1`](https://wavesexplorer.com/addresses/3PEB3yJQhCFSLMuDRtqDGPT2cCSFyVvFRJ1) | `FMnViF8ENmvfZZihbwZfVHNAojpJLa3E9PEDNt4BjKFk` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -194,8 +195,8 @@ BUSD | [`8DLiYZjo3UUaRBTHU7Ayoqg4ihwb6YH1AfXrrhdjQ7K1`](https://wavesexplorer.co
 CRV-ERC20-PPT | [`FmsB2B21fVVetWvZm7Q48cC2Bvs2hEZtft49TBn3guV1`](https://wavesexplorer.com/assets/FmsB2B21fVVetWvZm7Q48cC2Bvs2hEZtft49TBn3guV1) | CRV ERC20 Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/CRV-ERC20-PPT 
 Curve DAO Token | [`3KhNcHo4We1G5EWps7b1e5DTdLgWDzctc8S6ynu37KAb`](https://wavesexplorer.com/assets/3KhNcHo4We1G5EWps7b1e5DTdLgWDzctc8S6ynu37KAb) | Curve Finance DAO Token 
 Duck Egg | [`C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS`](https://wavesexplorer.com/assets/C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS) | Utility and Reward token @ WavesDucks.com game. The duckiest token in the world. 
-EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
 EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.com/assets/3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK) | Enterprise Algorithmic Stable Token 
+EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
 ENNO | [`7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg`](https://wavesexplorer.com/assets/7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg) | Native utility and governance token of Enno Wallet 
 ETH-Ethereum-PPT | [`3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13`](https://wavesexplorer.com/assets/3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
 gxWX | [`3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii`](https://wavesexplorer.com/assets/3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii) | xWX - purpose of the token, increase the value and liquidity of the WX token.  The program will launch after the implementation of 15% of the emission of 1 xWX -1 WX with the support of the private capital community 
@@ -425,6 +426,7 @@ WESTEASTLP | [`Fc5KnsRaXaBQujnPZ4iDmykAoDkt45iyjKPwwwK9rZfX`](https://wavesexplo
 WESTEASTLP | [`B5TyYVE82o7iWzhajTt8d1PFaSS9c6S9XFyAzv9pnQyT`](https://wavesexplorer.com/assets/B5TyYVE82o7iWzhajTt8d1PFaSS9c6S9XFyAzv9pnQyT) | WEST/EAST pool liquidity provider token 
 WESTWAVESLP | [`FTTJnB6xG4CKZEJMgsgqjmgbzcyH8ya3tV8LQP2GCDs7`](https://wavesexplorer.com/assets/FTTJnB6xG4CKZEJMgsgqjmgbzcyH8ya3tV8LQP2GCDs7) | WEST/WAVES pool liquidity provider token 
 WESTXTNLP | [`CaryXC3PhVr1rTxUGk8Bx7CcoxPX9ea3F5RGFiCe98Jr`](https://wavesexplorer.com/assets/CaryXC3PhVr1rTxUGk8Bx7CcoxPX9ea3F5RGFiCe98Jr) | WX WEST/XTN pool liquidity provider token 
+WUNCOIN~USDTLP | [`B3AFXsfCZfh6f7qkX6jmXYwDSKQXafT3Zaf8AK8kMuKq`](https://wavesexplorer.com/assets/B3AFXsfCZfh6f7qkX6jmXYwDSKQXafT3Zaf8AK8kMuKq) | WUNCOIN~/USDT pool liquidity provider token 
 WUNCOIN~WAVESLP | [`EKPJvGrHPFbYyhNLgezkX7CKbzJ5RtteStLdyYWhtyCc`](https://wavesexplorer.com/assets/EKPJvGrHPFbYyhNLgezkX7CKbzJ5RtteStLdyYWhtyCc) | WUNCOIN~/WAVES pool liquidity provider token 
 WWXTNLP | [`CJuMAECUKr5j3qtCLJ76W5emFDGP9MpDCZ9Ge9s5aAyM`](https://wavesexplorer.com/assets/CJuMAECUKr5j3qtCLJ76W5emFDGP9MpDCZ9Ge9s5aAyM) | WX WW/XTN pool liquidity provider token 
 WXB TokenUSDNLP | [`CDNRpYYrfXsfUpoL8Yj3SvU1xT6GBoBFiG7dVGnWXkg7`](https://wavesexplorer.com/assets/CDNRpYYrfXsfUpoL8Yj3SvU1xT6GBoBFiG7dVGnWXkg7) | WXB Token/USDN pool liquidity provider token 
