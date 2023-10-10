@@ -32,6 +32,7 @@ export const setup = async ({
     'factory',
     'service',
     'bot',
+    'creator',
     'user1',
     'user2',
     'account1',

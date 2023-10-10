@@ -10,7 +10,7 @@ import { setup } from './_setup.mjs';
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe(`[${process.pid}] grid_trading: request`, () => {
+describe(`[${process.pid}] grid_trading: factory request`, () => {
   let accounts;
   let rewardAmount;
   let assetId1;
