@@ -150,4 +150,21 @@ describe(`[${process.pid}] grid_trading: request`, () => {
 
     expect(stateChanges.data).to.deep.equal(expected);
   });
+
+  it('account already exists', async () => {
+    expect(broadcastAndWait(invokeScript({
+      dApp: accounts.factory.address,
+      call: {
+        function: 'request',
+        args: [
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
+        ],
+      },
+      payment: [
+        { assetId: null, amount: rewardAmount },
+      ],
+      chainId,
+    }, accounts.user1.seed))).to.be.rejectedWith('account already exists');
+  });
 });
