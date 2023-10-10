@@ -9,6 +9,30 @@ const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
 const api = create(apiBase);
 
+export const compileScriptFromFile = async (
+  path,
+  transform = null,
+  libraries = {},
+) => {
+  let transformFunc = transform;
+  if (!transform) transformFunc = (x) => x;
+  const estimatorVersion = undefined;
+  const compact = false;
+  const removeUnused = false;
+  const compilation = ride.compile(
+    transformFunc(await readFile(path, { encoding: 'utf-8' })),
+    estimatorVersion,
+    compact,
+    removeUnused,
+    libraries,
+  );
+  if (compilation.error) {
+    throw new Error(compilation.error);
+  }
+
+  return compilation.result;
+};
+
 /**
  * @param {string} path
  * @param {string} account
@@ -17,9 +41,10 @@ const api = create(apiBase);
 export const setScriptFromFile = async (
   path,
   account,
-  transform = (content) => content,
+  transform = null,
+  libraries = {},
 ) => {
-  const { base64, size } = ride.compile(transform(await readFile(path, { encoding: 'utf-8' }))).result;
+  const { base64, size } = await compileScriptFromFile(path, transform, libraries);
   const waveletsPerKilobyte = 1e5;
   const bitsInByte = 1024;
   const min = 1000000;
