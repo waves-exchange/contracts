@@ -9,8 +9,8 @@ const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
 const api = create(apiBase);
 
-export const compileScriptFromFile = async (
-  path,
+export const compileScript = (
+  script,
   transform = null,
   libraries = {},
 ) => {
@@ -20,7 +20,7 @@ export const compileScriptFromFile = async (
   const compact = false;
   const removeUnused = false;
   const compilation = ride.compile(
-    transformFunc(await readFile(path, { encoding: 'utf-8' })),
+    transformFunc(script),
     estimatorVersion,
     compact,
     removeUnused,
@@ -31,6 +31,17 @@ export const compileScriptFromFile = async (
   }
 
   return compilation.result;
+};
+
+export const compileScriptFromFile = async (
+  path,
+  transform = null,
+  libraries = {},
+) => {
+  const script = await readFile(path, { encoding: 'utf-8' });
+  const result = compileScript(script, transform, libraries);
+
+  return result;
 };
 
 /**
