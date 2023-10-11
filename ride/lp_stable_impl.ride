@@ -23,7 +23,7 @@
 #
 #   Factory LP could do do the following:
 #      1. Activate the pool
-#      2. Halt pool operations partially of completelly
+#      2. Halt pool operations partially of completely
 #
 #   Matcher LP could do do the following:
 #      1. Perform exchange operations with pool assets
@@ -31,7 +31,7 @@
 #   New Pool deployment flow:
 #      0. Factory contract has BLAKE2b-256 hash of the Pool contract.
 #      1. Pool contract is deployed to the blockchain (factory address is injected into it)
-#      2. Factory calls 'activate' callable and activate pool in case all prerequisites passed (assset pairs are not registered, contract hash matches actual)
+#      2. Factory calls 'activate' callable and activate pool in case all prerequisites passed (asset pairs are not registered, contract hash matches actual)
 
 #-----------------
 # GLOBAL VARIABLES
@@ -192,7 +192,7 @@ let fca = addressFromStringValue(strf(this, fc()))
 let inFee = fca.invoke("getInFeeREADONLY", [this.toString()], []).exactAs[Int]
 let outFee = fca.invoke("getOutFeeREADONLY", [this.toString()], []).exactAs[Int]
 
-let A = strf(this, amp())
+func A(poolAddress: Address) = strf(poolAddress, amp())
 
 # isGlobalShutdown
 # check that global shutdown is take place
@@ -209,9 +209,9 @@ let feeCollectorAddress = fca.strf(keyFeeCollectorAddress()).addressFromStringVa
 
 # getPoolConfig
 # function used to gather all pool data from factory
-func gpc() = {
-  let amtAs = strf(this, aa())
-  let priceAs = strf(this, pa())
+func gpc(address: Address) = {
+  let amtAs = strf(address, aa())
+  let priceAs = strf(address, pa())
   let iPriceAs = intf(fca, mba(priceAs))
   let iAmtAs = intf(fca, mba(amtAs))
   strf(fca, pc(iAmtAs.toString(), iPriceAs.toString())).split(SEP)
@@ -237,17 +237,6 @@ func parsePoolConfig(poolConfig: List[String]) = {
   )
 }
 
-let poolConfigParsed = gpc().parsePoolConfig()
-let (
-  cfgPoolAddress,
-  cfgPoolStatus,
-  cfgLpAssetId,
-  cfgAmountAssetId,
-  cfgPriceAssetId,
-  cfgAmountAssetDecimals,
-  cfgPriceAssetDecimals
-) = poolConfigParsed
-
 # getFactoryConfig
 func gfc() = {
   strf(fca, fcfg()).split(SEP)
@@ -267,8 +256,8 @@ func dataGetActionInfo(outAmtAssetAmt: Int, outPriceAssetAmt: Int, inLpAmt: Int,
   makeString( ["%d%d%d%d%d%d", outAmtAssetAmt.toString(), outPriceAssetAmt.toString(), inLpAmt.toString(), price.toString(), txHeight.toString(), txTimestamp.toString()], SEP)
 }
 
-func getAccBalance(assetId: String) = {
-  if(assetId == "WAVES") then wavesBalance(this).available else assetBalance(this, fromBase58String(assetId))
+func getAccBalance(poolAddress: Address, assetId: String) = {
+  if(assetId == "WAVES") then wavesBalance(poolAddress).available else assetBalance(poolAddress, fromBase58String(assetId))
 }
 
 # calcPriceBigInt
@@ -305,7 +294,18 @@ func pcp(amAssetDcm: Int, prAssetDcm: Int, amAmt: Int, prAmt: Int) = {
 }
 
 # used only in stats endpoint, so result values are in scale8 as required
-func calcPrices(amAmt: Int, prAmt: Int, lpAmt: Int) = {
+func calcPrices(poolAddress: Address, amAmt: Int, prAmt: Int, lpAmt: Int) = {
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   let amtAsDcm = cfgAmountAssetDecimals
   let prAsDcm = cfgPriceAssetDecimals
 
@@ -322,8 +322,9 @@ func calcPrices(amAmt: Int, prAmt: Int, lpAmt: Int) = {
 }
 
 # public API which is used by backend
-func calculatePrices(amAmt: Int, prAmt: Int, lpAmt: Int) = {
-    let p = calcPrices(amAmt, prAmt, lpAmt)
+func calculatePrices(poolAddress: Address, amAmt: Int, prAmt: Int, lpAmt: Int) = {
+  
+    let p = calcPrices(poolAddress, amAmt, prAmt, lpAmt)
     [p[0].f1(scale8),
         p[1].f1(scale8),
         p[2].f1(scale8)]
@@ -334,12 +335,12 @@ func takeFee(amount: Int, fee: Int) = {
   (amount - feeAmount, feeAmount)
 }
 
-func getD(xp: List[BigInt]) = {
+func getD(poolAddress: Address, xp: List[BigInt]) = {
   let xp0 = xp[0]
   let xp1 = xp[1]
   let s = xp0 + xp1
   if (s == big0) then big0 else {
-    let a = A.parseIntValue()
+    let a = A(poolAddress).parseIntValue()
     let ann = a * 2
     let p = fraction(xp0, xp1, big1)
     let xp0_xp1_n_n = fraction(p, big4, big1)
@@ -379,7 +380,18 @@ func getD(xp: List[BigInt]) = {
 }
 
 # estimateGetOperation
-func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address) = {
+func ego(poolAddress: Address, txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address) = {
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   let lpId   = cfgLpAssetId
   let amId   = cfgAmountAssetId.value().toBase58String()
   let prId   = cfgPriceAssetId.value().toBase58String()
@@ -392,10 +404,10 @@ func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address
   # validation block
   if (lpId.toBase58String() != pmtAssetId) then throw("Wrong pmt asset") else
 
-  let amBalance = getAccBalance(amId)
+  let amBalance = getAccBalance(poolAddress, amId)
   let amBalanceX18 = amBalance.t1(amDcm)
 
-  let prBalance = getAccBalance(prId)
+  let prBalance = getAccBalance(poolAddress, prId)
   let prBalanceX18 = prBalance.t1(prDcm)
 
   let curPriceX18 = cpbi(prBalanceX18, amBalanceX18)
@@ -437,7 +449,7 @@ func ego(txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address
 }
 
 # estimatePutOperation
-func epo(txId58: String,
+func epo(poolAddress: Address, txId58: String,
                           slippage: Int,
                           inAmAmt: Int,
                           inAmId: ByteVector|Unit,
@@ -450,6 +462,17 @@ func epo(txId58: String,
                           validateSlippage: Boolean,
                           pmtAmt: Int,
                           pmtId: String) = {
+    let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+    let (
+      cfgPoolAddress,
+      cfgPoolStatus,
+      cfgLpAssetId,
+      cfgAmountAssetId,
+      cfgPriceAssetId,
+      cfgAmountAssetDecimals,
+      cfgPriceAssetDecimals
+    ) = poolConfigParsed
+
     let lpId      = cfgLpAssetId
     let amIdStr   = cfgAmountAssetId.value().toBase58String()
     let prIdStr   = cfgPriceAssetId.value().toBase58String()
@@ -460,12 +483,12 @@ func epo(txId58: String,
     let lpEm = assetInfo(lpId).valueOrErrorMessage("Wr lp as").quantity
 
     # get current balances from acc
-    let amBalance = if(isEval) then getAccBalance(amIdStr) else
-                                                              if(isOneAsset && pmtId == amIdStr) then getAccBalance(amIdStr) - pmtAmt else
-                                                                                            if(isOneAsset) then getAccBalance(amIdStr) else getAccBalance(amIdStr) - inAmAmt
-    let prBalance = if(isEval) then getAccBalance(prIdStr) else
-                                                              if(isOneAsset && pmtId == prIdStr) then getAccBalance(prIdStr) - pmtAmt  else
-                                                                                            if(isOneAsset) then getAccBalance(prIdStr) else getAccBalance(prIdStr) - inPrAmt
+    let amBalance = if(isEval) then getAccBalance(poolAddress, amIdStr) else
+                                                              if(isOneAsset && pmtId == amIdStr) then getAccBalance(poolAddress, amIdStr) - pmtAmt else
+                                                                                            if(isOneAsset) then getAccBalance(poolAddress, amIdStr) else getAccBalance(poolAddress, amIdStr) - inAmAmt
+    let prBalance = if(isEval) then getAccBalance(poolAddress, prIdStr) else
+                                                              if(isOneAsset && pmtId == prIdStr) then getAccBalance(poolAddress, prIdStr) - pmtAmt  else
+                                                                                            if(isOneAsset) then getAccBalance(poolAddress, prIdStr) else getAccBalance(poolAddress, prIdStr) - inPrAmt
 
     #if(true) then throw("lpEmission = "+ lpEmission.toString() +
     #                    " amBalance = " + amBalance.toString() +
@@ -484,7 +507,7 @@ func epo(txId58: String,
     let amBalanceX18 = amBalance.t1(amtDcm)
     let prBalanceX18 = prBalance.t1(priceDcm)
 
-    let D0 = [amBalanceX18, prBalanceX18].getD()
+    let D0 = getD(poolAddress, [amBalanceX18, prBalanceX18])
 
     # case of the initial or first deposit
     # result is a tuple containing the following:
@@ -493,7 +516,7 @@ func epo(txId58: String,
     # 3. priceAsset amount that goes to Pool liquidity
     # 4. pool price after PUT operation
     let r = if(lpEm == 0) then {
-      let D1 = [amBalanceX18 + inAmAssetAmtX18, prBalanceX18 + inPrAssetAmtX18].getD()
+      let D1 = getD(poolAddress, [amBalanceX18 + inAmAssetAmtX18, prBalanceX18 + inPrAssetAmtX18])
 
       strict checkD = D1 > D0 || "D1 should be greater than D0".throw()
         let curPriceX18 = zeroBigInt
@@ -530,7 +553,7 @@ func epo(txId58: String,
             let expPriceAssetAmtX18 = expectedAmts._2
             # calculate LP amount that user
             # let lpAmtX18 = fraction(lpEmissionX18, expPriceAssetAmtX18, prBalanceX18, FLOOR)
-            let D1 = [amBalanceX18 + expAmtAssetAmtX18, prBalanceX18 + expPriceAssetAmtX18].getD()
+            let D1 = getD(poolAddress, [amBalanceX18 + expAmtAssetAmtX18, prBalanceX18 + expPriceAssetAmtX18])
 
             strict checkD = D1 > D0 || "D1 should be greater than D0".throw()
             let lpAmtX18 = fraction(lpEmissionX18, D1 - D0, D0)
@@ -586,11 +609,11 @@ func epo(txId58: String,
     )
 }
 
-func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
+func getYD(poolAddress: Address, xp: List[BigInt], i: Int, D: BigInt) = {
   let n = big2
   let x = xp[if (i == 0) then 1 else 0]
   let aPrecision = Amult.parseBigIntValue()
-  let a = A.parseBigIntValue() * aPrecision
+  let a = A(poolAddress).parseBigIntValue() * aPrecision
   let s = x
   let ann = a * n
   let c = D * D / (x * n) * D * aPrecision / (ann * n)
@@ -616,12 +639,24 @@ func getYD(xp: List[BigInt], i: Int, D: BigInt) = {
   }
 }
 
-func calcDLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
+func calcDLp(poolAddress: Address, amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = {
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+  
   let updatedDLp = fraction(
+    getD(poolAddress, 
     [
       amountBalance.t1BigInt(cfgAmountAssetDecimals.toBigInt()),
       priceBalance.t1BigInt(cfgPriceAssetDecimals.toBigInt())
-    ].getD(),
+    ]),
     scale18,
     lpEmission
   )
@@ -629,23 +664,45 @@ func calcDLp(amountBalance: BigInt, priceBalance: BigInt, lpEmission: BigInt) = 
   if (lpEmission == big0) then big0 else updatedDLp
 }
 
-func calcCurrentDLp(amountAssetDelta: BigInt, priceAssetDelta: BigInt, lpAssetEmissionDelta: BigInt) = {
-  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amountAssetDelta
-  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - priceAssetDelta
+func calcCurrentDLp(poolAddress: Address, amountAssetDelta: BigInt, priceAssetDelta: BigInt, lpAssetEmissionDelta: BigInt) = {
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
+  let amountAssetBalance = getAccBalance(poolAddress, cfgAmountAssetId.assetIdToString()).toBigInt() - amountAssetDelta
+  let priceAssetBalance = getAccBalance(poolAddress, cfgPriceAssetId.assetIdToString()).toBigInt() - priceAssetDelta
   let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt() - lpAssetEmissionDelta
 
-  let currentDLp = calcDLp(amountAssetBalance, priceAssetBalance, lpAssetEmission)
+  let currentDLp = calcDLp(poolAddress, amountAssetBalance, priceAssetBalance, lpAssetEmission)
 
   currentDLp
 }
 
-func refreshDLpInternal(amountAssetBalanceDelta: Int, priceAssetBalanceDelta: Int, lpAssetEmissionDelta: Int) = {
-  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance() + amountAssetBalanceDelta
-  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance() + priceAssetBalanceDelta
+func refreshDLpInternal(poolAddress: Address, amountAssetBalanceDelta: Int, priceAssetBalanceDelta: Int, lpAssetEmissionDelta: Int) = {
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
+  let amountAssetBalance = getAccBalance(poolAddress, cfgAmountAssetId.assetIdToString()) + amountAssetBalanceDelta
+  let priceAssetBalance = getAccBalance(poolAddress, cfgPriceAssetId.assetIdToString()) + priceAssetBalanceDelta
   # TODO: can be moved outside functions
   let lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity + lpAssetEmissionDelta
 
-  let updatedDLp = calcDLp(amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpAssetEmission.toBigInt())
+  let updatedDLp = calcDLp(poolAddress, amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpAssetEmission.toBigInt())
 
   let actions = [
     IntegerEntry(keyDLpRefreshedHeight, height),
@@ -659,9 +716,20 @@ func validateUpdatedDLp(oldDLp: BigInt, updatedDLp: BigInt) = {
   updatedDLp >= oldDLp || "updated DLp lower than current DLp".throwErr()
 }
 
-func validateMatcherOrderAllowed(order: Order) = {
-  let amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance()
-  let priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance()
+func validateMatcherOrderAllowed(poolAddress: Address, order: Order) = {
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
+  let amountAssetBalance = getAccBalance(poolAddress, cfgAmountAssetId.assetIdToString())
+  let priceAssetBalance = getAccBalance(poolAddress, cfgPriceAssetId.assetIdToString())
   let amountAssetAmount = order.amount
   # TODO: check order.priceMode when available
   let priceAssetAmount = fraction(order.amount, order.price, scale8, FLOOR)
@@ -678,7 +746,7 @@ func validateMatcherOrderAllowed(order: Order) = {
   if (order.assetPair.amountAsset != cfgAmountAssetId || order.assetPair.priceAsset != cfgPriceAssetId) then throw("Wr assets") else
 
   let dLp = this.getString(keyDLp).valueOrElse("0").parseBigIntValue()
-  let (unusedActions, dLpNew) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+  let (unusedActions, dLpNew) = refreshDLpInternal(poolAddress, amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
   let isOrderValid = dLpNew >= dLp
 
   let info = [
@@ -695,14 +763,14 @@ func validateMatcherOrderAllowed(order: Order) = {
 }
 
 # commonGet
-func cg(i: Invocation) = {
+func cg(poolAddress: Address, i: Invocation) = {
   if (i.payments.size() != 1) then throw("1 pmnt exp") else
 
   let pmt         = i.payments[0].value()
   let pmtAssetId  = pmt.assetId.value()
   let pmtAmt      = pmt.amount
 
-  let r = ego(i.transactionId.toBase58String(), pmtAssetId.toBase58String(), pmtAmt, i.caller)
+  let r = ego(poolAddress, i.transactionId.toBase58String(), pmtAssetId.toBase58String(), pmtAmt, i.originCaller)
   let outAmAmt    = r._1
   let outPrAmt    = r._2
   let sts  = r._9.parseIntValue()
@@ -719,7 +787,7 @@ func cg(i: Invocation) = {
 }
 
 # commonPut
-func cp(caller: String,
+func cp(poolAddress: Address, caller: String,
               txId: String,
               amAsPmt: AttachedPayment,
               prAsPmt: AttachedPayment,
@@ -730,7 +798,7 @@ func cp(caller: String,
               pmtAmt: Int,
               pmtId: String) = {
 
-    let r = epo(txId, # i.transactionId.toBase58String()
+    let r = epo(poolAddress, txId, # i.transactionId.toBase58String()
                       slippage,
                       amAsPmt.value().amount,
                       amAsPmt.value().assetId,
@@ -750,12 +818,24 @@ func cp(caller: String,
 }
 
 func calcPutOneTkn(
+  poolAddress: Address,
   pmtAmtRaw: Int,
   pmtAssetId: String,
   userAddress: String,
   txId: String,
   withTakeFee: Boolean
 ) = {
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   let amId = cfgAmountAssetId.value().toBase58String()
   let prId = cfgPriceAssetId.value().toBase58String()
   let lpId = cfgLpAssetId
@@ -765,8 +845,8 @@ func calcPutOneTkn(
   let lpAssetEmission = lpId.assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
   strict chechEmission = lpAssetEmission > big0 || "initial deposit requires all coins".throw()
 
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
+  let amBalance = getAccBalance(poolAddress, amId)
+  let prBalance = getAccBalance(poolAddress, prId)
 
   let (amBalanceOld, prBalanceOld) =
     if (txId == "") then (amBalance, prBalance) else {
@@ -803,8 +883,8 @@ func calcPutOneTkn(
   let prBalanceNew = prBalanceOld + prAmount
 
   # check D1 > D0
-  let D0 = [amBalanceOld.t1(cfgAmountAssetDecimals), prBalanceOld.t1(cfgPriceAssetDecimals)].getD()
-  let D1 = [amBalanceNew.t1(cfgAmountAssetDecimals), prBalanceNew.t1(cfgPriceAssetDecimals)].getD()
+  let D0 = getD(poolAddress, [amBalanceOld.t1(cfgAmountAssetDecimals), prBalanceOld.t1(cfgPriceAssetDecimals)])
+  let D1 = getD(poolAddress, [amBalanceNew.t1(cfgAmountAssetDecimals), prBalanceNew.t1(cfgPriceAssetDecimals)])
 
   strict checkD = D1 > D0 || throw()
 
@@ -831,6 +911,7 @@ func calcPutOneTkn(
 }
 
 func getOneTknV2Internal(
+  poolAddress: Address,
   outAssetId: String,
   minOutAmount: Int,
   payments: List[AttachedPayment],
@@ -838,6 +919,17 @@ func getOneTknV2Internal(
   originCaller: Address,
   transactionId: ByteVector
 ) = {
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   let lpId = cfgLpAssetId.value().toBase58String()
   let amId = cfgAmountAssetId.value().toBase58String()
   let prId = cfgPriceAssetId.value().toBase58String()
@@ -851,14 +943,14 @@ func getOneTknV2Internal(
   let pmtAssetId = pmt.assetId.value()
   let pmtAmt = pmt.amount
 
-  strict currentDLp = calcCurrentDLp(big0, big0, big0)
+  strict currentDLp = calcCurrentDLp(poolAddress, big0, big0, big0)
 
   let txId58 = transactionId.toBase58String()
 
   if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
 
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
+  let amBalance = getAccBalance(poolAddress, amId)
+  let prBalance = getAccBalance(poolAddress, prId)
 
   strict (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
 
@@ -877,7 +969,7 @@ func getOneTknV2Internal(
   let curPrX18 = cpbi(prBalanceNew.t1(prDecimals), amBalanceNew.t1(amDecimals))
   let curPr = curPrX18.f1(scale8)
 
-  let outAssetIdOrWaves = if (outAssetId == "WAVES") then unit else outAssetId.fromBase58String()
+  let outAssetIdOrWaves = if (outAssetId == wavesString) then unit else outAssetId.fromBase58String()
   let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetIdOrWaves)] else []
 
   strict state = [
@@ -900,7 +992,7 @@ func getOneTknV2Internal(
     let outInAmountAsset = if (outAssetId.parseAssetId() == cfgAmountAssetId) then true else false
     if (outInAmountAsset) then (-(totalGet + feeAmountForCalc), 0) else (0, -(totalGet + feeAmountForCalc))
   }
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
   strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
@@ -933,17 +1025,17 @@ func mustManager(i: Invocation) = {
   }
 }
 
-func getY(isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
-  let poolConfig = gpc()
+func getY(poolAddress: Address, isReverse: Boolean, D: BigInt, poolAmountInBalance: BigInt) = {
+  let poolConfig = gpc(poolAddress)
   let amId = poolConfig[idxAmAsId]
   let prId = poolConfig[idxPrAsId]
   let n = big2
   let aPrecision = Amult.parseBigIntValue()
-  let a = A.parseBigIntValue() * aPrecision
+  let a = A(poolAddress).parseBigIntValue() * aPrecision
   let xp = if (isReverse == false) then { 
-    [amId.getAccBalance().toBigInt() + poolAmountInBalance, prId.getAccBalance().toBigInt()]
+    [getAccBalance(poolAddress, amId).toBigInt() + poolAmountInBalance, getAccBalance(poolAddress, prId).toBigInt()]
   } else {
-    [prId.getAccBalance().toBigInt() + poolAmountInBalance, amId.getAccBalance().toBigInt()]
+    [getAccBalance(poolAddress, prId).toBigInt() + poolAmountInBalance, getAccBalance(poolAddress, amId).toBigInt()]
   }
 
   let x = xp[0]
@@ -977,56 +1069,58 @@ func skipOrderValidation() = {
   fca.getBoolean(keySkipOrderValidation(this.toString())).valueOrElse(false)
 }
 
-let keyFactoryAddress = ["%s", "factoryContract"].makeString(SEP)
-let factoryAddress = this.getStringValue(keyFactoryAddress).addressFromStringValue()
-
-let keyImplAddress = ["%s", "lpStableImpl"].makeString(SEP)
-let implAddress = factoryAddress.getStringValue(keyImplAddress).addressFromStringValue()
-
-func mustAddress(i: Invocation, address: Address) = {
-  i.caller == address || throw()
-}
-
-func mustImpl(i: Invocation) = {
-  mustAddress(i, implAddress)
-}
-
-@Callable(i)
-func stringEntry(key: String, val: String) =
-  if (i.mustImpl()) then ([StringEntry(key, val)], key) else ([], unit)
-
-@Callable(i)
-func integerEntry(key: String, val: Int) =
-  if (i.mustImpl()) then ([IntegerEntry(key, val)], key) else ([], unit)
-
-@Callable(i)
-func transferAsset(recipientBytes: ByteVector, amount: Int, assetIdString: String) = {
-  let assetId = if (assetIdString == wavesString) then unit else assetIdString.fromBase58String()
-  if (i.mustImpl()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
-}
-
-@Callable(i)
-func callInvoke(recipientBytes: ByteVector, funcName: String, paymentAssetIdString: String, paymentAmount: Int) = {
-  let assetId = if (paymentAssetIdString == wavesString) then unit else paymentAssetIdString.fromBase58String()
-  let dappAddress = Address(recipientBytes)
-  if (i.mustImpl()) then ([], dappAddress.invoke(funcName, [], [AttachedPayment(assetId, paymentAmount)])) else ([], unit)
-}
-
 @Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
-  let totalGetRaw = implAddress.reentrantInvoke(
-    "calculateAmountOutForSwapREADONLY",
-    [cleanAmountIn, isReverse, feePoolAmount],
-    []
-  )
+  let poolAddress = i.caller
+
+   let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
+    let assetOut = poolAddress.strf(pa())
+    let poolAmountInBalance = getAccBalance(poolAddress, poolAddress.strf(aa())).toBigInt() + cleanAmountIn.toBigInt()
+    (assetOut, poolAmountInBalance)
+  } else {
+    let assetOut = poolAddress.strf(aa())
+    let poolAmountInBalance = getAccBalance(poolAddress, poolAddress.strf(pa())).toBigInt() + cleanAmountIn.toBigInt()
+    (assetOut, poolAmountInBalance) 
+  }
+
+  let poolConfig = gpc(poolAddress)
+  let amId = poolConfig[idxAmAsId]
+  let prId = poolConfig[idxPrAsId]
+  let xp = [getAccBalance(poolAddress, amId).toBigInt(), getAccBalance(poolAddress, prId).toBigInt()]
+  
+  let D = getD(poolAddress, xp)
+  let y = getY(poolAddress, isReverse, D, cleanAmountIn.toBigInt())
+
+  let dy = getAccBalance(poolAddress, assetOut).toBigInt() - y - toBigInt(1) # -1 just in case there were some rounding errors
+
+  let totalGetRaw = [0, dy.toInt()].max()
+
+  let newXp = if (isReverse == false) then {
+    [getAccBalance(poolAddress, amId).toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt(), getAccBalance(poolAddress, prId).toBigInt() - dy]
+  } else { 
+    [getAccBalance(poolAddress, amId).toBigInt() - dy, getAccBalance(poolAddress, prId).toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt()]
+  }
+  let newD = getD(poolAddress, newXp)
+  strict checkD = newD >= D || makeString(["new D is fewer error", D.toString(), newD.toString()], "__").throw()
   
   (nil, totalGetRaw)
 }
 
 @Callable(i)
 func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String, feePoolAmount: Int) = {
-  let swapContact = invoke(
-    fca,
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
+  let swapContact = fca.invoke(
     "getSwapContractREADONLY", 
     [], 
     []
@@ -1034,7 +1128,7 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
 
   let isPoolSwapDisabled = fca.invoke(
     "isPoolSwapDisabledREADONLY",
-    [this.toString()],
+    [i.caller.toString()],
     []
   ).exactAs[Boolean]
   let isSwapDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolSwapDisabled
@@ -1049,37 +1143,36 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
 
   let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
     let assetOut = this.strf(pa())
-    let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
+    let poolAmountInBalance = getAccBalance(poolAddress, assetIn) - i.payments[0].value().amount
     (assetOut, poolAmountInBalance)
   } else {
     let assetOut = this.strf(aa())
-    let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
+    let poolAmountInBalance = getAccBalance(poolAddress, assetIn) - i.payments[0].value().amount
     (assetOut, poolAmountInBalance) 
   }
 
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
+  let amId = cfgAmountAssetId.value().toBase58String()
+  let prId = cfgPriceAssetId.value().toBase58String()
   let xp = if (isReverse == false) then {
-    [amId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt(), prId.getAccBalance().toBigInt()]
+    [getAccBalance(poolAddress, amId).toBigInt() - i.payments[0].value().amount.toBigInt(), getAccBalance(poolAddress, prId).toBigInt()]
   } else { 
-    [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt()]
+    [getAccBalance(poolAddress, amId).toBigInt(), getAccBalance(poolAddress, prId).toBigInt() - i.payments[0].value().amount.toBigInt()]
   }
-  let D = xp.getD()
-  let y = getY(isReverse, D, toBigInt(0))
+  let D = getD(poolAddress, xp)
+  let y = getY(poolAddress, isReverse, D, toBigInt(0))
 
-  let dy = getAccBalance(assetOut).toBigInt() - y - toBigInt(1) # -1 just in case there were some rounding errors
+  let dy = getAccBalance(poolAddress, assetOut).toBigInt() - y - toBigInt(1) # -1 just in case there were some rounding errors
 
   let totalGetRaw = [0, dy.toInt()].max()
 
   strict checkMin = amountOutMin <= totalGetRaw || "Exchange result is fewer coins than expected".throw()
 
   let newXp = if (isReverse == false) then {
-    [amId.getAccBalance().toBigInt() + feePoolAmount.toBigInt(), prId.getAccBalance().toBigInt() - dy]
+    [getAccBalance(poolAddress, amId).toBigInt() + feePoolAmount.toBigInt(), getAccBalance(poolAddress, prId).toBigInt() - dy]
   } else { 
-    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + feePoolAmount.toBigInt()]
+    [getAccBalance(poolAddress, amId).toBigInt() - dy, getAccBalance(poolAddress, prId).toBigInt() + feePoolAmount.toBigInt()]
   }
-  let newD = newXp.getD()
+  let newD = getD(poolAddress, newXp)
   strict checkD = newD >= D || "new D is fewer error".throw()
 
   let amountAssetBalanceDelta = if (isReverse) then {
@@ -1092,7 +1185,7 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   } else {
     -totalGetRaw
   }
-  strict refreshDLpActions = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)._1
+  strict refreshDLpActions = refreshDLpInternal(poolAddress, amountAssetBalanceDelta, priceAssetBalanceDelta, 0)._1
   
   (
     [
@@ -1128,6 +1221,18 @@ func constructor(fc: String) = {
 #    transfer LP tokens based on deposit share
 @Callable(i)
 func put(slip: Int, autoStake: Boolean) = {
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
     let factCfg = gfc()
     let stakingCntr = addressFromString(factCfg[idxFactStakCntr]).valueOrErrorMessage("Wr st addr")
     let slipCntr = addressFromString(factCfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
@@ -1137,12 +1242,12 @@ func put(slip: Int, autoStake: Boolean) = {
     let amAssetPmt = i.payments[0].value().amount.toBigInt()
     let prAssetPmt = i.payments[1].value().amount.toBigInt()
 
-    strict amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amAssetPmt
-    strict priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - prAssetPmt
+    strict amountAssetBalance = getAccBalance(poolAddress, cfgAmountAssetId.assetIdToString()).toBigInt() - amAssetPmt
+    strict priceAssetBalance = getAccBalance(poolAddress, cfgPriceAssetId.assetIdToString()).toBigInt() - prAssetPmt
     strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
-    strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
+    strict currentDLp = calcCurrentDLp(poolAddress, amAssetPmt, prAssetPmt, 0.toBigInt())
     # estPut
-    let e = cp(i.caller.toString(),
+    let e = cp(poolAddress, i.originCaller.toString(),
                           i.transactionId.toBase58String(),
                           AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
                           i.payments[1],
@@ -1175,7 +1280,7 @@ func put(slip: Int, autoStake: Boolean) = {
       if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
       else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
     
-    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
+    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, 0, 0, 0)
 
     # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
     strict check = updatedDLp >= currentDLp || [
@@ -1198,6 +1303,18 @@ func put(slip: Int, autoStake: Boolean) = {
 
 @Callable(i)
 func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   let isPoolOneTokenOperationsDisabled = fca.invoke(
     "isPoolOneTokenOperationsDisabledREADONLY",
     [this.toString()],
@@ -1223,12 +1340,13 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   let pmtAmt = pmt.amount
 
   strict currentDLp = if (pmt.assetId == cfgAmountAssetId) then {
-    calcCurrentDLp(pmtAmt.toBigInt(), 0.toBigInt(), 0.toBigInt())
+    calcCurrentDLp(poolAddress, pmtAmt.toBigInt(), 0.toBigInt(), 0.toBigInt())
   } else {
-    calcCurrentDLp(0.toBigInt(), pmtAmt.toBigInt(), 0.toBigInt())
+    calcCurrentDLp(poolAddress, 0.toBigInt(), pmtAmt.toBigInt(), 0.toBigInt())
   }
 
   strict (estimLP, state, feeAmount) = calcPutOneTkn(
+    poolAddress,
     pmtAmt,
     pmtAssetId,
     userAddress.toString(),
@@ -1268,7 +1386,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
       if (paymentInAmountAsset) then (-feeAmount, 0) else (0, -feeAmount)
     }
   }
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
 
   strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
@@ -1284,9 +1402,21 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
 # Put without LP emission
 @Callable(i)
 func putForFree(maxSlpg: Int) = {
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   if(maxSlpg < 0) then throw("Wrong slpg") else
   if (i.payments.size() != 2) then throw("2 pmnts expd") else
-    let estPut = cp(i.caller.toString(),
+    let estPut = cp(poolAddress, i.originCaller.toString(),
                           i.transactionId.toBase58String(),
                           AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
                           i.payments[1],
@@ -1302,9 +1432,9 @@ func putForFree(maxSlpg: Int) = {
     let amAssetPmt = i.payments[0].value().amount.toBigInt()
     let prAssetPmt = i.payments[1].value().amount.toBigInt()
 
-    strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
+    strict currentDLp = calcCurrentDLp(poolAddress, amAssetPmt, prAssetPmt, 0.toBigInt())
 
-    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
+    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, 0, 0, 0)
 
     strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
@@ -1332,9 +1462,21 @@ func get() = {
   # strict lae = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
   # # lpAssetEmissionAfter
   # strict laea = lae - i.payments[0].value().amount.toBigInt()
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
 
-  let r = cg(i)
+  strict currentDLp = calcCurrentDLp(poolAddress, 0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+
+  let r = cg(poolAddress, i)
   let outAmtAmt    = r._1
   let outPrAmt     = r._2
   let pmtAmt       = r._3
@@ -1345,7 +1487,7 @@ func get() = {
                     [pmtAmt],
                     [AttachedPayment(pmtAssetId, pmtAmt)])
 
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmtAmt, -outPrAmt, 0)
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, -outAmtAmt, -outPrAmt, 0)
 
   strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
@@ -1354,6 +1496,18 @@ func get() = {
 
 @Callable(i)
 func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   let isPoolOneTokenOperationsDisabled = fca.invoke(
     "isPoolOneTokenOperationsDisabledREADONLY",
     [this.toString()],
@@ -1367,6 +1521,7 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
   ]
 
   let (state, totalAmount) = getOneTknV2Internal(
+    poolAddress,
     outAssetId,
     minOutAmount,
     i.payments,
@@ -1381,6 +1536,18 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
 
 @Callable(i)
 func refreshDLp() = {
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   let lastRefreshedBlockHeight = keyDLpRefreshedHeight.getInteger().valueOrElse(0)
   strict checkLastRefreshedBlockHeight = if (height - lastRefreshedBlockHeight >= dLpRefreshDelay) then unit else {
     [
@@ -1394,7 +1561,7 @@ func refreshDLp() = {
     .parseBigInt()
     .valueOrErrorMessage("invalid dLp".fmtErr())
 
-  let (dLpUpdateActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
+  let (dLpUpdateActions, updatedDLp) = refreshDLpInternal(poolAddress, 0, 0, 0)
   let actions = if (dLp != updatedDLp) then dLpUpdateActions else "nothing to refresh".throwErr()
 
   (actions, updatedDLp.toString())
@@ -1405,13 +1572,25 @@ func getOneTknV2READONLY(
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   let amId = cfgAmountAssetId.value().toBase58String()
   let prId = cfgPriceAssetId.value().toBase58String()
   let lpId = cfgLpAssetId.value().toBase58String()
-  let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
+  let xp = [getAccBalance(poolAddress, amId).toBigInt(), getAccBalance(poolAddress, prId).toBigInt()]
   # let xp = [prId.getAccBalance().toBigInt(), amId.getAccBalance().toBigInt()]
   let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
-  let D0 = xp.getD()
+  let D0 = getD(poolAddress, xp)
   let D1 = D0 - fraction(lpAssetAmount.toBigInt(), D0, lpEmission)
   let index = if (outAssetId == amId) then {
     0
@@ -1420,7 +1599,7 @@ func getOneTknV2READONLY(
   } else {
     "invalid out asset id".throw()
   }
-  let newY = xp.getYD(index, D1)
+  let newY = getYD(poolAddress, xp, index, D1)
   let dy = xp[index] - newY
   let totalGetRaw = [0, { dy - big1 }.toInt()].max()
   let (totalGet, feeAmount) = totalGetRaw.takeFee(outFee)
@@ -1433,16 +1612,29 @@ func getOneTknV2WithBonusREADONLY(
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   let amId = cfgAmountAssetId.value().toBase58String()
   let prId = cfgPriceAssetId.value().toBase58String()
   let lpId = cfgLpAssetId.value().toBase58String()
 
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
+  let amBalance = getAccBalance(poolAddress, amId)
+  let prBalance = getAccBalance(poolAddress, prId)
 
   let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, lpAssetAmount], []).exactAs[(Int, Int)]
 
   let r = ego(
+    poolAddress,
     "",
     lpId,
     lpAssetAmount,
@@ -1464,7 +1656,19 @@ func getOneTknV2WithBonusREADONLY(
 
 @Callable(i)
 func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
-  let r = cg(i)
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
+  let r = cg(poolAddress, i)
   let outAmAmt    = r._1
   let outPrAmt    = r._2
   let pmtAmt      = r._3
@@ -1473,14 +1677,14 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
   if (outAmAmt < noLessThenAmtAsset) then throw("Failed:  " + outAmAmt.toString() + " < " + noLessThenAmtAsset.toString()) else
   if (outPrAmt < noLessThenPriceAsset) then throw("Failed: " + outPrAmt.toString() + " < " + noLessThenPriceAsset.toString()) else
 
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict currentDLp = calcCurrentDLp(poolAddress, 0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict burnLPAssetOnFactory = invoke(fca,
                                   "burn",
                                   [pmtAmt],
                                   [AttachedPayment(pmtAssetId, pmtAmt)])
 
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, -outAmAmt, -outPrAmt, 0)
 
   strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
@@ -1490,6 +1694,18 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
 # Unstake LP tokens and exit from pool
 @Callable(i)
 func unstakeAndGet(amount: Int) = {
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   strict checkPayments = if (i.payments.size() != 0) then throw("No pmnts expd") else true
 
   let factoryCfg = gfc()
@@ -1497,12 +1713,12 @@ func unstakeAndGet(amount: Int) = {
   let lpAssetId = cfgLpAssetId
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
 
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict currentDLp = calcCurrentDLp(poolAddress, 0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   # negative amount will not pass
   strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
 
-  let r = ego(i.transactionId.toBase58String(), lpAssetId.toBase58String(), amount, i.caller)
+  let r = ego(poolAddress, i.transactionId.toBase58String(), lpAssetId.toBase58String(), amount, i.originCaller)
   let outAmAmt = r._1
   let outPrAmt = r._2
   let sts = r._9.parseIntValue()
@@ -1512,7 +1728,7 @@ func unstakeAndGet(amount: Int) = {
 
   strict burnA = invoke(fca, "burn", [amount], [AttachedPayment(lpAssetId, amount)])
 
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, -outAmAmt, -outPrAmt, 0)
 
   strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
@@ -1521,6 +1737,18 @@ func unstakeAndGet(amount: Int) = {
 
 @Callable(i)
 func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessThenPriceAsset: Int) = {
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown
 
   strict checks = [
@@ -1528,11 +1756,11 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
     i.payments.size() == 0 || "no payments are expected".throw()
   ]
 
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict currentDLp = calcCurrentDLp(poolAddress, 0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
 
-  let res = ego(i.transactionId.toBase58String(), cfgLpAssetId.toBase58String(), unstakeAmount, i.caller)
+  let res = ego(poolAddress, i.transactionId.toBase58String(), cfgLpAssetId.toBase58String(), unstakeAmount, i.originCaller)
   let outAmAmt = res._1
   let outPrAmt = res._2
   let state = res._10
@@ -1544,7 +1772,7 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
   strict burnLPAssetOnFactory = fca.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
 
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, -outAmAmt, -outPrAmt, 0)
 
   strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
@@ -1553,6 +1781,18 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
 @Callable(i)
 func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
+  let poolAddress = i.caller
+  let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
+  let (
+    cfgPoolAddress,
+    cfgPoolStatus,
+    cfgLpAssetId,
+    cfgAmountAssetId,
+    cfgPriceAssetId,
+    cfgAmountAssetDecimals,
+    cfgPriceAssetDecimals
+  ) = poolConfigParsed
+
   let isPoolOneTokenOperationsDisabled = fca.invoke(
     "isPoolOneTokenOperationsDisabledREADONLY",
     [this.toString()],
@@ -1579,6 +1819,7 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
     lpAssetRecipientAddress.bytes
   ], [])
   let (state, totalAmount) = getOneTknV2Internal(
+    poolAddress,
     outAssetId,
     minOutAmount,
     [AttachedPayment(lpAssetId, unstakeAmount)],
@@ -1592,14 +1833,16 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
 
 @Callable(i)
 func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
-  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", true)
+  let poolAddress = i.caller
+  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(poolAddress, paymentAmountRaw, paymentAssetId, "", "", true)
 
   (nil, (lpAmount, feeAmount, bonus))
 }
 
 @Callable(i)
 func putOneTknV2WithoutTakeFeeREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
-  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", false)
+  let poolAddress = i.caller
+  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(poolAddress, paymentAmountRaw, paymentAssetId, "", "", false)
 
   (nil, (lpAmount, feeAmount, bonus))
 }
@@ -1629,23 +1872,26 @@ func activate(amtAsStr: String, prAsStr: String) = {
 # API wrappers
 @Callable(i)
 func getPoolConfigWrapperREADONLY() = {
+  let poolAddress = i.caller
   (
     [],
-    gpc()
+    gpc(poolAddress)
   )
 }
 
 @Callable(i)
 func getAccBalanceWrapperREADONLY(assetId: String) = {
+  let poolAddress = i.caller
   (
     [],
-    assetId.getAccBalance()
+    getAccBalance(poolAddress, assetId)
   )
 }
 
 @Callable(i)
 func calcPricesWrapperREADONLY(amAmt: Int, prAmt: Int, lpAmt: Int) = {
-  let pr = calcPrices(amAmt, prAmt, lpAmt)
+  let poolAddress = i.caller
+  let pr = calcPrices(poolAddress, amAmt, prAmt, lpAmt)
   (
     [],
     [
@@ -1692,9 +1938,11 @@ func estimatePutOperationWrapperREADONLY(
   isEval: Boolean,
   emitLp: Boolean
 ) = {
+  let poolAddress = i.caller
   (
     [],
     epo(
+      poolAddress,
       txId58,
       slippage,
       inAmAmt,
@@ -1714,7 +1962,9 @@ func estimatePutOperationWrapperREADONLY(
 
 @Callable(i)
 func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpAmt: Int, usrAddr: String) = {
+  let poolAddress = i.caller
   let r = ego(
+    poolAddress,
     txId58,
     pmtAsId,
     pmtLpAmt,
@@ -1759,35 +2009,3 @@ func changeAmp() = {
     StringEntry(keyAmpHistory(height), newAmp.toString())
   ]
 }
-
-@Verifier(tx)
-func verify() = {
-  let targetPublicKey = match managerPublicKeyOrUnit() {
-    case pk: ByteVector => pk
-    case _: Unit => tx.senderPublicKey
-  }
-
-  match tx {
-    case order: Order =>
-      let matcherPub    = mp()
-      let (orderValid, orderValidInfo) = if (skipOrderValidation()) then (true, "") else validateMatcherOrderAllowed(order)
-      let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
-      let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
-
-      (orderValid && senderValid && matcherValid) || throwOrderError(orderValid, orderValidInfo, senderValid, matcherValid)
-    case s: SetScriptTransaction =>
-      if sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey) then {
-        true
-      } else {
-        let newHash = s.script.value().blake2b256()
-        let allowedHash = fca.getString(keyAllowedLpStableScriptHash()).value().fromBase64String()
-        let currentHash = this.scriptHash()
-
-        allowedHash == newHash && currentHash != newHash
-      }
-    case _ => {
-      sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
-    }
-  }
-}
-

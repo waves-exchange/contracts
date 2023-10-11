@@ -19,6 +19,7 @@ const seedWordsCount = 5;
 const ridePath = '../ride';
 const mockRidePath = 'components/lp_stable/mock';
 const lpStablePath = format({ dir: ridePath, base: 'lp_stable.ride' });
+const lpStableImplPath = format({ dir: ridePath, base: 'lp_stable_impl.ride' });
 const factoryV2Path = format({ dir: ridePath, base: 'factory_v2.ride' });
 const stakingPath = format({ dir: mockRidePath, base: 'staking.mock.ride' });
 const slippagePath = format({ dir: mockRidePath, base: 'slippage.mock.ride' });
@@ -28,7 +29,7 @@ const restPath = format({ dir: ridePath, base: 'rest.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
-    const names = ['lpStable', 'factoryV2', 'staking', 'slippage', 'gwxReward', 'manager', 'store', 'feeCollector', 'rest', 'user1'];
+    const names = ['lpStable', 'lpStableImpl', 'factoryV2', 'staking', 'slippage', 'gwxReward', 'manager', 'store', 'feeCollector', 'rest', 'user1'];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
@@ -40,6 +41,7 @@ export const mochaHooks = {
     await waitForTx(massTransferTx.id, { apiBase });
 
     await setScriptFromFile(lpStablePath, this.accounts.lpStable);
+    await setScriptFromFile(lpStableImplPath, this.accounts.lpStableImpl);
     await setScriptFromFile(factoryV2Path, this.accounts.factoryV2);
     await setScriptFromFile(stakingPath, this.accounts.staking);
     await setScriptFromFile(slippagePath, this.accounts.slippage);
@@ -220,6 +222,11 @@ export const mochaHooks = {
         key: '%s__managerPublicKey',
         type: 'string',
         value: publicKey(this.accounts.manager),
+      },
+      {
+        key: '%s__lpStableImpl',
+        type: 'string',
+        value: address(this.accounts.lpStableImpl, chainId),
       }],
       chainId,
     }, this.accounts.factoryV2);
@@ -292,10 +299,32 @@ export const mochaHooks = {
         key: '%s__managerPublicKey',
         type: 'string',
         value: publicKey(this.accounts.manager),
+      },
+      {
+        key: '%s__factoryContract',
+        type: 'string',
+        value: address(this.accounts.factoryV2, chainId),
       }],
       chainId,
     }, this.accounts.lpStable);
     await api.transactions.broadcast(setManagerLpStableTx, {});
     await waitForTx(setManagerLpStableTx.id, { apiBase });
+
+    const setLpStableImplStateTx = data({
+      additionalFee: 4e5,
+      data: [{
+        key: '%s__factoryContract',
+        type: 'string',
+        value: address(this.accounts.factoryV2, chainId),
+      },
+      {
+        key: '%s__swap',
+        type: 'string',
+        value: address(this.accounts.factoryV2, chainId),
+      }],
+      chainId,
+    }, this.accounts.lpStableImpl);
+    await api.transactions.broadcast(setLpStableImplStateTx, {});
+    await waitForTx(setLpStableImplStateTx.id, { apiBase });
   },
 };
