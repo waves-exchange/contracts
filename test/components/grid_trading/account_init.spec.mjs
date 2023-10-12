@@ -80,6 +80,7 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, accounts.account1.seed))).to.be.rejectedWith('invalid script');
   });
@@ -105,6 +106,7 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, accounts.account1.seed))).to.be.rejectedWith('invalid script');
   });
@@ -180,18 +182,31 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
     ]);
   });
 
-  it('account is already exists', async () => {
+  it('successfull init account', async () => {
+    const kAccountScript = '%s__accountScript';
+    const script = await api.addresses.fetchDataKey(
+      accounts.factory.address,
+      kAccountScript,
+    ).then(({ value }) => value);
+
+    await broadcastAndWait(setScript({
+      script,
+      chainId,
+    }, accounts.account2.seed)).catch(({ message }) => { throw new Error(message); });
+
     expect(broadcastAndWait(invokeScript({
-      dApp: accounts.factory.address,
+      dApp: accounts.account2.address,
       call: {
-        function: 'complete',
+        function: 'init',
         args: [
           { type: 'string', value: accountId },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
           { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
         ],
       },
       payment: [],
       chainId,
-    }, accounts.account1.seed))).to.be.rejectedWith('account is already exists');
+      additionalFee: 4e5,
+    }, accounts.account2.seed))).to.be.rejectedWith('account is already exists');
   });
 });
