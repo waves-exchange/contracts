@@ -19,6 +19,7 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
   let assetId1;
   let assetId2;
   let accountId;
+  let validScript;
 
   before(async () => {
     ({
@@ -52,6 +53,12 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
       ...base58Decode(assetId1),
       ...base58Decode(assetId2),
     ]));
+
+    const kAccountScript = '%s__accountScript';
+    validScript = await api.addresses.fetchDataKey(
+      accounts.factory.address,
+      kAccountScript,
+    ).then(({ value }) => value);
   });
 
   it('account is not found', async () => {
@@ -112,14 +119,8 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
   });
 
   it('successfull init account', async () => {
-    const kAccountScript = '%s__accountScript';
-    const script = await api.addresses.fetchDataKey(
-      accounts.factory.address,
-      kAccountScript,
-    ).then(({ value }) => value);
-
     await broadcastAndWait(setScript({
-      script,
+      script: validScript,
       chainId,
     }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
 
@@ -182,15 +183,9 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
     ]);
   });
 
-  it('successfull init account', async () => {
-    const kAccountScript = '%s__accountScript';
-    const script = await api.addresses.fetchDataKey(
-      accounts.factory.address,
-      kAccountScript,
-    ).then(({ value }) => value);
-
+  it('account exists', async () => {
     await broadcastAndWait(setScript({
-      script,
+      script: validScript,
       chainId,
     }, accounts.account2.seed)).catch(({ message }) => { throw new Error(message); });
 
