@@ -99,4 +99,40 @@ describe(`[${process.pid}] grid_trading: account call`, () => {
       chainId,
     }, accounts.user2.seed))).to.be.rejectedWith('permission denied');
   });
+
+  it('successfully set int param', async () => {
+    const targetFunction = 'setIntParam';
+    const entryKey = 'test';
+    const entryValue = 1;
+    const { stateChanges } = await broadcastAndWait(invokeScript({
+      dApp: accounts.account1.address,
+      call: {
+        function: 'call',
+        args: [
+          { type: 'string', value: targetFunction },
+          {
+            type: 'list',
+            value: [
+              { type: 'string', value: entryKey },
+              { type: 'string', value: entryValue.toString() },
+            ],
+          },
+        ],
+      },
+      payment: [],
+      chainId,
+    }, accounts.user1.seed)).catch(({ message }) => { throw new Error(message); });
+
+    expect(stateChanges.invokes[0].dApp).to.equal(accounts.service.address);
+    expect(stateChanges.invokes[0].call.function).to.equal(targetFunction);
+
+    const accountState = await api.addresses.data(accounts.account1.address);
+    expect(accountState).to.deep.include.members([
+      {
+        key: entryKey,
+        type: 'integer',
+        value: entryValue,
+      },
+    ]);
+  });
 });
