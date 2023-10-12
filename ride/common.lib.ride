@@ -6,7 +6,7 @@ let chainIdT = base16'54'
 let chainIdW = base16'57'
 
 func mustAddress(i: Invocation, address: Address) = {
-  i.caller == address || throw()
+  i.caller == address || throw("permission denied")
 }
 
 func mustThis(i: Invocation) = {
