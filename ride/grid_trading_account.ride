@@ -12,7 +12,7 @@ func kAccountAddressToAccountId(accountAddress: Address) = {
   ["%s%s", accountAddress.toString(), "accountAddressToAccountId"].makeString(separator)
 }
 func kAccountOwner(accountId: String) = {
-  ["%s%s", accountId, "owner"].makeString(separator)
+  ["%s%s", accountId, "ownerPublicKey"].makeString(separator)
 }
 
 let factoryAddress = addressFromPublicKey(this.getBinaryValue(kFactoryPublicKey))
