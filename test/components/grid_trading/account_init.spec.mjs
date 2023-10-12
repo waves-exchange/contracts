@@ -154,12 +154,13 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
     ).then(({ balance }) => balance);
     expect(creatorBalanceAfter - creatorBalanceBefore).to.equal(rewardAmount);
 
+    const accountStatusReady = 1;
     const factoryState = await api.addresses.data(accounts.factory.address);
     expect(factoryState).to.deep.include.members([
       {
         key: `%s%s__${accountId}__status`,
         type: 'integer',
-        value: 1,
+        value: accountStatusReady,
       },
       {
         key: `%s%s__${accountId}__creatorPublicKey`,
@@ -177,5 +178,20 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
         value: accountId,
       },
     ]);
+  });
+
+  it('account is already exists', async () => {
+    expect(broadcastAndWait(invokeScript({
+      dApp: accounts.factory.address,
+      call: {
+        function: 'complete',
+        args: [
+          { type: 'string', value: accountId },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
+        ],
+      },
+      payment: [],
+      chainId,
+    }, accounts.account1.seed))).to.be.rejectedWith('account is already exists');
   });
 });
