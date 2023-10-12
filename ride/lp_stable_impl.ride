@@ -1107,7 +1107,14 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, f
 }
 
 @Callable(i)
-func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String, feePoolAmount: Int) = {
+func calculateAmountOutForSwapAndSendTokens(
+    cleanAmountIn: Int, 
+    isReverse: Boolean, 
+    amountOutMin: Int, 
+    addressTo: String, 
+    feePoolAmount: Int, 
+    paymentAssetId: String, 
+    paymentAmount: Int) = {
   let poolAddress = i.caller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
@@ -1128,35 +1135,34 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
 
   let isPoolSwapDisabled = fca.invoke(
     "isPoolSwapDisabledREADONLY",
-    [i.caller.toString()],
+    [poolAddress.toString()],
     []
   ).exactAs[Boolean]
   let isSwapDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolSwapDisabled
 
   strict checks = [
     !isSwapDisabled || i.isManager() || "swap operation is blocked by admin".throwErr(),
-    i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
-    i.caller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
+    paymentAmount >= cleanAmountIn || "Wrong amount".throwErr(),
+    i.originCaller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
   ]
-  let pmt = i.payments[0].value()
-  let assetIn = pmt.assetId.assetIdToString()
+  let assetIn = paymentAssetId
 
   let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
-    let assetOut = this.strf(pa())
-    let poolAmountInBalance = getAccBalance(poolAddress, assetIn) - i.payments[0].value().amount
+    let assetOut = poolAddress.strf(pa())
+    let poolAmountInBalance = getAccBalance(poolAddress, assetIn) - paymentAmount
     (assetOut, poolAmountInBalance)
   } else {
-    let assetOut = this.strf(aa())
-    let poolAmountInBalance = getAccBalance(poolAddress, assetIn) - i.payments[0].value().amount
+    let assetOut = poolAddress.strf(aa())
+    let poolAmountInBalance = getAccBalance(poolAddress, assetIn) - paymentAmount
     (assetOut, poolAmountInBalance) 
   }
 
   let amId = cfgAmountAssetId.value().toBase58String()
   let prId = cfgPriceAssetId.value().toBase58String()
   let xp = if (isReverse == false) then {
-    [getAccBalance(poolAddress, amId).toBigInt() - i.payments[0].value().amount.toBigInt(), getAccBalance(poolAddress, prId).toBigInt()]
+    [getAccBalance(poolAddress, amId).toBigInt() - paymentAmount.toBigInt(), getAccBalance(poolAddress, prId).toBigInt()]
   } else { 
-    [getAccBalance(poolAddress, amId).toBigInt(), getAccBalance(poolAddress, prId).toBigInt() - i.payments[0].value().amount.toBigInt()]
+    [getAccBalance(poolAddress, amId).toBigInt(), getAccBalance(poolAddress, prId).toBigInt() - paymentAmount.toBigInt()]
   }
   let D = getD(poolAddress, xp)
   let y = getY(poolAddress, isReverse, D, toBigInt(0))
@@ -1187,12 +1193,12 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   }
   strict refreshDLpActions = refreshDLpInternal(poolAddress, amountAssetBalanceDelta, priceAssetBalanceDelta, 0)._1
   
-  (
-    [
-      ScriptTransfer(addressTo.addressFromStringValue(), totalGetRaw, assetOut.parseAssetId())
-    ],
-    totalGetRaw
-  )
+  strict transfer = poolAddress.invoke(
+    "transferAsset",
+    [addressTo.fromBase58String(), totalGetRaw, assetOut],
+    []
+    )
+  ([], totalGetRaw)
 }
 
 @Callable(i)

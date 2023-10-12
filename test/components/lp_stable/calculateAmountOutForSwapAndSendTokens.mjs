@@ -1,13 +1,11 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import chaiSubset from 'chai-subset';
 
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 
 chai.use(chaiAsPromised);
-chai.use(chaiSubset);
 const { expect } = chai;
 
 const apiBase = process.env.API_NODE_URL;
@@ -19,6 +17,7 @@ describe('lp_stable: calculateAmountOutForSwapAndSendTokens.mjs', /** @this {Moc
     const usdnAmount = 10e8;
     const usdtAmount = 10e8;
     const shouldAutoStake = false;
+    const user1Address = address(this.accounts.user1, chainId);
 
     const expected1 = {
       address: address(this.accounts.user1, chainId),
@@ -48,6 +47,13 @@ describe('lp_stable: calculateAmountOutForSwapAndSendTokens.mjs', /** @this {Moc
     await api.transactions.broadcast(put, {});
     await ni.waitForTx(put.id, { apiBase });
 
+    const poolUsdtBalanceBeforeInvoke = (
+      await api.assets.fetchBalanceAddressAssetId(
+        user1Address,
+        this.usdnAssetId,
+      )
+    ).balance;
+
     const invokeTx = invokeScript({
       dApp: lpStable,
       payment: [
@@ -66,8 +72,16 @@ describe('lp_stable: calculateAmountOutForSwapAndSendTokens.mjs', /** @this {Moc
       chainId,
     }, this.accounts.swap);
     await api.transactions.broadcast(invokeTx, {});
-    const { stateChanges } = await ni.waitForTx(invokeTx.id, { apiBase });
+    await ni.waitForTx(invokeTx.id, { apiBase });
 
-    expect(stateChanges).to.deep.nested.include({"transfers": [expected1]}); /* eslint-disable-line */
+    const poolUsdtBalanceAfterInvoke = (
+      await api.assets.fetchBalanceAddressAssetId(
+        user1Address,
+        this.usdnAssetId,
+      )
+    ).balance;
+
+    expect(Number(poolUsdtBalanceAfterInvoke))
+      .to.be.eql(Number(poolUsdtBalanceBeforeInvoke) + expected1.amount);
   });
 });

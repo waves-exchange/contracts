@@ -1025,81 +1025,21 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, f
 
 @Callable(i)
 func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String, feePoolAmount: Int) = {
-  let swapContact = invoke(
-    fca,
-    "getSwapContractREADONLY", 
-    [], 
-    []
-  ).exactAs[String]
-
-  let isPoolSwapDisabled = fca.invoke(
-    "isPoolSwapDisabledREADONLY",
-    [this.toString()],
-    []
-  ).exactAs[Boolean]
-  let isSwapDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolSwapDisabled
-
-  strict checks = [
-    !isSwapDisabled || i.isManager() || "swap operation is blocked by admin".throwErr(),
-    i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
-    i.caller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
-  ]
-  let pmt = i.payments[0].value()
-  let assetIn = pmt.assetId.assetIdToString()
-
-  let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
-    let assetOut = this.strf(pa())
-    let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
-    (assetOut, poolAmountInBalance)
-  } else {
-    let assetOut = this.strf(aa())
-    let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
-    (assetOut, poolAmountInBalance) 
-  }
-
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let xp = if (isReverse == false) then {
-    [amId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt(), prId.getAccBalance().toBigInt()]
-  } else { 
-    [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt()]
-  }
-  let D = xp.getD()
-  let y = getY(isReverse, D, toBigInt(0))
-
-  let dy = getAccBalance(assetOut).toBigInt() - y - toBigInt(1) # -1 just in case there were some rounding errors
-
-  let totalGetRaw = [0, dy.toInt()].max()
-
-  strict checkMin = amountOutMin <= totalGetRaw || "Exchange result is fewer coins than expected".throw()
-
-  let newXp = if (isReverse == false) then {
-    [amId.getAccBalance().toBigInt() + feePoolAmount.toBigInt(), prId.getAccBalance().toBigInt() - dy]
-  } else { 
-    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + feePoolAmount.toBigInt()]
-  }
-  let newD = newXp.getD()
-  strict checkD = newD >= D || "new D is fewer error".throw()
-
-  let amountAssetBalanceDelta = if (isReverse) then {
-    -totalGetRaw
-  } else {
-    feePoolAmount
-  }
-  let priceAssetBalanceDelta = if (isReverse) then {
-    feePoolAmount
-  } else {
-    -totalGetRaw
-  }
-  strict refreshDLpActions = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)._1
-  
-  (
+  strict totalGetRaw = implAddress.reentrantInvoke(
+    "calculateAmountOutForSwapAndSendTokens",
     [
-      ScriptTransfer(addressTo.addressFromStringValue(), totalGetRaw, assetOut.parseAssetId())
+      cleanAmountIn, 
+      isReverse, 
+      amountOutMin,
+      addressTo,
+      feePoolAmount,
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount
     ],
-    totalGetRaw
+    []
   )
+
+  ([], totalGetRaw)
 }
 
 @Callable(i)
