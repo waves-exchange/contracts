@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **17:03 12.10.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **10:54 13.10.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -149,6 +149,7 @@ ACRES/USDT-ERC20 pool | [`3P3TZMyQY4h3DZW1eQJVLRKmwJyipcDneCp`](https://wavesexp
 WLGOLD/USDT-ERC20 pool | [`3P7ai6jXxMcEmicV5ryshJqYAnozMV8PDhC`](https://wavesexplorer.com/addresses/3P7ai6jXxMcEmicV5ryshJqYAnozMV8PDhC) | `BMf1TfiR5QX1SCN5P6JCYUWq8kFszyjnm5nq6Sg5Ng6N` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 PETE/USDT-ERC20 pool | [`3PMmpgNaua443yyoKNjAUV7n4WK4MBeMzGg`](https://wavesexplorer.com/addresses/3PMmpgNaua443yyoKNjAUV7n4WK4MBeMzGg) | `EWGzzMZXyAZoDQK1TZSN7SG2vBHXTkZVwgjY1YMZoCeR` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 PETE/DOBERCOIN pool | [`3PNF3FNzApg4KCCu4rPtGnAzBZW3T4aj4j2`](https://wavesexplorer.com/addresses/3PNF3FNzApg4KCCu4rPtGnAzBZW3T4aj4j2) | `CVgF1i5cgEd4NH3b8voCWM9TKjMW5Ea6K9MmceQ1E733` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+DOBERCOIN/WX pool | [`3P9ESPjDH7Ye89iEgWx73jTNXatThCFrMFM`](https://wavesexplorer.com/addresses/3P9ESPjDH7Ye89iEgWx73jTNXatThCFrMFM) | `dKPTaNsphXEiJRAZKN9PH2rAHiphUfZ3KWYVZjxdusR` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -322,6 +323,7 @@ CROXTNLP | [`Bv1h21xvJ6Hj5WUhih42Wo8NHRjtETjFYn4J3QgD5Wua`](https://wavesexplore
 CRV-ERC2~WAVESLP | [`5sbHqAx17SzdgSDKoxC8QJvTpoWByL1kriu3D53v84xx`](https://wavesexplorer.com/assets/5sbHqAx17SzdgSDKoxC8QJvTpoWByL1kriu3D53v84xx) | CRV-ERC2~/WAVES pool liquidity provider token 
 CRVXTNLP | [`4xYRVdfdQy5f9j7kcRARjLUhapje8Mu4tn3UXbzM4LXB`](https://wavesexplorer.com/assets/4xYRVdfdQy5f9j7kcRARjLUhapje8Mu4tn3UXbzM4LXB) | WX CRV/XTN pool liquidity provider token 
 DAIXTNLP | [`7Ak1dydf1n696rQm2dz4s2sBwi11XDfLJ1XffoCvw7Jo`](https://wavesexplorer.com/assets/7Ak1dydf1n696rQm2dz4s2sBwi11XDfLJ1XffoCvw7Jo) | WX DAI/XTN pool liquidity provider token 
+DOBERCOIN~WXLP | [`2gd6VPFh5unXiBngb92X9qiRXN7pYGDtYAeWzPAD4aGo`](https://wavesexplorer.com/assets/2gd6VPFh5unXiBngb92X9qiRXN7pYGDtYAeWzPAD4aGo) | DOBERCOIN~/WX pool liquidity provider token 
 EASTUSDT-ERC20LP | [`3WcNBQgiFM7P7xDAd52SXmhxYUyVm1xCdCaohx7633LC`](https://wavesexplorer.com/assets/3WcNBQgiFM7P7xDAd52SXmhxYUyVm1xCdCaohx7633LC) | EAST/USDT-ERC20 pool liquidity provider token 
 EASTXTNLP | [`AF3twxhEeRcAmEhoah3Ej39mBUnzgKJFcFLuPu7gihDA`](https://wavesexplorer.com/assets/AF3twxhEeRcAmEhoah3Ej39mBUnzgKJFcFLuPu7gihDA) | WX EAST/XTN pool liquidity provider token 
 EASTXTNLP | [`BPR1Fq3fCMV7u7NpkmqTtFT7oeKs2BGSXFhrfQHZapN2`](https://wavesexplorer.com/assets/BPR1Fq3fCMV7u7NpkmqTtFT7oeKs2BGSXFhrfQHZapN2) | EAST/XTN pool liquidity provider token 
