@@ -8,6 +8,7 @@ import {
   chainId, broadcastAndWait, api,
 } from '../../utils/api.mjs';
 import { setup } from './_setup.mjs';
+import { compileScript } from '../../utils/utils.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -134,5 +135,48 @@ describe(`[${process.pid}] grid_trading: account call`, () => {
         value: entryValue,
       },
     ]);
+  });
+
+  it('change service address', async () => {
+    const errorMessage = 'forbidden';
+    const script = `{-# STDLIB_VERSION 7 #-}
+    {-# CONTENT_TYPE DAPP #-}
+    {-# SCRIPT_TYPE ACCOUNT #-}
+    
+    @Callable(i)
+    func setIntParam(args: List[String]) = throw("${errorMessage}")
+    `;
+
+    await broadcastAndWait(setScript({
+      script: `base64:${compileScript(script).base64}`,
+      chainId,
+    }, accounts.serviceNew.seed));
+
+    const kServicePublicKey = '%s__servicePublicKey';
+    await broadcastAndWait(data({
+      data: [
+        { key: kServicePublicKey, type: 'binary', value: base64Encode(base58Decode(accounts.serviceNew.publicKey)) },
+      ],
+      chainId,
+    }, accounts.factory.seed));
+
+    expect(broadcastAndWait(invokeScript({
+      dApp: accounts.account1.address,
+      call: {
+        function: 'call',
+        args: [
+          { type: 'string', value: 'setIntParam' },
+          {
+            type: 'list',
+            value: [
+              { type: 'string', value: 'test' },
+              { type: 'string', value: '1' },
+            ],
+          },
+        ],
+      },
+      payment: [],
+      chainId,
+    }, accounts.user1.seed))).to.be.rejectedWith(errorMessage);
   });
 });
