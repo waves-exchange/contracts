@@ -26,6 +26,18 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
       accounts, rewardAmount, assetId1, assetId2,
     } = await setup());
 
+    accountId = base58Encode(sha256([
+      ...base58Decode(accounts.user1.address),
+      ...base58Decode(assetId1),
+      ...base58Decode(assetId2),
+    ]));
+
+    const kAccountScript = '%s__accountScript';
+    validScript = await api.addresses.fetchDataKey(
+      accounts.factory.address,
+      kAccountScript,
+    ).then(({ value }) => value);
+
     await broadcastAndWait(data({
       data: [
         { key: `%s%s%s__${assetId1}__${assetId2}__pairAllowed`, type: 'boolean', value: true },
@@ -47,18 +59,6 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
       ],
       chainId,
     }, accounts.user1.seed)).catch(({ message }) => { throw new Error(message); });
-
-    accountId = base58Encode(sha256([
-      ...base58Decode(accounts.user1.address),
-      ...base58Decode(assetId1),
-      ...base58Decode(assetId2),
-    ]));
-
-    const kAccountScript = '%s__accountScript';
-    validScript = await api.addresses.fetchDataKey(
-      accounts.factory.address,
-      kAccountScript,
-    ).then(({ value }) => value);
   });
 
   it('account is not found', async () => {

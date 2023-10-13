@@ -26,43 +26,6 @@ describe(`[${process.pid}] grid_trading: account call`, () => {
       accounts, rewardAmount, assetId1, assetId2,
     } = await setup());
 
-    await broadcastAndWait(data({
-      data: [
-        { key: `%s%s%s__${assetId1}__${assetId2}__pairAllowed`, type: 'boolean', value: true },
-      ],
-      chainId,
-    }, accounts.factory.seed)).catch(({ message }) => { throw new Error(message); });
-
-    await broadcastAndWait(invokeScript({
-      dApp: accounts.factory.address,
-      call: {
-        function: 'request',
-        args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
-        ],
-      },
-      payment: [
-        { assetId: null, amount: rewardAmount },
-      ],
-      chainId,
-    }, accounts.user1.seed)).catch(({ message }) => { throw new Error(message); });
-
-    await broadcastAndWait(invokeScript({
-      dApp: accounts.factory.address,
-      call: {
-        function: 'request',
-        args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
-        ],
-      },
-      payment: [
-        { assetId: null, amount: rewardAmount },
-      ],
-      chainId,
-    }, accounts.user2.seed)).catch(({ message }) => { throw new Error(message); });
-
     accountId1 = base58Encode(sha256([
       ...base58Decode(accounts.user1.address),
       ...base58Decode(assetId1),
@@ -81,45 +44,86 @@ describe(`[${process.pid}] grid_trading: account call`, () => {
       kAccountScript,
     ).then(({ value }) => value);
 
-    await broadcastAndWait(setScript({
-      script,
+    await broadcastAndWait(data({
+      data: [
+        { key: `%s%s%s__${assetId1}__${assetId2}__pairAllowed`, type: 'boolean', value: true },
+      ],
       chainId,
-    }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
+    }, accounts.factory.seed)).catch(({ message }) => { throw new Error(message); });
 
-    await broadcastAndWait(setScript({
-      script,
-      chainId,
-    }, accounts.account2.seed)).catch(({ message }) => { throw new Error(message); });
-
-    await broadcastAndWait(invokeScript({
-      dApp: accounts.account1.address,
-      call: {
-        function: 'init',
-        args: [
-          { type: 'string', value: accountId1 },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
+    await Promise.all([
+      broadcastAndWait(invokeScript({
+        dApp: accounts.factory.address,
+        call: {
+          function: 'request',
+          args: [
+            { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
+            { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
+          ],
+        },
+        payment: [
+          { assetId: null, amount: rewardAmount },
         ],
-      },
-      payment: [],
-      chainId,
-      additionalFee: 4e5,
-    }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
+        chainId,
+      }, accounts.user1.seed)).catch(({ message }) => { throw new Error(message); }),
 
-    await broadcastAndWait(invokeScript({
-      dApp: accounts.account2.address,
-      call: {
-        function: 'init',
-        args: [
-          { type: 'string', value: accountId2 },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
+      broadcastAndWait(invokeScript({
+        dApp: accounts.factory.address,
+        call: {
+          function: 'request',
+          args: [
+            { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
+            { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
+          ],
+        },
+        payment: [
+          { assetId: null, amount: rewardAmount },
         ],
-      },
-      payment: [],
-      chainId,
-      additionalFee: 4e5,
-    }, accounts.account2.seed)).catch(({ message }) => { throw new Error(message); });
+        chainId,
+      }, accounts.user2.seed)).catch(({ message }) => { throw new Error(message); }),
+
+      broadcastAndWait(setScript({
+        script,
+        chainId,
+      }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); }),
+
+      broadcastAndWait(setScript({
+        script,
+        chainId,
+      }, accounts.account2.seed)).catch(({ message }) => { throw new Error(message); }),
+    ]);
+
+    await Promise.all([
+      broadcastAndWait(invokeScript({
+        dApp: accounts.account1.address,
+        call: {
+          function: 'init',
+          args: [
+            { type: 'string', value: accountId1 },
+            { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
+            { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
+          ],
+        },
+        payment: [],
+        chainId,
+        additionalFee: 4e5,
+      }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); }),
+
+      broadcastAndWait(invokeScript({
+        dApp: accounts.account2.address,
+        call: {
+          function: 'init',
+          args: [
+            { type: 'string', value: accountId2 },
+            { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
+            { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
+          ],
+        },
+        payment: [],
+        chainId,
+        additionalFee: 4e5,
+      }, accounts.account2.seed)).catch(({ message }) => { throw new Error(message); }),
+    ]);
   });
 
   it('permission denied', async () => {
