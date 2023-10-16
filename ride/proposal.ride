@@ -3,6 +3,10 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 
 let SEP = "__"
+let contractFilename = "proposal.ride"
+
+func wrapErr(msg: String) = [contractFilename, ": ", msg].makeString("")
+func throwErr(msg: String) = msg.wrapErr().throw()
 
 func blockHeightError() = "The block's height is too big for this proposal".throw()
 func alreadyVoteError() = "You have already voted".throw()
@@ -29,6 +33,13 @@ func getManagerVaultAddressOrThis() = {
     case _=> this
   }
 }
+
+let idxProposalInfoName = 1
+let idxProposalInfoEnd = 2
+let idxProposalInfoQuorumNumber = 3
+let idxProposalInfoPositiveVotes = 4
+let idxProposalInfoNegativeVotes = 5
+
 func formatProposalInfo(
   name: String,
   end: String,
@@ -46,6 +57,9 @@ func formatProposalInfo(
   ],
   SEP)
 }
+
+let idxUserVoteOnProposalVote = 1
+let idxUserVoteOnProposalGwxNumber = 2
 
 func formatUserVoteOnProposal(vote: String, gwxNumber: String) = {
   makeString([

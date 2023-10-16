@@ -279,6 +279,17 @@ func finalize() = {
   }
 }
 
+@Callable(i)
+func getLockedGwxAmount(userAddressStr: String) = {
+  let startHeight = keyStartHeight.getIntegerValue()
+  let gwxAmount = match this.getString(keyVote(userAddressStr, startHeight)) {
+    case _: Unit => 0
+    case s: String => s.split(separator)[1].parseInt().valueOrElse(0)
+  }
+
+  (nil, gwxAmount)
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {

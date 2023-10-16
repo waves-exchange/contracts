@@ -1,9 +1,72 @@
 import { data, invokeScript } from '@waves/waves-transactions';
-import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
+import wc from '@waves/ts-lib-crypto';
+import { broadcastAndWait, chainId, separator } from '../../../utils/api.mjs';
 
-export const boosting = {
-  init: async ({
-    caller,
+export const keyLock = (userAddress, txId) => ['%s%s%s', 'lock', userAddress, txId].join(separator);
+export const keyUserGwxAmountTotal = (userAddress) => ['%s%s', 'gwxAmountTotal', userAddress].join(separator);
+
+export const parseLockParams = (s) => {
+  const [
+    meta,
+    wxAmount,
+    startHeight,
+    duration,
+    lastUpdateTimestamp,
+    gwxAmount,
+    wxClaimed,
+  ] = s.split(separator);
+
+  return {
+    meta,
+    wxAmount: parseInt(wxAmount, 10),
+    startHeight: parseInt(startHeight, 10),
+    duration: parseInt(duration, 10),
+    gwxAmount: parseInt(gwxAmount, 10),
+    wxClaimed: parseInt(wxClaimed, 10),
+    lastUpdateTimestamp: parseInt(lastUpdateTimestamp, 10),
+  };
+};
+
+const decayConstant = 8;
+class Boosting {
+  maxLockDuration = 0;
+
+  blocksInPeriod = 0;
+
+  seed = '';
+
+  get address() {
+    return wc.address(this.seed, chainId);
+  }
+
+  calcGwxAmountStart({ wxAmount, duration }) {
+    return Math.floor((wxAmount * duration) / this.maxLockDuration);
+  }
+
+  calcWxWithdrawable({
+    lockWxAmount, lockDuration, passedPeriods,
+  }) {
+    const exponent = (passedPeriods * decayConstant * this.blocksInPeriod) / lockDuration;
+    // TODO: if height > lockEnd then userAmount
+    const wxWithdrawable = Math.floor(lockWxAmount * (1 - 0.5 ** exponent));
+
+    return wxWithdrawable;
+  }
+
+  calcGwxAmountBurned({
+    wxWithdrawable, lockDuration, gwxAmountPrev,
+  }) {
+    const gwxBurned = Math.min(
+      Math.floor(
+        (wxWithdrawable * lockDuration) / this.maxLockDuration,
+      ),
+      gwxAmountPrev,
+    );
+
+    return gwxBurned;
+  }
+
+  async init({
     factoryAddress,
     referralsAddress,
     votingEmissionAddress,
@@ -15,7 +78,9 @@ export const boosting = {
     maxLockDuration,
     mathContract,
     nextUserNum = 0,
-  }) => {
+    blocksInPeriod,
+    lockStepBlocks,
+  }) {
     const dataTx = data({
       data: [
         { key: '%s%s__config__factoryAddress', type: 'string', value: factoryAddress },
@@ -25,24 +90,24 @@ export const boosting = {
         {
           key: '%s__config',
           type: 'string',
-          value: `%s%d%d%d__${lockAssetId}__${minLockAmount}__${minLockDuration}__${maxLockDuration}__${mathContract}`,
+          value: `%s%d%d%d%s%d%d__${lockAssetId}__${minLockAmount}__${minLockDuration}__${maxLockDuration}__${mathContract}__${blocksInPeriod}__${lockStepBlocks}`,
         },
         { key: '%s__votingEmissionContract', type: 'string', value: votingEmissionAddress },
         { key: '%s__managerVaultAddress', type: 'string', value: managerVaultAddress },
       ],
       additionalFee: 4e5,
       chainId,
-    }, caller);
+    }, this.seed);
 
     return broadcastAndWait(dataTx);
-  },
+  }
 
-  lock: async ({
-    dApp, caller, duration, payments = [],
-  }) => {
+  async lock({
+    caller, duration, payments = [],
+  }) {
     const invokeTx = invokeScript(
       {
-        dApp,
+        dApp: this.address,
         call: {
           function: 'lock',
           args: [
@@ -56,26 +121,28 @@ export const boosting = {
       caller,
     );
     return broadcastAndWait(invokeTx);
-  },
+  }
 
-  increaseLock: async ({
-    dApp, caller, deltaDuration, payments = [],
-  }) => {
+  async unlock({
+    caller, txId,
+  }) {
     const invokeTx = invokeScript(
       {
-        dApp,
+        dApp: this.address,
         call: {
-          function: 'increaseLock',
+          function: 'unlock',
           args: [
-            { type: 'integer', value: deltaDuration },
+            { type: 'string', value: txId },
           ],
         },
-        payment: payments,
+        payment: [],
         additionalFee: 4e5,
         chainId,
       },
       caller,
     );
     return broadcastAndWait(invokeTx);
-  },
-};
+  }
+}
+
+export const boosting = new Boosting();

@@ -11,6 +11,7 @@ export const emission = {
     emissionDuration,
     wxAssetId,
     boostingV2StartHeight,
+    gwxHoldersReward,
   }) => {
     const dataTx = data({
       data: [
@@ -53,6 +54,11 @@ export const emission = {
           key: '%s%s__boostingV2__startBlock',
           type: 'integer',
           value: boostingV2StartHeight,
+        },
+        {
+          key: '%s%s__gwxHoldersReward__current',
+          type: 'integer',
+          value: gwxHoldersReward,
         },
       ],
       additionalFee: 4e5,

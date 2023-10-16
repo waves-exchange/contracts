@@ -121,13 +121,6 @@ func checkWxEmissionPoolLabel(pool: (String, String)) = {
   factoryContract.invoke("checkWxEmissionPoolLabel", [amountAssetId, priceAssetId], []).exactAs[Boolean]
 }
 
-func gwxRewardDeposit() = {
-  let factoryCfg = factoryContract.readFactoryCfgOrFail()
-  let gwxRewardsContract = factoryCfg.getGwxRewardAddressOrFail()
-
-  gwxRewardsContract.invoke("deposit", [], [])
-}
-
 # Doubly linked list ->
 let poolsListName = "pools"
 func getVotesListName(pool: (String, String)) = {
@@ -505,28 +498,23 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
   let stakingContract = this.getStrOrFail(keyStakingContract).addressFromStringValue()
 
   let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
-  strict r = stakingContract.invoke("usersListTraversal", [lpAssetId], []).exactAs[Boolean]
-  if (r) then {
-    ([], true)
-  } else {
-    let wxEmission = pool.checkWxEmissionPoolLabel()
-    let totalVotes = this.getInteger(targetEpoch.keyTotalVotes()).valueOrElse(0)
-    let votingResult = this.getInteger(pool.keyVotingResult(targetEpoch)).valueOrElse(0)
-    let share = if (totalVotes == 0 || !wxEmission) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
-    strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, share], [])
-    let poolsListActions = if (wxEmission || force) then [] else {
-      [
-        DeleteEntry(pool.keyInList())
-      ] ++ poolsListName.deleteNodeActions(poolStr)
-    }
-
-    (
-      [
-        IntegerEntry(pool.keyPoolShare(targetEpoch), share)
-      ] ++ poolsListActions,
-      false
-    )
+  let wxEmission = pool.checkWxEmissionPoolLabel()
+  let totalVotes = this.getInteger(targetEpoch.keyTotalVotes()).valueOrElse(0)
+  let votingResult = this.getInteger(pool.keyVotingResult(targetEpoch)).valueOrElse(0)
+  let share = if (totalVotes == 0 || !wxEmission) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
+  strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, share], [])
+  let poolsListActions = if (wxEmission || force) then [] else {
+    [
+      DeleteEntry(pool.keyInList())
+    ] ++ poolsListName.deleteNodeActions(poolStr)
   }
+
+  (
+    [
+      IntegerEntry(pool.keyPoolShare(targetEpoch), share)
+    ] ++ poolsListActions,
+    false
+  )
 }
 
 # Может вызвать любой
@@ -663,7 +651,6 @@ func finalizeHelper() = {
                 IntegerEntry(keyStartHeightUi, startHeight)
               ]
             }
-            strict gwxRewardDepositInv = gwxRewardDeposit()
             (actions, true)
           }
           case nextPoolStr: String => {
@@ -694,7 +681,6 @@ func finalizeHelper() = {
                   DeleteEntry(keyNextPool)
                 ]
               }
-              strict gwxRewardDepositInv = gwxRewardDeposit()
               (actions, true)
             }
             case nextPoolStr: String => {
@@ -781,6 +767,19 @@ func deletePool(amountAssetId: String, priceAssetId: String) = {
   [
     DeleteEntry(keyInList(pool))
   ] ++ actions
+}
+
+@Callable(i)
+func getLockedGwxAmount(userAddressStr: String) = {
+  let userAddress = userAddressStr.addressFromString()
+    .valueOrErrorMessage(wrapErr("invalid user address"))
+  let epoch = this.getInteger(keyCurrentEpoch).valueOrElse(0)
+  let gwxAmount = match this.getInteger(keyUsed(userAddress, epoch)) {
+    case _: Unit => 0
+    case n: Int => n
+  }
+
+  (nil, gwxAmount)
 }
 
 @Verifier(tx)

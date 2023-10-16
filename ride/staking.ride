@@ -712,41 +712,6 @@ func stakedTotalREADONLY(lpAssetIdStr: String) = {
 }
 
 @Callable(i)
-func usersListTraversal(lpAssetId: String) = {
-  strict checkCaller = i.caller.bytes.toBase58String() == this.getString(keyVotingEmissionContract()).valueOrElse("") || i.mustManager()
-  let listName = lpAssetId.getUsersListName()
-  let userOrUnit = lpAssetId.keyNextUser().getString()
-  let headOrUnit = listName.keyListHead().getString()
-  match userOrUnit {
-    case _: Unit => {
-      match headOrUnit {
-        case _: Unit => ([], false)
-        case head: String => ([
-          StringEntry(lpAssetId.keyNextUser(), head)
-        ], true)
-      }
-    }
-    case userAddress: String => {
-      let claimedByUserMinReward = this.getBigIntFromStringOrZero(lpAssetId.keyClaimedByUserMinReward(userAddress))
-      let poolAddress = factoryContract.getStringByAddressOrFail(lpAssetId.keyFactoryLpAssetToPoolContractAddress())
-      let wxToClaimUserNew = refreshINTEGRALS(lpAssetId, userAddress, poolAddress, 0)._1
-      let availableToClaim = wxToClaimUserNew - claimedByUserMinReward
-      let throwIfNothingToClaim = true
-      strict r = if (availableToClaim > zeroBigInt) then this.invoke("claimWxINTERNAL", [lpAssetId, userAddress, throwIfNothingToClaim], []) else unit
-      let nextUserOrUnit = listName.keyListNext(userAddress).getString()
-      match nextUserOrUnit {
-        case _: Unit => ([
-          DeleteEntry(lpAssetId.keyNextUser())
-        ], false)
-        case nextUser: String => ([
-          StringEntry(lpAssetId.keyNextUser(), nextUser)
-        ], true)
-      }
-    }
-  }
-}
-
-@Callable(i)
 func onModifyWeight(lpAssetIdStr: String, poolAddressStr: String) = {
   if (i.caller != factoryContract) then throwErr("permissions denied") else
   let (wxPerLpIntegralNew, poolIntegralSTATE, poolDEBUG) = refreshPoolINTEGRALS(lpAssetIdStr, poolAddressStr, 0)

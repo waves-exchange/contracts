@@ -8,7 +8,9 @@ import {
 import { table, getBorderCharacters } from 'table';
 import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
-import { api, broadcastAndWait, waitForHeight } from '../../utils/api.mjs';
+import {
+  api, broadcastAndWait, waitForHeight, chainId, baseSeed,
+} from '../../utils/api.mjs';
 import { staking } from './contract/staking.mjs';
 import { boosting } from './contract/boosting.mjs';
 import { emission } from './contract/emission.mjs';
@@ -17,12 +19,12 @@ import { assetsStore } from './contract/assetsStore.mjs';
 import { gwx } from './contract/gwx.mjs';
 import { votingEmission } from './contract/votingEmission.mjs';
 import { managerVault } from './contract/managerVault.mjs';
+import { votingEmissionRate } from './contract/votingEmissionRate.mjs';
 
-const { CHAIN_ID: chainId, BASE_SEED: baseSeed } = process.env;
 const nonceLength = 3;
 
 const ridePath = '../ride';
-const mockPath = './components/staking_boosting/mock';
+const mockPath = './components/boosting/mock';
 const stakingPath = format({ dir: ridePath, base: 'staking.ride' });
 const boostingPath = format({ dir: ridePath, base: 'boosting.ride' });
 const gwxPath = format({ dir: ridePath, base: 'gwx_reward.ride' });
@@ -33,7 +35,7 @@ const factoryPath = format({ dir: ridePath, base: 'factory_v2.ride' });
 const assetsStorePath = format({ dir: ridePath, base: 'assets_store.ride' });
 const lpPath = format({ dir: ridePath, base: 'lp.ride' });
 const votingEmissionCandidate = format({ dir: ridePath, base: 'voting_emission_candidate.ride' });
-const referralPath = format({ dir: ridePath, base: 'referral.ride' });
+const votingEmissionRatePath = format({ dir: ridePath, base: 'voting_emission_rate.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
@@ -49,11 +51,11 @@ export const mochaHooks = {
       'lp',
       'factory',
       'votingEmission',
+      'votingEmisisonRate',
       'referral',
       'votingEmissionCandidate',
       'manager',
       'managerVault',
-      'referral',
       'referrer',
       'lpStakingPools',
     ];
@@ -83,47 +85,26 @@ export const mochaHooks = {
 
     this.wavesAssetId = 'WAVES';
 
-    await setScriptFromFile(stakingPath, this.accounts.staking.seed);
-    await setScriptFromFile(boostingPath, this.accounts.boosting.seed);
-    await setScriptFromFile(gwxPath, this.accounts.gwx.seed);
-    await setScriptFromFile(emissionPath, this.accounts.emission.seed);
-    await setScriptFromFile(referralMockPath, this.accounts.referral.seed);
-    await setScriptFromFile(votingEmissionPath, this.accounts.votingEmission.seed);
-    await setScriptFromFile(factoryPath, this.accounts.factory.seed);
-    await setScriptFromFile(assetsStorePath, this.accounts.store.seed);
-    await setScriptFromFile(lpPath, this.accounts.lp.seed);
-    await setScriptFromFile(votingEmissionCandidate, this.accounts.votingEmissionCandidate.seed);
-    await setScriptFromFile(referralPath, this.accounts.referral.seed);
+    await Promise.all([
+      setScriptFromFile(stakingPath, this.accounts.staking.seed),
+      setScriptFromFile(boostingPath, this.accounts.boosting.seed),
+      setScriptFromFile(gwxPath, this.accounts.gwx.seed),
+      setScriptFromFile(emissionPath, this.accounts.emission.seed),
+      setScriptFromFile(referralMockPath, this.accounts.referral.seed),
+      setScriptFromFile(votingEmissionPath, this.accounts.votingEmission.seed),
+      setScriptFromFile(factoryPath, this.accounts.factory.seed),
+      setScriptFromFile(assetsStorePath, this.accounts.store.seed),
+      setScriptFromFile(lpPath, this.accounts.lp.seed),
+      setScriptFromFile(votingEmissionCandidate, this.accounts.votingEmissionCandidate.seed),
+      setScriptFromFile(votingEmissionRatePath, this.accounts.votingEmisisonRate.seed),
+    ]);
 
     this.minLockAmount = 500000000;
-    this.minDuration = 2;
-    this.maxDuration = 2102400;
 
-    await managerVault.init({
-      caller: this.accounts.managerVault.seed,
-      managerPublicKey: this.accounts.manager.publicKey,
-    });
-
-    await staking.init({
-      caller: this.accounts.staking.seed,
-      factoryAddress: this.accounts.factory.addr,
-      votingEmissionAddress: this.accounts.votingEmission.addr,
-    });
-
+    this.minLockDuration = 2;
     this.maxLockDuration = 2102400;
-    await boosting.init({
-      caller: this.accounts.boosting.seed,
-      factoryAddress: this.accounts.factory.addr,
-      referralsAddress: this.accounts.referral.addr,
-      votingEmissionAddress: this.accounts.votingEmission.addr,
-      lpStakingPoolsAddress: this.accounts.lpStakingPools.addr,
-      managerVaultAddress: this.accounts.managerVault.addr,
-      lockAssetId: this.wxAssetId,
-      minLockAmount: this.minLockAmount,
-      minLockDuration: this.minDuration,
-      maxLockDuration: this.maxLockDuration,
-      mathContract: this.accounts.gwx.addr,
-    });
+    this.blocksInPeriod = 1;
+    this.lockStepBlocks = 2;
 
     const { height } = await api.blocks.fetchHeight();
     this.releaseRate = 3805175038;
@@ -131,70 +112,117 @@ export const mochaHooks = {
     this.emissionStartBlock = 1806750;
     this.emissionEndBlock = 4434750;
     this.emissionDuration = this.emissionEndBlock - this.emissionStartBlock;
-
-    await emission.init({
-      caller: this.accounts.emission.seed,
-      factoryAddress: this.accounts.factory.addr,
-      ratePerBlockMax: this.releaseRateMax,
-      ratePerBlock: this.releaseRate,
-      emissionStartBlock: this.emissionStartBlock,
-      emissionDuration: this.emissionDuration,
-      wxAssetId: this.wxAssetId,
-      boostingV2StartHeight: height,
-    });
-    await waitForHeight(height + 1);
-
-    await factory.init({
-      caller: this.accounts.factory.seed,
-      stakingAddress: this.accounts.staking.addr,
-      boostingAddress: this.accounts.boosting.addr,
-      emissionAddress: this.accounts.emission.addr,
-      gwxAddress: this.accounts.gwx.addr,
-      votingEmissionAddress: this.accounts.votingEmission.addr,
-    });
-
-    await gwx.init({
-      caller: this.accounts.gwx.seed,
-      referralAddress: this.accounts.referral.addr,
-    });
-
-    await assetsStore.init({
-      caller: this.accounts.store.seed,
-      factorySeed: this.accounts.factory.seed,
-      labels: 'COMMUNITY_VERIFIED__GATEWAY__STABLECOIN__STAKING_LP__3RD_PARTY__ALGO_LP__LAMBO_LP__POOLS_LP__WX__PEPE',
-    });
+    this.gwxHoldersReward = 0.2 * 1e8;
 
     this.epochLength = 7;
 
-    await votingEmission.init({
-      dApp: this.accounts.votingEmission.addr,
-      caller: this.accounts.votingEmission.seed,
-      factoryAddress: this.accounts.factory.addr,
-      votingEmissionCandidateAddress: this.accounts.votingEmissionCandidate.addr,
-      boostingAddress: this.accounts.boosting.addr,
-      stakingAddress: this.accounts.staking.addr,
-      epochLength: this.epochLength,
-    });
+    boosting.seed = this.accounts.boosting.seed;
+    boosting.maxLockDuration = this.maxLockDuration;
+    boosting.blocksInPeriod = this.blocksInPeriod;
 
-    await factory.setWxEmissionPoolLabel({
-      dApp: this.accounts.factory.addr,
-      caller: this.accounts.factory.seed,
-      amountAssetId: this.wxAssetId,
-      priceAssetId: this.wavesAssetId,
-    });
+    gwx.seed = this.accounts.gwx.seed;
 
-    await votingEmission.create({
-      dApp: this.accounts.votingEmission.addr,
-      caller: this.accounts.votingEmission.seed,
-      amountAssetId: this.wxAssetId,
-      priceAssetId: this.wavesAssetId,
-    });
+    await Promise.all([
+      managerVault.init({
+        caller: this.accounts.managerVault.seed,
+        managerPublicKey: this.accounts.manager.publicKey,
+      }),
 
-    await votingEmission.updateEpochUiKey({
-      caller: this.accounts.votingEmission.seed,
-      epochUiKey: height + 10,
-      epochStartHeight: height,
-    });
+      staking.init({
+        caller: this.accounts.staking.seed,
+        factoryAddress: this.accounts.factory.addr,
+        votingEmissionAddress: this.accounts.votingEmission.addr,
+      }),
+
+      boosting.init({
+        factoryAddress: this.accounts.factory.addr,
+        referralsAddress: this.accounts.referral.addr,
+        votingEmissionAddress: this.accounts.votingEmission.addr,
+        lpStakingPoolsAddress: this.accounts.lpStakingPools.addr,
+        managerVaultAddress: this.accounts.managerVault.addr,
+        lockAssetId: this.wxAssetId,
+        minLockAmount: this.minLockAmount,
+        minLockDuration: this.minLockDuration,
+        maxLockDuration: this.maxLockDuration,
+        mathContract: this.accounts.gwx.addr,
+        blocksInPeriod: this.blocksInPeriod,
+        lockStepBlocks: this.lockStepBlocks,
+      }),
+
+      emission.init({
+        caller: this.accounts.emission.seed,
+        factoryAddress: this.accounts.factory.addr,
+        ratePerBlockMax: this.releaseRateMax,
+        ratePerBlock: this.releaseRate,
+        emissionStartBlock: this.emissionStartBlock,
+        emissionDuration: this.emissionDuration,
+        wxAssetId: this.wxAssetId,
+        boostingV2StartHeight: height,
+        gwxHoldersReward: this.gwxHoldersReward,
+      }),
+
+      factory.init({
+        caller: this.accounts.factory.seed,
+        stakingAddress: this.accounts.staking.addr,
+        boostingAddress: this.accounts.boosting.addr,
+        emissionAddress: this.accounts.emission.addr,
+        gwxAddress: this.accounts.gwx.addr,
+        votingEmissionAddress: this.accounts.votingEmission.addr,
+      }),
+
+      gwx.init({
+        caller: this.accounts.gwx.seed,
+        referralAddress: this.accounts.referral.addr,
+        wxAssetId: this.wxAssetId,
+        matcherPacemakerAddress: '',
+        boostingContractAddress: this.accounts.boosting.addr,
+        gwxRewardEmissionPartStartHeight: 1,
+        emissionContractAddress: this.accounts.emission.addr,
+      }),
+
+      assetsStore.init({
+        caller: this.accounts.store.seed,
+        factorySeed: this.accounts.factory.seed,
+        labels: 'COMMUNITY_VERIFIED__GATEWAY__STABLECOIN__STAKING_LP__3RD_PARTY__ALGO_LP__LAMBO_LP__POOLS_LP__WX__PEPE',
+      }),
+
+      votingEmission.init({
+        dApp: this.accounts.votingEmission.addr,
+        caller: this.accounts.votingEmission.seed,
+        factoryAddress: this.accounts.factory.addr,
+        votingEmissionCandidateAddress: this.accounts.votingEmissionCandidate.addr,
+        boostingAddress: this.accounts.boosting.addr,
+        stakingAddress: this.accounts.staking.addr,
+        epochLength: this.epochLength,
+        votingEmissionRateAddress: this.accounts.votingEmisisonRate.addr,
+      }),
+
+      factory.setWxEmissionPoolLabel({
+        dApp: this.accounts.factory.addr,
+        caller: this.accounts.factory.seed,
+        amountAssetId: this.wxAssetId,
+        priceAssetId: this.wavesAssetId,
+      }),
+
+      votingEmission.create({
+        dApp: this.accounts.votingEmission.addr,
+        caller: this.accounts.votingEmission.seed,
+        amountAssetId: this.wxAssetId,
+        priceAssetId: this.wavesAssetId,
+      }),
+
+      votingEmission.updateEpochUiKey({
+        caller: this.accounts.votingEmission.seed,
+        epochUiKey: height + 10,
+        epochStartHeight: height,
+      }),
+
+      votingEmissionRate.init({
+        dApp: this.accounts.votingEmisisonRate.addr,
+        caller: this.accounts.votingEmisisonRate.seed,
+        startHeight: height,
+      }),
+    ]);
 
     ({ lpAssetId: this.lpAssetId } = await factory.createPool({
       amountAssetId: this.wxAssetId,
@@ -210,6 +238,8 @@ export const mochaHooks = {
       accountsFactoryV2: this.accounts.factory.seed,
       poolWeight: 1000,
     });
+
+    await waitForHeight(height + 1);
 
     const accountsInfo = Object.entries(this.accounts)
       .map(([name, { seed, addr }]) => [name, seed, privateKey(seed), addr]);
