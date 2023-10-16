@@ -5,6 +5,10 @@
 
 let separator = "__"
 let MULT8 = 100000000
+let wavesString = "WAVES"
+let statusInProgress = "inProgress"
+let statusAccepted = "accepted"
+let statusRejected = "rejected"
 
 func wrapErr(msg: String) = ["voting_verified_v2.ride:", msg].makeString(" ")
 func throwErr(msg: String) = msg.wrapErr().throw()
@@ -14,6 +18,14 @@ func asInt(val: Any) = {
     case valInt: Int => valInt
     case _ => throw("Failed to cast into Integer")
   }
+}
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
 }
 
 func getIntegerOrZero(address:Address, key: String) = address.getInteger(key).valueOrElse(0)
@@ -204,7 +216,7 @@ func votingExistChecks(assetId: String, currentIndex: Int) = {
   )
 
   strict checks = [
-    status == "inProgress" || "no voting in progress".throwErr(),
+    status == statusInProgress || "no voting in progress".throwErr(),
     votingEndHeight > height || "voting expired".throwErr()
   ]
 
@@ -226,6 +238,7 @@ func calculateReward(voter: Address, assetId: String, index: Int) = {
     wrapErr("voting info not found")
   )
   let votingParts = getVotingInfoParts(votingInfoStr)
+  let status = votingParts._5
   let votesFor = votingParts._9
   let votesAgainst = votingParts._10
 
@@ -233,7 +246,9 @@ func calculateReward(voter: Address, assetId: String, index: Int) = {
   let totalVotingReward = keyTotalVotingReward(assetId, index).getInteger().valueOrElse(0)
   let voterRewardAmount = fraction(partOfTheTotalVotesX8, totalVotingReward, MULT8, FLOOR)
 
-  voterRewardAmount
+  let canClaim = status == statusAccepted && voterRewardAmount > 0
+
+  (voterRewardAmount, canClaim)
 }
 
 @Callable(i)
@@ -290,7 +305,7 @@ func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
     rewardAssetId,
     rewardAmount,
     "verification",
-    "inProgress",
+    statusInProgress,
     height,
     height + periodLength,
     votesQuorum,
@@ -350,7 +365,7 @@ func suggestRemove(assetId: String) = {
     "EMPTY",
     0,
     "deverification",
-    "inProgress",
+    statusInProgress,
     height,
     height + periodLength,
     votesQuorum,
@@ -504,7 +519,7 @@ func finalize(assetId: String) = {
   let votesAgainst = votingInfoParts._10
 
   strict checks = [
-    status == "inProgress" || "voting not in progress".throwErr(),
+    status == statusInProgress || "voting not in progress".throwErr(),
     votingEndHeight <= height || "voting not finished".throwErr(),
     keyAssetImage(assetId).getString().isDefined() || "asset image not set".throwErr()
   ]
@@ -512,7 +527,7 @@ func finalize(assetId: String) = {
   let votingAccepted = if votesFor + votesAgainst >= votingQuorum &&
     votesFor > votesAgainst then { true } else { false }
 
-  let newStatus = if votingAccepted then { "accepted" } else { "rejected" }
+  let newStatus = if votingAccepted then { statusAccepted } else { statusRejected }
 
   let assetImage = keyAssetImage(assetId).getStringValue()
 
@@ -543,10 +558,17 @@ func finalize(assetId: String) = {
 
   let finalizeCallRewardAmount = keyFinalizeCallRewardAmount.getIntegerValue()
 
+  let suggestIssuerAddress = addressFromStringValue(getStringValue(keySuggestIssuer(assetId, currentIndex)))
+  let votingRewardAssetIdOption = getString(keyVotingRewardAssetId(assetId, currentIndex))
+  let totalVotingRewardOption = getInteger(keyTotalVotingReward(assetId, currentIndex))
+  let returnRewardActions = if (votingAccepted || votingRewardAssetIdOption == unit || totalVotingRewardOption == unit) then [] else [
+    ScriptTransfer(suggestIssuerAddress, totalVotingRewardOption.value(), votingRewardAssetIdOption.value().parseAssetId())
+  ]
+
   [
     StringEntry(keyVotingInfo(assetId, currentIndex), newVotingInfoValue),
     ScriptTransfer(i.caller, finalizeCallRewardAmount, wxAssetId)
-  ]
+  ] ++ returnRewardActions
 }
 
 @Callable(i)
@@ -555,7 +577,7 @@ func claimREADONLY(assetId: String, index: Int, userAddressStr: String) = {
   let votingRewardAssetIdStr = keyVotingRewardAssetId(assetId, index).getString()
 
   let rewardAmount = if votingRewardAssetIdStr.isDefined() then {
-    calculateReward(userAddress, assetId, index)
+    calculateReward(userAddress, assetId, index)._1
   } else {
     0
   }
@@ -574,11 +596,8 @@ func claim(assetId: String, index: Int) = {
     claimHistory == unit || "already claimed".throwErr()
   ]
 
-  let rewardAmount = if calculateReward(callerAddress, assetId, index) > 0 then {
-    calculateReward(callerAddress, assetId, index)
-  } else {
-    "nothing to claim".throwErr()
-  }
+  let (rewardAmount, canClaim) = calculateReward(callerAddress, assetId, index)
+  if (!canClaim) then throwErr("nothing to claim") else
 
   let votingRewardAssetIdStr = keyVotingRewardAssetId(assetId, index).getString()
 
