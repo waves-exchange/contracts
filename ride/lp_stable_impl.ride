@@ -1012,7 +1012,7 @@ let pd = "Permission denied".throw()
 
 func isManager(i: Invocation) = {
   match managerPublicKeyOrUnit() {
-    case pk: ByteVector => i.callerPublicKey == pk
+    case pk: ByteVector => i.originCaller == addressFromPublicKey(pk)
     case _: Unit => i.caller == this
   }
 }
@@ -1020,7 +1020,7 @@ func isManager(i: Invocation) = {
 # mustManager
 func mustManager(i: Invocation) = {
   match managerPublicKeyOrUnit() {
-    case pk: ByteVector => i.callerPublicKey == pk || pd
+    case pk: ByteVector => i.originCaller == addressFromPublicKey(pk) || pd
     case _: Unit => i.caller == this || pd
   }
 }
@@ -1199,15 +1199,6 @@ func calculateAmountOutForSwapAndSendTokens(
     []
     )
   ([], totalGetRaw)
-}
-
-@Callable(i)
-# ido, team, emission, staking, locking (boosting), rest
-# fc - factoryContract
-func constructor(fc: String) = {
-  strict c = i.mustManager()
-
-  [StringEntry(fc(), fc)]
 }
 
 # called by: LP
