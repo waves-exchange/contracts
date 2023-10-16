@@ -465,6 +465,10 @@ func epo(txId58: String,
 
     let lpEm = assetInfo(lpId).valueOrErrorMessage("Wr lp as").quantity
 
+    strict checkAssets = [
+      (inAmId == amIdStr.parseAssetId() && inPrId == prIdStr.parseAssetId()) || throwErr("Invalid amt or price asset passed.")
+    ]
+
     # get current balances from acc
     let amBalance = if(isEval) then getAccBalance(amIdStr) else
                                                               if(isOneAsset && pmtId == amIdStr) then getAccBalance(amIdStr) - pmtAmt else
