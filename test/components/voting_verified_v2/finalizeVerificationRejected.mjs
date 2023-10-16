@@ -95,4 +95,15 @@ describe('voting_verified_v2: finalizeVerificationRejected.mjs', /** @this {Moch
       },
     ]);
   });
+
+  it('can not claim if rejected', async function () {
+    const currentIndex = 0;
+
+    expect(votingVerifiedV2.claim({
+      caller: this.accounts.user0.seed,
+      dApp: this.accounts.votingVerifiedV2.addr,
+      assetId: this.wxAssetId,
+      index: currentIndex,
+    })).to.be.rejectedWith('nothing to claim');
+  });
 });
