@@ -29,6 +29,7 @@ describe('voting_verified_v2: finalizeVerificationRejected.mjs', /** @this {Moch
 
     const payments = [
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
+      { assetId: this.wxAssetId, amount: this.votingRewardAmount },
     ];
 
     const { height: votingStartHeight } = await votingVerifiedV2.suggestAdd({
@@ -61,9 +62,9 @@ describe('voting_verified_v2: finalizeVerificationRejected.mjs', /** @this {Moch
 
   it('should successfully finalize', async function () {
     const expectedIndex = 0;
-    const expectedIsRewardExist = false;
-    const expectedRewardAssetId = 'EMPTY';
-    const expectedRewardAmount = 0;
+    const expectedIsRewardExist = true;
+    const expectedRewardAssetId = this.wxAssetId;
+    const expectedRewardAmount = this.votingRewardAmount;
     const expectedType = 'verification';
     const expectedStatus = 'rejected';
 
@@ -78,6 +79,19 @@ describe('voting_verified_v2: finalizeVerificationRejected.mjs', /** @this {Moch
         key: `%s%s%d__votingInfo__${this.wxAssetId}__${expectedIndex}`,
         type: 'string',
         value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdAdd}__0__${this.gwxAmount}`,
+      },
+    ]);
+
+    expect(stateChanges.transfers).to.eql([
+      {
+        address: this.accounts.pacemaker.addr,
+        asset: this.wxAssetId,
+        amount: this.finalizeCallRewardAmount,
+      },
+      {
+        address: this.accounts.user0.addr,
+        asset: this.wxAssetId,
+        amount: this.votingRewardAmount,
       },
     ]);
   });

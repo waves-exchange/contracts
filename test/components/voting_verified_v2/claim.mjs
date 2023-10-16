@@ -56,7 +56,20 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
       assetId: this.wxAssetId,
       inFavor,
     });
+  });
 
+  it('can not claim before finalization', async function () {
+    const currentIndex = 0;
+
+    expect(votingVerifiedV2.claim({
+      caller: this.accounts.user0.seed,
+      dApp: this.accounts.votingVerifiedV2.addr,
+      assetId: this.wxAssetId,
+      index: currentIndex,
+    })).to.be.rejectedWith('nothing to claim');
+  });
+
+  it('should successfully claim', async function () {
     await waitNBlocks(this.votingPeriodLength, this.waitNBlocksTimeout);
 
     await votingVerifiedV2.finalize({
@@ -64,9 +77,7 @@ describe('voting_verified_v2: claim.mjs', /** @this {MochaSuiteModified} */ () =
       dApp: this.accounts.votingVerifiedV2.addr,
       assetId: this.wxAssetId,
     });
-  });
 
-  it('should successfully claim', async function () {
     const currentIndex = 0;
 
     const { stateChanges } = await votingVerifiedV2.claim({
