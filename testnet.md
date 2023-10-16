@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-483-voting-verified-fix**](https://github.com/waves-exchange/contracts/tree/wxdefi-483-voting-verified-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **18:51 16.10.2023** (GMT+4)
+[**wxdefi-483-voting-verified-fix**](https://github.com/waves-exchange/contracts/tree/wxdefi-483-voting-verified-fix) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **18:55 16.10.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
