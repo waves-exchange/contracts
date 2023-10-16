@@ -176,6 +176,8 @@ func keyMinBalance(poolAddress: String, assetId: String)
 func keyMinBalanceDefault(assetId: String)
       = makeString(["%s%s", "minBalanceDefault", assetId], SEP)
 
+func keyAddressWhitelisted(address: Address) = makeString(["%s%s", "whitelisted", address.toString()], SEP)
+
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------

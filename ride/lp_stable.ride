@@ -192,6 +192,12 @@ let fca = addressFromStringValue(strf(this, fc()))
 let inFee = fca.invoke("getInFeeREADONLY", [this.toString()], []).exactAs[Int]
 let outFee = fca.invoke("getOutFeeREADONLY", [this.toString()], []).exactAs[Int]
 
+func keyAddressWhitelisted(address: Address) = makeString(["%s%s", "whitelisted", address.toString()], SEP)
+
+func isAddressWhitelisted(address: Address) = {
+  fca.getBoolean(keyAddressWhitelisted(address)).valueOrElse(false)
+}
+
 let A = strf(this, amp())
 
 # isGlobalShutdown
@@ -708,7 +714,8 @@ func cg(i: Invocation) = {
   let sts  = r._9.parseIntValue()
   let state       = r._10
 
-  if(igs() || sts == PoolShutdown) then throw("Admin blocked: " + sts.toString()) else
+  let isGetDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown)
+  if (isGetDisabled) then throw("Admin blocked: " + sts.toString()) else
 
   (outAmAmt,
   outPrAmt,
@@ -745,7 +752,8 @@ func cp(caller: String,
                       pmtId)
 
     let sts  = r._8.parseIntValue()
-    if(igs() || sts == PoolPutDis || sts == PoolShutdown) then throw("Blocked:" + sts.toString()) else
+    let isPutDisabled = !isAddressWhitelisted(caller.addressFromStringValue()) && (igs() || cfgPoolStatus == PoolShutdown || cfgPoolStatus == PoolPutDis)
+    if (isPutDisabled) then throw("Blocked:" + sts.toString()) else
     r
 }
 
@@ -1026,7 +1034,7 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
     [this.toString()],
     []
   ).exactAs[Boolean]
-  let isSwapDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolSwapDisabled
+  let isSwapDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown || isPoolSwapDisabled)
 
   strict checks = [
     !isSwapDisabled || i.isManager() || "swap operation is blocked by admin".throwErr(),
@@ -1192,7 +1200,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
     [this.toString()],
     []
   ).exactAs[Boolean]
-  let isPutDisabled = igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  let isPutDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
 
   strict checks = [
     !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr(),
@@ -1348,7 +1356,7 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
     [this.toString()],
     []
   ).exactAs[Boolean]
-  let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  let isGetDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
 
   strict checks = [
     !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
@@ -1497,7 +1505,8 @@ func unstakeAndGet(amount: Int) = {
   let sts = r._9.parseIntValue()
   let state = r._10
 
-  strict v = if (igs() || sts == PoolShutdown) then throw("Blocked: " + sts.toString()) else true
+  let isGetDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown)
+  strict v = if (isGetDisabled) then throw("Blocked: " + sts.toString()) else true
 
   strict burnA = invoke(fca, "burn", [amount], [AttachedPayment(lpAssetId, amount)])
 
@@ -1510,7 +1519,7 @@ func unstakeAndGet(amount: Int) = {
 
 @Callable(i)
 func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessThenPriceAsset: Int) = {
-  let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown
+  let isGetDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown)
 
   strict checks = [
     !isGetDisabled || "get operation is blocked by admin".throw(),
@@ -1547,7 +1556,7 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
     [this.toString()],
     []
   ).exactAs[Boolean]
-  let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  let isGetDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
 
   strict checks = [
     !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
