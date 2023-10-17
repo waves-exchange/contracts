@@ -535,7 +535,10 @@ func finalize(assetId: String) = {
     let votingAcceptedInvokes = if votingType == "verification" then { 
       assetsStoreContract.invoke("createOrUpdate", [assetId, assetImage, true], [])
     } else {
-      assetsStoreContract.invoke("setVerified", [assetId, false], [])
+      [
+        assetsStoreContract.invoke("setVerified", [assetId, false], []),
+        assetsStoreContract.invoke("onEliminate", [assetId], [])
+      ]
     }
 
     votingAcceptedInvokes
