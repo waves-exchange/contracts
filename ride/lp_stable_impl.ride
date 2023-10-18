@@ -895,14 +895,16 @@ func calcPutOneTkn(
 
   let curPrice = cpbi(prBalanceNew.t1(priceDcm), amBalanceNew.t1(amtDcm)).f1(scale8)
 
-  let commonState = [
-    IntegerEntry(pl(), curPrice),
-    IntegerEntry(ph(height, lastBlock.timestamp), curPrice),
-    StringEntry(
+  strict actions = [
+    poolAddress.invoke("integerEntry", [pl(), curPrice], []),
+    poolAddress.invoke("integerEntry", [ph(height, lastBlock.timestamp), curPrice], []),
+    poolAddress.invoke("stringEntry", [
       pau(userAddress, txId),
       dataPutActionInfo(amAmountRaw, prAmountRaw, lpAmount.toInt(), curPrice, 0, 0, height, lastBlock.timestamp, 0, 0)
-    )
+    ], [])
   ]
+
+  let commonState = []
 
   let poolProportion = prBalanceOld.fraction(scale8, amBalanceOld)
   let amountAssetPart = fraction(pmtAmtRaw, scale8, poolProportion + scale8)
@@ -1310,7 +1312,12 @@ func put(
 }
 
 @Callable(i)
-func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
+func putOneTknV2(
+    minOutAmount: Int, 
+    autoStake: Boolean,     
+    payment1AssetId: String, 
+    payment1Amount: Int 
+  ) = {
   let poolAddress = i.caller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
@@ -1325,14 +1332,13 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
 
   let isPoolOneTokenOperationsDisabled = fca.invoke(
     "isPoolOneTokenOperationsDisabledREADONLY",
-    [this.toString()],
+    [poolAddress.toString()],
     []
   ).exactAs[Boolean]
   let isPutDisabled = igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr(),
-    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
+    !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr()
   ]
 
   let amId = cfgAmountAssetId.value().toBase58String()
@@ -1341,9 +1347,9 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   let amDecimals = cfgAmountAssetDecimals
   let prDecimals = cfgPriceAssetDecimals
 
-  let userAddress = if (i.caller == this) then i.originCaller else i.caller
+  let userAddress = i.originCaller
 
-  let pmt = i.payments[0].value()
+  let pmt = AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount)
   let pmtAssetId = pmt.assetId.value().toBase58String()
   let pmtAmt = pmt.amount
 
@@ -1367,25 +1373,52 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
   } else estimLP
 
   # emit lp on factory
-  strict e = fca.invoke("emit", [emitLpAmt], [])
+  strict e = poolAddress.invoke("callEmit", [fca.bytes, emitLpAmt], [])
   # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
   strict el = match (e) {
-    case legacy: Address => legacy.invoke("emit", [emitLpAmt], [])
+    case legacy: Address => poolAddress.invoke("callEmit", [legacy.bytes, emitLpAmt], [])
     case _ => unit
   }
 
   let lpTrnsfr =
     if (autoStake) then {
-      strict ss = stakingContract.invoke(
-        "stakeFor",
-        [i.caller.toString()],
-        [AttachedPayment(lpId, emitLpAmt)]
+      strict ss = poolAddress.invoke(
+        "callStakeFor",
+        [
+          stakingContract.bytes,
+          i.originCaller.toString(),
+          lpId.assetIdToString(),
+          emitLpAmt
+        ],
+        []
       )
 
       []
-    } else [ScriptTransfer(i.caller, emitLpAmt, lpId)]
+    } else {
+      strict lpTrInv = poolAddress.invoke(
+        "transferAsset",
+        [
+          i.originCaller.bytes,
+          emitLpAmt,
+          lpId.assetIdToString()
+        ],
+        []
+      )
+      []
+    }
 
-  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, pmtAssetId.fromBase58String())] else []
+  let sendFeeToMatcher = if (feeAmount > 0) then {
+    strict feeTrInv = poolAddress.invoke(
+      "transferAsset",
+      [
+        feeCollectorAddress.bytes,
+        feeAmount,
+        pmtAssetId
+      ],
+      []
+    )
+    []
+  } else []
 
   let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
     if (this == feeCollectorAddress) then (0, 0) else {

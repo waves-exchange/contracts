@@ -1028,6 +1028,11 @@ func callStake(dappAddress: ByteVector, assetId: String, amount: Int) = {
 }
 
 @Callable(i)
+func callStakeFor(dappAddress: ByteVector, stakeAddress: String,assetId: String, amount: Int) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("stakeFor", [stakeAddress], [AttachedPayment(assetId.parseAssetId(), amount)])) else ([], unit)
+}
+
+@Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
   let totalGetRaw = implAddress.reentrantInvoke(
     "calculateAmountOutForSwapREADONLY",
@@ -1101,87 +1106,22 @@ func put(slip: Int, autoStake: Boolean) = {
 
 @Callable(i)
 func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke(
-    "isPoolOneTokenOperationsDisabledREADONLY",
-    [this.toString()],
-    []
-  ).exactAs[Boolean]
-  let isPutDisabled = igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
-
   strict checks = [
-    !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
-  let amId = cfgAmountAssetId.value().toBase58String()
-  let prId = cfgPriceAssetId.value().toBase58String()
-  let lpId = cfgLpAssetId
-  let amDecimals = cfgAmountAssetDecimals
-  let prDecimals = cfgPriceAssetDecimals
-
-  let userAddress = if (i.caller == this) then i.originCaller else i.caller
-
-  let pmt = i.payments[0].value()
-  let pmtAssetId = pmt.assetId.value().toBase58String()
-  let pmtAmt = pmt.amount
-
-  strict currentDLp = if (pmt.assetId == cfgAmountAssetId) then {
-    calcCurrentDLp(pmtAmt.toBigInt(), 0.toBigInt(), 0.toBigInt())
-  } else {
-    calcCurrentDLp(0.toBigInt(), pmtAmt.toBigInt(), 0.toBigInt())
-  }
-
-  strict (estimLP, state, feeAmount) = calcPutOneTkn(
-    pmtAmt,
-    pmtAssetId,
-    userAddress.toString(),
-    i.transactionId.toBase58String(),
-    true
+    strict emitLpAmt = implAddress.reentrantInvoke(
+    "putOneTknV2",
+    [
+      minOutAmount, 
+      autoStake, 
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount
+    ],
+    []
   )
 
-  let emitLpAmt = if (minOutAmount > 0 && estimLP < minOutAmount) then {
-    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
-  } else estimLP
-
-  # emit lp on factory
-  strict e = fca.invoke("emit", [emitLpAmt], [])
-  # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
-  strict el = match (e) {
-    case legacy: Address => legacy.invoke("emit", [emitLpAmt], [])
-    case _ => unit
-  }
-
-  let lpTrnsfr =
-    if (autoStake) then {
-      strict ss = stakingContract.invoke(
-        "stakeFor",
-        [i.caller.toString()],
-        [AttachedPayment(lpId, emitLpAmt)]
-      )
-
-      []
-    } else [ScriptTransfer(i.caller, emitLpAmt, lpId)]
-
-  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, pmtAssetId.fromBase58String())] else []
-
-  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
-    if (this == feeCollectorAddress) then (0, 0) else {
-      # full payment asset id validation is in calcPutOneTkn
-      let paymentInAmountAsset = if (pmt.assetId == cfgAmountAssetId) then true else false
-      if (paymentInAmountAsset) then (-feeAmount, 0) else (0, -feeAmount)
-    }
-  }
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
-
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-
-  (
-    state
-    ++ lpTrnsfr
-    ++ sendFeeToMatcher
-    ++ refreshDLpActions,
-    emitLpAmt
-  )
+  ([], emitLpAmt)
 }
 
 # Put without LP emission
