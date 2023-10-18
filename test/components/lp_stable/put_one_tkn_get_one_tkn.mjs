@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address, publicKey } from '@waves/ts-lib-crypto';
 import { lpStable } from './contract/lp_stable.mjs';
 import { chainId } from '../../utils/api.mjs';
+import { flattenTransfers } from './contract/tools.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -45,7 +46,7 @@ describe('lp_stable: put_one_tkn_get_one_tkn.mjs put one token, get one token', 
 
     let lpAssetAmount;
     {
-      const transfersToUser = putOneTknInfo.stateChanges.transfers
+      const transfersToUser = flattenTransfers(putOneTknInfo.stateChanges)
         .filter((t) => t.address === address(caller, chainId));
 
       expect(transfersToUser.length).to.equal(1, '1 transfer to caller is expected');
@@ -66,7 +67,7 @@ describe('lp_stable: put_one_tkn_get_one_tkn.mjs put one token, get one token', 
 
     let outAssetAmount;
     {
-      const transfersToUser = getOneTknInfo.stateChanges.transfers
+      const transfersToUser = flattenTransfers(getOneTknInfo.stateChanges)
         .filter((t) => t.address === address(caller, chainId));
 
       expect(transfersToUser.length).to.equal(1, '1 transfer to caller is expected');

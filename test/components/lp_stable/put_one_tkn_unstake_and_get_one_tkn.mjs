@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address, publicKey } from '@waves/ts-lib-crypto';
 import { lpStable } from './contract/lp_stable.mjs';
 import { chainId } from '../../utils/api.mjs';
+import { flattenTransfers, flattenInvokes } from './contract/tools.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -15,7 +16,7 @@ describe('lp_stable: put_one_tkn_unstake_and_get_one_tkn.mjs put one token, get 
       value: 0,
     });
   });
-  it('user should reveive the same amount after get minus fees', async function () {
+  it('user should receive the same amount after get minus fees', async function () {
     const dApp = address(this.accounts.lpStable, chainId);
     const caller = this.accounts.user1;
     const amountAssetId = this.usdtAssetId;
@@ -46,12 +47,12 @@ describe('lp_stable: put_one_tkn_unstake_and_get_one_tkn.mjs put one token, get 
 
     let lpAssetAmount;
     {
-      const transfersToUser = putOneTknInfo.stateChanges.transfers
+      const transfersToUser = flattenTransfers(putOneTknInfo.stateChanges)
         .filter((t) => t.address === address(caller, chainId));
 
       expect(transfersToUser.length).to.equal(0, 'no transfers to caller are expected');
 
-      const stakingInvokes = putOneTknInfo.stateChanges.invokes
+      const stakingInvokes = flattenInvokes(putOneTknInfo.stateChanges)
         .filter((t) => t.dApp === address(this.accounts.staking, chainId));
 
       expect(stakingInvokes.length).to.equal(1, '1 staking invoke is expected');
@@ -72,7 +73,7 @@ describe('lp_stable: put_one_tkn_unstake_and_get_one_tkn.mjs put one token, get 
 
     let outAssetAmount;
     {
-      const transfersToUser = unstakeAndGetOneTknInfo.stateChanges.transfers
+      const transfersToUser = flattenTransfers(unstakeAndGetOneTknInfo.stateChanges)
         .filter((t) => t.address === address(caller, chainId));
 
       expect(transfersToUser.length).to.equal(1, '1 transfer to caller is expected');

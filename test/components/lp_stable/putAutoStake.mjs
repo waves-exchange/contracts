@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { flattenInvokes } from './contract/tools.mjs';
+import { flattenInvokesList } from './contract/tools.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -68,7 +68,7 @@ describe('lp_stable: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
       value: '10000000000000003120271887017',
     }]);
 
-    expect(flattenInvokes(stateChanges))
+    expect(flattenInvokesList(stateChanges))
       .to.deep.include.members([
         [address(this.accounts.factoryV2, chainId), 'emit'],
         [address(this.accounts.staking, chainId), 'stake'],
