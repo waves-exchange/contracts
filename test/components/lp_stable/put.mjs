@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { flattenInvokes } from './contract/tools.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -77,7 +78,7 @@ describe('lp_stable: put.mjs', /** @this {MochaSuiteModified} */() => {
     expect(Number(userAfterBalance.balance))
       .to.eql(Number(userBeforeBalance.balance) + expectedLpAmount);
 
-    expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
+    expect(flattenInvokes(stateChanges))
       .to.deep.include.members([
         [address(this.accounts.factoryV2, chainId), 'emit'],
       ]);

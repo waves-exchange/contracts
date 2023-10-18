@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address, publicKey } from '@waves/ts-lib-crypto';
 import { transfer, invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { flattenInvokes } from './contract/tools.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -17,6 +18,7 @@ describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() =
   it('should successfully put with shouldAutoStake false in testnet stand', async function () {
     const rest = address(this.accounts.rest, chainId);
     const lpStable = address(this.accounts.lpStable, chainId);
+    const userAddress = address(this.accounts.user1, chainId);
 
     const transferAmountUsdn = 139018444021;
     const transferAmountUsdt = 230660086797;
@@ -88,6 +90,8 @@ describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() =
 
     const expectedPoolUsdtBalanceAfterPut = transferAmountUsdt + usdtAmount;
     const expectedPoolUsdnBalanceAfterPut = transferAmountUsdn + usdnAmount;
+    const userBeforeBalance = await api.assets
+      .fetchBalanceAddressAssetId(userAddress, this.lpStableAssetId);
 
     const put = invokeScript({
       dApp: lpStable,
@@ -131,8 +135,11 @@ describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() =
 
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
+    const lpStableState = await api.addresses.data(lpStable);
+    const userAfterBalance = await api.assets
+      .fetchBalanceAddressAssetId(userAddress, this.lpStableAssetId);
 
-    expect(stateChanges.data).to.eql([{
+    expect(lpStableState).to.include.deep.members([{
       key: '%s%s__price__last',
       type: 'integer',
       value: priceLast,
@@ -154,13 +161,10 @@ describe('lp_stable: putTestnetStand.mjs', /** @this {MochaSuiteModified} */() =
       value: '29940057202414181477464152049',
     }]);
 
-    expect(stateChanges.transfers).to.eql([{
-      address: address(this.accounts.user1, chainId),
-      asset: this.lpStableAssetId,
-      amount: expectedLpAmount,
-    }]);
+    expect(Number(userAfterBalance.balance))
+      .to.eql(Number(userBeforeBalance.balance) + expectedLpAmount);
 
-    expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
+    expect(flattenInvokes(stateChanges))
       .to.deep.include.members([
         [address(this.accounts.factoryV2, chainId), 'emit'],
       ]);

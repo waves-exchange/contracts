@@ -584,12 +584,15 @@ func epo(poolAddress: Address, txId58: String,
                                             then (0, pmtAmt)
                                                   else (calcAmAssetPmt, calcPrAssetPmt)
 
-    let commonState = [
-      IntegerEntry(pl(), curPrice),
-      IntegerEntry(ph(height, lastBlock.timestamp), curPrice),
-      StringEntry(
-          pau(userAddress, txId58),
-          dataPutActionInfo(writeAmAmt, writePrAmt, emitLpAmt, curPrice, slippage, slippageCalc, height, lastBlock.timestamp, amDiff, prDiff))
+    let commonState = []
+
+    strict stateChanges = [
+      poolAddress.invoke("integerEntry", [pl(), curPrice], []),
+      poolAddress.invoke("integerEntry", [ph(height, lastBlock.timestamp), curPrice], []),
+      poolAddress.invoke("stringEntry", [
+        pau(userAddress, txId58),
+        dataPutActionInfo(writeAmAmt, writePrAmt, emitLpAmt, curPrice, slippage, slippageCalc, height, lastBlock.timestamp, amDiff, prDiff)
+      ], [])
     ]
 
     (
@@ -600,7 +603,7 @@ func epo(poolAddress: Address, txId58: String,
       prBalance,                # 5.
       lpEm,                     # 6.
       lpId,                     # 7.
-      sts,               # 8.
+      sts,                      # 8.
       commonState,              # 9.
       amDiff,                   # 10.
       prDiff,                   # 11.
@@ -704,12 +707,12 @@ func refreshDLpInternal(poolAddress: Address, amountAssetBalanceDelta: Int, pric
 
   let updatedDLp = calcDLp(poolAddress, amountAssetBalance.toBigInt(), priceAssetBalance.toBigInt(), lpAssetEmission.toBigInt())
 
-  let actions = [
-    IntegerEntry(keyDLpRefreshedHeight, height),
-    StringEntry(keyDLp, updatedDLp.toString())
+  strict actions = [
+    poolAddress.invoke("integerEntry", [keyDLpRefreshedHeight, height], []),
+    poolAddress.invoke("stringEntry", [keyDLp, updatedDLp.toString()], [])
   ]
 
-  (actions, updatedDLp)
+  ([], updatedDLp)
 }
 
 func validateUpdatedDLp(oldDLp: BigInt, updatedDLp: BigInt) = {
@@ -1217,7 +1220,14 @@ func calculateAmountOutForSwapAndSendTokens(
 # return:
 #    transfer LP tokens based on deposit share
 @Callable(i)
-func put(slip: Int, autoStake: Boolean) = {
+func put(
+    slip: Int, 
+    autoStake: Boolean, 
+    payment1AssetId: String, 
+    payment1Amount: Int, 
+    payment2AssetId: String, 
+    payment2Amount: Int
+  ) = {
   let poolAddress = i.caller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
@@ -1233,11 +1243,11 @@ func put(slip: Int, autoStake: Boolean) = {
     let factCfg = gfc()
     let stakingCntr = addressFromString(factCfg[idxFactStakCntr]).valueOrErrorMessage("Wr st addr")
     let slipCntr = addressFromString(factCfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
-    if(slip < 0) then throw("Wrong slippage") else
-    if (i.payments.size() != 2) then throw("2 pmnts expd") else
+    if (slip < 0) then throw("Wrong slippage") else
+    # if (i.payments.size() != 2) then throw("2 pmnts expd") else
 
-    let amAssetPmt = i.payments[0].value().amount.toBigInt()
-    let prAssetPmt = i.payments[1].value().amount.toBigInt()
+    let amAssetPmt = payment1Amount.toBigInt()
+    let prAssetPmt = payment2Amount.toBigInt()
 
     strict amountAssetBalance = getAccBalance(poolAddress, cfgAmountAssetId.assetIdToString()).toBigInt() - amAssetPmt
     strict priceAssetBalance = getAccBalance(poolAddress, cfgPriceAssetId.assetIdToString()).toBigInt() - prAssetPmt
@@ -1246,8 +1256,9 @@ func put(slip: Int, autoStake: Boolean) = {
     # estPut
     let e = cp(poolAddress, i.originCaller.toString(),
                           i.transactionId.toBase58String(),
-                          AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
-                          i.payments[1],
+                          AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount),
+                          AttachedPayment(payment2AssetId.parseAssetId(), payment2Amount),
+                          # i.payments[1],
                           slip,
                           true,
                           false,
@@ -1264,18 +1275,18 @@ func put(slip: Int, autoStake: Boolean) = {
     let prId      = e._13
 
     # emit lp on factory
-    strict r = fca.invoke("emit", [emitLpAmt], [])
+    strict r = poolAddress.invoke( "callEmit", [fca.bytes, emitLpAmt], [])
     # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
     strict el = match (r) {
-      case legacy: Address => legacy.invoke("emit", [emitLpAmt], [])
+      case legacy: Address => poolAddress.invoke("callEmit", [legacy.bytes, emitLpAmt], [])
       case _ => unit
     }
-    strict sa = if(amDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(amId, amDiff)])        else []
-    strict sp = if(prDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(prId, prDiff)])        else []
+    strict sa = if(amDiff > 0) then poolAddress.invoke("callPut",[slipCntr.bytes, amId.assetIdToString(), amDiff], []) else []
+    strict sp = if(prDiff > 0) then poolAddress.invoke("callPut",[slipCntr.bytes, prId.assetIdToString(), prDiff], []) else []
 
     let lpTrnsfr =
-      if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
-      else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
+      if(autoStake) then strict ss = poolAddress.invoke("callStake",[stakingCntr.bytes, lpAssetId.assetIdToString(), emitLpAmt], []); []
+      else strict tr = poolAddress.invoke("transferAsset", [i.originCaller.bytes, emitLpAmt, lpAssetId.assetIdToString()], []); []
     
     let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, 0, 0, 0)
 

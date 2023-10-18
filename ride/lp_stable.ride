@@ -1013,6 +1013,21 @@ func callInvoke(recipientBytes: ByteVector, funcName: String, paymentAssetIdStri
 }
 
 @Callable(i)
+func callEmit(dappAddress: ByteVector, emitLpAmt: Int) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("emit", [emitLpAmt], [])) else ([], unit)
+}
+
+@Callable(i)
+func callPut(dappAddress: ByteVector, assetId: String, amount: Int) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("put", [], [AttachedPayment(assetId.parseAssetId(), amount)])) else ([], unit)
+}
+
+@Callable(i)
+func callStake(dappAddress: ByteVector, assetId: String, amount: Int) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("stake", [], [AttachedPayment(assetId.parseAssetId(), amount)])) else ([], unit)
+}
+
+@Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
   let totalGetRaw = implAddress.reentrantInvoke(
     "calculateAmountOutForSwapREADONLY",
@@ -1061,79 +1076,27 @@ func constructor(fc: String) = {
 #       2. slipage is not bigger that current tokens ratio
 # arguments:
 #    slippageTolerance  max allowed slippage
-#    shouldAutoStake    perform LP staking immediatelly in case true otherwise transfer LP to user)
+#    shouldAutoStake    perform LP staking immediately in case true otherwise transfer LP to user)
 # attach:
 #    attached should be two valid tokens from the available pools.
 # return:
 #    transfer LP tokens based on deposit share
 @Callable(i)
 func put(slip: Int, autoStake: Boolean) = {
-    let factCfg = gfc()
-    let stakingCntr = addressFromString(factCfg[idxFactStakCntr]).valueOrErrorMessage("Wr st addr")
-    let slipCntr = addressFromString(factCfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
-    if(slip < 0) then throw("Wrong slippage") else
-    if (i.payments.size() != 2) then throw("2 pmnts expd") else
+  strict putInvoke = implAddress.reentrantInvoke(
+    "put",
+    [
+      slip, 
+      autoStake, 
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount,
+      i.payments[1].assetId.assetIdToString(),
+      i.payments[1].amount
+    ],
+    []
+  )
 
-    let amAssetPmt = i.payments[0].value().amount.toBigInt()
-    let prAssetPmt = i.payments[1].value().amount.toBigInt()
-
-    strict amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amAssetPmt
-    strict priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - prAssetPmt
-    strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
-    strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
-    # estPut
-    let e = cp(i.caller.toString(),
-                          i.transactionId.toBase58String(),
-                          AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
-                          i.payments[1],
-                          slip,
-                          true,
-                          false,
-                          true,
-                          0,
-                          "")
-
-    let emitLpAmt = e._2
-    let lpAssetId = e._7
-    let state     = e._9
-    let amDiff    = e._10
-    let prDiff    = e._11
-    let amId      = e._12
-    let prId      = e._13
-
-    # emit lp on factory
-    strict r = fca.invoke("emit", [emitLpAmt], [])
-    # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
-    strict el = match (r) {
-      case legacy: Address => legacy.invoke("emit", [emitLpAmt], [])
-      case _ => unit
-    }
-    strict sa = if(amDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(amId, amDiff)])        else []
-    strict sp = if(prDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(prId, prDiff)])        else []
-
-    let lpTrnsfr =
-      if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
-      else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
-    
-    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
-
-    # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-    strict check = updatedDLp >= currentDLp || [
-      "updated DLp lower than current DLp",
-      amountAssetBalance.toString(),
-      priceAssetBalance.toString(),
-      lpAssetEmission.toString(),
-      currentDLp.toString(),
-      updatedDLp.toString(),
-      amDiff.toString(),
-      prDiff.toString()
-    ].makeString(" ").throwErr()
-
-    strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
-
-    state
-    ++ lpTrnsfr
-    ++ refreshDLpActions
+  ([], nil)
 }
 
 @Callable(i)
