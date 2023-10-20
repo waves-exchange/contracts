@@ -1442,7 +1442,13 @@ func putOneTknV2(
 
 # Put without LP emission
 @Callable(i)
-func putForFree(maxSlpg: Int) = {
+func putForFree(
+  maxSlpg: Int,
+  payment1AssetId: String, 
+  payment1Amount: Int, 
+  payment2AssetId: String, 
+  payment2Amount: Int
+) = {
   let poolAddress = i.caller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
@@ -1456,11 +1462,10 @@ func putForFree(maxSlpg: Int) = {
   ) = poolConfigParsed
 
   if(maxSlpg < 0) then throw("Wrong slpg") else
-  if (i.payments.size() != 2) then throw("2 pmnts expd") else
     let estPut = cp(poolAddress, i.originCaller.toString(),
                           i.transactionId.toBase58String(),
-                          AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
-                          i.payments[1],
+                          AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount),
+                          AttachedPayment(payment2AssetId.parseAssetId(), payment2Amount),
                           maxSlpg,
                           false,
                           false,
@@ -1470,8 +1475,8 @@ func putForFree(maxSlpg: Int) = {
 
     let state = estPut._9
 
-    let amAssetPmt = i.payments[0].value().amount.toBigInt()
-    let prAssetPmt = i.payments[1].value().amount.toBigInt()
+    let amAssetPmt = payment1Amount.toBigInt()
+    let prAssetPmt = payment2Amount.toBigInt()
 
     strict currentDLp = calcCurrentDLp(poolAddress, amAssetPmt, prAssetPmt, 0.toBigInt())
 

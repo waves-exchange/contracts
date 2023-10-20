@@ -1127,33 +1127,22 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
 # Put without LP emission
 @Callable(i)
 func putForFree(maxSlpg: Int) = {
-  if(maxSlpg < 0) then throw("Wrong slpg") else
-  if (i.payments.size() != 2) then throw("2 pmnts expd") else
-    let estPut = cp(i.caller.toString(),
-                          i.transactionId.toBase58String(),
-                          AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
-                          i.payments[1],
-                          maxSlpg,
-                          false,
-                          false,
-                          true,
-                          0,
-                          "")
+  strict check = i.payments.size() == 2 || throw("2 pmnts expd")
 
-    let state = estPut._9
+  strict putInvoke = implAddress.reentrantInvoke(
+    "putForFree",
+    [
+      maxSlpg, 
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount,
+      i.payments[1].assetId.assetIdToString(),
+      i.payments[1].amount
+    ],
+    []
+  )
 
-    let amAssetPmt = i.payments[0].value().amount.toBigInt()
-    let prAssetPmt = i.payments[1].value().amount.toBigInt()
-
-    strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
-
-    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
-
-    strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-
-    state ++ refreshDLpActions
+  ([], nil)
 }
-
 # Called by: LP
 #
 # purpose:
