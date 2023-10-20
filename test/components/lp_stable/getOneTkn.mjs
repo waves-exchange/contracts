@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { flattenInvokesList, flattenTransfers } from './contract/tools.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -89,8 +90,9 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
 
     const { timestamp } = await api.blocks.fetchHeadersAt(heightAfterGetOneTkn);
     const keyPriceHistory = `%s%s%d%d__price__history__${heightAfterGetOneTkn}__${timestamp}`;
+    const lpStableState = await api.addresses.data(lpStable);
 
-    expect(stateChanges.data).to.eql([{
+    expect(lpStableState).to.include.deep.members([{
       key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
       value: `%d%d%d%d%d%d__${expectedOutAmAmt}__${expectedOutPrAmt}__${outLp}__${expectedPriceLast}__${heightAfterGetOneTkn}__${timestamp}`,
@@ -112,7 +114,7 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
       value: '10000000127432425026570490178',
     }]);
 
-    expect(stateChanges.transfers).to.eql([
+    expect(flattenTransfers(stateChanges)).to.eql([
       {
         address: address(this.accounts.user1, chainId),
         asset: this.usdtAssetId,
@@ -125,7 +127,7 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
       },
     ]);
 
-    expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
+    expect(flattenInvokesList(stateChanges))
       .to.deep.include.members([
         [address(this.accounts.factoryV2, chainId), 'burn'],
       ]);
