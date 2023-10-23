@@ -29,6 +29,7 @@ describe('voting_verified_v2: finalizeVerificationAccepted.mjs', /** @this {Moch
 
     const payments = [
       { assetId: this.wxAssetId, amount: this.wxMinForSuggestAddAmountRequired },
+      { assetId: this.wxAssetId, amount: this.votingRewardAmount },
     ];
 
     const { height: votingStartHeight } = await votingVerifiedV2.suggestAdd({
@@ -61,9 +62,9 @@ describe('voting_verified_v2: finalizeVerificationAccepted.mjs', /** @this {Moch
 
   it('should successfully finalize', async function () {
     const expectedIndex = 0;
-    const expectedIsRewardExist = false;
-    const expectedRewardAssetId = 'EMPTY';
-    const expectedRewardAmount = 0;
+    const expectedIsRewardExist = true;
+    const expectedRewardAssetId = this.wxAssetId;
+    const expectedRewardAmount = this.votingRewardAmount;
     const expectedType = 'verification';
     const expectedStatus = 'accepted';
 
@@ -80,5 +81,16 @@ describe('voting_verified_v2: finalizeVerificationAccepted.mjs', /** @this {Moch
         value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdAdd}__${this.gwxAmount}__0`,
       },
     ]);
+  });
+
+  it('can claim if accepted', async function () {
+    const currentIndex = 0;
+
+    expect(votingVerifiedV2.claim({
+      caller: this.accounts.user0.seed,
+      dApp: this.accounts.votingVerifiedV2.addr,
+      assetId: this.wxAssetId,
+      index: currentIndex,
+    })).to.be.fulfilled;
   });
 });
