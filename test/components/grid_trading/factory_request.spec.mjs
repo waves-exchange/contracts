@@ -2,7 +2,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { data, invokeScript, transfer } from '@waves/waves-transactions';
 import {
-  base58Decode, base58Encode, base64Encode, sha256,
+  base58Decode, base64Encode,
 } from '@waves/ts-lib-crypto';
 import { chainId, broadcastAndWait, baseSeed } from '../../utils/api.mjs';
 import { setup } from './_setup.mjs';
@@ -28,8 +28,8 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
       call: {
         function: 'request',
         args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
+          { type: 'string', value: assetId1 },
+          { type: 'string', value: assetId2 },
         ],
       },
       payment: [],
@@ -48,8 +48,8 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
       call: {
         function: 'request',
         args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
+          { type: 'string', value: assetId1 },
+          { type: 'string', value: assetId2 },
         ],
       },
       payment: [
@@ -65,8 +65,8 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
       call: {
         function: 'request',
         args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
+          { type: 'string', value: assetId1 },
+          { type: 'string', value: assetId2 },
         ],
       },
       payment: [
@@ -82,8 +82,8 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
       call: {
         function: 'request',
         args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
+          { type: 'string', value: assetId1 },
+          { type: 'string', value: assetId2 },
         ],
       },
       payment: [
@@ -106,8 +106,8 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
       call: {
         function: 'request',
         args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
+          { type: 'string', value: assetId1 },
+          { type: 'string', value: assetId2 },
         ],
       },
       payment: [
@@ -116,12 +116,11 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
       chainId,
     }, accounts.user1.seed)).catch(({ message }) => { throw new Error(message); });
 
-    // let accountId = sha256(i.caller.bytes + amountAssetId + priceAssetId).toBase58String()
-    const accountId = base58Encode(sha256([
-      ...base58Decode(accounts.user1.address),
-      ...base58Decode(assetId1),
-      ...base58Decode(assetId2),
-    ]));
+    const accountId = [
+      accounts.user1.address,
+      assetId1,
+      assetId2,
+    ].join(':');
 
     const accountStatusEmpty = 0;
 
@@ -138,13 +137,13 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
       },
       {
         key: `%s%s__${accountId}__amountAssetId`,
-        type: 'binary',
-        value: `base64:${base64Encode(base58Decode(assetId1))}`,
+        type: 'string',
+        value: assetId1,
       },
       {
         key: `%s%s__${accountId}__priceAssetId`,
-        type: 'binary',
-        value: `base64:${base64Encode(base58Decode(assetId2))}`,
+        type: 'string',
+        value: assetId2,
       },
     ];
 
@@ -157,8 +156,8 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
       call: {
         function: 'request',
         args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
+          { type: 'string', value: assetId1 },
+          { type: 'string', value: assetId2 },
         ],
       },
       payment: [

@@ -2,7 +2,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { data, invokeScript, setScript } from '@waves/waves-transactions';
 import {
-  base58Decode, base58Encode, base64Encode, sha256,
+  base58Decode, base58Encode, base64Encode,
 } from '@waves/ts-lib-crypto';
 import {
   chainId, broadcastAndWait, api,
@@ -26,11 +26,11 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
       accounts, rewardAmount, assetId1, assetId2,
     } = await setup());
 
-    accountId = base58Encode(sha256([
-      ...base58Decode(accounts.user1.address),
-      ...base58Decode(assetId1),
-      ...base58Decode(assetId2),
-    ]));
+    accountId = [
+      accounts.user1.address,
+      assetId1,
+      assetId2,
+    ].join(':');
 
     const kAccountScript = '%s__accountScript';
     validScript = await api.addresses.fetchDataKey(
@@ -50,8 +50,8 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
       call: {
         function: 'request',
         args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId1))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId2))}` },
+          { type: 'string', value: assetId1 },
+          { type: 'string', value: assetId2 },
         ],
       },
       payment: [

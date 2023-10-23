@@ -3,6 +3,16 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 {-# IMPORT common.lib.ride #-}
 
+let wavesString = "WAVES"
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
 let kServicePublicKey = "%s__servicePublicKey"
 let kBotPublicKey = "%s__botPublicKey"
 
@@ -46,10 +56,10 @@ func kAccountAddressToAccountId(accountAddress: Address) = {
   ["%s%s", accountAddress.toString(), "accountAddressToAccountId"].makeString(separator)
 }
 
-func kPairAllowed(amountAssetId: ByteVector, priceAssetId: ByteVector) = {
-  ["%s%s%s", amountAssetId.toBase58String(), priceAssetId.toBase58String(), "pairAllowed"].makeString(separator)
+func kPairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
+  ["%s%s%s", assetIdToString(amountAssetId), assetIdToString(priceAssetId), "pairAllowed"].makeString(separator)
 }
-func pairAllowed(amountAssetId: ByteVector, priceAssetId: ByteVector) = {
+func pairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
   this.getBoolean(
     kPairAllowed(amountAssetId, priceAssetId)
   ).valueOrElse(false)
@@ -79,8 +89,10 @@ func init(
 # called by user
 # additional fee in payment
 @Callable(i)
-func request(amountAssetId: ByteVector, priceAssetId: ByteVector) = {
-  let accountId = sha256(i.caller.bytes + amountAssetId + priceAssetId).toBase58String()
+func request(amountAssetIdStr: String, priceAssetIdStr: String) = {
+  let accountId = [i.caller.toString(), amountAssetIdStr, priceAssetIdStr].makeString(":")
+  let amountAssetId = parseAssetId(amountAssetIdStr)
+  let priceAssetId = parseAssetId(priceAssetIdStr)
 
   strict checks = [
     i.payments.size() == 1 || throw("1 payment is required"),
@@ -93,8 +105,8 @@ func request(amountAssetId: ByteVector, priceAssetId: ByteVector) = {
   ([
     IntegerEntry(kAccountStatus(accountId), 0),
     BinaryEntry(kAccountOwnerPublicKey(accountId), i.callerPublicKey),
-    BinaryEntry(kAccountAmountAssetId(accountId), amountAssetId),
-    BinaryEntry(kAccountPriceAssetId(accountId), priceAssetId)
+    StringEntry(kAccountAmountAssetId(accountId), amountAssetIdStr),
+    StringEntry(kAccountPriceAssetId(accountId), priceAssetIdStr)
   ], unit)
 }
 
