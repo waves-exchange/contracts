@@ -424,16 +424,37 @@ func ego(poolAddress: Address, txId58: String, pmtAssetId: String, pmtLpAmt: Int
   let outPrAmt = outPrAmtX18.fromX18Round(prDcm, FLOOR)
 
   let state = if (txId58 == "") then [] else
-  [
-    ScriptTransfer(userAddress, outAmAmt, if (amId == "WAVES") then unit else amId.fromBase58String()),
-    ScriptTransfer(userAddress, outPrAmt, if (prId == "WAVES") then unit else prId.fromBase58String()),
-
-    StringEntry(
-          gau(userAddress.toString(), txId58),
-          dataGetActionInfo(outAmAmt, outPrAmt, pmtLpAmt, curPrice, height, lastBlock.timestamp)),
-    IntegerEntry(pl(), curPrice),
-    IntegerEntry(ph(height, lastBlock.timestamp), curPrice)
+  strict stateInvokes = [
+    poolAddress.invoke(
+      "transferAsset",
+      [userAddress.bytes, outAmAmt, amId],
+      []
+    ),
+    poolAddress.invoke(
+      "transferAsset",
+      [userAddress.bytes, outPrAmt, prId],
+      []
+    ),
+    poolAddress.invoke(
+      "stringEntry",
+      [
+        gau(userAddress.toString(), txId58),
+        dataGetActionInfo(outAmAmt, outPrAmt, pmtLpAmt, curPrice, height, lastBlock.timestamp)
+      ],
+      []
+    ),
+    poolAddress.invoke(
+      "integerEntry",
+      [pl(), curPrice],
+      []
+    ),
+    poolAddress.invoke(
+      "integerEntry",
+      [ph(height, lastBlock.timestamp), curPrice],
+      []
+    )
   ]
+  []
 
   ( outAmAmt,     # 1
     outPrAmt,     # 2
@@ -441,9 +462,9 @@ func ego(poolAddress: Address, txId58: String, pmtAssetId: String, pmtLpAmt: Int
     prId,         # 4
     amBalance,    # 5
     prBalance,    # 6
-    lpEmiss,   # 7
+    lpEmiss,      # 7
     curPriceX18,  # 8
-    sts,   # 9
+    sts,          # 9
     state         # 10
   )
 }
@@ -766,18 +787,15 @@ func validateMatcherOrderAllowed(poolAddress: Address, order: Order) = {
 }
 
 # commonGet
-func cg(poolAddress: Address, i: Invocation) = {
-  if (i.payments.size() != 1) then throw("1 pmnt exp") else
-
-  let pmt         = i.payments[0].value()
+func cg(poolAddress: Address, pmt: AttachedPayment, i: Invocation) = {
   let pmtAssetId  = pmt.assetId.value()
   let pmtAmt      = pmt.amount
 
   let r = ego(poolAddress, i.transactionId.toBase58String(), pmtAssetId.toBase58String(), pmtAmt, i.originCaller)
-  let outAmAmt    = r._1
-  let outPrAmt    = r._2
-  let sts  = r._9.parseIntValue()
-  let state       = r._10
+  let outAmAmt     = r._1
+  let outPrAmt     = r._2
+  let sts          = r._9.parseIntValue()
+  let state        = r._10
 
   if(igs() || sts == PoolShutdown) then throw("Admin blocked: " + sts.toString()) else
 
@@ -1499,7 +1517,7 @@ func putForFree(
 # return:
 #    transfer to user his share of pool tokens base on passed lp token amount
 @Callable(i)
-func get() = {
+func get(payment1AssetId: String, payment1Amount: Int) = {
   # amountAssetBalance
   # strict aab = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
   # # priceAssetBalance
@@ -1522,18 +1540,21 @@ func get() = {
 
   strict currentDLp = calcCurrentDLp(poolAddress, 0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
-  let r = cg(poolAddress, i)
+  let pmt = AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount)
+
+  let r = cg(poolAddress, pmt, i)
   let outAmtAmt    = r._1
   let outPrAmt     = r._2
   let pmtAmt       = r._3
   let pmtAssetId   = r._4
   let state        = r._5
-  strict b = invoke(fca,
-                    "burn",
-                    [pmtAmt],
-                    [AttachedPayment(pmtAssetId, pmtAmt)])
 
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, -outAmtAmt, -outPrAmt, 0)
+  strict b = poolAddress.invoke(
+    "callBurn",
+    [fca.bytes, pmtAssetId.assetIdToString(), pmtAmt],
+    [])
+
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, 0, 0, 0)
 
   strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
@@ -1701,7 +1722,12 @@ func getOneTknV2WithBonusREADONLY(
 }
 
 @Callable(i)
-func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
+func getNoLess(
+  noLessThenAmtAsset: Int, 
+  noLessThenPriceAsset: Int,
+  payment1AssetId: String,
+  payment1Amount: Int
+) = {
   let poolAddress = i.caller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
@@ -1714,7 +1740,9 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
     cfgPriceAssetDecimals
   ) = poolConfigParsed
 
-  let r = cg(poolAddress, i)
+  let pmt = AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount)
+
+  let r = cg(poolAddress, pmt, i)
   let outAmAmt    = r._1
   let outPrAmt    = r._2
   let pmtAmt      = r._3
@@ -1725,10 +1753,10 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
 
   strict currentDLp = calcCurrentDLp(poolAddress, 0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
-  strict burnLPAssetOnFactory = invoke(fca,
-                                  "burn",
-                                  [pmtAmt],
-                                  [AttachedPayment(pmtAssetId, pmtAmt)])
+  strict burnLPAssetOnFactory = poolAddress.invoke(
+                                  "callBurn",
+                                  [fca.bytes, pmtAssetId, pmtAmt],
+                                  [])
 
   let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, -outAmAmt, -outPrAmt, 0)
 

@@ -1033,6 +1033,11 @@ func callStakeFor(dappAddress: ByteVector, stakeAddress: String,assetId: String,
 }
 
 @Callable(i)
+func callBurn(dappAddress: ByteVector, assetId: String, amount: Int) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("burn", [amount], [AttachedPayment(assetId.parseAssetId(), amount)])) else ([], unit)
+}
+
+@Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
   let totalGetRaw = implAddress.reentrantInvoke(
     "calculateAmountOutForSwapREADONLY",
@@ -1156,32 +1161,16 @@ func putForFree(maxSlpg: Int) = {
 #    transfer to user his share of pool tokens base on passed lp token amount
 @Callable(i)
 func get() = {
-  # amountAssetBalance
-  # strict aab = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
-  # # priceAssetBalance
-  # strict pab = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
-  # # lpAssetEmission
-  # strict lae = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
-  # # lpAssetEmissionAfter
-  # strict laea = lae - i.payments[0].value().amount.toBigInt()
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict getInvoke = implAddress.reentrantInvoke(
+    "get",
+    [
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount
+    ],
+    []
+  )
 
-  let r = cg(i)
-  let outAmtAmt    = r._1
-  let outPrAmt     = r._2
-  let pmtAmt       = r._3
-  let pmtAssetId   = r._4
-  let state        = r._5
-  strict b = invoke(fca,
-                    "burn",
-                    [pmtAmt],
-                    [AttachedPayment(pmtAssetId, pmtAmt)])
-
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmtAmt, -outPrAmt, 0)
-
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-
-  state ++ refreshDLpActions
+  ([], nil)
 }
 
 @Callable(i)
