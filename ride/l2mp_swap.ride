@@ -23,6 +23,7 @@ let keyAssetOutPrice = ["%s", "assetOutPrice"].makeString(SEP)
 let keyStakingAddress = ["%s", "stakingAddress"].makeString(SEP)
 let keyStatsTotalIn = ["%s%s", "stats", "totalIn"].makeString(SEP)
 let keyStatsTotalOut = ["%s%s", "stats", "totalOut"].makeString(SEP)
+let keyAllowedAddress = ["%s", "allowedAddress"].makeString(SEP)
 
 func keyStatsTotalInByAddress(address: Address) = {
   ["%s%s%s", "stats", "totalIn", address.toString()].makeString(SEP)
@@ -55,6 +56,12 @@ let stakingAddressOption = match this.getString(keyStakingAddress) {
 }
 let stakingAddress = stakingAddressOption
   .valueOrErrorMessage(wrapErr("invalid stakingAddress"))
+let allowedAddressOption = match this.getString(keyAllowedAddress) {
+  case s: String => addressFromString(s)
+  case _: Unit => unit
+}
+let allowedAddress = allowedAddressOption
+  .valueOrErrorMessage(wrapErr("invalid allowedAddress"))
 
 let ADMIN_LIST_SIZE = 5
 let QUORUM = 3
@@ -157,7 +164,6 @@ func swap(stake: Boolean) = {
 
   (
     [
-      Burn(assetInId, assetInAmount),
       IntegerEntry(
         keyStatsTotalIn,
         this.getInteger(keyStatsTotalIn).valueOrElse(0) + assetInAmount
@@ -183,6 +189,15 @@ func swap(stake: Boolean) = {
     ],
     assetOutAmount
   )
+}
+
+@Callable(i)
+func claim() = {
+  strict checkCaller = i.caller == allowedAddress || throwErr("permission denied")
+
+  ([
+    ScriptTransfer(allowedAddress, this.assetBalance(assetInId), assetInId)
+  ], unit)
 }
 
 # Vote for txId that is allowed in Verifier

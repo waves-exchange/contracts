@@ -185,6 +185,8 @@ func keyPoolStepSize(poolAddress: String) = "%s%s__stepSize__" + poolAddress
 let ordersNumberDefault = 100
 func keyPoolOrdersNumber(poolAddress: String) = "%s%s__ordersNumber__" + poolAddress
 
+func keyAddressWhitelisted(address: Address) = makeString(["%s%s", "whitelisted", address.toString()], SEP)
+
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------

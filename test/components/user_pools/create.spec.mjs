@@ -33,8 +33,6 @@ describe('User Pools - Create', /** @this {MochaSuiteModified} */() => {
           { type: 'string', value: address(this.accounts.factory, chainId) }, // factoryV2Address
           { type: 'string', value: address(this.accounts.store, chainId) }, // assetsStoreAddress
           { type: 'string', value: address(this.accounts.emission, chainId) }, // emissionAddress
-          { type: 'list', value: [{ type: 'string', value: '1000' }] }, // priceAssetsMinAmount: List[String]
-          { type: 'integer', value: 1000 }, // amountAssetMinAmount
           { type: 'string', value: this.wxAssetId }, // feeAssetId
           { type: 'integer', value: 1000 }, // feeAmount
         ],

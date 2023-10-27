@@ -31,8 +31,7 @@ describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
         chainId,
       }, this.accounts.user1.seed));
 
-      expect(stateChanges.burns[0].assetId).to.equal(this.xtnAssetId);
-      expect(stateChanges.burns[0].quantity).to.equal(assetInAmount);
+      expect(stateChanges.burns).to.have.lengthOf(0);
       expect(stateChanges.invokes[0].dApp).to.equal(this.accounts.l2mpStaking.addr);
       expect(stateChanges.invokes[0].call.function).to.equal('stakeFor');
       expect(stateChanges.invokes[0].call.args[0].value).to.equal(this.accounts.user1.addr);

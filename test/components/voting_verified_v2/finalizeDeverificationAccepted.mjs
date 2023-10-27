@@ -114,5 +114,15 @@ describe('voting_verified_v2: finalizeDeverificationAccepted.mjs', /** @this {Mo
         value: `%s%s%d%s%s%d%d%d%d%d__${expectedIsRewardExist}__${expectedRewardAssetId}__${expectedRewardAmount}__${expectedType}__${expectedStatus}__${this.votingStartHeight}__${this.votingEndHeight}__${this.votingThresholdRemove}__${this.minSuggestRemoveBalance}__0`,
       },
     ]);
+    expect(stateChanges.invokes[1].dApp).to.equal(this.accounts.store.addr);
+    expect(stateChanges.invokes[1].call).to.deep.equal({
+      function: 'onEliminate',
+      args: [
+        {
+          type: 'String',
+          value: this.wxAssetId,
+        },
+      ],
+    });
   });
 });
