@@ -114,7 +114,7 @@ describe('lp_stable: getOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
       value: '10000000127432425026570490178',
     }]);
 
-    expect(flattenTransfers(stateChanges)).to.eql([
+    expect(flattenTransfers(stateChanges)).to.deep.include.members([
       {
         address: address(this.accounts.user1, chainId),
         asset: this.usdtAssetId,

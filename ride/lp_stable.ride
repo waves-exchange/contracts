@@ -1175,28 +1175,22 @@ func get() = {
 
 @Callable(i)
 func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke(
-    "isPoolOneTokenOperationsDisabledREADONLY",
-    [this.toString()],
-    []
-  ).exactAs[Boolean]
-  let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
-
   strict checks = [
-    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
-  let (state, totalAmount) = getOneTknV2Internal(
-    outAssetId,
-    minOutAmount,
-    i.payments,
-    i.caller,
-    i.originCaller,
-    i.transactionId
+  strict totalAmount = implAddress.reentrantInvoke(
+    "getOneTknV2",
+    [
+      outAssetId,
+      minOutAmount,
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount
+    ],
+    []
   )
 
-  (state, totalAmount)
+  ([], totalAmount)
 }
 
 

@@ -960,7 +960,7 @@ func getOneTknV2Internal(
   let prDecimals = cfgPriceAssetDecimals
   let poolStatus = cfgPoolStatus
 
-  let userAddress = if (caller == restContract) then originCaller else caller
+  let userAddress = originCaller
 
   let pmt = payments[0].value()
   let pmtAssetId = pmt.assetId.value()
@@ -972,10 +972,14 @@ func getOneTknV2Internal(
 
   if (lpId != pmtAssetId.toBase58String()) then throw("Wrong LP") else
 
-  let amBalance = getAccBalance(poolAddress, amId)
-  let prBalance = getAccBalance(poolAddress, prId)
+  strict amBalance = getAccBalance(poolAddress, amId)
+  strict prBalance = getAccBalance(poolAddress, prId)
 
-  strict (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, pmtAmt], []).exactAs[(Int, Int)]
+  strict (totalGet, feeAmount) = this.invoke(
+    "getOneTknV2READONLY", 
+    [poolAddress.toString(), outAssetId, pmtAmt], 
+    []
+  ).exactAs[(Int, Int)]
 
   let totalAmount = if (minOutAmount > 0 && totalGet < minOutAmount) then {
     ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
@@ -993,21 +997,47 @@ func getOneTknV2Internal(
   let curPr = curPrX18.f1(scale8)
 
   let outAssetIdOrWaves = if (outAssetId == wavesString) then unit else outAssetId.fromBase58String()
-  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, outAssetIdOrWaves)] else []
+  strict sendFeeToMatcher = if (feeAmount > 0) then 
+    strict tr = [
+      poolAddress.invoke(
+      "transferAsset",
+      [feeCollectorAddress.bytes, feeAmount, outAssetId],
+      []
+      )]
+    []
+  else []
 
-  strict state = [
-    ScriptTransfer(userAddress, totalAmount, outAssetIdOrWaves),
-    StringEntry(
-      gau(userAddress.toString(), txId58),
-      dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)),
-    IntegerEntry(pl(), curPr),
-    IntegerEntry(ph(height, lastBlock.timestamp), curPr)
-  ] ++ sendFeeToMatcher
+  strict stateInvokes = [
+    poolAddress.invoke(
+      "transferAsset",
+      [userAddress.bytes, totalAmount, outAssetId],
+      []
+    ),
+    poolAddress.invoke(
+      "stringEntry",
+      [
+        gau(userAddress.toString(), txId58),
+        dataGetActionInfo(outAm, outPr, pmtAmt, curPr, height, lastBlock.timestamp)
+      ],
+      []
+    ),
+    poolAddress.invoke(
+      "integerEntry",
+      [pl(), curPr],
+      []
+    ),
+      poolAddress.invoke(
+      "integerEntry",
+      [ph(height, lastBlock.timestamp), curPr],
+      []
+    )
+  ]
+  strict state = [] ++ sendFeeToMatcher
 
-  strict burn = invoke(fca,
-    "burn",
-    [pmtAmt],
-    [AttachedPayment(pmtAssetId, pmtAmt)]
+  strict burn = poolAddress.invoke(
+    "callBurn",
+    [fca.bytes, pmtAssetId.assetIdToString(), pmtAmt],
+    []
   )
 
   let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
@@ -1015,7 +1045,7 @@ func getOneTknV2Internal(
     let outInAmountAsset = if (outAssetId.parseAssetId() == cfgAmountAssetId) then true else false
     if (outInAmountAsset) then (-(totalGet + feeAmountForCalc), 0) else (0, -(totalGet + feeAmountForCalc))
   }
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, 0, 0, 0)
 
   strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
@@ -1562,7 +1592,12 @@ func get(payment1AssetId: String, payment1Amount: Int) = {
 }
 
 @Callable(i)
-func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
+func getOneTknV2(
+    outAssetId: String, 
+    minOutAmount: Int, 
+    payment1AssetId: String, 
+    payment1Amount: Int
+  ) = {
   let poolAddress = i.caller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
@@ -1577,21 +1612,21 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
 
   let isPoolOneTokenOperationsDisabled = fca.invoke(
     "isPoolOneTokenOperationsDisabledREADONLY",
-    [this.toString()],
+    [i.caller.toString()],
     []
   ).exactAs[Boolean]
   let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
 
   strict checks = [
-    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
-    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
+    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr()
   ]
 
+  let pmt = AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount)
   let (state, totalAmount) = getOneTknV2Internal(
     poolAddress,
     outAssetId,
     minOutAmount,
-    i.payments,
+    [pmt],
     i.caller,
     i.originCaller,
     i.transactionId
@@ -1636,10 +1671,11 @@ func refreshDLp() = {
 
 @Callable(i)
 func getOneTknV2READONLY(
+  poolAddressString: String,
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
-  let poolAddress = i.caller
+  let poolAddress = addressFromStringValue(poolAddressString)
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
     cfgPoolAddress,
