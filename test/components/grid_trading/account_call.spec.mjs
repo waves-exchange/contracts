@@ -18,25 +18,11 @@ describe(`[${process.pid}] grid_trading: account call`, () => {
   let rewardAmount;
   let assetId1;
   let assetId2;
-  let accountId1;
-  let accountId2;
 
   before(async () => {
     ({
       accounts, rewardAmount, assetId1, assetId2,
     } = await setup());
-
-    accountId1 = [
-      accounts.user1.address,
-      assetId1,
-      assetId2,
-    ].join(':');
-
-    accountId2 = [
-      accounts.user2.address,
-      assetId1,
-      assetId2,
-    ].join(':');
 
     const kAccountScript = '%s__accountScript';
     const script = await api.addresses.fetchDataKey(
@@ -55,7 +41,7 @@ describe(`[${process.pid}] grid_trading: account call`, () => {
       broadcastAndWait(invokeScript({
         dApp: accounts.factory.address,
         call: {
-          function: 'request',
+          function: 'requestAccount',
           args: [
             { type: 'string', value: assetId1 },
             { type: 'string', value: assetId2 },
@@ -70,7 +56,7 @@ describe(`[${process.pid}] grid_trading: account call`, () => {
       broadcastAndWait(invokeScript({
         dApp: accounts.factory.address,
         call: {
-          function: 'request',
+          function: 'requestAccount',
           args: [
             { type: 'string', value: assetId1 },
             { type: 'string', value: assetId2 },
@@ -99,7 +85,6 @@ describe(`[${process.pid}] grid_trading: account call`, () => {
         call: {
           function: 'init',
           args: [
-            { type: 'string', value: accountId1 },
             { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
             { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
           ],
@@ -114,7 +99,6 @@ describe(`[${process.pid}] grid_trading: account call`, () => {
         call: {
           function: 'init',
           args: [
-            { type: 'string', value: accountId2 },
             { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
             { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
           ],

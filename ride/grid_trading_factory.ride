@@ -4,6 +4,7 @@
 {-# IMPORT common.lib.ride #-}
 
 let wavesString = "WAVES"
+let queueItemSize = 32
 
 func parseAssetId(input: String) = {
   if (input == wavesString) then unit else input.fromBase58String()
@@ -26,35 +27,40 @@ func rewardAmount() = this.getInteger(
   kRewardAmount
 ).valueOrErrorMessage("reward amount is not set")
 
-let ACCOUNT_STATUS_EMPTY = 0
-let ACCOUNT_STATUS_READY = 1
-func kAccountStatus(accountId: String) = {
-  ["%s%s", accountId, "status"].makeString(separator)
-}
-func accountStatus(accountId: String) = {
-  this.getInteger(
-    kAccountStatus(accountId)
-  ).valueOrErrorMessage("account is not found")
+let REQUEST_STATUS_EMPTY = 0
+let REQUEST_STATUS_READY = 1
+func kRequestStatus(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "status"].makeString(separator)
 }
 
-func kAccountCreatorPublicKey(accountId: String) = {
-  ["%s%s", accountId, "creatorPublicKey"].makeString(separator)
+func kAccountCreatorPublicKey(accountAddress: Address) = {
+  ["%s%s", accountAddress.toString(), "creatorPublicKey"].makeString(separator)
 }
-func kAccountOwnerPublicKey(accountId: String) = {
-  ["%s%s", accountId, "ownerPublicKey"].makeString(separator)
+func kRequestOwnerPublicKey(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "ownerPublicKey"].makeString(separator)
 }
-func kAccountAmountAssetId(accountId: String) = {
-  ["%s%s", accountId, "amountAssetId"].makeString(separator)
+func kRequestAmountAssetId(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "amountAssetId"].makeString(separator)
 }
-func kAccountPriceAssetId(accountId: String) = {
-  ["%s%s", accountId, "priceAssetId"].makeString(separator)
+func kRequestPriceAssetId(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "priceAssetId"].makeString(separator)
 }
-func kAccountIdToAccountPublicKey(accountId: String) = {
-  ["%s%s", accountId, "accountIdToAccountPublicKey"].makeString(separator)
+func kRequestIdToAccountPublicKey(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "requestIdToAccountPublicKey"].makeString(separator)
 }
-func kAccountAddressToAccountId(accountAddress: Address) = {
+func kAccountAddressToRequestId(accountAddress: Address) = {
   ["%s%s", accountAddress.toString(), "accountAddressToAccountId"].makeString(separator)
 }
+
+func kRequestsQueue() = {
+  ["%s", "requestsQueue"].makeString(separator)
+}
+func requestsQueue() = this.getBinary(kRequestsQueue()).valueOrElse(base58'')
+
+func kAccountsQueue() = {
+  ["%s", "accountsQueue"].makeString(separator)
+}
+func accountsQueue() = this.getBinary(kAccountsQueue()).valueOrElse(base58'')
 
 func kPairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
   ["%s%s%s", assetIdToString(amountAssetId), assetIdToString(priceAssetId), "pairAllowed"].makeString(separator)
@@ -89,8 +95,8 @@ func init(
 # called by user
 # additional fee in payment
 @Callable(i)
-func request(amountAssetIdStr: String, priceAssetIdStr: String) = {
-  let accountId = [i.caller.toString(), amountAssetIdStr, priceAssetIdStr].makeString(":")
+func requestAccount(amountAssetIdStr: String, priceAssetIdStr: String) = {
+  let requestId = sha256(i.caller.bytes + amountAssetIdStr.fromBase58String() + priceAssetIdStr.fromBase58String())
   let amountAssetId = parseAssetId(amountAssetIdStr)
   let priceAssetId = parseAssetId(priceAssetIdStr)
 
@@ -99,39 +105,76 @@ func request(amountAssetIdStr: String, priceAssetIdStr: String) = {
     i.payments[0].assetId == unit || throw("invalid asset"),
     i.payments[0].amount == rewardAmount() || throw("invalid amount"),
     pairAllowed(amountAssetId, priceAssetId) || throw("pair is not allowed"),
-    this.getInteger(kAccountStatus(accountId)) == unit || throw("account already exists")
+    this.getInteger(kRequestStatus(requestId)) == unit || throw("account already exists")
   ]
 
-  ([
-    IntegerEntry(kAccountStatus(accountId), 0),
-    BinaryEntry(kAccountOwnerPublicKey(accountId), i.callerPublicKey),
-    StringEntry(kAccountAmountAssetId(accountId), amountAssetIdStr),
-    StringEntry(kAccountPriceAssetId(accountId), priceAssetIdStr)
+  # add request to queue or match with account immediately
+
+  let actions = if (accountsQueue().size() == 0) then { # if the accounts queue is empty
+    # then add request to requests queue
+    [
+      IntegerEntry(kRequestStatus(requestId), REQUEST_STATUS_EMPTY),
+      BinaryEntry(kRequestsQueue(), requestsQueue() + requestId)
+    ]
+  } else { # if the accounts queue is not empty
+    # then fullfill request
+    let accountPublicKey = accountsQueue().take(queueItemSize)
+    let accountAddress = addressFromPublicKey(accountPublicKey)
+    let creatorAddress = addressFromPublicKey(
+      this.getBinary(
+        kAccountCreatorPublicKey(accountAddress)
+      ).valueOrErrorMessage("invalid creator public key")
+    )
+    [
+      BinaryEntry(kAccountsQueue(), accountsQueue().drop(queueItemSize)),
+      IntegerEntry(kRequestStatus(requestId), REQUEST_STATUS_READY),
+      BinaryEntry(kRequestIdToAccountPublicKey(requestId), accountPublicKey),
+      StringEntry(kAccountAddressToRequestId(accountAddress), requestId.toBase58String()),
+      ScriptTransfer(creatorAddress, rewardAmount(), unit)
+    ]
+  }
+
+  (actions ++ [
+    BinaryEntry(kRequestOwnerPublicKey(requestId), i.callerPublicKey),
+    StringEntry(kRequestAmountAssetId(requestId), amountAssetIdStr),
+    StringEntry(kRequestPriceAssetId(requestId), priceAssetIdStr)
   ], unit)
 }
 
 # called by account script
 # additional fee is sent to recipient
 @Callable(i)
-func complete(accountId: String, creatorPublicKey: ByteVector) = {
+func addAccount(creatorPublicKey: ByteVector) = {
   let accountPublicKey = i.callerPublicKey
   let accountAddress = i.caller
+  let creatorAddress = addressFromPublicKey(creatorPublicKey)
 
   strict checks = [
-    accountStatus(accountId) == ACCOUNT_STATUS_EMPTY || throw("account is already exists"),
+    this.getBinary(kAccountCreatorPublicKey(accountAddress)) == unit || throw("account is already exists"),
     match scriptHash(accountAddress) {
       case b: ByteVector => b == blake2b256_32Kb(accountScript())
       case _ => false
     } || throw("invalid script")
   ]
 
-  let creatorAddress = addressFromPublicKey(creatorPublicKey)
+  let actions = if (requestsQueue().size() == 0) then { # if the requests queue is empty
+    # then add account to accounts queue
+    [
+      BinaryEntry(kAccountsQueue(), accountsQueue() + accountPublicKey)
+    ]
+  } else { # if the requests queue is not empty
+    # then fullfill next request
+    let requestId = requestsQueue().take(queueItemSize)
+    [
+      BinaryEntry(kRequestsQueue(), requestsQueue().drop(queueItemSize)),
+      IntegerEntry(kRequestStatus(requestId), REQUEST_STATUS_READY),
+      BinaryEntry(kRequestIdToAccountPublicKey(requestId), accountPublicKey),
+      StringEntry(kAccountAddressToRequestId(accountAddress), requestId.toBase58String()),
+      ScriptTransfer(creatorAddress, rewardAmount(), unit)
+    ]
+  }
 
-  ([
-    IntegerEntry(kAccountStatus(accountId), ACCOUNT_STATUS_READY),
-    BinaryEntry(kAccountCreatorPublicKey(accountId), creatorPublicKey),
-    BinaryEntry(kAccountIdToAccountPublicKey(accountId), accountPublicKey),
-    StringEntry(kAccountAddressToAccountId(accountAddress), accountId),
-    ScriptTransfer(creatorAddress, rewardAmount(), unit)
+  (actions ++ [
+    BinaryEntry(kAccountCreatorPublicKey(accountAddress), creatorPublicKey)
   ], unit)
 }

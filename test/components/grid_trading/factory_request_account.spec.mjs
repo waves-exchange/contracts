@@ -2,7 +2,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { data, invokeScript, transfer } from '@waves/waves-transactions';
 import {
-  base58Decode, base64Encode,
+  base58Decode, base64Encode, base58Encode, sha256,
 } from '@waves/ts-lib-crypto';
 import { chainId, broadcastAndWait, baseSeed } from '../../utils/api.mjs';
 import { setup } from './_setup.mjs';
@@ -10,7 +10,7 @@ import { setup } from './_setup.mjs';
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe(`[${process.pid}] grid_trading: factory request`, () => {
+describe(`[${process.pid}] grid_trading: factory request account`, () => {
   let accounts;
   let rewardAmount;
   let assetId1;
@@ -26,7 +26,7 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'request',
+        function: 'requestAccount',
         args: [
           { type: 'string', value: assetId1 },
           { type: 'string', value: assetId2 },
@@ -46,7 +46,7 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'request',
+        function: 'requestAccount',
         args: [
           { type: 'string', value: assetId1 },
           { type: 'string', value: assetId2 },
@@ -63,7 +63,7 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'request',
+        function: 'requestAccount',
         args: [
           { type: 'string', value: assetId1 },
           { type: 'string', value: assetId2 },
@@ -80,7 +80,7 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'request',
+        function: 'requestAccount',
         args: [
           { type: 'string', value: assetId1 },
           { type: 'string', value: assetId2 },
@@ -104,7 +104,7 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
     const { stateChanges } = await broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'request',
+        function: 'requestAccount',
         args: [
           { type: 'string', value: assetId1 },
           { type: 'string', value: assetId2 },
@@ -116,11 +116,11 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
       chainId,
     }, accounts.user1.seed)).catch(({ message }) => { throw new Error(message); });
 
-    const accountId = [
-      accounts.user1.address,
-      assetId1,
-      assetId2,
-    ].join(':');
+    const accountId = base58Encode(sha256([
+      ...base58Decode(accounts.user1.address),
+      ...base58Decode(assetId1),
+      ...base58Decode(assetId2),
+    ]));
 
     const accountStatusEmpty = 0;
 
@@ -129,6 +129,11 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
         key: `%s%s__${accountId}__status`,
         type: 'integer',
         value: accountStatusEmpty,
+      },
+      {
+        key: '%s__requestsQueue',
+        type: 'binary',
+        value: `base64:${base64Encode(base58Decode(accountId))}`,
       },
       {
         key: `%s%s__${accountId}__ownerPublicKey`,
@@ -154,7 +159,7 @@ describe(`[${process.pid}] grid_trading: factory request`, () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'request',
+        function: 'requestAccount',
         args: [
           { type: 'string', value: assetId1 },
           { type: 'string', value: assetId2 },

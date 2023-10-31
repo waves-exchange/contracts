@@ -47,13 +47,13 @@ func transferWaves(recipientBytes: ByteVector, amount: Int) =
   if (i.mustService()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
 
 @Callable(i)
-func init(requestId: String, factoryPublicKey: ByteVector, creatorPublicKey: ByteVector) = {
+func init(factoryPublicKey: ByteVector, creatorPublicKey: ByteVector) = {
   strict checkCaller = i.mustThis()
 
   # throws if accounts is not ok
   strict completeRequest = addressFromPublicKey(
     factoryPublicKey
-  ).invoke("complete", [requestId, creatorPublicKey], [])
+  ).invoke("addAccount", [creatorPublicKey], [])
 
   ([
     BinaryEntry(kFactoryPublicKey, factoryPublicKey)

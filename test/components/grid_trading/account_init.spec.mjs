@@ -15,7 +15,6 @@ const { expect } = chai;
 
 describe(`[${process.pid}] grid_trading: account init`, () => {
   let accounts;
-  let rewardAmount;
   let assetId1;
   let assetId2;
   let accountId;
@@ -23,14 +22,14 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
 
   before(async () => {
     ({
-      accounts, rewardAmount, assetId1, assetId2,
+      accounts, assetId1, assetId2,
     } = await setup());
 
-    accountId = [
-      accounts.user1.address,
-      assetId1,
-      assetId2,
-    ].join(':');
+    accountId = base58Encode(sha256([
+      ...base58Decode(accounts.user1.address),
+      ...base58Decode(assetId1),
+      ...base58Decode(assetId2),
+    ]));
 
     const kAccountScript = '%s__accountScript';
     validScript = await api.addresses.fetchDataKey(
@@ -44,45 +43,14 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
       ],
       chainId,
     }, accounts.factory.seed)).catch(({ message }) => { throw new Error(message); });
-
-    await broadcastAndWait(invokeScript({
-      dApp: accounts.factory.address,
-      call: {
-        function: 'request',
-        args: [
-          { type: 'string', value: assetId1 },
-          { type: 'string', value: assetId2 },
-        ],
-      },
-      payment: [
-        { assetId: null, amount: rewardAmount },
-      ],
-      chainId,
-    }, accounts.user1.seed)).catch(({ message }) => { throw new Error(message); });
-  });
-
-  it('account is not found', async () => {
-    expect(broadcastAndWait(invokeScript({
-      dApp: accounts.factory.address,
-      call: {
-        function: 'complete',
-        args: [
-          { type: 'string', value: base58Encode([1, 2, 3]) },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
-        ],
-      },
-      payment: [],
-      chainId,
-    }, accounts.account1.seed))).to.be.rejectedWith('account is not found');
   });
 
   it('no script', async () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'complete',
+        function: 'addAccount',
         args: [
-          { type: 'string', value: accountId },
           { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
         ],
       },
@@ -106,7 +74,7 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'complete',
+        function: 'addAccount',
         args: [
           { type: 'string', value: accountId },
           { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
@@ -124,16 +92,11 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
       chainId,
     }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
 
-    const creatorBalanceBefore = await api.addresses.fetchBalance(
-      accounts.creator.address,
-    ).then(({ balance }) => balance);
-
     await broadcastAndWait(invokeScript({
       dApp: accounts.account1.address,
       call: {
         function: 'init',
         args: [
-          { type: 'string', value: accountId },
           { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
           { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
         ],
@@ -152,56 +115,18 @@ describe(`[${process.pid}] grid_trading: account init`, () => {
       },
     ]);
 
-    const creatorBalanceAfter = await api.addresses.fetchBalance(
-      accounts.creator.address,
-    ).then(({ balance }) => balance);
-    expect(creatorBalanceAfter - creatorBalanceBefore).to.equal(rewardAmount);
-
-    const accountStatusReady = 1;
     const factoryState = await api.addresses.data(accounts.factory.address);
     expect(factoryState).to.deep.include.members([
       {
-        key: `%s%s__${accountId}__status`,
-        type: 'integer',
-        value: accountStatusReady,
-      },
-      {
-        key: `%s%s__${accountId}__creatorPublicKey`,
-        type: 'binary',
-        value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}`,
-      },
-      {
-        key: `%s%s__${accountId}__accountIdToAccountPublicKey`,
+        key: '%s__accountsQueue',
         type: 'binary',
         value: `base64:${base64Encode(base58Decode(accounts.account1.publicKey))}`,
       },
       {
-        key: `%s%s__${accounts.account1.address}__accountAddressToAccountId`,
-        type: 'string',
-        value: accountId,
+        key: `%s%s__${accounts.account1.address}__creatorPublicKey`,
+        type: 'binary',
+        value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}`,
       },
     ]);
-  });
-
-  it('account exists', async () => {
-    await broadcastAndWait(setScript({
-      script: validScript,
-      chainId,
-    }, accounts.account2.seed)).catch(({ message }) => { throw new Error(message); });
-
-    expect(broadcastAndWait(invokeScript({
-      dApp: accounts.account2.address,
-      call: {
-        function: 'init',
-        args: [
-          { type: 'string', value: accountId },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
-        ],
-      },
-      payment: [],
-      chainId,
-      additionalFee: 4e5,
-    }, accounts.account2.seed))).to.be.rejectedWith('account is already exists');
   });
 });
