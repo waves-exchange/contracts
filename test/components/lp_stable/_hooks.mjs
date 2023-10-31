@@ -311,6 +311,10 @@ export const mochaHooks = {
         key: '%s__factoryContract',
         type: 'string',
         value: address(this.accounts.factoryV2, chainId),
+      }, {
+        key: '%s__refreshDLpDelay',
+        type: 'integer',
+        value: 2,
       }],
       chainId,
     }, this.accounts.lpStable);

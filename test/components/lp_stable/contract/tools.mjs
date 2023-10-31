@@ -32,3 +32,15 @@ export function flattenInvokes(stateChanges) {
 
   return outArray;
 }
+
+export function flattenData(stateChanges) {
+  let outArray = [];
+
+  stateChanges.invokes.forEach((element) => {
+    outArray = outArray.concat(flattenData(element.stateChanges));
+  });
+
+  outArray = outArray.concat(stateChanges.data);
+
+  return outArray;
+}
