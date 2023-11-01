@@ -124,7 +124,7 @@ let keyDLp = ["%s", "dLp"].makeString(SEP)
 let keyDLpRefreshedHeight = ["%s", "dLpRefreshedHeight"].makeString(SEP)
 let keyDLpRefreshDelay = ["%s", "refreshDLpDelay"].makeString(SEP)
 let dLpRefreshDelayDefault = 30
-let dLpRefreshDelay = this.getInteger(keyDLpRefreshDelay).valueOrElse(dLpRefreshDelayDefault)
+func dLpRefreshDelay(poolAddress: Address) = poolAddress.getInteger(keyDLpRefreshDelay).valueOrElse(dLpRefreshDelayDefault)
 
 #------------------------
 # KEYS ON OTHER CONTRACTS
@@ -1650,15 +1650,15 @@ func refreshDLp() = {
     cfgPriceAssetDecimals
   ) = poolConfigParsed
 
-  let lastRefreshedBlockHeight = keyDLpRefreshedHeight.getInteger().valueOrElse(0)
-  strict checkLastRefreshedBlockHeight = if (height - lastRefreshedBlockHeight >= dLpRefreshDelay) then unit else {
+  let lastRefreshedBlockHeight = poolAddress.getInteger(keyDLpRefreshedHeight).valueOrElse(0)
+  strict checkLastRefreshedBlockHeight = if (height - lastRefreshedBlockHeight >= dLpRefreshDelay(poolAddress)) then unit else {
     [
-      dLpRefreshDelay.toString(),
+      dLpRefreshDelay(poolAddress).toString(),
       " blocks have not passed since the previous call"
     ].makeString("").throwErr()
   }
 
-  let dLp = this.getString(keyDLp)
+  let dLp = poolAddress.getString(keyDLp)
     .valueOrElse("0")
     .parseBigInt()
     .valueOrErrorMessage("invalid dLp".fmtErr())

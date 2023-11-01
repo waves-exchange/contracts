@@ -3,7 +3,6 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni, transfer } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
-import { flattenData } from './contract/tools.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -21,6 +20,7 @@ describe('lp_stable: refreshDLp.mjs', /** @this {MochaSuiteModified} */() => {
       const usdtAmount = 1e8 / 10;
       const shouldAutoStake = false;
       const delay = 2;
+      const expectedDLp = '12569372929872107410759846168';
 
       const lpStable = address(this.accounts.lpStable, chainId);
 
@@ -50,6 +50,13 @@ describe('lp_stable: refreshDLp.mjs', /** @this {MochaSuiteModified} */() => {
 
       await ni.waitForHeight(height + delay, { apiBase });
 
+      const expr = `refreshDLp()`; /* eslint-disable-line */
+      const response = await api.utils.fetchEvaluate(
+        lpStable,
+        expr,
+      );
+      const evaluateData = response.result.value._2; /* eslint-disable-line */
+
       const getNoLess = invokeScript({
         dApp: lpStable,
         payment: [],
@@ -60,16 +67,23 @@ describe('lp_stable: refreshDLp.mjs', /** @this {MochaSuiteModified} */() => {
         chainId,
       }, this.accounts.user1);
       await api.transactions.broadcast(getNoLess, {});
-      const { stateChanges, height: refreshHeight } = await ni.waitForTx(getNoLess.id, { apiBase });
+      const { height: refreshHeight } = await ni.waitForTx(getNoLess.id, { apiBase });
 
-      expect(flattenData(stateChanges)).to.include.deep.members([{
+      const lpStableState = await api.addresses.data(lpStable);
+
+      expect(evaluateData).to.eql({
+        type: 'String',
+        value: expectedDLp,
+      });
+
+      expect(lpStableState).to.include.deep.members([{
         key: '%s__dLpRefreshedHeight',
         type: 'integer',
         value: refreshHeight,
       }, {
         key: '%s__dLp',
         type: 'string',
-        value: '12569372929872107410759846168',
+        value: expectedDLp,
       }]);
     },
   );

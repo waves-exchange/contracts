@@ -1196,23 +1196,13 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
 
 @Callable(i)
 func refreshDLp() = {
-  let lastRefreshedBlockHeight = keyDLpRefreshedHeight.getInteger().valueOrElse(0)
-  strict checkLastRefreshedBlockHeight = if (height - lastRefreshedBlockHeight >= dLpRefreshDelay) then unit else {
-    [
-      dLpRefreshDelay.toString(),
-      " blocks have not passed since the previous call"
-    ].makeString("").throwErr()
-  }
+  strict updatedDLpString = implAddress.reentrantInvoke(
+    "refreshDLp",
+    [],
+    []
+  )
 
-  let dLp = this.getString(keyDLp)
-    .valueOrElse("0")
-    .parseBigInt()
-    .valueOrErrorMessage("invalid dLp".fmtErr())
-
-  let (dLpUpdateActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
-  let actions = if (dLp != updatedDLp) then dLpUpdateActions else "nothing to refresh".throwErr()
-
-  (actions, updatedDLp.toString())
+  ([], updatedDLpString)
 }
 
 @Callable(i)
