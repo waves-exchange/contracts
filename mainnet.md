@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **18:18 31.10.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **15:20 02.11.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -154,6 +154,7 @@ PETE/STALKER pool | [`3PH5FGzZycQdX5KKFugXXVaVuGK3ThFqQva`](https://wavesexplore
 STALKER/WAVES pool | [`3PHkQMpy45rXP7DRFpQarMTnXcb8FH87VLN`](https://wavesexplorer.com/addresses/3PHkQMpy45rXP7DRFpQarMTnXcb8FH87VLN) | `6vNVf1JvRNhmmat9PvcrCfBhsMc9bHUGVN9aaey3LSXV` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 PETE/DEPS pool | [`3PMSioyssCsxqFmB9rjFXqZk2x84p8MmLwo`](https://wavesexplorer.com/addresses/3PMSioyssCsxqFmB9rjFXqZk2x84p8MmLwo) | `Dm9d76y15JoAV9xVY5ARDQLNeSpDim6N2vmkEGHkxntD` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 WX/USDT-ERC20 pool | [`3PJCEGATr8B7F3wSp4Dvgq9kSh95CxKDPxg`](https://wavesexplorer.com/addresses/3PJCEGATr8B7F3wSp4Dvgq9kSh95CxKDPxg) | `7RJzhdHSoweeWgdpARY4fDC8Wv9fr8CSNJGrU5AA5QHj` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+BURN-XTN/WAVES pool | [`3P5vwLbXddLWpsRspftMxLuzfsjk3dLT3n5`](https://wavesexplorer.com/addresses/3P5vwLbXddLWpsRspftMxLuzfsjk3dLT3n5) | `8ZYLmc9wHLCCXBmLZGg1CQR5ze8infRPZnfEj7i7GYEK` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -201,6 +202,7 @@ ATOM | [`47cyc68FWJszCWEwMWVsD9CadjS2M1XtgANuRGbEW8UH`](https://wavesexplorer.co
 AXLY | [`DcAbWMXrfMeooG1BrZ9ipiseFSVm7zxTs1XZKRp6DVeZ`](https://wavesexplorer.com/assets/DcAbWMXrfMeooG1BrZ9ipiseFSVm7zxTs1XZKRp6DVeZ) | AXLY protocol token 
 BNB-BSC-PPT | [`66a1br3BrkoaJgP7yEar9hJcSTvJPoH6PYBLqscXcMGo`](https://wavesexplorer.com/assets/66a1br3BrkoaJgP7yEar9hJcSTvJPoH6PYBLqscXcMGo) | BNB Token from Binance Smart Chain network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/BNB-BSC-PPT 
 BTCB-BSC-PPT | [`EW1uGLVo21Wd9i2Rhq8o4VKDTCQTGCGXE8DqayHGrLg8`](https://wavesexplorer.com/assets/EW1uGLVo21Wd9i2Rhq8o4VKDTCQTGCGXE8DqayHGrLg8) | BTCB Token from Binance Smart Chain network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/BTCB-BSC-PPT 
+BURN-XTN | [`3SjxA2YLdfF9fTRbzLm9xFn27C6MW34W1YsdJ6Axefns`](https://wavesexplorer.com/assets/3SjxA2YLdfF9fTRbzLm9xFn27C6MW34W1YsdJ6Axefns) | Constantly burn more XTN without draining collateral from Neutrino treasury and make a profit while doing so. Support Neutrino and the Waves ecosystem. For more info go to: www.burnxtn.tech 
 BUSD | [`8DLiYZjo3UUaRBTHU7Ayoqg4ihwb6YH1AfXrrhdjQ7K1`](https://wavesexplorer.com/assets/8DLiYZjo3UUaRBTHU7Ayoqg4ihwb6YH1AfXrrhdjQ7K1) | Wrapped BUSD token 
 CRV-ERC20-PPT | [`FmsB2B21fVVetWvZm7Q48cC2Bvs2hEZtft49TBn3guV1`](https://wavesexplorer.com/assets/FmsB2B21fVVetWvZm7Q48cC2Bvs2hEZtft49TBn3guV1) | CRV ERC20 Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/CRV-ERC20-PPT 
 Curve DAO Token | [`3KhNcHo4We1G5EWps7b1e5DTdLgWDzctc8S6ynu37KAb`](https://wavesexplorer.com/assets/3KhNcHo4We1G5EWps7b1e5DTdLgWDzctc8S6ynu37KAb) | Curve Finance DAO Token 
@@ -322,6 +324,7 @@ BNBWAVESLP | [`7swiE4RL4CWeq5ZTbwaxva1HpcAsd1xugSMN6byKX887`](https://wavesexplo
 BRLNUSDNLP | [`DuPn2ZNd6ZoK62Fx7V4btjx2FXCFeZHvtofHvue193ij`](https://wavesexplorer.com/assets/DuPn2ZNd6ZoK62Fx7V4btjx2FXCFeZHvtofHvue193ij) | WX BRLN/USDN pool liquidity provider token 
 BTCUSDNWXLP | [`8WhH5CCJ6NakPvEvAJcizqqD7H6axhupdYHDFumSDwsy`](https://wavesexplorer.com/assets/8WhH5CCJ6NakPvEvAJcizqqD7H6axhupdYHDFumSDwsy) | WX Btc/Usdn pool liquidity provider token 
 BTCWAVESLP | [`99qA4k17Jc7mkQiMB7vfP1R19WoRPWtVrkrj2z247VDa`](https://wavesexplorer.com/assets/99qA4k17Jc7mkQiMB7vfP1R19WoRPWtVrkrj2z247VDa) | BTC/WAVES pool liquidity provider token 
+BURN-XTN~WAVESLP | [`GyiHdcN59sZ46baFvj68ruLngrTPEvWDtsd6jHm4o46n`](https://wavesexplorer.com/assets/GyiHdcN59sZ46baFvj68ruLngrTPEvWDtsd6jHm4o46n) | BURN-XTN~/WAVES pool liquidity provider token 
 BUSDUSDCLP | [`B4N146WrYnUKXn9zP1W4Q3FLpanWfQVm42ZsRzXPgRjU`](https://wavesexplorer.com/assets/B4N146WrYnUKXn9zP1W4Q3FLpanWfQVm42ZsRzXPgRjU) | WX BUSD/USDC pool liquidity provider token 
 BUSDUSDTLP | [`A2HYUR8NJ1DGX3R7WjKR2caUtpq6JGSPVMtGe2jQyC22`](https://wavesexplorer.com/assets/A2HYUR8NJ1DGX3R7WjKR2caUtpq6JGSPVMtGe2jQyC22) | WX BUSD/USDT pool liquidity provider token 
 BUSDXTNLP | [`3ZfzodjKXPzAtUrdeFFquq9KjaccW6nMWXr6qbVJmSQa`](https://wavesexplorer.com/assets/3ZfzodjKXPzAtUrdeFFquq9KjaccW6nMWXr6qbVJmSQa) | WX BUSD/XTN pool liquidity provider token 
