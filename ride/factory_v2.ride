@@ -185,6 +185,8 @@ func keyChangeAmpLastCall(poolAddress: String)
       = makeString(["%s%s", "changeAmpLastCall", poolAddress], SEP)
 let ampInitial = 50
 
+func keyAddressWhitelisted(address: Address) = makeString(["%s%s", "whitelisted", address.toString()], SEP)
+
 #------------------------
 # GLOBAL FUNCTIONS
 #------------------------
