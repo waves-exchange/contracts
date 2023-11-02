@@ -1671,11 +1671,10 @@ func refreshDLp() = {
 
 @Callable(i)
 func getOneTknV2READONLY(
-  poolAddressString: String,
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
-  let poolAddress = addressFromStringValue(poolAddressString)
+  let poolAddress = i.caller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
     cfgPoolAddress,

@@ -1210,27 +1210,13 @@ func getOneTknV2READONLY(
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
-  let amId = cfgAmountAssetId.value().toBase58String()
-  let prId = cfgPriceAssetId.value().toBase58String()
-  let lpId = cfgLpAssetId.value().toBase58String()
-  let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
-  # let xp = [prId.getAccBalance().toBigInt(), amId.getAccBalance().toBigInt()]
-  let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
-  let D0 = xp.getD()
-  let D1 = D0 - fraction(lpAssetAmount.toBigInt(), D0, lpEmission)
-  let index = if (outAssetId == amId) then {
-    0
-  } else if (outAssetId == prId) then {
-    1
-  } else {
-    "invalid out asset id".throw()
-  }
-  let newY = xp.getYD(index, D1)
-  let dy = xp[index] - newY
-  let totalGetRaw = [0, { dy - big1 }.toInt()].max()
-  let (totalGet, feeAmount) = totalGetRaw.takeFee(outFee)
+  strict outData = implAddress.reentrantInvoke(
+    "getOneTknV2READONLY",
+    [outAssetId, lpAssetAmount],
+    []
+  )
 
-  (nil, (totalGet, feeAmount))
+  ([], outData)
 }
 
 @Callable(i)
