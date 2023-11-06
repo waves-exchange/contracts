@@ -16,10 +16,10 @@ describe('lp_stable: getOneTknV2WithBonusREADONLY.mjs', /** @this {MochaSuiteMod
   it(
     'should successfully getOneTknV2WithBonusREADONLY',
     async function () {
-      const usdnAmount = 1e8 / 10;
-      const usdtAmount = 1e8 / 10;
+      const usdnAmount = 1e8;
+      const usdtAmount = 1e8;
       const shouldAutoStake = false;
-      const lpStableAmount = 100000000;
+      const lpStableAmount = 10000000;
 
       const lpStable = address(this.accounts.lpStable, chainId);
 
@@ -53,11 +53,15 @@ describe('lp_stable: getOneTknV2WithBonusREADONLY.mjs', /** @this {MochaSuiteMod
         value: {
           _1: {
             type: 'Int',
-            value: '2964892755865620',
+            value: 99900,
           },
           _2: {
             type: 'Int',
-            value: 2967860616482,
+            value: 99,
+          },
+          _3: {
+            type: 'Int',
+            value: -100000,
           },
         },
       });
