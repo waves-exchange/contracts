@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **15:20 02.11.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **15:07 06.11.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -155,6 +155,7 @@ STALKER/WAVES pool | [`3PHkQMpy45rXP7DRFpQarMTnXcb8FH87VLN`](https://wavesexplor
 PETE/DEPS pool | [`3PMSioyssCsxqFmB9rjFXqZk2x84p8MmLwo`](https://wavesexplorer.com/addresses/3PMSioyssCsxqFmB9rjFXqZk2x84p8MmLwo) | `Dm9d76y15JoAV9xVY5ARDQLNeSpDim6N2vmkEGHkxntD` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 WX/USDT-ERC20 pool | [`3PJCEGATr8B7F3wSp4Dvgq9kSh95CxKDPxg`](https://wavesexplorer.com/addresses/3PJCEGATr8B7F3wSp4Dvgq9kSh95CxKDPxg) | `7RJzhdHSoweeWgdpARY4fDC8Wv9fr8CSNJGrU5AA5QHj` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 BURN-XTN/WAVES pool | [`3P5vwLbXddLWpsRspftMxLuzfsjk3dLT3n5`](https://wavesexplorer.com/addresses/3P5vwLbXddLWpsRspftMxLuzfsjk3dLT3n5) | `8ZYLmc9wHLCCXBmLZGg1CQR5ze8infRPZnfEj7i7GYEK` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+PETE/Sasha-X pool | [`3PBmD7dXD61xJ8TUioMPEkWP5EU4fzkfbmr`](https://wavesexplorer.com/addresses/3PBmD7dXD61xJ8TUioMPEkWP5EU4fzkfbmr) | `EAu1QUqcTiRGqSXRTqWUvhLUpUjwGHG4F2PN84n56T5R` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -250,6 +251,7 @@ Post-conflict reconstruction: A portion of the transactions will be used to fund
 
 Transparency and accountability: Blockchain technology will ensure the traceability and transparency of donations and the use of funds, ensuring that every contribution is utilized for its intended purposes. 
 SAND | [`8YyrMfuBdZ5gtMWkynLTveRvGb6LJ4Aff9rpz46UUMW`](https://wavesexplorer.com/assets/8YyrMfuBdZ5gtMWkynLTveRvGb6LJ4Aff9rpz46UUMW) | Wrapped SAND token 
+Sasha-X | [`Fz1S3rRAF8RaBoFSKoohDxzfPBX4Jj8mCTFn1Mab8H3x`](https://wavesexplorer.com/assets/Fz1S3rRAF8RaBoFSKoohDxzfPBX4Jj8mCTFn1Mab8H3x) | I am Sasha sturgeon, a very valuable fish in the Waves network.  I have 52,653 eggs - a limited collection.  IDO will automatically launch after verification.  The entire issue will be offered at a fixed price.  The offer period is one month. 
 SBT  | [`vAYvjoLheNuvi2wRdQYK9NUjJ6ZQ5EkAtx7jy36rK13`](https://wavesexplorer.com/assets/vAYvjoLheNuvi2wRdQYK9NUjJ6ZQ5EkAtx7jy36rK13) | SBT is the native platform token for StakeBooster - https://stakebooster.com/
 
 StakeBooster is a non-custodial platform provides an array of tools to help you maximize the potential of your digital assets, whether you are an individual, a DAO, or another protocol. 
@@ -382,6 +384,7 @@ PETE~PESTLP | [`BypuMqGjWUKnKQ4kewAejUsof4a7sBveVmQC8GvZzFZE`](https://wavesexpl
 PETE~PL-WAVESLP | [`B4cVaMYMrTteZ7gbAuH7YjXqZr3Kx5TcjbN43CuPrAM5`](https://wavesexplorer.com/assets/B4cVaMYMrTteZ7gbAuH7YjXqZr3Kx5TcjbN43CuPrAM5) | PETE/~PL-WAVES pool liquidity provider token 
 PETE~PsinetikaLP | [`GBXSTFae9qFFRLfgomjCB1ABbJEjEMCaVMewQpmqvw3H`](https://wavesexplorer.com/assets/GBXSTFae9qFFRLfgomjCB1ABbJEjEMCaVMewQpmqvw3H) | PETE/~Psinetika pool liquidity provider token 
 PETE~RebuildLP | [`CSKdSgjFHk89fJUGSuBzPAp5Znn8RcXefouuBrm4USsq`](https://wavesexplorer.com/assets/CSKdSgjFHk89fJUGSuBzPAp5Znn8RcXefouuBrm4USsq) | PETE/~Rebuild pool liquidity provider token 
+PETE~Sasha-XLP | [`rJCgD5imHzuiMbzLHFEZYVozXU5L7pzHzoayHNVZjqh`](https://wavesexplorer.com/assets/rJCgD5imHzuiMbzLHFEZYVozXU5L7pzHzoayHNVZjqh) | PETE/~Sasha-X pool liquidity provider token 
 PETE~SBTLP | [`9LWwnNkGW8YzdP1c2bQKBRRHQWCAr5F1v41Kiq1TKjXQ`](https://wavesexplorer.com/assets/9LWwnNkGW8YzdP1c2bQKBRRHQWCAr5F1v41Kiq1TKjXQ) | PETE/~SBT pool liquidity provider token 
 PETE~STALKERLP | [`9y34Tp9DYvFnaqtGKt3cTt8XXeV6STG5gxb6YLy3h23w`](https://wavesexplorer.com/assets/9y34Tp9DYvFnaqtGKt3cTt8XXeV6STG5gxb6YLy3h23w) | PETE/~STALKER pool liquidity provider token 
 PETE~TEAM STRELP | [`3zwuGf8RsF6tPdVg6aGJWkGF7f3kmdLGYuTz9ZqweFtm`](https://wavesexplorer.com/assets/3zwuGf8RsF6tPdVg6aGJWkGF7f3kmdLGYuTz9ZqweFtm) | PETE/~TEAM STRE pool liquidity provider token 
