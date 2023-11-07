@@ -1235,27 +1235,22 @@ func getOneTknV2WithBonusREADONLY(
 
 @Callable(i)
 func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
-  let r = cg(i)
-  let outAmAmt    = r._1
-  let outPrAmt    = r._2
-  let pmtAmt      = r._3
-  let pmtAssetId  = r._4
-  let state       = r._5
-  if (outAmAmt < noLessThenAmtAsset) then throw("Failed:  " + outAmAmt.toString() + " < " + noLessThenAmtAsset.toString()) else
-  if (outPrAmt < noLessThenPriceAsset) then throw("Failed: " + outPrAmt.toString() + " < " + noLessThenPriceAsset.toString()) else
+  strict checks = [
+    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
+  ]
 
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict inv = implAddress.reentrantInvoke(
+    "getNoLess",
+    [
+      noLessThenAmtAsset, 
+      noLessThenPriceAsset,
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount
+    ],
+    []
+  )
 
-  strict burnLPAssetOnFactory = invoke(fca,
-                                  "burn",
-                                  [pmtAmt],
-                                  [AttachedPayment(pmtAssetId, pmtAmt)])
-
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
-
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-
-  state ++ refreshDLpActions
+  ([], nil)
 }
 
 # Unstake LP tokens and exit from pool

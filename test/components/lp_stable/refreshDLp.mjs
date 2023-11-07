@@ -57,7 +57,7 @@ describe('lp_stable: refreshDLp.mjs', /** @this {MochaSuiteModified} */() => {
       );
       const evaluateData = response.result.value._2; /* eslint-disable-line */
 
-      const getNoLess = invokeScript({
+      const refreshDLpInvoke = invokeScript({
         dApp: lpStable,
         payment: [],
         call: {
@@ -66,8 +66,8 @@ describe('lp_stable: refreshDLp.mjs', /** @this {MochaSuiteModified} */() => {
         },
         chainId,
       }, this.accounts.user1);
-      await api.transactions.broadcast(getNoLess, {});
-      const { height: refreshHeight } = await ni.waitForTx(getNoLess.id, { apiBase });
+      await api.transactions.broadcast(refreshDLpInvoke, {});
+      const { height: refreshHeight } = await ni.waitForTx(refreshDLpInvoke.id, { apiBase });
 
       const lpStableState = await api.addresses.data(lpStable);
 

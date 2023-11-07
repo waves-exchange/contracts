@@ -1792,10 +1792,10 @@ func getNoLess(
 
   strict burnLPAssetOnFactory = poolAddress.invoke(
                                   "callBurn",
-                                  [fca.bytes, pmtAssetId, pmtAmt],
+                                  [fca.bytes, pmtAssetId.assetIdToString(), pmtAmt],
                                   [])
 
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, -outAmAmt, -outPrAmt, 0)
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, 0, 0, 0)
 
   strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
