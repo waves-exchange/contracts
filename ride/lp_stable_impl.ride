@@ -938,8 +938,7 @@ func getOneTknV2Internal(
   outAssetId: String,
   minOutAmount: Int,
   payments: List[AttachedPayment],
-  caller: Address,
-  originCaller: Address,
+  userAddress: Address,
   transactionId: ByteVector
 ) = {
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
@@ -959,8 +958,6 @@ func getOneTknV2Internal(
   let amDecimals = cfgAmountAssetDecimals
   let prDecimals = cfgPriceAssetDecimals
   let poolStatus = cfgPoolStatus
-
-  let userAddress = originCaller
 
   let pmt = payments[0].value()
   let pmtAssetId = pmt.assetId.value()
@@ -1627,7 +1624,6 @@ func getOneTknV2(
     outAssetId,
     minOutAmount,
     [pmt],
-    i.caller,
     i.originCaller,
     i.transactionId
   )
@@ -1671,10 +1667,11 @@ func refreshDLp() = {
 
 @Callable(i)
 func getOneTknV2READONLY(
+  poolAddressString: String,
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
-  let poolAddress = i.caller
+  let poolAddress = poolAddressString.addressFromStringValue()
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
     cfgPoolAddress,
@@ -1734,7 +1731,11 @@ func getOneTknV2WithBonusREADONLY(
   let amBalance = getAccBalance(poolAddress, amId)
   let prBalance = getAccBalance(poolAddress, prId)
 
-  let (totalGet, feeAmount) = poolAddress.reentrantInvoke("getOneTknV2READONLY", [outAssetId, lpAssetAmount], []).exactAs[(Int, Int)]
+  let (totalGet, feeAmount) = this.invoke(
+    "getOneTknV2READONLY", 
+    [poolAddress.toString(), outAssetId, lpAssetAmount], 
+    []
+  ).exactAs[(Int, Int)]
 
   let r = ego(
     poolAddress,
@@ -1933,7 +1934,6 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
     outAssetId,
     minOutAmount,
     [AttachedPayment(lpAssetId, unstakeAmount)],
-    i.caller,
     i.originCaller,
     i.transactionId
   )

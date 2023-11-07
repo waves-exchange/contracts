@@ -1212,7 +1212,7 @@ func getOneTknV2READONLY(
 ) = {
   strict outData = implAddress.reentrantInvoke(
     "getOneTknV2READONLY",
-    [outAssetId, lpAssetAmount],
+    [this.toString(), outAssetId, lpAssetAmount],
     []
   )
 
