@@ -1224,33 +1224,13 @@ func getOneTknV2WithBonusREADONLY(
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
-  let amId = cfgAmountAssetId.value().toBase58String()
-  let prId = cfgPriceAssetId.value().toBase58String()
-  let lpId = cfgLpAssetId.value().toBase58String()
-
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
-
-  let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, lpAssetAmount], []).exactAs[(Int, Int)]
-
-  let r = ego(
-    "",
-    lpId,
-    lpAssetAmount,
-    this
+  strict outData = implAddress.reentrantInvoke(
+    "getOneTknV2WithBonusREADONLY",
+    [outAssetId, lpAssetAmount],
+    []
   )
 
-  let outAmAmt = r._1
-  let outPrAmt = r._2
-  let sumOfGetAssets = outAmAmt + outPrAmt
-  
-  let bonus = if (sumOfGetAssets == 0) then {
-    if (totalGet == 0) then 0 else "bonus calculation error".throw()
-  } else {
-    fraction((totalGet - sumOfGetAssets), scale8, sumOfGetAssets)
-  }
-
-  ([], (totalGet, feeAmount, bonus))
+  ([], outData)
 }
 
 @Callable(i)

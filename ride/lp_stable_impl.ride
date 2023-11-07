@@ -1715,6 +1715,7 @@ func getOneTknV2WithBonusREADONLY(
   lpAssetAmount: Int
 ) = {
   let poolAddress = i.caller
+  let userAddress = i.originCaller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
     cfgPoolAddress,
@@ -1733,14 +1734,14 @@ func getOneTknV2WithBonusREADONLY(
   let amBalance = getAccBalance(poolAddress, amId)
   let prBalance = getAccBalance(poolAddress, prId)
 
-  let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, lpAssetAmount], []).exactAs[(Int, Int)]
+  let (totalGet, feeAmount) = poolAddress.reentrantInvoke("getOneTknV2READONLY", [outAssetId, lpAssetAmount], []).exactAs[(Int, Int)]
 
   let r = ego(
     poolAddress,
     "",
     lpId,
     lpAssetAmount,
-    this
+    userAddress
   )
 
   let outAmAmt = r._1
