@@ -1817,8 +1817,6 @@ func unstakeAndGet(amount: Int) = {
     cfgPriceAssetDecimals
   ) = poolConfigParsed
 
-  strict checkPayments = if (i.payments.size() != 0) then throw("No pmnts expd") else true
-
   let factoryCfg = gfc()
 
   let lpAssetId = cfgLpAssetId
@@ -1827,7 +1825,7 @@ func unstakeAndGet(amount: Int) = {
   strict currentDLp = calcCurrentDLp(poolAddress, 0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
   # negative amount will not pass
-  strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
+  strict unstakeInv = poolAddress.invoke("callUnstake", [stakingContract.bytes, lpAssetId.assetIdToString(), amount], []);
 
   let r = ego(poolAddress, i.transactionId.toBase58String(), lpAssetId.toBase58String(), amount, i.originCaller)
   let outAmAmt = r._1
@@ -1837,9 +1835,13 @@ func unstakeAndGet(amount: Int) = {
 
   strict v = if (igs() || sts == PoolShutdown) then throw("Blocked: " + sts.toString()) else true
 
-  strict burnA = invoke(fca, "burn", [amount], [AttachedPayment(lpAssetId, amount)])
+  strict burnLPAssetOnFactory = poolAddress.invoke(
+    "callBurn",
+    [fca.bytes, lpAssetId.assetIdToString(), amount],
+    []
+  )
 
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, -outAmAmt, -outPrAmt, 0)
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, 0, 0, 0)
 
   strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
@@ -1863,13 +1865,12 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
   let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown
 
   strict checks = [
-    !isGetDisabled || "get operation is blocked by admin".throw(),
-    i.payments.size() == 0 || "no payments are expected".throw()
+    !isGetDisabled || "get operation is blocked by admin".throw()
   ]
 
   strict currentDLp = calcCurrentDLp(poolAddress, 0.toBigInt(), 0.toBigInt(), 0.toBigInt())
 
-  strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
+  strict unstakeInv = poolAddress.invoke("callUnstake", [stakingContract.bytes, cfgLpAssetId.assetIdToString(), unstakeAmount], []);
 
   let res = ego(poolAddress, i.transactionId.toBase58String(), cfgLpAssetId.toBase58String(), unstakeAmount, i.originCaller)
   let outAmAmt = res._1
@@ -1881,9 +1882,13 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
     outPrAmt >= noLessThenPriceAsset || ["price asset amount to receive is less than ", noLessThenPriceAsset.toString()].makeString("").throw()
   ]
 
-  strict burnLPAssetOnFactory = fca.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
+  strict burnLPAssetOnFactory = poolAddress.invoke(
+    "callBurn",
+    [fca.bytes, cfgLpAssetId.assetIdToString(), unstakeAmount],
+    []
+  )
 
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, -outAmAmt, -outPrAmt, 0)
+  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(poolAddress, 0, 0, 0)
 
   strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
 
