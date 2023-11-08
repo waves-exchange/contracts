@@ -1,0 +1,116 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+{-# IMPORT common.lib.ride #-}
+
+let SEP = "__"
+let WAVES = "WAVES"
+let contractFilename = "wxdao_calculator.ride"
+
+func wrapErr(s: String) = {
+  contractFilename + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
+
+func keyConfigAddress() = "%s__powerConfigAddress"
+func powerConfigAddress(factoryAddress: Address) = {
+  match this.getString(keyConfigAddress()) {
+    case s: String => s.addressFromString()
+    case _: Unit => unit
+  }
+}.valueOrErrorMessage(wrapErr("invalid power config address"))
+
+func keyPowerAssetId() = "powerAssetId"
+func powerAssetId(factoryAddress: Address) = powerConfigAddress(factoryAddress).getString(
+  keyPowerAssetId()
+).valueOrErrorMessage(wrapErr("invalid power asset id")).fromBase58String()
+
+func keyPowerContractAddress() = "%s__powerContractAddress"
+func powerContractAddress(factoryAddress: Address) = {
+  match factoryAddress.getString(keyPowerContractAddress()) {
+    case s: String => s.addressFromString()
+    case _: Unit => unit
+  }
+}.valueOrErrorMessage(wrapErr("invalid power contract address"))
+
+func keyAvailable(userAddress: Address) = ["%s%s", "available", userAddress.toString()].makeString(SEP)
+func keyClaimed(userAddress: Address) = ["%s%s", "claimed", userAddress.toString()].makeString(SEP)
+
+# withdraw from investment account to specified address
+@Callable(i)
+func withdraw(args: List[String]) = {
+  let recipient = addressFromStringValue(args[0])
+  let amount = parseIntValue(args[1])
+  let result = i.caller.invoke("transferWaves", [recipient.bytes, amount], [])
+
+  (nil, result)
+}
+
+# set param example
+@Callable(i)
+func setIntParam(args: List[String]) = {
+  let key = args[0]
+  let val = parseIntValue(args[1])
+  let result = i.caller.invoke("integerEntry", [key, val], [])
+
+  (nil, result)
+}
+
+# Swap WXDAO token to staked PWR token
+# Stake PWR token, send profit to caller, burn WXDAO token
+# payments:
+# - WXDAO token
+@Callable(i)
+func swap(callerPublicKey: ByteVector, args: List[String]) = {
+  (nil, unit)
+}
+
+# Claim staked PWR tokens (for invested WAVES and locked WX)
+@Callable(i)
+func claim(callerPublicKey: ByteVector, args: List[String]) = {
+  let factoryAddress = i.caller
+  let userAddress = addressFromPublicKey(callerPublicKey)
+  let available = factoryAddress.getInteger(keyAvailable(userAddress)).valueOrElse(0)
+  let claimed = factoryAddress.getBoolean(keyClaimed(userAddress)).valueOrElse(false)
+
+  strict checks = [
+    available > 0 || throwErr("nothing to claim"),
+    !claimed || throwErr("already claimed")
+  ]
+
+  let additionalLockRounds = 0
+  let factoryActions = [
+    factoryAddress.invoke("booleanEntry", [
+      keyClaimed(userAddress),
+      true
+    ], []),
+    factoryAddress.invoke(
+      "commitAfterStartWithLockRoundFor",
+      [
+        powerContractAddress(factoryAddress),
+        factoryAddress.toString(),
+        userAddress.toString(),
+        additionalLockRounds,
+        powerAssetId(factoryAddress),
+        available
+      ],
+      i.payments
+    )
+  ]
+
+  ([], factoryActions)
+}
+
+# returns wxdao token price
+@Callable(i)
+func price(callerPublicKey: ByteVector, args: List[String]) = {
+  (nil, 0)
+}
+
+@Verifier(tx)
+func verify() = {
+  chainId == chainIdT
+}
