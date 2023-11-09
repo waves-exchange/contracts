@@ -1,0 +1,29 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+# children + config
+
+func changeBy(key: String, value: Int) = IntegerEntry(key, this.getInteger(key).valueOrElse(0) + value)
+
+func userSkinStore(child: String, user: String) = "skin_" + child + "_" + user
+func skinTotalStore(child: String) = "skin_total_" + child
+
+let pwrAssetId = this.getString("powerAssetId").valueOrErrorMessage("pwr asset id not found").fromBase58String()
+
+@Callable(i)
+func commitAfterStartWithLockRoundFor(
+  child: String,
+  address: String,
+  additionalLockRounds: Int
+) = {
+  let p = i.payments[0]
+  strict checks = [
+    i.payments.size() == 1 && p.assetId == pwrAssetId || throw("invalid payment")
+  ]
+
+  ([
+    child.userSkinStore(address).changeBy(p.amount),
+    child.skinTotalStore().changeBy(p.amount)
+  ], unit)
+}

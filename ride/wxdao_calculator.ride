@@ -65,12 +65,6 @@ func setIntParam(args: List[String]) = {
 # - WXDAO token
 @Callable(i)
 func swap(callerPublicKey: ByteVector, args: List[String]) = {
-  (nil, unit)
-}
-
-# Claim staked PWR tokens (for invested WAVES and locked WX)
-@Callable(i)
-func claim(callerPublicKey: ByteVector, args: List[String]) = {
   let factoryAddress = i.caller
   let userAddress = addressFromPublicKey(callerPublicKey)
   let available = factoryAddress.getInteger(keyAvailable(userAddress)).valueOrElse(0)
