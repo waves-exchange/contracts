@@ -186,15 +186,15 @@ func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector)
   if (i.onlyCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
 
 @Callable(i)
-func transferAssets(recipientBytes: ByteVector, assetsList: List[String], amountsList: List[String]) = {
+func transferAssets(recipientBytes: ByteVector, assetsList: List[ByteVector], amountsList: List[Int]) = {
   if (i.onlyCalculator()) then {
-    func addNewTransfer(acc: (List[ScriptTransfer], Int), nextAssetId: String) = {
+    func addNewTransfer(acc: (List[ScriptTransfer], Int), nextAssetId: ByteVector) = {
       let (transfers, j) = acc
 
       let newTransfer = ScriptTransfer(
         Address(recipientBytes),
-        amountsList[j].parseIntValue(),
-        assetsList[j].stringToAssetId()
+        amountsList[j],
+        assetsList[j]
       )
       let updatedTransfers = transfers :+ newTransfer
       (updatedTransfers, j + 1)

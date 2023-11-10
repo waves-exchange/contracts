@@ -36,8 +36,10 @@ func powerContractAddress(factoryAddress: Address) = {
   }
 }.valueOrErrorMessage(wrapErr("invalid power contract address"))
 
-func keyAvailable(userAddress: Address) = ["%s%s", "available", userAddress.toString()].makeString(SEP)
-func keyClaimed(userAddress: Address) = ["%s%s", "claimed", userAddress.toString()].makeString(SEP)
+func keyAssets() = "%s__assets"
+func getAssetsStr(factoryAddress: Address) = factoryAddress.getString(
+  keyAssets()
+).valueOrErrorMessage(wrapErr("invalid assets"))
 
 # withdraw from investment account to specified address
 @Callable(i)
@@ -67,19 +69,34 @@ func setIntParam(args: List[String]) = {
 func swap(callerPublicKey: ByteVector, args: List[String]) = {
   let factoryAddress = i.caller
   let userAddress = addressFromPublicKey(callerPublicKey)
-  let available = factoryAddress.getInteger(keyAvailable(userAddress)).valueOrElse(0)
-  let claimed = factoryAddress.getBoolean(keyClaimed(userAddress)).valueOrElse(false)
 
-  strict checks = [
-    available > 0 || throwErr("nothing to claim"),
-    !claimed || throwErr("already claimed")
-  ]
+  # TODO: check payments size
+  # TODO: check payment asset id
+  let payment = i.payments[0]
+
+  let pwrPrice = 100 # 100 WXDAO tokens for 1 PWR token
+  let pwrAmount = payment.amount / pwrPrice
+
+  let assetsStr = getAssetsStr(factoryAddress).split(SEP)
+  strict pwrBalance = factoryAddress.assetBalance(powerAssetId(factoryAddress))
+
+  func map(acc: (List[ByteVector], List[Int]), nextAssetId: String) = {
+    let assetId = nextAssetId.fromBase58String()
+    strict balance = factoryAddress.assetBalance(assetId)
+    let amount = fraction(balance, pwrAmount, pwrBalance)
+
+    (
+      acc._1 :+ assetId,
+      acc._2 :+ amount
+    )
+  }
+
+  strict transfers = FOLD<6>(assetsStr, (nil, nil), map)
 
   let additionalLockRounds = 0
   let factoryActions = [
-    factoryAddress.invoke("booleanEntry", [
-      keyClaimed(userAddress),
-      true
+    factoryAddress.invoke("burn", [
+      payment.amount
     ], []),
     factoryAddress.invoke(
       "commitAfterStartWithLockRoundFor",
@@ -89,13 +106,24 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
         userAddress.toString(),
         additionalLockRounds,
         powerAssetId(factoryAddress),
-        available
+        pwrAmount
+      ],
+      i.payments
+    ),
+    factoryAddress.invoke(
+      "transferAssets",
+      [
+        userAddress.bytes,
+        transfers._1,
+        transfers._2
       ],
       i.payments
     )
   ]
 
-  ([], factoryActions)
+  ([
+    Burn(payment.assetId.value(), payment.amount)
+  ], factoryActions)
 }
 
 # returns wxdao token price
