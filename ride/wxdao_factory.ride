@@ -174,12 +174,12 @@ func deleteEntry(key: String) =
   if (i.onlyCalculator()) then ([DeleteEntry(key)], key) else ([], unit)
 
 @Callable(i)
-func reissue(amount: Int) = 
-  if (i.onlyCalculator()) then ([Reissue(lpAssetIdOrFail, amount, true)], amount) else ([], unit)
+func reissue(assetId: ByteVector, amount: Int, reissuable: Boolean) = 
+  if (i.onlyCalculator()) then ([Reissue(assetId, amount, reissuable)], amount) else ([], unit)
 
 @Callable(i)
-func burn(amount: Int) = 
-  if (i.onlyCalculator()) then ([Burn(lpAssetIdOrFail, amount)], amount) else ([], unit)
+func burn(assetId: ByteVector, amount: Int) = 
+  if (i.onlyCalculator()) then ([Burn(assetId, amount)], amount) else ([], unit)
 
 @Callable(i)
 func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 

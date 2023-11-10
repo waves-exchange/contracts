@@ -41,6 +41,11 @@ func getAssetsStr(factoryAddress: Address) = factoryAddress.getString(
   keyAssets()
 ).valueOrErrorMessage(wrapErr("invalid assets"))
 
+func keyLpAssetId() = "%s__lpAssetId"
+func getLpAssetId(factoryAddress: Address) = factoryAddress.getString(
+  keyLpAssetId()
+).valueOrErrorMessage(wrapErr("invalid lp asset id")).fromBase58String()
+
 # withdraw from investment account to specified address
 @Callable(i)
 func withdraw(args: List[String]) = {
@@ -70,9 +75,16 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
   let factoryAddress = i.caller
   let userAddress = addressFromPublicKey(callerPublicKey)
 
-  # TODO: check payments size
-  # TODO: check payment asset id
-  let payment = i.payments[0]
+  let payment = if (i.payments.size() == 1) then i.payments[0] else {
+    throwErr("1 payment is required")
+  }
+
+  let err = wrapErr("invalid payment asset id")
+  let paymentAssetId = if (payment.assetId.valueOrErrorMessage(err) == getLpAssetId(factoryAddress)) then {
+    payment.assetId.value()
+  } else {
+    throwErr(err)
+  }
 
   let pwrPrice = 100 # 100 WXDAO tokens for 1 PWR token
   let pwrAmount = payment.amount / pwrPrice
@@ -95,9 +107,6 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
 
   let additionalLockRounds = 0
   let factoryActions = [
-    factoryAddress.invoke("burn", [
-      payment.amount
-    ], []),
     factoryAddress.invoke(
       "commitAfterStartWithLockRoundFor",
       [
@@ -122,7 +131,7 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
   ]
 
   ([
-    Burn(payment.assetId.value(), payment.amount)
+    Burn(paymentAssetId, payment.amount)
   ], factoryActions)
 }
 
