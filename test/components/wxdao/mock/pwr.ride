@@ -19,7 +19,8 @@ func commitAfterStartWithLockRoundFor(
 ) = {
   let p = i.payments[0]
   strict checks = [
-    i.payments.size() == 1 && p.assetId == pwrAssetId || throw("invalid payment")
+    i.payments.size() == 1 || throw("invalid payments"),
+    p.assetId == pwrAssetId || throw("invalid payment asset")
   ]
 
   ([

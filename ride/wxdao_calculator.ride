@@ -17,7 +17,7 @@ func throwErr(s: String) = {
 
 func keyPowerConfigAddress() = "%s__powerConfigAddress"
 func powerConfigAddress(factoryAddress: Address) = {
-  match this.getString(keyPowerConfigAddress()) {
+  match factoryAddress.getString(keyPowerConfigAddress()) {
     case s: String => s.addressFromString()
     case _: Unit => unit
   }
@@ -97,10 +97,10 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
     strict balance = factoryAddress.assetBalance(assetId)
     let amount = fraction(balance, pwrAmount, pwrBalance)
 
-    (
+    if (amount > 0) then (
       acc._1 :+ assetId,
       acc._2 :+ amount
-    )
+    ) else acc
   }
 
   strict transfers = FOLD<6>(assetsStr, (nil, nil), map)
@@ -110,15 +110,16 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
     factoryAddress.invoke(
       "commitAfterStartWithLockRoundFor",
       [
-        powerContractAddress(factoryAddress),
+        powerContractAddress(factoryAddress).toString(),
         factoryAddress.toString(),
         userAddress.toString(),
         additionalLockRounds,
         powerAssetId(factoryAddress),
         pwrAmount
       ],
-      i.payments
-    ),
+      []
+    )
+  ] ++ if (transfers._1.size() == 0) then [] else [
     factoryAddress.invoke(
       "transferAssets",
       [
@@ -126,7 +127,7 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
         transfers._1,
         transfers._2
       ],
-      i.payments
+      []
     )
   ]
 
