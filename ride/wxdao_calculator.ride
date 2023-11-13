@@ -15,9 +15,9 @@ func throwErr(s: String) = {
   throw(wrapErr(s))
 }
 
-func keyConfigAddress() = "%s__powerConfigAddress"
+func keyPowerConfigAddress() = "%s__powerConfigAddress"
 func powerConfigAddress(factoryAddress: Address) = {
-  match this.getString(keyConfigAddress()) {
+  match this.getString(keyPowerConfigAddress()) {
     case s: String => s.addressFromString()
     case _: Unit => unit
   }
