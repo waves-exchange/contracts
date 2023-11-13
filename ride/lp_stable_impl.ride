@@ -1911,7 +1911,7 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
 
   let isPoolOneTokenOperationsDisabled = fca.invoke(
     "isPoolOneTokenOperationsDisabledREADONLY",
-    [this.toString()],
+    [poolAddress.toString()],
     []
   ).exactAs[Boolean]
   let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
@@ -1926,9 +1926,10 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
   let lpAssetId = cfgLpAssetId
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
 
-  let userAddress = i.caller
-  let lpAssetRecipientAddress = this
-  strict unstakeInv = staking.invoke("unstakeINTERNAL", [
+  let userAddress = i.originCaller
+  let lpAssetRecipientAddress = poolAddress
+  strict unstakeInv = poolAddress.invoke("callUnstakeINTERNAL", [
+    staking.bytes,
     lpAssetId,
     unstakeAmount,
     userAddress.bytes,
@@ -1939,7 +1940,7 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
     outAssetId,
     minOutAmount,
     [AttachedPayment(lpAssetId, unstakeAmount)],
-    i.originCaller,
+    userAddress,
     i.transactionId
   )
 

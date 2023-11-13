@@ -1043,6 +1043,12 @@ func callUnstake(dappAddress: ByteVector, assetId: String, amount: Int) = {
 }
 
 @Callable(i)
+func callUnstakeINTERNAL(dappAddress: ByteVector, assetId: String, amount: Int, userAddress: ByteVector, recipientAddress: ByteVector) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("unstakeINTERNAL", [assetId, amount, userAddress, recipientAddress], [])) else ([], unit)
+}
+
+
+@Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
   let totalGetRaw = implAddress.reentrantInvoke(
     "calculateAmountOutForSwapREADONLY",
@@ -1286,41 +1292,18 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
 @Callable(i)
 func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke(
-    "isPoolOneTokenOperationsDisabledREADONLY",
-    [this.toString()],
-    []
-  ).exactAs[Boolean]
-  let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  strict checkPayments = (i.payments.size() == 0) || throw("no payments are expected")
 
-  strict checks = [
-    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
-    i.payments.size() == 0 || "no payments are expected".throwErr()
-  ]
+    strict totalAmount = implAddress.reentrantInvoke(
+    "unstakeAndGetOneTknV2", 
+    [
+      unstakeAmount,
+      outAssetId,
+      minOutAmount
+    ], 
+    [])
 
-  let factoryCfg = gfc()
-
-  let lpAssetId = cfgLpAssetId
-  let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
-
-  let userAddress = i.caller
-  let lpAssetRecipientAddress = this
-  strict unstakeInv = staking.invoke("unstakeINTERNAL", [
-    lpAssetId,
-    unstakeAmount,
-    userAddress.bytes,
-    lpAssetRecipientAddress.bytes
-  ], [])
-  let (state, totalAmount) = getOneTknV2Internal(
-    outAssetId,
-    minOutAmount,
-    [AttachedPayment(lpAssetId, unstakeAmount)],
-    i.caller,
-    i.originCaller,
-    i.transactionId
-  )
-
-  (state, totalAmount)
+  ([], totalAmount)
 }
 
 @Callable(i)
