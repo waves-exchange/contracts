@@ -95,6 +95,7 @@ func voteINTERNAL(
 }
 
 func keyCalculatorAddress() = "%s__calculatorAddress"
+func keyPoolsFactoryAddress() = "%s__poolsFactoryAddress"
 
 func keyLpAssetId() = "%s__lpAssetId"
 
@@ -218,6 +219,7 @@ func init(
   calculatorAddressStr: String,
   powerConfigAddressStr: String,
   powerContractAddress: String, # child
+  poolsFactoryAddressStr: String,
   periodLength: Int,
   treasuryValue: Int,
   assets: List[String]
@@ -229,6 +231,7 @@ func init(
     StringEntry(keyCalculatorAddress(), calculatorAddressStr),
     StringEntry(keyPowerConfigAddress(), powerConfigAddressStr),
     StringEntry(keyPowerContractAddress(), powerContractAddress),
+    StringEntry(keyPoolsFactoryAddress(), poolsFactoryAddressStr),
     IntegerEntry(keyPeriodLength(), periodLength),
     IntegerEntry(keyTreasuryValue(), treasuryValue),
     IntegerEntry(keyTreasuryValueByPeriod(0), treasuryValue),

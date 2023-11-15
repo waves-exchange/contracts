@@ -1032,6 +1032,34 @@ func deletePool(poolContractAddress: String) = {
   ]
 }
 
+@Callable(i)
+func getPriceX18(poolAddressStr: String) = {
+  let poolAddress = poolAddressStr.addressFromStringValue()
+  let cfg = getPoolConfig(poolAddressStr)
+  let lpAssetId = cfg[idxPoolLPAssetId].fromBase58String()
+  let amtAssetId = cfg[idxAmtAssetId]
+  let priceAssetId = cfg[idxPriceAssetId]
+
+  let poolLpBalance = lpAssetId.assetInfo().value().quantity
+  let accAmtAssetBalance = poolAddress.invoke("getAccBalanceWrapperREADONLY", [amtAssetId], []).exactAs[Int]
+  let accPriceAssetBalance = poolAddress.invoke("getAccBalanceWrapperREADONLY", [priceAssetId], []).exactAs[Int]
+
+  let price = if (poolLpBalance == 0) then {
+    0.toString()
+  } else {
+    poolAddress.invoke(
+      "calcPricesWrapperREADONLY",
+      [accAmtAssetBalance, accPriceAssetBalance, poolLpBalance],
+      []
+    ).exactAs[List[Any]][0].exactAs[String]
+  }
+
+  (
+    [],
+    price
+  )
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {

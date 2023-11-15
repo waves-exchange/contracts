@@ -6,6 +6,7 @@
 let SEP = "__"
 let WAVES = "WAVES"
 let contractFilename = "wxdao_calculator.ride"
+let mult18 = 1_000_000_000_000_000_000.toBigInt()
 
 func wrapErr(s: String) = {
   contractFilename + ": " + s
@@ -36,6 +37,14 @@ func powerContractAddress(factoryAddress: Address) = {
   }
 }.valueOrErrorMessage(wrapErr("invalid power contract address"))
 
+func keyPoolsFactoryAddress() = "%s__poolsFactoryAddress"
+func getPoolsFactoryAddress(factoryAddress: Address) = {
+  match factoryAddress.getString(keyPoolsFactoryAddress()) {
+    case s: String => s.addressFromString()
+    case _: Unit => unit
+  }
+}.valueOrErrorMessage(wrapErr("invalid pools factory address"))
+
 func keyAssets() = "%s__assets"
 func getAssetsStr(factoryAddress: Address) = factoryAddress.getString(
   keyAssets()
@@ -45,6 +54,45 @@ func keyLpAssetId() = "%s__lpAssetId"
 func getLpAssetId(factoryAddress: Address) = factoryAddress.getString(
   keyLpAssetId()
 ).valueOrErrorMessage(wrapErr("invalid lp asset id")).fromBase58String()
+
+func getAssetPrice(i: Invocation, assetId: ByteVector) = {
+  let factoryAddress = i.caller
+  let poolsFactoryAddress = getPoolsFactoryAddress(factoryAddress)
+  # mainnet
+  # WAVES/USDT
+  # WAVES/XTN -> XTN/USDT
+  match assetId {
+    # PWR 2thsACuHmzDMuNezPM32wg9a3BwUzBWDeSKakgz3cw21
+    # PWR/WAVES -> WAVES/USDT -> PWR/USDT
+
+    # WX Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on
+    # WX/WAVES -> WAVES/USDT -> WX/USDT
+    case base58'Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on' => {
+      let wxWavesAddressStr = "3PFzaH2ghpwANHFgjeva83N1yxzErELx2eh"
+      let wavesUsdtAddressStr = "3PKfrupEydU2nZAghVjZAfvCwMBkzuR1F52"
+      let wxWavesPrice = poolsFactoryAddress.invoke("getPriceX18", [wxWavesAddressStr], []).exactAs[String].parseBigIntValue()
+      let wavesUsdtPrice = poolsFactoryAddress.invoke("getPriceX18", [wavesUsdtAddressStr], []).exactAs[String].parseBigIntValue()
+      let wxUsdtPrice = fraction(wxWavesPrice, wavesUsdtPrice, mult18)
+      wxUsdtPrice
+    }
+    # USDT-WXG 34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ
+    # USDT-WXG/XTN -> WAVES/XTN -> XTN/USDT -> USDT-WXG/USDT
+
+    # USDC-WXG 6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ
+    # USDС-WXG/XTN -> WAVES/XTN -> XTN/USDT -> USDС-WXG/USDT
+
+    # LTC-WXG HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk
+    # LTC-WXG/XTN -> WAVES/XTN -> XTN/USDT -> LTC-WXG/USDT
+
+    # ETH-WXG 474jTeYx2r2Va35794tCScAXWJG9hU2HcgxzMowaZUnu
+    # ETH-WXG/WAVES -> WAVES/USDT -> ETH-WXG/USDT
+
+    # BTC-WXG 8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS
+    # BTC-WXG/XTN -> WAVES/XTN -> XTN/USDT -> BTC/USDT
+
+    case _ => throwErr("invalid asset id")
+  }
+}
 
 # withdraw from investment account to specified address
 @Callable(i)
