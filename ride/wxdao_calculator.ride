@@ -61,34 +61,66 @@ func getAssetPrice(i: Invocation, assetId: ByteVector) = {
   # mainnet
   # WAVES/USDT
   # WAVES/XTN -> XTN/USDT
+  let wavesUsdtAddressStr = "3PKfrupEydU2nZAghVjZAfvCwMBkzuR1F52"
+  let wavesUsdtPrice = poolsFactoryAddress.invoke("getPrice", [wavesUsdtAddressStr], []).exactAs[Int]
+  let wavesXtnAddressStr = "3PPZWgFNRKHLvM51pwS934C8VZ7d2F4Z58g"
+  let wavesXtnPrice = poolsFactoryAddress.invoke("getPrice", [wavesXtnAddressStr], []).exactAs[Int]
+  let xtnUsdtPrice = fraction(wavesUsdtPrice, mult8, wavesXtnPrice)
   match assetId {
     # PWR 2thsACuHmzDMuNezPM32wg9a3BwUzBWDeSKakgz3cw21
     # PWR/WAVES -> WAVES/USDT -> PWR/USDT
+    case base58'2thsACuHmzDMuNezPM32wg9a3BwUzBWDeSKakgz3cw21' => {
+      let pwrWavesAddressStr = "3PDi7Qq8pLQYvtKyTfQuqqPUWyhoYbU957t"
+      let pwrWavesPrice = poolsFactoryAddress.invoke("getPrice", [pwrWavesAddressStr], []).exactAs[Int]
+      fraction(pwrWavesPrice, wavesUsdtPrice, mult8)
+    }
 
     # WX Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on
     # WX/WAVES -> WAVES/USDT -> WX/USDT
     case base58'Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on' => {
       let wxWavesAddressStr = "3PFzaH2ghpwANHFgjeva83N1yxzErELx2eh"
-      let wavesUsdtAddressStr = "3PKfrupEydU2nZAghVjZAfvCwMBkzuR1F52"
       let wxWavesPrice = poolsFactoryAddress.invoke("getPrice", [wxWavesAddressStr], []).exactAs[Int]
-      let wavesUsdtPrice = poolsFactoryAddress.invoke("getPrice", [wavesUsdtAddressStr], []).exactAs[Int]
-      let wxUsdtPrice = fraction(wxWavesPrice, wavesUsdtPrice, mult8)
-      wxUsdtPrice
+      fraction(wxWavesPrice, wavesUsdtPrice, mult8)
     }
     # USDT-WXG 34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ
-    # USDT-WXG/XTN -> WAVES/XTN -> XTN/USDT -> USDT-WXG/USDT
+    # USDT-WXG/XTN -> XTN/USDT -> USDT-WXG/USDT
+    case base58'34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ' => {
+      let usdtwxgXtnAddressStr = "3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz"
+      let usdtwxgXtnPrice = poolsFactoryAddress.invoke("getPrice", [usdtwxgXtnAddressStr], []).exactAs[Int]
+      fraction(usdtwxgXtnPrice, xtnUsdtPrice, mult8)
+    }
 
     # USDC-WXG 6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ
-    # USDС-WXG/XTN -> WAVES/XTN -> XTN/USDT -> USDС-WXG/USDT
+    # WAVES/USDС-WXG -> WAVES/USDT -> USDС-WXG/USDT
+    case base58'6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ' => {
+      let wavesUsdcwxgAddressStr = "3P3g3eipfG2NZKKQE8DZXt2E9tRJqii9jcX"
+      let usdcwxgXtnPrice = poolsFactoryAddress.invoke("getPrice", [wavesUsdcwxgAddressStr], []).exactAs[Int]
+      fraction(wavesUsdtPrice, mult8, usdcwxgXtnPrice)
+    }
 
     # LTC-WXG HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk
-    # LTC-WXG/XTN -> WAVES/XTN -> XTN/USDT -> LTC-WXG/USDT
+    # LTC-WXG/XTN -> XTN/USDT -> LTC-WXG/USDT
+    case base58'HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk' => {
+      let ltcwxgXtnAddressStr = "3P94wvu5gA7VhjPgAB3twaeqdwHCwNK2vsn"
+      let ltcwxgXtnPrice = poolsFactoryAddress.invoke("getPrice", [ltcwxgXtnAddressStr], []).exactAs[Int]
+      fraction(ltcwxgXtnPrice, xtnUsdtPrice, mult8)
+    }
 
     # ETH-WXG 474jTeYx2r2Va35794tCScAXWJG9hU2HcgxzMowaZUnu
     # ETH-WXG/WAVES -> WAVES/USDT -> ETH-WXG/USDT
+    case base58'HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk' => {
+      let ethwxgXtnAddressStr = "3P3XGTN6s292g9iwYhs3TEqJqHiffQYojuE"
+      let ethwxgXtnPrice = poolsFactoryAddress.invoke("getPrice", [ethwxgXtnAddressStr], []).exactAs[Int]
+      fraction(ethwxgXtnPrice, wavesUsdtPrice, mult8)
+    }
 
     # BTC-WXG 8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS
-    # BTC-WXG/XTN -> WAVES/XTN -> XTN/USDT -> BTC/USDT
+    # BTC-WXG/XTN -> XTN/USDT -> BTC-WXG/USDT
+    case base58'HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk' => {
+      let btcwxgXtnAddressStr = "3PCBWDTA6jrFswd7gQgaE3Xk7gLM5RKofvp"
+      let btcwxgXtnPrice = poolsFactoryAddress.invoke("getPrice", [btcwxgXtnAddressStr], []).exactAs[Int]
+      fraction(btcwxgXtnPrice, wavesUsdtPrice, mult8)
+    }
 
     case _ => throwErr("invalid asset id")
   }
