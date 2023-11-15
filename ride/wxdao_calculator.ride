@@ -6,7 +6,7 @@
 let SEP = "__"
 let WAVES = "WAVES"
 let contractFilename = "wxdao_calculator.ride"
-let mult18 = 1_000_000_000_000_000_000.toBigInt()
+let mult8 = 100_000_000
 
 func wrapErr(s: String) = {
   contractFilename + ": " + s
@@ -70,9 +70,9 @@ func getAssetPrice(i: Invocation, assetId: ByteVector) = {
     case base58'Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on' => {
       let wxWavesAddressStr = "3PFzaH2ghpwANHFgjeva83N1yxzErELx2eh"
       let wavesUsdtAddressStr = "3PKfrupEydU2nZAghVjZAfvCwMBkzuR1F52"
-      let wxWavesPrice = poolsFactoryAddress.invoke("getPriceX18", [wxWavesAddressStr], []).exactAs[String].parseBigIntValue()
-      let wavesUsdtPrice = poolsFactoryAddress.invoke("getPriceX18", [wavesUsdtAddressStr], []).exactAs[String].parseBigIntValue()
-      let wxUsdtPrice = fraction(wxWavesPrice, wavesUsdtPrice, mult18)
+      let wxWavesPrice = poolsFactoryAddress.invoke("getPrice", [wxWavesAddressStr], []).exactAs[Int]
+      let wavesUsdtPrice = poolsFactoryAddress.invoke("getPrice", [wavesUsdtAddressStr], []).exactAs[Int]
+      let wxUsdtPrice = fraction(wxWavesPrice, wavesUsdtPrice, mult8)
       wxUsdtPrice
     }
     # USDT-WXG 34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ
