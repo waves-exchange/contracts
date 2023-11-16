@@ -104,7 +104,6 @@ func keyCurrentPeriod() = ["%s", "currentPeriod"].makeString(SEP)
 func keyStartHeightByPeriod(period: Int) = ["%s%d", "startHeight", period.toString()].makeString(SEP)
 func keyPeriodLength() = ["%s", "periodLength"].makeString(SEP)
 func keyTreasuryValueByPeriod(period: Int) = ["%s%d", "treasuryValue", period.toString()].makeString(SEP)
-func keyTreasuryValue() = ["%s", "treasuryValue"].makeString(SEP)
 
 let calculatorAddressOption = match this.getString(keyCalculatorAddress()) {
   case s: String => s.addressFromString()
@@ -234,7 +233,6 @@ func init(
     StringEntry(keyPowerContractAddress(), powerContractAddress),
     StringEntry(keyPoolsFactoryAddress(), poolsFactoryAddressStr),
     IntegerEntry(keyPeriodLength(), periodLength),
-    IntegerEntry(keyTreasuryValue(), treasuryValue),
     IntegerEntry(keyTreasuryValueByPeriod(0), treasuryValue),
     IntegerEntry(keyCurrentPeriod(), 0),
     IntegerEntry(keyStartHeightByPeriod(0), height),
