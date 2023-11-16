@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **16:04 16.11.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **17:23 16.11.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -163,6 +163,9 @@ PETE/RoyalGacoin pool | [`3PJZot6W73an5rSL9kLRCXFh4gBNsZPkMm6`](https://wavesexp
 Marquise Museum/WX pool | [`3PLycrasptVBbH9UkAZBMjDYtYanzwT6oic`](https://wavesexplorer.com/addresses/3PLycrasptVBbH9UkAZBMjDYtYanzwT6oic) | `3jqJoFUpxSmZXLqXMc8dSkDeaeZtj2rU4aExHruGiHJT` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 PETE/TheGakingdom pool | [`3PCKZ7r5qryy6S3me1rXzxTxnu3YcfkrL2c`](https://wavesexplorer.com/addresses/3PCKZ7r5qryy6S3me1rXzxTxnu3YcfkrL2c) | `5wtxNDTCbzXRPPduqpMhLm2BZFr7uiiedcMbdZfwxpf` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 LortrexNetwork/PETE pool | [`3P5ataMsBpNb5cQSSNYdMFVsjyRrwKe7qbB`](https://wavesexplorer.com/addresses/3P5ataMsBpNb5cQSSNYdMFVsjyRrwKe7qbB) | `5CMiiXgRGGv314GUhCmTGcoeHJehbuixTnTsvvwXCK7P` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+ROME/WAVES pool | [`3PNw62rrdrA8TjtgDn1eLiHPceijwN3YvQy`](https://wavesexplorer.com/addresses/3PNw62rrdrA8TjtgDn1eLiHPceijwN3YvQy) | `EcWmgwLPpYh4gYJc8joXp7dCJudunUJqgETyKbqqRQS1` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+ROME/WX pool | [`3P8BxuVGXmgb6P3Kzw3Vcyv4MdiDZ9hKCXJ`](https://wavesexplorer.com/addresses/3P8BxuVGXmgb6P3Kzw3Vcyv4MdiDZ9hKCXJ) | `2nmmBP17GABfB2gwbWsDYD38rnjpGavnGhyvpFtFCND2` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+ROME/XTN pool | [`3PQB4h6gBqzVuujCN9P5RvvyKP4D4YnpqwY`](https://wavesexplorer.com/addresses/3PQB4h6gBqzVuujCN9P5RvvyKP4D4YnpqwY) | `GLV1vbGy6PjodXnHYksh5GD3zqZnR5jJaWUz4ctzMsZc` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -217,8 +220,8 @@ Curve DAO Token | [`3KhNcHo4We1G5EWps7b1e5DTdLgWDzctc8S6ynu37KAb`](https://waves
 DEPS | [`C5Z9rc59bQgNF5GHsHxtRXJboGTMyXCFopsd7moevx4F`](https://wavesexplorer.com/assets/C5Z9rc59bQgNF5GHsHxtRXJboGTMyXCFopsd7moevx4F) | Deposit Coin 
 DOBERCOIN | [`AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc`](https://wavesexplorer.com/assets/AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc) | A digital meme coin. Created in honor of a beloved pet. 
 Duck Egg | [`C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS`](https://wavesexplorer.com/assets/C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS) | Utility and Reward token @ WavesDucks.com game. The duckiest token in the world. 
-EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.com/assets/3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK) | Enterprise Algorithmic Stable Token 
 EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
+EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.com/assets/3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK) | Enterprise Algorithmic Stable Token 
 ENNO | [`7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg`](https://wavesexplorer.com/assets/7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg) | Native utility and governance token of Enno Wallet 
 ETH-Ethereum-PPT | [`3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13`](https://wavesexplorer.com/assets/3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
 gxWX | [`3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii`](https://wavesexplorer.com/assets/3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii) | xWX - purpose of the token, increase the value and liquidity of the WX token.  The program will launch after the implementation of 15% of the emission of 1 xWX -1 WX with the support of the private capital community 
@@ -260,6 +263,7 @@ Key features of Rebuild:
 Post-conflict reconstruction: A portion of the transactions will be used to fund projects for rebuilding damaged schools and hospitals, restoring essential services, providing access to education and healthcare, and preserving the environment. Additionally, part of the funds raised will be allocated to protecting the local flora and fauna affected by disasters, preserving biodiversity and ecological balance.
 
 Transparency and accountability: Blockchain technology will ensure the traceability and transparency of donations and the use of funds, ensuring that every contribution is utilized for its intended purposes. 
+ROME | [`AP4Cb5xLYGH6ZigHreCZHoXpQTWDkPsG2BHqfDUx6taJ`](https://wavesexplorer.com/assets/AP4Cb5xLYGH6ZigHreCZHoXpQTWDkPsG2BHqfDUx6taJ) | Rome. Res Stabilis Ultima. 
 RoyalGacoin | [`G1tyWnzaEfWNevesep8d13MAhsrxSoS7QDBUtEQ7vA1d`](https://wavesexplorer.com/assets/G1tyWnzaEfWNevesep8d13MAhsrxSoS7QDBUtEQ7vA1d) | La crypto monnaie royal du peuple Ga est une crypto monnaie qui intervient dans plusieurs projets lucratives tout genre d'investissement inclus, la monnaie ce veut participante à la lutte contre la pauvreté et encourager les jeunes entrepreneurs et investisseurs. Les parts des investisseurs seront reversés selon la participation du capital émis par chacun. RoyalGacoin  http://gakingdomcoin.news.blog/   email : 
 gabusinesspeuple@gmail.com  
 SAND | [`8YyrMfuBdZ5gtMWkynLTveRvGb6LJ4Aff9rpz46UUMW`](https://wavesexplorer.com/assets/8YyrMfuBdZ5gtMWkynLTveRvGb6LJ4Aff9rpz46UUMW) | Wrapped SAND token 
@@ -415,6 +419,9 @@ POWERWAVESLP | [`AKQsEQoeinKRFtdx6rhKWcpkAMu6cbDLdtSWnR8tpBCq`](https://wavesexp
 PUZZLEWAVESLP | [`7G687ui3m59oAd6qkyni2vt77bHF4bbA6xcPfDo3uiTu`](https://wavesexplorer.com/assets/7G687ui3m59oAd6qkyni2vt77bHF4bbA6xcPfDo3uiTu) | PUZZLE/WAVES pool liquidity provider token 
 PUZZLEXTNLP | [`E8zHu33GfcNyGLypX77gZiUXfvuZQeaYmiEfsy7VYNwP`](https://wavesexplorer.com/assets/E8zHu33GfcNyGLypX77gZiUXfvuZQeaYmiEfsy7VYNwP) | WX PUZZLE/XTN pool liquidity provider token 
 RACEXTNLP | [`E4c8uXbwsUkPyD4XRpiYF8AXBzWDH5CjZkeXNCLoiMsD`](https://wavesexplorer.com/assets/E4c8uXbwsUkPyD4XRpiYF8AXBzWDH5CjZkeXNCLoiMsD) | WX RACE/XTN pool liquidity provider token 
+ROME~WAVESLP | [`BjGeEcGqg3m6cuySrJFyse171q6UvTsG74boopy6x3UX`](https://wavesexplorer.com/assets/BjGeEcGqg3m6cuySrJFyse171q6UvTsG74boopy6x3UX) | ROME~/WAVES pool liquidity provider token 
+ROME~WXLP | [`87cr61Qs7NMk7ADNPSPhy8HcsTnTvUkfNGoQwHCyvB47`](https://wavesexplorer.com/assets/87cr61Qs7NMk7ADNPSPhy8HcsTnTvUkfNGoQwHCyvB47) | ROME~/WX pool liquidity provider token 
+ROME~XTNLP | [`DzRKHSQ4wibtJ3F1Y3jh5R8uSJpaQYuwVtfd9BHDqGAC`](https://wavesexplorer.com/assets/DzRKHSQ4wibtJ3F1Y3jh5R8uSJpaQYuwVtfd9BHDqGAC) | ROME~/XTN pool liquidity provider token 
 RUBNUSDNLP | [`7ZHWXXrftxaeGjyJgguVU5vE1pja2AWEPKyohLWRTnhz`](https://wavesexplorer.com/assets/7ZHWXXrftxaeGjyJgguVU5vE1pja2AWEPKyohLWRTnhz) | WX RUBN/USDN pool liquidity provider token 
 SANDXTNLP | [`BN9s7S1KSY3qoSJo19wz9yBCNStMHAzTDwdWBtbjf6Nv`](https://wavesexplorer.com/assets/BN9s7S1KSY3qoSJo19wz9yBCNStMHAzTDwdWBtbjf6Nv) | WX SAND/XTN pool liquidity provider token 
 Sasha-X~WAVESLP | [`27MHAaZfMjczaqMM2RT7JPoHqUT5UArwKj1A65MaEUNV`](https://wavesexplorer.com/assets/27MHAaZfMjczaqMM2RT7JPoHqUT5UArwKj1A65MaEUNV) | Sasha-X~/WAVES pool liquidity provider token 
