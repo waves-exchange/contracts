@@ -251,14 +251,16 @@ func commitAfterStartWithLockRoundFor(
   paymentAssetId: ByteVector,
   paymentAmount: Int
 ) = {
-  (
-    nil,
-    addressFromStringValue(contract).invoke(
-      "commitAfterStartWithLockRoundFor",
-      [child, address, additionalLockRounds],
-      [AttachedPayment(paymentAssetId, paymentAmount)]
+  if (i.onlyCalculator()) then {
+    (
+      nil,
+      addressFromStringValue(contract).invoke(
+        "commitAfterStartWithLockRoundFor",
+        [child, address, additionalLockRounds],
+        [AttachedPayment(paymentAssetId, paymentAmount)]
+      )
     )
-  )
+  } else (nil, unit)
 }
 
 # calculator address should be replaced to change logic
