@@ -291,12 +291,13 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
   strict transfers = FOLD<6>(assetsStr, (nil, nil), map)
 
   let additionalLockRounds = 1
+  let treasuryAddress = factoryAddress.getTreasuryAddress()
   let factoryActions = [
     factoryAddress.invoke(
       "commitAfterStartWithLockRoundFor",
       [
         powerContractAddress(factoryAddress).toString(),
-        factoryAddress.toString(),
+        treasuryAddress.toString(),
         userAddress.toString(),
         additionalLockRounds,
         getPowerAssetId(factoryAddress),
