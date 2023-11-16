@@ -290,7 +290,7 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
 
   strict transfers = FOLD<6>(assetsStr, (nil, nil), map)
 
-  let additionalLockRounds = 0
+  let additionalLockRounds = 1
   let factoryActions = [
     factoryAddress.invoke(
       "commitAfterStartWithLockRoundFor",
