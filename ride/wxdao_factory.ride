@@ -96,6 +96,7 @@ func voteINTERNAL(
 
 func keyCalculatorAddress() = "%s__calculatorAddress"
 func keyPoolsFactoryAddress() = "%s__poolsFactoryAddress"
+func keyTreasuryAddress() = "%s__treasuryAddress"
 
 func keyLpAssetId() = "%s__lpAssetId"
 
