@@ -216,6 +216,7 @@ func transferWaves(recipientBytes: ByteVector, amount: Int) =
 @Callable(i)
 func init(
   lpAssetIdStr: String,
+  treasuryAddressStr: String,
   calculatorAddressStr: String,
   powerConfigAddressStr: String,
   powerContractAddress: String, # child
@@ -228,6 +229,7 @@ func init(
 
   ([
     StringEntry(keyLpAssetId(), lpAssetIdStr),
+    StringEntry(keyTreasuryAddress(), treasuryAddressStr),
     StringEntry(keyCalculatorAddress(), calculatorAddressStr),
     StringEntry(keyPowerConfigAddress(), powerConfigAddressStr),
     StringEntry(keyPowerContractAddress(), powerContractAddress),
