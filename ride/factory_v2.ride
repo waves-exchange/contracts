@@ -1053,7 +1053,7 @@ func getPrice(poolAddressStr: String) = {
       "calcPricesWrapperREADONLY",
       [accAmtAssetBalance, accPriceAssetBalance, poolLpBalance],
       []
-    ).exactAs[List[Any]][0].exactAs[String].parseBigIntValue().fromX18(MULT8)
+    ).exactAs[List[Any]][0].exactAs[String]
   }
 
   (
