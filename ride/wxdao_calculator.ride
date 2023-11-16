@@ -123,11 +123,11 @@ func getAssetsPrices(poolsFactoryAddress: Address, assetIdList: List[String]) = 
           fraction(wxWavesPrice, wavesUsdtPrice, mult18)
         }
         # USDT-WXG 34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ
-        # USDT-WXG/XTN -> XTN/USDT -> USDT-WXG/USDT
+        # WAVES/USDT-WXG -> WAVES/USDT -> USDT-WXG/USDT
         case "34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ" => {
-          let usdtwxgXtnAddressStr = "3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz"
-          let usdtwxgXtnPrice = poolsFactoryAddress.invoke("getPrice", [usdtwxgXtnAddressStr], []).exactAs[String].parseBigIntValue()
-          fraction(usdtwxgXtnPrice, xtnUsdtPrice, mult18)
+          let wavesUsdtwxgAddressStr = "3PKMVZ7kQeaREajYi8Yc25Ro6mcNw5D6QSa"
+          let wavesUsdtwxgPrice = poolsFactoryAddress.invoke("getPrice", [wavesUsdtwxgAddressStr], []).exactAs[String].parseBigIntValue()
+          fraction(wavesUsdtPrice, mult18, wavesUsdtwxgPrice)
         }
 
         # USDC-WXG 6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ
