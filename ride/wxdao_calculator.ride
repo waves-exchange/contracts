@@ -273,8 +273,7 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
   let assetsStr = getAssetsStr(factoryAddress).split(SEP)
   strict pwrBalance = factoryAddress.assetBalance(getPowerAssetId(factoryAddress))
 
-  let treasuryAddress = factoryAddress.getTreasuryAddress()
-  let assetsBalances = getAssetsBalances(treasuryAddress, assetsStr)
+  let assetsBalances = getAssetsBalances(factoryAddress, assetsStr)
 
   func map(acc: (List[ByteVector], List[Int]), nextAssetIdStr: String) = {
     let assetId = nextAssetIdStr.fromBase58String()
