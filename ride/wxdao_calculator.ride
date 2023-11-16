@@ -7,6 +7,10 @@ let SEP = "__"
 let WAVES = "WAVES"
 let contractFilename = "wxdao_calculator.ride"
 let mult8 = 100_000_000
+let mult18 = 1_000_000_000_000_000_000.toBigInt()
+
+func toX18(origVal: Int, origScaleMult: Int) = fraction(origVal.toBigInt(), mult18, origScaleMult.toBigInt())
+func fromX18(val: BigInt, resultScaleMult: Int) = fraction(val, resultScaleMult.toBigInt(), mult18).toInt()
 
 func wrapErr(s: String) = {
   contractFilename + ": " + s
@@ -136,7 +140,7 @@ func getAssetsPrices(poolsFactoryAddress: Address, assetIdList: List[String]) = 
 
         # ETH-WXG 474jTeYx2r2Va35794tCScAXWJG9hU2HcgxzMowaZUnu
         # ETH-WXG/WAVES -> WAVES/USDT -> ETH-WXG/USDT
-        case "HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk" => {
+        case "474jTeYx2r2Va35794tCScAXWJG9hU2HcgxzMowaZUnu" => {
           let ethwxgXtnAddressStr = "3P3XGTN6s292g9iwYhs3TEqJqHiffQYojuE"
           let ethwxgXtnPrice = poolsFactoryAddress.invoke("getPrice", [ethwxgXtnAddressStr], []).exactAs[Int]
           fraction(ethwxgXtnPrice, wavesUsdtPrice, mult8)
@@ -144,7 +148,7 @@ func getAssetsPrices(poolsFactoryAddress: Address, assetIdList: List[String]) = 
 
         # BTC-WXG 8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS
         # BTC-WXG/XTN -> XTN/USDT -> BTC-WXG/USDT
-        case "HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk" => {
+        case "8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS" => {
           let btcwxgXtnAddressStr = "3PCBWDTA6jrFswd7gQgaE3Xk7gLM5RKofvp"
           let btcwxgXtnPrice = poolsFactoryAddress.invoke("getPrice", [btcwxgXtnAddressStr], []).exactAs[Int]
           fraction(btcwxgXtnPrice, wavesUsdtPrice, mult8)
@@ -313,13 +317,14 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
 @Callable(i)
 func price(callerPublicKey: ByteVector, args: List[String]) = {
   let factoryAddress = i.caller
+  let poolsFactoryAddress = factoryAddress.getPoolsFactoryAddress()
   let currentPeriod = factoryAddress.getInteger(keyCurrentPeriod())
     .valueOrErrorMessage(wrapErr("invalid current period"))
   let startTreasuryValue = factoryAddress.getInteger(keyTreasuryValueByPeriod(currentPeriod))
     .valueOrErrorMessage(wrapErr("invalid treasury value for period " + currentPeriod.toString()))
   let treasuryValue = calcTreasuryValue(factoryAddress)
   let treasuryValueDiff = treasuryValue - startTreasuryValue
-  let pwrPriceRaw = getAssetsPrices(factoryAddress, [getPowerAssetId(factoryAddress).toBase58String()])[0]
+  let pwrPriceRaw = getAssetsPrices(poolsFactoryAddress, [getPowerAssetId(factoryAddress).toBase58String()])[0]
   let pwrPrice = if (pwrPriceRaw > 0) then pwrPriceRaw else throwErr("invalid PWR price")
   let price = if (treasuryValueDiff < 0) then {
     pwrPrice / 100
