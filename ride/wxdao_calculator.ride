@@ -176,6 +176,13 @@ func getAssetsPrices(poolsFactoryAddress: Address, assetIdList: List[String]) = 
           let usdcUsdtPrice = poolsFactoryAddress.invoke("getPrice", [usdcUsdtAddressStr], []).exactAs[Int]
           usdcUsdtPrice
         }
+
+        # PWR
+        case "8Q6SE2ANebufw8JuPjJVRjZD6drD8ihjNjM8xaGUSfdR" => {
+          let price = 100000000
+          price
+        }
+
         case _ => throwErr("invalid asset id")
       }
 
