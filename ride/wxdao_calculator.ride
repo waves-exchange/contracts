@@ -22,6 +22,7 @@ func throwErr(s: String) = {
   throw(wrapErr(s))
 }
 
+func keyLocked() = ["%s", "locked"].makeString(SEP)
 func keyCurrentPeriod() = ["%s", "currentPeriod"].makeString(SEP)
 func keyStartHeightByPeriod(period: Int) = ["%s%d", "startHeight", period.toString()].makeString(SEP)
 func keyPeriodLength() = ["%s", "periodLength"].makeString(SEP)
@@ -353,7 +354,18 @@ func getTreasuryValue(callerPublicKey: ByteVector, args: List[String]) = {
   (nil, treasuryValue)
 }
 
+@Callable(i)
+func lock() = {
+  strict checkCaller = i.mustThis()
+
+  ([
+    BooleanEntry(keyLocked(), true)
+  ], unit)
+}
+
 @Verifier(tx)
 func verify() = {
-  chainId == chainIdT
+  let locked = this.getBoolean(keyLocked()).valueOrElse(false)
+
+  !locked && sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
 }
