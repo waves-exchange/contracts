@@ -33,7 +33,9 @@ export const setup = async ({
   const names = [
     'factory',
     'calculator',
+    'treasury',
     'power',
+    'poolsFactory',
     'user1',
     'user2',
   ];
@@ -127,9 +129,10 @@ export const setup = async ({
       function: 'init',
       args: [
         { type: 'string', value: wxdaoAssetId },
+        { type: 'string', value: accounts.treasury.address },
         { type: 'string', value: accounts.calculator.address },
         { type: 'string', value: accounts.power.address },
-        { type: 'string', value: accounts.power.address },
+        { type: 'string', value: accounts.poolsFactory.address },
         { type: 'integer', value: periodLength },
         { type: 'integer', value: treasuryValue },
         { type: 'list', value: Object.values(assets).map((value) => ({ type: 'string', value })) },
@@ -142,6 +145,7 @@ export const setup = async ({
   await broadcastAndWait(data({
     data: [
       { key: 'powerAssetId', type: 'string', value: pwrAssetId },
+      { key: 'contract_children', type: 'string', value: accounts.power.address },
     ],
     chainId,
     additionalFee: 4e5,
