@@ -41,13 +41,13 @@ func getPowerAssetId(factoryAddress: Address) = powerConfigAddress(factoryAddres
   keyPowerAssetId()
 ).valueOrErrorMessage(wrapErr("invalid power asset id")).fromBase58String()
 
-func keyPowerContractAddress() = "%s__powerContractAddress"
-func powerContractAddress(factoryAddress: Address) = {
-  match factoryAddress.getString(keyPowerContractAddress()) {
+func keyPowerChildrenAddress() = "contract_children"
+func getPowerChildrenAddress(factoryAddress: Address) = {
+  match powerConfigAddress(factoryAddress).getString(keyPowerChildrenAddress()) {
     case s: String => s.addressFromString()
     case _: Unit => unit
   }
-}.valueOrErrorMessage(wrapErr("invalid power contract address"))
+}.valueOrErrorMessage(wrapErr("invalid power children address"))
 
 func keyPoolsFactoryAddress() = "%s__poolsFactoryAddress"
 func getPoolsFactoryAddress(factoryAddress: Address) = {
@@ -297,7 +297,7 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
     factoryAddress.invoke(
       "commitAfterStartWithLockRoundFor",
       [
-        powerContractAddress(factoryAddress).toString(),
+        getPowerChildrenAddress(factoryAddress).toString(),
         treasuryAddress.toString(),
         userAddress.toString(),
         additionalLockRounds,

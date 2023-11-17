@@ -112,7 +112,6 @@ let calculatorAddressOption = match this.getString(keyCalculatorAddress()) {
 let calculatorAddressOrFail = calculatorAddressOption.valueOrErrorMessage(wrapErr("invalid calculator address"))
 
 func keyPowerConfigAddress() = "%s__powerConfigAddress"
-func keyPowerContractAddress() = "%s__powerContractAddress"
 func keyAssets() = "%s__assets"
 
 # config keys
@@ -219,7 +218,6 @@ func init(
   treasuryAddressStr: String,
   calculatorAddressStr: String,
   powerConfigAddressStr: String,
-  powerContractAddress: String, # child
   poolsFactoryAddressStr: String,
   periodLength: Int,
   treasuryValue: Int,
@@ -232,7 +230,6 @@ func init(
     StringEntry(keyTreasuryAddress(), treasuryAddressStr),
     StringEntry(keyCalculatorAddress(), calculatorAddressStr),
     StringEntry(keyPowerConfigAddress(), powerConfigAddressStr),
-    StringEntry(keyPowerContractAddress(), powerContractAddress),
     StringEntry(keyPoolsFactoryAddress(), poolsFactoryAddressStr),
     IntegerEntry(keyPeriodLength(), periodLength),
     IntegerEntry(keyTreasuryValueByPeriod(0), treasuryValue),
