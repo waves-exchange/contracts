@@ -192,7 +192,7 @@ func getAssetsPrices(poolsFactoryAddress: Address, assetIdList: List[String]) = 
 
         # PWR
         case "8Q6SE2ANebufw8JuPjJVRjZD6drD8ihjNjM8xaGUSfdR" => {
-          let price = 100000000
+          let price = mult18
           price
         }
 
@@ -202,6 +202,14 @@ func getAssetsPrices(poolsFactoryAddress: Address, assetIdList: List[String]) = 
       acc :+ price
     }
 
+    FOLD<10>(assetIdList, [], map)
+  } else if (chainId == chainIdR) then {
+    # custom
+    func map(acc: List[BigInt], nextAssetId: String) = {
+      let price = mult18
+
+      acc :+ price
+    }
     FOLD<10>(assetIdList, [], map)
   } else throwErr("invalid chain id")
 }
@@ -226,6 +234,27 @@ func calcTreasuryValue(factoryAddress: Address) = {
   let treasuryValue = FOLD<10>(assetsStr, 0.toBigInt(), reduce)
 
   treasuryValue
+}
+
+func calcLpAssetPrice(factoryAddress: Address) = {
+  let poolsFactoryAddress = factoryAddress.getPoolsFactoryAddress()
+  let currentPeriod = factoryAddress.getInteger(keyCurrentPeriod())
+    .valueOrErrorMessage(wrapErr("invalid current period"))
+  let startTreasuryValue = factoryAddress.getInteger(keyTreasuryValueByPeriod(currentPeriod))
+    .valueOrErrorMessage(wrapErr("invalid treasury value for period " + currentPeriod.toString()))
+    .toX18(usdtDecimals)
+  let treasuryValue = calcTreasuryValue(factoryAddress)
+  let treasuryValueDiff = treasuryValue - startTreasuryValue
+  let pwrPriceRaw = getAssetsPrices(poolsFactoryAddress, [getPowerAssetId(factoryAddress).toBase58String()])[0]
+  let pwrPrice = if (pwrPriceRaw > 0.toBigInt()) then pwrPriceRaw else throwErr("invalid PWR price")
+  let price = if (treasuryValueDiff < 0.toBigInt()) then {
+    pwrPrice / 100.toBigInt()
+  } else {
+    # ((Sc - So) * 0.2 / 1000 + PWR price) / 100
+    (fraction(treasuryValueDiff, 2.toBigInt(), 10000.toBigInt()) + pwrPrice) / 100.toBigInt()
+  }
+  
+  price
 }
 
 # withdraw from investment account to specified address
@@ -327,21 +356,8 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
 @Callable(i)
 func price(callerPublicKey: ByteVector, args: List[String]) = {
   let factoryAddress = i.caller
-  let poolsFactoryAddress = factoryAddress.getPoolsFactoryAddress()
-  let currentPeriod = factoryAddress.getInteger(keyCurrentPeriod())
-    .valueOrErrorMessage(wrapErr("invalid current period"))
-  let startTreasuryValue = factoryAddress.getInteger(keyTreasuryValueByPeriod(currentPeriod))
-    .valueOrErrorMessage(wrapErr("invalid treasury value for period " + currentPeriod.toString()))
-  let treasuryValue = calcTreasuryValue(factoryAddress).fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN))
-  let treasuryValueDiff = treasuryValue - startTreasuryValue
-  let pwrPriceRaw = getAssetsPrices(poolsFactoryAddress, [getPowerAssetId(factoryAddress).toBase58String()])[0]
-  let pwrPrice = if (pwrPriceRaw > 0.toBigInt()) then pwrPriceRaw.fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN)) else throwErr("invalid PWR price")
-  let price = if (treasuryValueDiff < 0) then {
-    pwrPrice / 100
-  } else {
-    # ((Sc - So) * 0.2 / 1000 + PWR price) / 100
-    (fraction(treasuryValueDiff, 2, 10000) + pwrPrice) / 100
-  }
+  let price = calcLpAssetPrice(factoryAddress).fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN))
+
   (nil, price)
 }
 
