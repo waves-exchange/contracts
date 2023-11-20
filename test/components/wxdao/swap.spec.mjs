@@ -24,6 +24,7 @@ describe(`[${process.pid}] wxdao: swap`, () => {
       assetId: wxdaoAssetId,
       amount: 1e8,
       additionalFee: 4e5,
+      chainId,
     }, accounts.factory.seed));
 
     await broadcastAndWait(transfer({
@@ -31,6 +32,7 @@ describe(`[${process.pid}] wxdao: swap`, () => {
       assetId: pwrAssetId,
       amount: 1e8,
       additionalFee: 4e5,
+      chainId,
     }, baseSeed));
   });
 

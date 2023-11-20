@@ -367,5 +367,9 @@ func lock() = {
 func verify() = {
   let locked = this.getBoolean(keyLocked()).valueOrElse(false)
 
-  !locked && sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+  if (locked) then {
+    throwErr("locked")
+  } else {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+  }
 }
