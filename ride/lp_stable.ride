@@ -1308,16 +1308,16 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
 
 @Callable(i)
 func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
-  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", true)
+  let result = implAddress.reentrantInvoke("putOneTknV2WithBonusREADONLY", [paymentAmountRaw, paymentAssetId], [])
 
-  (nil, (lpAmount, feeAmount, bonus))
+  (nil, result)
 }
 
 @Callable(i)
 func putOneTknV2WithoutTakeFeeREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
-  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", false)
+  let result = implAddress.reentrantInvoke("putOneTknV2WithoutTakeFeeREADONLY", [paymentAmountRaw, paymentAssetId], [])
 
-  (nil, (lpAmount, feeAmount, bonus))
+  (nil, result)
 }
 
 # purpose:
@@ -1345,55 +1345,44 @@ func activate(amtAsStr: String, prAsStr: String) = {
 # API wrappers
 @Callable(i)
 func getPoolConfigWrapperREADONLY() = {
-  (
-    [],
-    gpc()
-  )
+  let result = implAddress.reentrantInvoke("getPoolConfigWrapperREADONLY", [], [])
+
+  (nil, result)
 }
 
 @Callable(i)
 func getAccBalanceWrapperREADONLY(assetId: String) = {
-  (
-    [],
-    assetId.getAccBalance()
-  )
+  let result = implAddress.reentrantInvoke("getAccBalanceWrapperREADONLY", [assetId], [])
+
+  (nil, result)
 }
 
 @Callable(i)
 func calcPricesWrapperREADONLY(amAmt: Int, prAmt: Int, lpAmt: Int) = {
-  let pr = calcPrices(amAmt, prAmt, lpAmt)
-  (
-    [],
-    [
-      pr[0].toString(),
-      pr[1].toString(),
-      pr[2].toString()
-    ]
-  )
+  let result = implAddress.reentrantInvoke("calcPricesWrapperREADONLY", [amAmt, prAmt, lpAmt], [])
+
+  (nil, result)
 }
 
 @Callable(i)
 func fromX18WrapperREADONLY(val: String, resScaleMult: Int) = {
-  (
-    [],
-    f1(val.parseBigIntValue(), resScaleMult)
-  )
+  let result = implAddress.reentrantInvoke("fromX18WrapperREADONLY", [val, resScaleMult], [])
+
+  (nil, result)
 }
 
 @Callable(i)
 func toX18WrapperREADONLY(origVal: Int, origScaleMult: Int) = {
-  (
-    [],
-    t1(origVal, origScaleMult).toString()
-  )
+  let result = implAddress.reentrantInvoke("toX18WrapperREADONLY", [origVal, origScaleMult], [])
+
+  (nil, result)
 }
 
 @Callable(i)
 func calcPriceBigIntWrapperREADONLY(prAmtX18: String, amAmtX18: String) = {
-  (
-    [],
-    cpbi(prAmtX18.parseBigIntValue(), amAmtX18.parseBigIntValue()).toString()
-  )
+  let result = implAddress.reentrantInvoke("calcPriceBigIntWrapperREADONLY", [prAmtX18, amAmtX18], [])
+
+  (nil, result)
 }
 
 @Callable(i)
