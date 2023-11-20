@@ -34,17 +34,8 @@ describe(
       const expected7 = { type: 'ByteVector', value: this.lpStableAssetId };
       const expected8 = { type: 'String', value: '1' };
       const expected9 = {
-        type: 'IntegerEntry',
-        value: {
-          key: {
-            type: 'String',
-            value: '%s%s__price__last',
-          },
-          value: {
-            type: 'Int',
-            value: 100000000,
-          },
-        },
+        type: 'Array',
+        value: [],
       };
 
       const expected10 = { type: 'Int', value: 0 };
@@ -66,7 +57,7 @@ describe(
       expect(checkData._6).to.eql(expected6); /* eslint-disable-line */
       expect(checkData._7).to.eql(expected7); /* eslint-disable-line */
       expect(checkData._8).to.eql(expected8); /* eslint-disable-line */
-      expect(checkData._9.value[0]).to.eql(expected9); /* eslint-disable-line */
+      expect(checkData._9).to.eql(expected9); /* eslint-disable-line */
       expect(checkData._10).to.eql(expected10); /* eslint-disable-line */
       expect(checkData._11).to.eql(expected11); /* eslint-disable-line */
       expect(checkData._12).to.eql(expected12); /* eslint-disable-line */

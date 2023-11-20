@@ -1397,10 +1397,10 @@ func estimatePutOperationWrapperREADONLY(
   isEval: Boolean,
   emitLp: Boolean
 ) = {
-  (
-    [],
-    epo(
-      txId58,
+  let result = implAddress.reentrantInvoke(
+    "estimatePutOperationWrapperREADONLY", 
+    [
+      txId58, 
       slippage,
       inAmAmt,
       inAmId,
@@ -1408,27 +1408,28 @@ func estimatePutOperationWrapperREADONLY(
       inPrId,
       usrAddr,
       isEval,
-      emitLp,
-      true,
-      false,
-      0,
-      ""
-    )
+      emitLp
+    ], 
+    []
   )
+
+  (nil, result)
 }
 
 @Callable(i)
 func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpAmt: Int, usrAddr: String) = {
-  let r = ego(
-    txId58,
-    pmtAsId,
-    pmtLpAmt,
-    usrAddr.addressFromStringValue()
+  let result = implAddress.reentrantInvoke(
+    "estimateGetOperationWrapperREADONLY", 
+    [
+      txId58, 
+      pmtAsId,
+      pmtLpAmt,
+      usrAddr
+    ], 
+    []
   )
-  (
-    [],
-    (r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8.toString(), r._9, r._10)
-  )
+
+  (nil, result)
 }
 
 @Callable(i)
