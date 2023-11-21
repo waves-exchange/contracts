@@ -242,7 +242,7 @@ func calcLpAssetPrice(factoryAddress: Address) = {
     .valueOrErrorMessage(wrapErr("invalid current period"))
   let startTreasuryValue = factoryAddress.getInteger(keyTreasuryValueByPeriod(currentPeriod))
     .valueOrErrorMessage(wrapErr("invalid treasury value for period " + currentPeriod.toString()))
-    .toX18(usdtDecimals)
+    .toX18(pow(10, 0, usdtDecimals, 0, 0, DOWN))
   let treasuryValue = calcTreasuryValue(factoryAddress)
   let treasuryValueDiff = treasuryValue - startTreasuryValue
   let pwrPriceRaw = getAssetsPrices(poolsFactoryAddress, [getPowerAssetId(factoryAddress).toBase58String()])[0]
