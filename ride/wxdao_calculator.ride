@@ -257,26 +257,6 @@ func calcLpAssetPrice(factoryAddress: Address) = {
   price
 }
 
-# withdraw from investment account to specified address
-@Callable(i)
-func withdraw(args: List[String]) = {
-  let recipient = addressFromStringValue(args[0])
-  let amount = parseIntValue(args[1])
-  let result = i.caller.invoke("transferWaves", [recipient.bytes, amount], [])
-
-  (nil, result)
-}
-
-# set param example
-@Callable(i)
-func setIntParam(args: List[String]) = {
-  let key = args[0]
-  let val = parseIntValue(args[1])
-  let result = i.caller.invoke("integerEntry", [key, val], [])
-
-  (nil, result)
-}
-
 # Swap WXDAO token to staked PWR token
 # Stake PWR token, send profit to caller, burn WXDAO token
 # payments:
