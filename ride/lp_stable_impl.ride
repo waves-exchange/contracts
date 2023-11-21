@@ -380,7 +380,7 @@ func getD(poolAddress: Address, xp: List[BigInt]) = {
 }
 
 # estimateGetOperation
-func ego(poolAddress: Address, txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address) = {
+func ego(poolAddress: Address, readonly: Boolean, txId58: String, pmtAssetId: String, pmtLpAmt: Int, userAddress: Address) = {
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
     cfgPoolAddress,
@@ -423,8 +423,8 @@ func ego(poolAddress: Address, txId58: String, pmtAssetId: String, pmtLpAmt: Int
   let outAmAmt = outAmAmtX18.fromX18Round(amDcm, FLOOR)
   let outPrAmt = outPrAmtX18.fromX18Round(prDcm, FLOOR)
 
-  let state = if (txId58 == "") then [] else
-  strict stateInvokes = [
+  let state = if (txId58 == "") then [] else {
+  strict stateInvokes = if (!readonly) then [
     poolAddress.invoke(
       "transferAsset",
       [userAddress.bytes, outAmAmt, amId],
@@ -453,8 +453,10 @@ func ego(poolAddress: Address, txId58: String, pmtAssetId: String, pmtLpAmt: Int
       [ph(height, lastBlock.timestamp), curPrice],
       []
     )
-  ]
+  ] else []
+
   []
+  }
 
   ( outAmAmt,     # 1
     outPrAmt,     # 2
@@ -470,19 +472,21 @@ func ego(poolAddress: Address, txId58: String, pmtAssetId: String, pmtLpAmt: Int
 }
 
 # estimatePutOperation
-func epo(poolAddress: Address, txId58: String,
-                          slippage: Int,
-                          inAmAmt: Int,
-                          inAmId: ByteVector|Unit,
-                          inPrAmt: Int,
-                          inPrId: ByteVector|Unit,
-                          userAddress: String,
-                          isEval: Boolean,
-                          emitLp: Boolean,
-                          isOneAsset: Boolean,
-                          validateSlippage: Boolean,
-                          pmtAmt: Int,
-                          pmtId: String) = {
+func epo(poolAddress: Address,
+  readonly: Boolean,
+  txId58: String,
+  slippage: Int,
+  inAmAmt: Int,
+  inAmId: ByteVector|Unit,
+  inPrAmt: Int,
+  inPrId: ByteVector|Unit,
+  userAddress: String,
+  isEval: Boolean,
+  emitLp: Boolean,
+  isOneAsset: Boolean,
+  validateSlippage: Boolean,
+  pmtAmt: Int,
+  pmtId: String) = {
     let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
     let (
       cfgPoolAddress,
@@ -607,14 +611,14 @@ func epo(poolAddress: Address, txId58: String,
 
     let commonState = []
 
-    strict stateChanges = [
+    strict stateChanges = if (!readonly) then [
       poolAddress.invoke("integerEntry", [pl(), curPrice], []),
       poolAddress.invoke("integerEntry", [ph(height, lastBlock.timestamp), curPrice], []),
       poolAddress.invoke("stringEntry", [
         pau(userAddress, txId58),
         dataPutActionInfo(writeAmAmt, writePrAmt, emitLpAmt, curPrice, slippage, slippageCalc, height, lastBlock.timestamp, amDiff, prDiff)
       ], [])
-    ]
+    ] else []
 
     (
       calcLpAmt,                # 1.
@@ -787,11 +791,11 @@ func validateMatcherOrderAllowed(poolAddress: Address, order: Order) = {
 }
 
 # commonGet
-func cg(poolAddress: Address, pmt: AttachedPayment, i: Invocation) = {
+func cg(poolAddress: Address, readonly: Boolean, pmt: AttachedPayment, i: Invocation) = {
   let pmtAssetId  = pmt.assetId.value()
   let pmtAmt      = pmt.amount
 
-  let r = ego(poolAddress, i.transactionId.toBase58String(), pmtAssetId.toBase58String(), pmtAmt, i.originCaller)
+  let r = ego(poolAddress, readonly, i.transactionId.toBase58String(), pmtAssetId.toBase58String(), pmtAmt, i.originCaller)
   let outAmAmt     = r._1
   let outPrAmt     = r._2
   let sts          = r._9.parseIntValue()
@@ -808,30 +812,33 @@ func cg(poolAddress: Address, pmt: AttachedPayment, i: Invocation) = {
 }
 
 # commonPut
-func cp(poolAddress: Address, caller: String,
-              txId: String,
-              amAsPmt: AttachedPayment,
-              prAsPmt: AttachedPayment,
-              slippage: Int,
-              emitLp: Boolean,
-              isOneAsset: Boolean,
-              validateSlippage: Boolean,
-              pmtAmt: Int,
-              pmtId: String) = {
-
-    let r = epo(poolAddress, txId, # i.transactionId.toBase58String()
-                      slippage,
-                      amAsPmt.value().amount,
-                      amAsPmt.value().assetId,
-                      prAsPmt.value().amount,
-                      prAsPmt.value().assetId,
-                      caller,     #i.caller.toString()
-                      txId == "",
-                      emitLp,
-                      isOneAsset,
-                      validateSlippage,
-                      pmtAmt,
-                      pmtId)
+func cp(poolAddress: Address,
+  readonly: Boolean,
+  caller: String,
+  txId: String,
+  amAsPmt: AttachedPayment,
+  prAsPmt: AttachedPayment,
+  slippage: Int,
+  emitLp: Boolean,
+  isOneAsset: Boolean,
+  validateSlippage: Boolean,
+  pmtAmt: Int,
+  pmtId: String) = {
+    let r = epo(poolAddress, 
+                readonly,
+                txId, # i.transactionId.toBase58String()
+                slippage,
+                amAsPmt.value().amount,
+                amAsPmt.value().assetId,
+                prAsPmt.value().amount,
+                prAsPmt.value().assetId,
+                caller,     #i.caller.toString()
+                txId == "",
+                emitLp,
+                isOneAsset,
+                validateSlippage,
+                pmtAmt,
+                pmtId)
 
     let sts  = r._8.parseIntValue()
     if(igs() || sts == PoolPutDis || sts == PoolShutdown) then throw("Blocked:" + sts.toString()) else
@@ -1301,17 +1308,19 @@ func put(
     strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
     strict currentDLp = calcCurrentDLp(poolAddress, amAssetPmt, prAssetPmt, 0.toBigInt())
     # estPut
-    let e = cp(poolAddress, i.originCaller.toString(),
-                          i.transactionId.toBase58String(),
-                          AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount),
-                          AttachedPayment(payment2AssetId.parseAssetId(), payment2Amount),
-                          # i.payments[1],
-                          slip,
-                          true,
-                          false,
-                          true,
-                          0,
-                          "")
+    let e = cp(poolAddress,
+               false,
+               i.originCaller.toString(),
+               i.transactionId.toBase58String(),
+               AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount),
+               AttachedPayment(payment2AssetId.parseAssetId(), payment2Amount),
+               # i.payments[1],
+               slip,
+               true,
+               false,
+               true,
+               0,
+               "")
 
     let emitLpAmt = e._2
     let lpAssetId = e._7
@@ -1507,16 +1516,18 @@ func putForFree(
   ) = poolConfigParsed
 
   if(maxSlpg < 0) then throw("Wrong slpg") else
-    let estPut = cp(poolAddress, i.originCaller.toString(),
-                          i.transactionId.toBase58String(),
-                          AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount),
-                          AttachedPayment(payment2AssetId.parseAssetId(), payment2Amount),
-                          maxSlpg,
-                          false,
-                          false,
-                          true,
-                          0,
-                          "")
+    let estPut = cp(poolAddress, 
+                    false, 
+                    i.originCaller.toString(),
+                    i.transactionId.toBase58String(),
+                    AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount),
+                    AttachedPayment(payment2AssetId.parseAssetId(), payment2Amount),
+                    maxSlpg,
+                    false,
+                    false,
+                    true,
+                    0,
+                    "")
 
     let state = estPut._9
 
@@ -1569,7 +1580,7 @@ func get(payment1AssetId: String, payment1Amount: Int) = {
 
   let pmt = AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount)
 
-  let r = cg(poolAddress, pmt, i)
+  let r = cg(poolAddress, false, pmt, i)
   let outAmtAmt    = r._1
   let outPrAmt     = r._2
   let pmtAmt       = r._3
@@ -1739,6 +1750,7 @@ func getOneTknV2WithBonusREADONLY(
 
   let r = ego(
     poolAddress,
+    true,
     "",
     lpId,
     lpAssetAmount,
@@ -1779,7 +1791,7 @@ func getNoLess(
 
   let pmt = AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount)
 
-  let r = cg(poolAddress, pmt, i)
+  let r = cg(poolAddress, false, pmt, i)
   let outAmAmt    = r._1
   let outPrAmt    = r._2
   let pmtAmt      = r._3
@@ -1827,7 +1839,7 @@ func unstakeAndGet(amount: Int) = {
   # negative amount will not pass
   strict unstakeInv = poolAddress.invoke("callUnstake", [stakingContract.bytes, lpAssetId.assetIdToString(), amount], []);
 
-  let r = ego(poolAddress, i.transactionId.toBase58String(), lpAssetId.toBase58String(), amount, i.originCaller)
+  let r = ego(poolAddress, false, i.transactionId.toBase58String(), lpAssetId.toBase58String(), amount, i.originCaller)
   let outAmAmt = r._1
   let outPrAmt = r._2
   let sts = r._9.parseIntValue()
@@ -1872,7 +1884,7 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
   strict unstakeInv = poolAddress.invoke("callUnstake", [stakingContract.bytes, cfgLpAssetId.assetIdToString(), unstakeAmount], []);
 
-  let res = ego(poolAddress, i.transactionId.toBase58String(), cfgLpAssetId.toBase58String(), unstakeAmount, i.originCaller)
+  let res = ego(poolAddress, false, i.transactionId.toBase58String(), cfgLpAssetId.toBase58String(), unstakeAmount, i.originCaller)
   let outAmAmt = res._1
   let outPrAmt = res._2
   let state = res._10
@@ -2059,6 +2071,7 @@ func estimatePutOperationWrapperREADONLY(
     [],
     epo(
       poolAddress,
+      true,
       txId58,
       slippage,
       inAmAmt,
@@ -2081,6 +2094,7 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
   let poolAddress = i.caller
   let r = ego(
     poolAddress,
+    true,
     txId58,
     pmtAsId,
     pmtLpAmt,
