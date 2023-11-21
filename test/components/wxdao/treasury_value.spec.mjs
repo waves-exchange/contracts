@@ -37,7 +37,7 @@ describe(`[${process.pid}] wxdao: treasury value`, () => {
     }, baseSeed));
   });
 
-  it('successfully set int param on account 1', async () => {
+  it('successfully calculate treasury value', async () => {
     const expr = `calcTreasuryValue(Address(base58'${accounts.factory.address}'))`;
     const response = await api.utils.fetchEvaluate(
       accounts.calculator.address,
