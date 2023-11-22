@@ -36,7 +36,7 @@ describe(`[${process.pid}] wxdao: swap`, () => {
     }, baseSeed));
   });
 
-  it('successfully set int param on account 1', async () => {
+  it('successfully swap', async () => {
     const amount = 1000;
     const { stateChanges } = await broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
@@ -60,5 +60,12 @@ describe(`[${process.pid}] wxdao: swap`, () => {
       assetId: wxdaoAssetId,
       quantity: amount,
     });
+
+    expect(
+      stateChanges.invokes[0]
+        .stateChanges.invokes[0]
+        .stateChanges.invokes[0]
+        .dApp,
+    ).to.equal(accounts.power.address);
   });
 });
