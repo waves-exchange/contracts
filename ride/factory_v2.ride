@@ -599,8 +599,8 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
       let poolAccountScriptHash = scriptHash(addressFromStringValue(poolAddress)).valueOrErrorMessage("No script has been found on pool account " + poolAddress)
       let ethalonPoolAccountScriptHash = getBinaryValue(keyPoolScriptHash())
 
-      let poolExists = poolExistsInternal(amountAssetStr, priceAssetStr)
-      if (poolExists) then throwErr("Pool " + amountAssetStr + "/" + priceAssetStr + " has already been activated.") else
+      # let poolExists = poolExistsInternal(amountAssetStr, priceAssetStr)
+      # if (poolExists) then throwErr("Pool " + amountAssetStr + "/" + priceAssetStr + " has already been activated.") else
 
         let poolConfigValue = this.getString(keyPoolConfig(internalAmountAssetId.toString(), internalPriceAssetId.toString())).value()
         # todo: uncomment after debugging
