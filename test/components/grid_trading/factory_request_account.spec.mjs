@@ -169,6 +169,6 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
         { assetId: null, amount: rewardAmount },
       ],
       chainId,
-    }, accounts.user1.seed))).to.be.rejectedWith('account already exists');
+    }, accounts.user1.seed))).to.be.rejectedWith('account is already exists');
   });
 });
