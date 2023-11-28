@@ -85,11 +85,6 @@ export const mochaHooks = {
           type: 'integer',
           value: 1,
         },
-        {
-          key: `%s%s__userLockedLpAmount__${this.accounts.user1.addr}`,
-          type: 'integer',
-          value: 87654321,
-        },
       ],
       chainId,
     }, this.accounts.l2mpStaking.seed);

@@ -195,6 +195,10 @@ func calcAssetFromLp(lpAmount: Int) = {
   max([0, fraction(lpAmount.toBigInt(), getCurrentPrice(), scale18BigInt).toInt()])
 }
 
+func calcLpFromAsset(assetAmount: Int) = {
+  max([0, fraction(assetAmount.toBigInt(), scale18BigInt, getCurrentPrice()).toInt()])
+}
+
 func getUserLpAmount(userAddress: String) = this.getInteger(keyUserLpAmount(userAddress)).valueOrElse(0)
 func getUserLockedLpAmount(userAddress: String) = this.getInteger(keyUserLockedLpAmount(userAddress)).valueOrElse(0)
 
@@ -356,6 +360,37 @@ func stakeAndSetStakingNode(nodeAddress: String) = {
     getStakeActions(i, userAddress) ++ getSetStakingNodeActions(userAddress, nodeAddress)
 }
 
+@Callable(i)
+func airdrop(addressList: List[String], amountList: List[Int]) = {
+    func sum(accum: Int, next: Int) = accum + next
+    let amountListSum = FOLD<90>(amountList, 0, sum)
+
+    strict check = [
+        i.payments.size() == 1 || "should include 1 payment".throwErr(),
+        i.payments[0].assetId == assetIdBytes || ("payment should be in " + assetIdString).throwErr(),
+        i.payments[0].amount > 0 || "payment amount should be greater than 0",
+        addressList.size() == amountList.size() || "addressList should be same size as amountList".throwErr(),
+        amountListSum <= i.payments[0].amount || "payment amount is less than sum of amountList".throwErr()
+    ]
+
+    func getAirdropStateChanges(accum: (List[IntegerEntry], Int, Int), assetAmount: Int) = {
+        let (result, index, totalLp) = accum
+
+        let addedLpAmount = calcLpFromAsset(assetAmount)
+        let userLockedLpKey = keyUserLockedLpAmount(addressList[index])
+        let oldLpAmount = this.getInteger(userLockedLpKey).valueOrElse(0)
+
+        (result :+ IntegerEntry(userLockedLpKey, oldLpAmount + addedLpAmount), index + 1, totalLp + addedLpAmount)
+    }
+    let (airdropEntries, _a, addedTotalLockedLpAmount) = FOLD<90>(amountList, ([], 0, 0), getAirdropStateChanges)
+
+    [
+        IntegerEntry(keyTotalLockedLpAmount, totalLockedLpAmount + addedTotalLockedLpAmount),
+        IntegerEntry(keyTotalLpAmount, totalLpAmount + addedTotalLockedLpAmount),
+        IntegerEntry(keyTotalAssetAmount, totalAssetAmount + amountListSum)
+    ] ++ airdropEntries
+}
+
 # Return tuple: 
 # _1 = user available internal LP amount
 # _2 = user available tokens to withdraw
@@ -393,6 +428,8 @@ func getUserAssetsREADONLY(userAddress: String) = {
 # _1 = total available internal LP amount
 # _2 = total available tokens to withdraw
 # _3 = current internal LP price
+# _4 = total locked internal LP amount
+# _5 = total locked tokens amount
 @Callable(i)
 func getTotalAssetsREADONLY() = {
     (
@@ -400,7 +437,9 @@ func getTotalAssetsREADONLY() = {
       (
         totalLpAmount, 
         getTotalAssetAmountWithProfitOrMaxAvailable(), 
-        getCurrentPrice()
+        getCurrentPrice(),
+        totalLockedLpAmount,
+        calcAssetFromLp(totalLockedLpAmount)
       )
     )
 }

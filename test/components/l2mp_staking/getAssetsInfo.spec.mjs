@@ -11,7 +11,7 @@ const { expect } = chai;
 describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() => {
   const stakeAmount1 = 12345678;
   const stakeAmount2 = 2e8;
-  const lockedAmount1 = 87654321;
+  const lockedAmount1 = 654321;
 
   before(
     async function () {
@@ -43,8 +43,39 @@ describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() =>
         chainId,
       }, this.accounts.user2.seed);
 
+      const airdropTx = invokeScript({
+        dApp: this.accounts.l2mpStaking.addr,
+        call: {
+          function: 'airdrop',
+          args: [{
+            type: 'list',
+            value: [
+              {
+                type: 'string',
+                value: this.accounts.user1.addr,
+              },
+            ],
+          },
+          {
+            type: 'list',
+            value: [
+              {
+                type: 'integer',
+                value: lockedAmount1,
+              },
+            ],
+          }],
+        },
+        payment: [
+          { assetId: this.l2mpAssetId, amount: lockedAmount1 },
+        ],
+        additionalFee: 4e5,
+        chainId,
+      }, this.accounts.user1.seed);
+
       await broadcastAndWait(stakeTx1);
       await broadcastAndWait(stakeTx2);
+      await broadcastAndWait(airdropTx);
     },
   );
 
@@ -87,9 +118,11 @@ describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() =>
       expect(checkData).to.eql({
         type: 'Tuple',
         value: {
-          _1: { type: 'Int', value: stakeAmount1 + stakeAmount2 },
-          _2: { type: 'Int', value: stakeAmount1 + stakeAmount2 },
+          _1: { type: 'Int', value: stakeAmount1 + stakeAmount2 + lockedAmount1 },
+          _2: { type: 'Int', value: stakeAmount1 + stakeAmount2 + lockedAmount1 },
           _3: { type: 'BigInt', value: `${10e17}` },
+          _4: { type: 'Int', value: lockedAmount1 },
+          _5: { type: 'Int', value: lockedAmount1 },
         },
       });
     },
