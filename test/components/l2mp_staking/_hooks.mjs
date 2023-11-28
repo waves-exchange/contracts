@@ -24,6 +24,7 @@ export const mochaHooks = {
       'admin3',
       'user1',
       'user2',
+      'node1',
     ];
     this.accounts = Object.fromEntries(names.map((item) => {
       const itemSeed = randomSeed(seedWordsCount);
@@ -83,6 +84,11 @@ export const mochaHooks = {
           key: '%s__emissionPeriodInBlocks',
           type: 'integer',
           value: 1,
+        },
+        {
+          key: `%s%s__userLockedLpAmount__${this.accounts.user1.addr}`,
+          type: 'integer',
+          value: 87654321,
         },
       ],
       chainId,

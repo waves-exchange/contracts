@@ -11,13 +11,18 @@ const { expect } = chai;
 describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() => {
   const stakeAmount1 = 12345678;
   const stakeAmount2 = 2e8;
+  const lockedAmount1 = 87654321;
 
   before(
     async function () {
       const stakeTx1 = invokeScript({
         dApp: this.accounts.l2mpStaking.addr,
         call: {
-          function: 'stake',
+          function: 'stakeAndSetStakingNode',
+          args: [{
+            type: 'string',
+            value: this.accounts.node1.addr,
+          }],
         },
         payment: [
           { assetId: this.l2mpAssetId, amount: stakeAmount1 },
@@ -61,6 +66,9 @@ describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() =>
           _3: { type: 'BigInt', value: `${10e17}` },
           _4: { type: 'Int', value: stakeAmount1 },
           _5: { type: 'Int', value: 0 },
+          _6: { type: 'Int', value: lockedAmount1 },
+          _7: { type: 'Int', value: lockedAmount1 },
+          _8: { type: 'String', value: this.accounts.node1.addr },
         },
       });
     },

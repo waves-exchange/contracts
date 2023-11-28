@@ -21,10 +21,19 @@ let keyEmissionPeriodInBlocks = ["%s", "emissionPeriodInBlocks"].makeString(SEP)
 let keyStartBlock             = ["%s", "startBlock"].makeString(SEP)
 let keyTotalLpAmount          = ["%s", "totalLpAmount"].makeString(SEP)
 let keyTotalAssetAmount       = ["%s", "totalAssetAmount"].makeString(SEP)
+let keyTotalLockedLpAmount    = ["%s", "totalLockedLpAmount"].makeString(SEP)
 
 func keyUserLpAmount(userAddress: String)            = ["%s%s", "userLpAmount", userAddress].makeString(SEP)
+func keyUserLockedLpAmount(userAddress: String)      = ["%s%s", "userLockedLpAmount", userAddress].makeString(SEP)
+func keyUserStakingNodes(userAddress: String)        = ["%s%s", "userStakingNode", userAddress].makeString(SEP)
 func keyUserTotalAssetWithdrawn(userAddress: String) = ["%s%s", "totalAssetWithdrawn", userAddress].makeString(SEP)
 func keyUserTotalAssetStaked(userAddress: String)    = ["%s%s", "totalAssetStaked", userAddress].makeString(SEP)
+
+func formatStakingNodeValue(nodeAddress: String) = [
+  "%s%d",
+  nodeAddress,
+  "100"
+].makeString(SEP)
 
 func keyHistory(type: String, userAddress: String, txId: ByteVector) = [
   "%s%s%s",
@@ -48,6 +57,7 @@ func formatHistory(
 
 let totalLpAmount = this.getInteger(keyTotalLpAmount).valueOrElse(0)
 let totalAssetAmount = this.getInteger(keyTotalAssetAmount).valueOrElse(0)
+let totalLockedLpAmount = this.getInteger(keyTotalLockedLpAmount).valueOrElse(0)
 let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
 let assetIdBytes = if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
 let emissionPeriodInBlocks = this.getInteger(keyEmissionPeriodInBlocks).valueOrElse(BLOCKS_IN_DAY)
@@ -175,20 +185,31 @@ func getCurrentPrice() = {
     }
 }
 
+func getUserStakingNode(userAddress: String) = {
+  let rawValue = this.getString(keyUserStakingNodes(userAddress)).valueOrElse("")
+
+  if (rawValue == "") then rawValue else rawValue.split(SEP)[1]
+}
+
+func calcAssetFromLp(lpAmount: Int) = {
+  max([0, fraction(lpAmount.toBigInt(), getCurrentPrice(), scale18BigInt).toInt()])
+}
+
 func getUserLpAmount(userAddress: String) = this.getInteger(keyUserLpAmount(userAddress)).valueOrElse(0)
+func getUserLockedLpAmount(userAddress: String) = this.getInteger(keyUserLockedLpAmount(userAddress)).valueOrElse(0)
 
 func getUserAvailableAssetsToWithdraw(userAddress: String) = {
   let userLpAmount = getUserLpAmount(userAddress)
-  let userAvailableAssetToWithdraw = fraction(userLpAmount.toBigInt(), getCurrentPrice(), scale18BigInt).toInt()
-
-  if (userAvailableAssetToWithdraw < 0) then 0 else userAvailableAssetToWithdraw
+  
+  calcAssetFromLp(userLpAmount)
 }
 
 func getStakeActions(i: Invocation, userAddress: String) = {
     strict checks = [
         i.payments.size() == 1 || "should include 1 payment".throwErr(),
         i.payments[0].assetId == assetIdBytes || ("payment should be in " + assetIdString).throwErr(),
-        i.payments[0].amount > 0 || "payment amount should be greater than 0"
+        i.payments[0].amount > 0 || "payment amount should be greater than 0",
+        userAddress.fromBase58String().size() == ADDRESS_BYTES_SIZE || "user address is not valid".throwErr()
     ]
 
     let paymentAmount = i.payments[0].amount
@@ -255,6 +276,17 @@ func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
     ]
 }
 
+func getSetStakingNodeActions(userAddress: String, nodeAddress: String) = {
+  strict check = [
+    userAddress.fromBase58String().size() == ADDRESS_BYTES_SIZE || "user address is not valid".throwErr(),
+    nodeAddress.fromBase58String().size() == ADDRESS_BYTES_SIZE || "node address is not valid".throwErr()
+  ]
+
+  [
+    StringEntry(keyUserStakingNodes(userAddress), formatStakingNodeValue(nodeAddress))
+  ]
+}
+
 @Callable(i)
 func setEmissionPerBlock(emissionPerBlock: Int) = {
     strict check = [
@@ -284,14 +316,13 @@ func setEmissionPeriodInBlocks(p: Int) = {
 
 @Callable(i)
 func stake() = {
-    getStakeActions(i, i.caller.toString())
+    let userAddress = i.caller.toString()
+
+    getStakeActions(i, userAddress)
 }
 
 @Callable(i)
 func stakeFor(userAddress: String) = {
-    strict check = [
-        userAddress.fromBase58String().size() == ADDRESS_BYTES_SIZE || "address is not valid".throwErr()
-    ]
     getStakeActions(i, userAddress)
 }
 
@@ -311,20 +342,51 @@ func withdraw(withdrawAssetAmount: Int) = {
   getWithdrawActions(i, min([userLpAmount, lpAmountToWithdraw + 1]))
 }
 
+@Callable(i)
+func setStakingNode(nodeAddress: String) = {
+    let userAddress = i.caller.toString()
+
+    getSetStakingNodeActions(userAddress, nodeAddress)
+}
+
+@Callable(i)
+func stakeAndSetStakingNode(nodeAddress: String) = {
+    let userAddress = i.caller.toString()
+
+    getStakeActions(i, userAddress) ++ getSetStakingNodeActions(userAddress, nodeAddress)
+}
+
 # Return tuple: 
 # _1 = user available internal LP amount
 # _2 = user available tokens to withdraw
 # _3 = current internal LP price
 # _4 = user total staked token amount
 # _5 = user total withdrawn token amount
+# _6 = user locked amount in internal LP
+# _7 = user locked token amount
 @Callable(i)
 func getUserAssetsREADONLY(userAddress: String) = {
     let userLpAmount = getUserLpAmount(userAddress)
+    let userLockedLpAmount = getUserLockedLpAmount(userAddress)
+    let userLockedAssetAmount = calcAssetFromLp(userLockedLpAmount)
     let userAvailableAssetToWithdraw = getUserAvailableAssetsToWithdraw(userAddress)
     let userTotalStakedAmount = this.getInteger(keyUserTotalAssetStaked(userAddress)).valueOrElse(0)
     let userTotalAssetWithdrawn = this.getInteger(keyUserTotalAssetWithdrawn(userAddress)).valueOrElse(0)
+    let userStakingNode = getUserStakingNode(userAddress)
 
-    (nil, (userLpAmount, userAvailableAssetToWithdraw, getCurrentPrice(), userTotalStakedAmount, userTotalAssetWithdrawn))
+    (
+      nil, 
+      (
+        userLpAmount, 
+        userAvailableAssetToWithdraw, 
+        getCurrentPrice(), 
+        userTotalStakedAmount, 
+        userTotalAssetWithdrawn,
+        userLockedLpAmount,
+        userLockedAssetAmount,
+        userStakingNode
+      )
+    )
 }
 
 # Return tuple: 
@@ -333,7 +395,14 @@ func getUserAssetsREADONLY(userAddress: String) = {
 # _3 = current internal LP price
 @Callable(i)
 func getTotalAssetsREADONLY() = {
-    (nil, (totalLpAmount, getTotalAssetAmountWithProfitOrMaxAvailable(), getCurrentPrice()))
+    (
+      nil, 
+      (
+        totalLpAmount, 
+        getTotalAssetAmountWithProfitOrMaxAvailable(), 
+        getCurrentPrice()
+      )
+    )
 }
 
 ######################
