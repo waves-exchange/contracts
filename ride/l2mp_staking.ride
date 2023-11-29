@@ -148,7 +148,7 @@ func voteINTERNAL(
 func stringListToIntListHelper(acc: List[Int], value: String) = acc :+ value.parseIntValue()
 
 func calcTotalProfitForHeight(h: Int) = {
-  let startBlock = this.getInteger(keyStartBlock).valueOrElse(0)
+  let startBlock = this.getInteger(keyStartBlock).valueOrElse(height)
   let startPeriod = fraction(startBlock, 1, emissionPeriodInBlocks)
   let elapsedPeriods = h / emissionPeriodInBlocks - startPeriod
 
@@ -186,10 +186,10 @@ func getUserStakingNodesData(userAddress: String) = {
     let nodesRaw = this.getString(keyUserStakingNodes(userAddress)).valueOrElse("")
     let sharesRaw = this.getString(keyUserStakingNodesShares(userAddress)).valueOrElse("")
 
-    let nodesList = nodesRaw.split(SEP)
-    let sharesStringList = sharesRaw.split(SEP)
+    let nodesList = if (nodesRaw == "") then [] else nodesRaw.split(SEP)
+    let sharesStringList = if (sharesRaw == "") then [] else sharesRaw.split(SEP)
 
-    let sharesList = FOLD<10>(sharesStringList, [], stringListToIntListHelper)
+    let sharesList = FOLD<20>(sharesStringList, [], stringListToIntListHelper)
 
     (nodesList, sharesList)
 }
@@ -225,11 +225,9 @@ func getStakeActions(i: Invocation, userAddress: String) = {
     let userTotalStakedAmount = this.getInteger(keyUserTotalAssetStaked(userAddress)).valueOrElse(0)
 
     let newTotalLpAmount= totalLpAmount + paymentLpAmount
-    let newTotalAssetAmount = totalAssetAmount + paymentAmount
+    let newTotalAssetAmount = fraction(newTotalLpAmount.toBigInt(), getCurrentPrice(), scale18BigInt).toInt()
     let newUserLpAmount = userLpAmount + paymentLpAmount
     let newUserTotalStakedAmount = userTotalStakedAmount + paymentAmount
-
-    let updateStartHeightAction = if (totalLpAmount == 0) then [ IntegerEntry(keyStartBlock, height) ] else []
 
     [
         StringEntry(
@@ -244,8 +242,9 @@ func getStakeActions(i: Invocation, userAddress: String) = {
         IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
         IntegerEntry(keyTotalAssetAmount, newTotalAssetAmount),
         IntegerEntry(keyUserLpAmount(userAddress), newUserLpAmount),
-        IntegerEntry(keyUserTotalAssetStaked(userAddress), newUserTotalStakedAmount)
-    ] ++ updateStartHeightAction
+        IntegerEntry(keyUserTotalAssetStaked(userAddress), newUserTotalStakedAmount),
+        IntegerEntry(keyStartBlock, height)
+    ]
 }
 
 func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
