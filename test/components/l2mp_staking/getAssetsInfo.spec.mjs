@@ -99,7 +99,18 @@ describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() =>
           _5: { type: 'Int', value: 0 },
           _6: { type: 'Int', value: lockedAmount1 },
           _7: { type: 'Int', value: lockedAmount1 },
-          _8: { type: 'String', value: this.accounts.node1.addr },
+          _8: {
+            type: 'Array',
+            value: [
+              { type: 'String', value: this.accounts.node1.addr },
+            ],
+          },
+          _9: {
+            type: 'Array',
+            value: [
+              { type: 'Int', value: 100 },
+            ],
+          },
         },
       });
     },

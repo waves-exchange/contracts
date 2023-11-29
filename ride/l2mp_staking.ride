@@ -25,15 +25,10 @@ let keyTotalLockedLpAmount    = ["%s", "totalLockedLpAmount"].makeString(SEP)
 
 func keyUserLpAmount(userAddress: String)            = ["%s%s", "userLpAmount", userAddress].makeString(SEP)
 func keyUserLockedLpAmount(userAddress: String)      = ["%s%s", "userLockedLpAmount", userAddress].makeString(SEP)
-func keyUserStakingNodes(userAddress: String)        = ["%s%s", "userStakingNode", userAddress].makeString(SEP)
+func keyUserStakingNodes(userAddress: String)        = ["%s%s", "userStakingNodes", userAddress].makeString(SEP)
+func keyUserStakingNodesShares(userAddress: String)  = ["%s%s", "userStakingNodesShares", userAddress].makeString(SEP)
 func keyUserTotalAssetWithdrawn(userAddress: String) = ["%s%s", "totalAssetWithdrawn", userAddress].makeString(SEP)
 func keyUserTotalAssetStaked(userAddress: String)    = ["%s%s", "totalAssetStaked", userAddress].makeString(SEP)
-
-func formatStakingNodeValue(nodeAddress: String) = [
-  "%s%d",
-  nodeAddress,
-  "100"
-].makeString(SEP)
 
 func keyHistory(type: String, userAddress: String, txId: ByteVector) = [
   "%s%s%s",
@@ -150,6 +145,8 @@ func voteINTERNAL(
 # MULTISIG FUNCTIONS END #
 ##########################
 
+func stringListToIntListHelper(acc: List[Int], value: String) = acc :+ value.parseIntValue()
+
 func calcTotalProfitForHeight(h: Int) = {
   let startBlock = this.getInteger(keyStartBlock).valueOrElse(0)
   let startPeriod = fraction(startBlock, 1, emissionPeriodInBlocks)
@@ -185,10 +182,16 @@ func getCurrentPrice() = {
     }
 }
 
-func getUserStakingNode(userAddress: String) = {
-  let rawValue = this.getString(keyUserStakingNodes(userAddress)).valueOrElse("")
+func getUserStakingNodesData(userAddress: String) = {
+    let nodesRaw = this.getString(keyUserStakingNodes(userAddress)).valueOrElse("")
+    let sharesRaw = this.getString(keyUserStakingNodesShares(userAddress)).valueOrElse("")
 
-  if (rawValue == "") then rawValue else rawValue.split(SEP)[1]
+    let nodesList = nodesRaw.split(SEP)
+    let sharesStringList = sharesRaw.split(SEP)
+
+    let sharesList = FOLD<10>(sharesStringList, [], stringListToIntListHelper)
+
+    (nodesList, sharesList)
 }
 
 func calcAssetFromLp(lpAmount: Int) = {
@@ -280,14 +283,15 @@ func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
     ]
 }
 
-func getSetStakingNodeActions(userAddress: String, nodeAddress: String) = {
+func getSetStakingNodeActions(userAddress: String, nodeAddress: String, nodeShare: Int) = {
   strict check = [
     userAddress.fromBase58String().size() == ADDRESS_BYTES_SIZE || "user address is not valid".throwErr(),
     nodeAddress.fromBase58String().size() == ADDRESS_BYTES_SIZE || "node address is not valid".throwErr()
   ]
 
   [
-    StringEntry(keyUserStakingNodes(userAddress), formatStakingNodeValue(nodeAddress))
+    StringEntry(keyUserStakingNodes(userAddress), nodeAddress),
+    StringEntry(keyUserStakingNodesShares(userAddress), nodeShare.toString())
   ]
 }
 
@@ -350,14 +354,14 @@ func withdraw(withdrawAssetAmount: Int) = {
 func setStakingNode(nodeAddress: String) = {
     let userAddress = i.caller.toString()
 
-    getSetStakingNodeActions(userAddress, nodeAddress)
+    getSetStakingNodeActions(userAddress, nodeAddress, 100)
 }
 
 @Callable(i)
 func stakeAndSetStakingNode(nodeAddress: String) = {
     let userAddress = i.caller.toString()
 
-    getStakeActions(i, userAddress) ++ getSetStakingNodeActions(userAddress, nodeAddress)
+    getStakeActions(i, userAddress) ++ getSetStakingNodeActions(userAddress, nodeAddress, 100)
 }
 
 @Callable(i)
@@ -397,8 +401,10 @@ func airdrop(addressList: List[String], amountList: List[Int]) = {
 # _3 = current internal LP price
 # _4 = user total staked token amount
 # _5 = user total withdrawn token amount
-# _6 = user locked amount in internal LP
+# _6 = user locked internal LP amount
 # _7 = user locked token amount
+# _8 = list of user staking nodes
+# _9 = list of user staking nodes shares
 @Callable(i)
 func getUserAssetsREADONLY(userAddress: String) = {
     let userLpAmount = getUserLpAmount(userAddress)
@@ -407,7 +413,7 @@ func getUserAssetsREADONLY(userAddress: String) = {
     let userAvailableAssetToWithdraw = getUserAvailableAssetsToWithdraw(userAddress)
     let userTotalStakedAmount = this.getInteger(keyUserTotalAssetStaked(userAddress)).valueOrElse(0)
     let userTotalAssetWithdrawn = this.getInteger(keyUserTotalAssetWithdrawn(userAddress)).valueOrElse(0)
-    let userStakingNode = getUserStakingNode(userAddress)
+    let (userStakingNodesList, userStakingNodeSharesList) = getUserStakingNodesData(userAddress)
 
     (
       nil, 
@@ -419,7 +425,8 @@ func getUserAssetsREADONLY(userAddress: String) = {
         userTotalAssetWithdrawn,
         userLockedLpAmount,
         userLockedAssetAmount,
-        userStakingNode
+        userStakingNodesList,
+        userStakingNodeSharesList
       )
     )
 }
