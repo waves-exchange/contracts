@@ -29,9 +29,14 @@ describe('l2mp_staking: set staking node', /** @this {MochaSuiteModified} */() =
 
       expect(stateChanges.data).to.be.deep.equal([
         {
-          key: `%s%s__userStakingNode__${this.accounts.user1.addr}`,
+          key: `%s%s__userStakingNodes__${this.accounts.user1.addr}`,
           type: 'string',
-          value: `%s%d__${this.accounts.node1.addr}__100`,
+          value: `${this.accounts.node1.addr}`,
+        },
+        {
+          key: `%s%s__userStakingNodesShares__${this.accounts.user1.addr}`,
+          type: 'string',
+          value: '100',
         },
       ]);
     },

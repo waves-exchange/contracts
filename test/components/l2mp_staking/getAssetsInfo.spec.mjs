@@ -111,6 +111,7 @@ describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() =>
               { type: 'Int', value: 100 },
             ],
           },
+          _10: { type: 'Int', value: 0 },
         },
       });
     },
@@ -134,6 +135,7 @@ describe('l2mp_staking: get staked info', /** @this {MochaSuiteModified} */() =>
           _3: { type: 'BigInt', value: `${10e17}` },
           _4: { type: 'Int', value: lockedAmount1 },
           _5: { type: 'Int', value: lockedAmount1 },
+          _6: { type: 'Int', value: 0 },
         },
       });
     },

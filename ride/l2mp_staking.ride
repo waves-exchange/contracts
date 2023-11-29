@@ -56,7 +56,8 @@ let totalLockedLpAmount = this.getInteger(keyTotalLockedLpAmount).valueOrElse(0)
 let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
 let assetIdBytes = if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
 let emissionPeriodInBlocks = this.getInteger(keyEmissionPeriodInBlocks).valueOrElse(BLOCKS_IN_DAY)
-let emissionPerPeriod = this.getInteger(keyEmissionPerBlock).valueOrElse(0) * emissionPeriodInBlocks
+let emissionPerBlock = this.getInteger(keyEmissionPerBlock).valueOrElse(0)
+let emissionPerPeriod = emissionPerBlock * emissionPeriodInBlocks
 
 ######################
 # MULTISIG FUNCTIONS #
@@ -159,13 +160,16 @@ func calcTotalProfit() = {
   calcTotalProfitForHeight(height)
 }
 
+func getMaxAssetAvailable() = {
+    match(assetIdBytes) {
+        case u: Unit => this.wavesBalance().available
+        case b: ByteVector => this.assetBalance(b)
+    }
+}
+
 func getTotalAssetAmountWithProfitOrMaxAvailable() = {
     let totalAssetAmountWithProfit = totalAssetAmount + calcTotalProfit()
-
-    let totalAmount = match(assetIdBytes) {
-        case u: Unit => min([totalAssetAmountWithProfit, this.wavesBalance().available])
-        case b: ByteVector => min([totalAssetAmountWithProfit, this.assetBalance(b)])
-    }
+    let totalAmount = min([totalAssetAmountWithProfit, getMaxAssetAvailable()])
 
     if (totalLpAmount == 0) then 0 else totalAmount
 }
@@ -180,6 +184,12 @@ func getCurrentPrice() = {
     } else {
         scale18BigInt
     }
+}
+
+func getRemainingBlocks() = {
+    if (emissionPerBlock == 0) 
+        then 0 
+        else fraction((getMaxAssetAvailable() - getTotalAssetAmountWithProfitOrMaxAvailable()), 1, emissionPerBlock)
 }
 
 func getUserStakingNodesData(userAddress: String) = {
@@ -395,15 +405,16 @@ func airdrop(addressList: List[String], amountList: List[Int]) = {
 }
 
 # Return tuple: 
-# _1 = user available internal LP amount
-# _2 = user available tokens to withdraw
-# _3 = current internal LP price
-# _4 = user total staked token amount
-# _5 = user total withdrawn token amount
-# _6 = user locked internal LP amount
-# _7 = user locked token amount
-# _8 = list of user staking nodes
-# _9 = list of user staking nodes shares
+# _1  = user available internal LP amount
+# _2  = user available tokens to withdraw
+# _3  = current internal LP price
+# _4  = user total staked token amount
+# _5  = user total withdrawn token amount
+# _6  = user locked internal LP amount
+# _7  = user locked token amount
+# _8  = string list of user staking nodes
+# _9  = int list of user staking nodes shares
+# _10 = interest remaining blocks
 @Callable(i)
 func getUserAssetsREADONLY(userAddress: String) = {
     let userLpAmount = getUserLpAmount(userAddress)
@@ -425,7 +436,8 @@ func getUserAssetsREADONLY(userAddress: String) = {
         userLockedLpAmount,
         userLockedAssetAmount,
         userStakingNodesList,
-        userStakingNodeSharesList
+        userStakingNodeSharesList,
+        getRemainingBlocks()
       )
     )
 }
@@ -436,6 +448,7 @@ func getUserAssetsREADONLY(userAddress: String) = {
 # _3 = current internal LP price
 # _4 = total locked internal LP amount
 # _5 = total locked tokens amount
+# _6 = interest remaining blocks
 @Callable(i)
 func getTotalAssetsREADONLY() = {
     (
@@ -445,7 +458,8 @@ func getTotalAssetsREADONLY() = {
         getTotalAssetAmountWithProfitOrMaxAvailable(), 
         getCurrentPrice(),
         totalLockedLpAmount,
-        calcAssetFromLp(totalLockedLpAmount)
+        calcAssetFromLp(totalLockedLpAmount),
+        getRemainingBlocks()
       )
     )
 }
