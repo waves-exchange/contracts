@@ -54,9 +54,9 @@ describe('l2mp_staking: airdrop function', /** @this {MochaSuiteModified} */() =
         chainId,
       }, this.accounts.user1.seed);
 
-      const { stateChanges } = await broadcastAndWait(airdropTx);
+      const { stateChanges, height } = await broadcastAndWait(airdropTx);
 
-      expect(stateChanges.data).to.be.deep.equal([
+      expect(stateChanges.data).to.deep.equal([
         {
           key: '%s__totalLockedLpAmount',
           type: 'integer',
@@ -71,6 +71,11 @@ describe('l2mp_staking: airdrop function', /** @this {MochaSuiteModified} */() =
           key: '%s__totalAssetAmount',
           type: 'integer',
           value: airdropTotalAmount,
+        },
+        {
+          key: '%s__startBlock',
+          type: 'integer',
+          value: height,
         },
         {
           key: `%s%s__userLockedLpAmount__${this.accounts.user1.addr}`,

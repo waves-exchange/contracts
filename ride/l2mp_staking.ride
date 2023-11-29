@@ -230,12 +230,12 @@ func getStakeActions(i: Invocation, userAddress: String) = {
     ]
 
     let paymentAmount = i.payments[0].amount
-    let paymentLpAmount = fraction(paymentAmount.toBigInt(), scale18BigInt, getCurrentPrice()).toInt()
+    let paymentLpAmount = calcLpFromAsset(paymentAmount)
     let userLpAmount = getUserLpAmount(userAddress)
     let userTotalStakedAmount = this.getInteger(keyUserTotalAssetStaked(userAddress)).valueOrElse(0)
 
     let newTotalLpAmount= totalLpAmount + paymentLpAmount
-    let newTotalAssetAmount = fraction(newTotalLpAmount.toBigInt(), getCurrentPrice(), scale18BigInt).toInt()
+    let newTotalAssetAmount = calcAssetFromLp(newTotalLpAmount)
     let newUserLpAmount = userLpAmount + paymentLpAmount
     let newUserTotalStakedAmount = userTotalStakedAmount + paymentAmount
 
@@ -266,9 +266,9 @@ func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
     ]
 
     let newUserLpAmount = userLpAmount - lpAssetWithdrawAmount
-    let withdrawAssetAmount = fraction(lpAssetWithdrawAmount.toBigInt(), getCurrentPrice(), scale18BigInt).toInt()
+    let withdrawAssetAmount = calcAssetFromLp(lpAssetWithdrawAmount)
     let newTotalLpAmount = totalLpAmount - lpAssetWithdrawAmount
-    let newTotalAssetAmount = fraction(newTotalLpAmount.toBigInt(), getCurrentPrice(), scale18BigInt).toInt()
+    let newTotalAssetAmount = calcAssetFromLp(newTotalLpAmount)
     
     let userTotalAssetWithdrawn = this.getInteger(keyUserTotalAssetWithdrawn(userAddress)).valueOrElse(0)
     let newUserTotalAssetWithdrawn = userTotalAssetWithdrawn + withdrawAssetAmount
@@ -347,7 +347,7 @@ func stakeFor(userAddress: String) = {
 func withdraw(withdrawAssetAmount: Int) = {
   let userAddress = i.caller.toString()
   let userLpAmount = getUserLpAmount(userAddress)
-  let lpAmountToWithdraw = fraction(withdrawAssetAmount.toBigInt(), scale18BigInt, getCurrentPrice()).toInt()
+  let lpAmountToWithdraw = calcLpFromAsset(withdrawAssetAmount)
   let userAvailableAssetToWithdraw = getUserAvailableAssetsToWithdraw(userAddress)
   let minWithdrawAssetAmount = fraction(getCurrentPrice(), 1.toBigInt(), scale18BigInt, CEILING).toInt()
   strict check = [
@@ -397,10 +397,12 @@ func airdrop(addressList: List[String], amountList: List[Int]) = {
     }
     let (airdropEntries, _a, addedTotalLockedLpAmount) = FOLD<90>(amountList, ([], 0, 0), getAirdropStateChanges)
 
+    let newTotalAsset = calcAssetFromLp(totalLpAmount + addedTotalLockedLpAmount)
     [
         IntegerEntry(keyTotalLockedLpAmount, totalLockedLpAmount + addedTotalLockedLpAmount),
         IntegerEntry(keyTotalLpAmount, totalLpAmount + addedTotalLockedLpAmount),
-        IntegerEntry(keyTotalAssetAmount, totalAssetAmount + amountListSum)
+        IntegerEntry(keyTotalAssetAmount, newTotalAsset),
+        IntegerEntry(keyStartBlock, height)
     ] ++ airdropEntries
 }
 
