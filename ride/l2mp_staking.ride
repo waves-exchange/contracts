@@ -373,6 +373,18 @@ func stakeAndSetStakingNode(nodeAddress: String) = {
     getStakeActions(i, userAddress) ++ getSetStakingNodeActions(userAddress, nodeAddress, 100)
 }
 
+# Used in l2mp_swap.ride
+@Callable(i)
+func stakeForSwapHELPER(userAddress: String, nodeAddress: String) = {
+    strict check = [
+      i.originCaller.toString() == userAddress || "i.originCaller should be equal to userAddress".throwErr()
+    ]
+
+    let setStakingNodeActions = if (nodeAddress == "") then [] else getSetStakingNodeActions(userAddress, nodeAddress, 100)
+
+    getStakeActions(i, userAddress) ++ setStakingNodeActions
+}
+
 @Callable(i)
 func airdrop(addressList: List[String], amountList: List[Int]) = {
     func sum(accum: Int, next: Int) = accum + next
