@@ -221,6 +221,13 @@ func getUserAvailableAssetsToWithdraw(userAddress: String) = {
   calcAssetFromLp(userLpAmount)
 }
 
+func getClearStakingNodesActions(userAddress: String) = {
+  [
+    DeleteEntry(keyUserStakingNodes(userAddress)),
+    DeleteEntry(keyUserStakingNodesShares(userAddress))
+  ]
+}
+
 func getStakeActions(i: Invocation, userAddress: String) = {
     strict checks = [
         i.payments.size() == 1 || "should include 1 payment".throwErr(),
@@ -273,6 +280,8 @@ func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
     let userTotalAssetWithdrawn = this.getInteger(keyUserTotalAssetWithdrawn(userAddress)).valueOrElse(0)
     let newUserTotalAssetWithdrawn = userTotalAssetWithdrawn + withdrawAssetAmount
 
+    let clearStakingNodesAction = if (newUserLpAmount == 0) then getClearStakingNodesActions(userAddress) else []
+
     [
         StringEntry(
           keyHistory("withdraw", userAddress, i.transactionId),
@@ -289,7 +298,7 @@ func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
         IntegerEntry(keyUserTotalAssetWithdrawn(userAddress), newUserTotalAssetWithdrawn),
         IntegerEntry(keyStartBlock, height),
         ScriptTransfer(i.caller, withdrawAssetAmount, assetIdBytes)
-    ]
+    ] ++ clearStakingNodesAction
 }
 
 func getSetStakingNodeActions(userAddress: String, nodeAddress: String, nodeShare: Int) = {
