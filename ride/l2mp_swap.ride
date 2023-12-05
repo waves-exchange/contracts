@@ -144,9 +144,8 @@ func voteINTERNAL(
   }
 }
 
-@Callable(i)
-func swap(stake: Boolean) = {
-  let userAddress = i.caller
+func getSwapActions(i: Invocation, stake: Boolean, stakingNode: String) = {
+    let userAddress = i.caller
   let paymentSizeExpected = 1
   if (i.payments.size() != paymentSizeExpected) then throwErr("invalid payments") else
   let payment = i.payments[0]
@@ -157,8 +156,8 @@ func swap(stake: Boolean) = {
   if (assetOutAmount == 0) then throwErr("invalid assetOutAmount") else
 
   strict stakeInv = if (stake) then stakingAddress.invoke(
-    "stakeFor",
-    [userAddress.toString()],
+    "stakeForSwapHELPER",
+    [userAddress.toString(), stakingNode],
     [AttachedPayment(assetOutId, assetOutAmount)]
   ) else unit
 
@@ -189,6 +188,16 @@ func swap(stake: Boolean) = {
     ],
     assetOutAmount
   )
+}
+
+@Callable(i)
+func swap(stake: Boolean) = {
+  getSwapActions(i, stake, "")
+}
+
+@Callable(i)
+func swapAndSetStakingNode(stake: Boolean, stakingNode: String) = {
+  getSwapActions(i, stake, stakingNode)
 }
 
 @Callable(i)

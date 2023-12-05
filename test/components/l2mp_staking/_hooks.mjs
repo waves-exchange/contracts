@@ -24,6 +24,7 @@ export const mochaHooks = {
       'admin3',
       'user1',
       'user2',
+      'node1',
     ];
     this.accounts = Object.fromEntries(names.map((item) => {
       const itemSeed = randomSeed(seedWordsCount);

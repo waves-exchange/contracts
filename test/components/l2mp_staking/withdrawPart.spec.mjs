@@ -10,14 +10,19 @@ const { expect } = chai;
 
 describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() => {
   // There are 2 stakers
-  const emissionPerBlock = 5e6;
+  const emissionPerBlock = 5e7;
   const stakeAmount = 10e8;
-  const expectedLpAmount = 10e8;
+  const startTotalLpAmount = stakeAmount * 2;
+  const startTotalAssetAmount = stakeAmount * 2;
   const blocksCount = 2;
   const totalProfit = emissionPerBlock * blocksCount;
-  // TODO: sometimes contract returns 1004999999 instead of 1005000000
-  const expectedWithdrawAmount = stakeAmount + (totalProfit / 2);
-  const expectedPrice = expectedWithdrawAmount * 10e8;
+  const expectedWithdrawAmount = stakeAmount;
+  const expectedPrice = (startTotalAssetAmount + totalProfit) / startTotalLpAmount;
+  const expectedUserLpAmount = (totalProfit / 2) / expectedPrice;
+
+  const withdrawLpAmount = expectedWithdrawAmount / expectedPrice;
+  const expectedTotalLpAmount = startTotalLpAmount - withdrawLpAmount;
+  const expectedTotalAssetAmount = startTotalLpAmount + totalProfit - expectedWithdrawAmount;
 
   before(
     async function () {
@@ -39,7 +44,7 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
   );
 
   it(
-    'should be able to withdraw with profit',
+    'should be able to withdraw part of tokens',
     async function () {
       const stakeTx = invokeScript({
         dApp: this.accounts.l2mpStaking.addr,
@@ -100,22 +105,22 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
         {
           key: `%s%s%s__withdraw__${this.accounts.user1.addr}__${id}`,
           type: 'string',
-          value: `%d%d%d%d__${totalProfit}__${expectedPrice}__${stakeAmount * 2}__${expectedLpAmount * 2}`,
+          value: `%d%d%d%d__${totalProfit}__${expectedPrice * 1e18}__${startTotalAssetAmount}__${startTotalLpAmount}`,
         },
         {
           key: '%s__totalLpAmount',
           type: 'integer',
-          value: expectedLpAmount,
+          value: Math.floor(expectedTotalLpAmount),
         },
         {
           key: '%s__totalAssetAmount',
           type: 'integer',
-          value: expectedWithdrawAmount,
+          value: expectedTotalAssetAmount - 1,
         },
         {
           key: `%s%s__userLpAmount__${this.accounts.user1.addr}`,
           type: 'integer',
-          value: 0,
+          value: Math.floor(expectedUserLpAmount),
         },
         {
           key: `%s%s__totalAssetWithdrawn__${this.accounts.user1.addr}`,
@@ -126,14 +131,6 @@ describe('l2mp_staking: withdraw tokens', /** @this {MochaSuiteModified} */() =>
           key: '%s__startBlock',
           type: 'integer',
           value: startHeight + blocksCount,
-        },
-        {
-          key: `%s%s__userStakingNodes__${this.accounts.user1.addr}`,
-          value: null,
-        },
-        {
-          key: `%s%s__userStakingNodesShares__${this.accounts.user1.addr}`,
-          value: null,
         },
       ]);
     },

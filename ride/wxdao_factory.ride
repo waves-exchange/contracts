@@ -1,0 +1,302 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+{-# IMPORT common.lib.ride #-}
+
+let SEP = "__"
+let WAVES = "WAVES"
+let contractFilename = "wxdao_factory.ride"
+
+func wrapErr(s: String) = {
+  contractFilename + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
+
+func stringToAssetId(s: String) = {
+  if (s == WAVES) then unit else s.fromBase58String()
+}
+
+let ADMIN_LIST_SIZE = 5
+let QUORUM = 3
+let TXID_BYTES_LENGTH = 32
+
+func keyAllowedTxIdVotePrefix(txId: String) = makeString(["%s%s%s", "allowTxId", txId], SEP)
+func keyFullAdminVote(prefix: String, adminAddress: String) = makeString([prefix, adminAddress], SEP)
+func keyAdminAddressList() = makeString(["%s", "adminAddressList"], SEP)
+func keyAllowedTxId() = makeString(["%s", "txId"], SEP)
+
+func getAdminVote(prefix: String, admin: String) = {
+  let voteKey = keyFullAdminVote(prefix, admin)
+  getInteger(voteKey).valueOrElse(0)
+}
+
+func getAdminsList() = {
+  match (this.getString(keyAdminAddressList())) {
+    case s:String => s.split(SEP)
+    case _ => []
+  }
+}
+
+func isInAdminList(address: String) = {
+  getAdminsList().containsElement(address)
+}
+
+func genVotesKeysHelper(a: (List[String], String), adminAddress: String) = {
+  let (result, prefix) = a
+  (result :+ keyFullAdminVote(prefix, adminAddress), prefix)
+}
+func genVotesKeys(keyPrefix: String) = {
+  let adminList = keyAdminAddressList()
+  let (result, prefix) = FOLD<5>(getAdminsList(), ([], keyPrefix), genVotesKeysHelper)
+  result
+}
+
+func countVotesHelper(result: Int, voteKey: String) = {
+  result + getInteger(voteKey).valueOrElse(0)
+}
+func countVotes(prefix: String) = {
+  let votes = genVotesKeys(prefix)
+  FOLD<5>(votes, 0, countVotesHelper)
+}
+
+func clearVotesHelper(result: List[DeleteEntry], key: String) = {
+  result :+ DeleteEntry(key) 
+}
+func getClearVoteEntries(prefix: String) = {
+  let votes = genVotesKeys(prefix)
+  FOLD<5>(votes, [], clearVotesHelper)
+}
+
+func voteINTERNAL(
+  callerAddressString: String, 
+  keyPrefix: String, 
+  minVotes: Int, 
+  voteResult: List[StringEntry|IntegerEntry|DeleteEntry]
+) = {
+  let voteKey = keyFullAdminVote(keyPrefix, callerAddressString)
+  let adminCurrentVote = getAdminVote(keyPrefix, callerAddressString)
+
+  strict err = if (!isInAdminList(callerAddressString)) then {
+    throwErr("Address: " + callerAddressString + " not in Admin list")
+  } else if (adminCurrentVote == 1) then {
+    throwErr(voteKey + " you already voted")
+  } else { unit }
+
+  let votes = countVotes(keyPrefix)
+  if (votes + 1 >= minVotes) then {
+    let clearVoteEntries = getClearVoteEntries(keyPrefix)
+    clearVoteEntries ++ voteResult
+  } else {
+    [ IntegerEntry(voteKey, 1) ]
+  }
+}
+
+func keyCalculatorAddress() = "%s__calculatorAddress"
+func keyPoolsFactoryAddress() = "%s__poolsFactoryAddress"
+func keyTreasuryAddress() = "%s__treasuryAddress"
+
+func keyLpAssetId() = "%s__lpAssetId"
+
+func keyCurrentPeriod() = ["%s", "currentPeriod"].makeString(SEP)
+func keyStartHeightByPeriod(period: Int) = ["%s%d", "startHeight", period.toString()].makeString(SEP)
+func keyPeriodLength() = ["%s", "periodLength"].makeString(SEP)
+func keyTreasuryValueByPeriod(period: Int) = ["%s%d", "treasuryValue", period.toString()].makeString(SEP)
+
+let calculatorAddressOption = match this.getString(keyCalculatorAddress()) {
+  case s: String => s.addressFromString()
+  case _: Unit => unit
+}
+let calculatorAddressOrFail = calculatorAddressOption.valueOrErrorMessage(wrapErr("invalid calculator address"))
+
+func keyPowerConfigAddress() = "%s__powerConfigAddress"
+func keyPowerContractAddress() = "%s__powerContractAddress"
+func keyAssets() = "%s__assets"
+
+# config keys
+func keyVotingResultAddress() = "contract_voting_result"
+
+# voting result keys
+func keyProposalAllowBroadcast(address: Address, txId: ByteVector) = {
+  "proposal_allow_broadcast_" + address.toString() + "_" + txId.toBase58String()
+}
+
+let configAddressOption = match this.getString(keyPowerConfigAddress()) {
+  case s: String => s.addressFromString()
+  case _: Unit => unit
+}
+
+let votingResultAddressOption = match configAddressOption {
+  case a: Address => match a.getString(keyVotingResultAddress()) {
+    case s: String => s.addressFromString()
+    case _: Unit => unit
+  }
+  case _: Unit => unit
+}
+let votingResultAddressOrFail = votingResultAddressOption.valueOrErrorMessage(wrapErr("invalid voting result address"))
+
+let lpAssetIdOption = match this.getString(keyLpAssetId()) {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+let lpAssetIdOrFail = lpAssetIdOption.valueOrErrorMessage(wrapErr("invalid lpAssetId"))
+
+func onlyAddress(i: Invocation, address: Address) = {
+  i.caller == address || throwErr("permission denied")
+}
+
+func onlyThis(i: Invocation) = {
+  onlyAddress(i, this)
+}
+
+func onlyCalculator(i: Invocation) = {
+  onlyAddress(i, calculatorAddressOrFail)
+}
+
+@Callable(i)
+func stringEntry(key: String, val: String) =
+  if (i.onlyCalculator()) then ([StringEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func integerEntry(key: String, val: Int) =
+  if (i.onlyCalculator()) then ([IntegerEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func booleanEntry(key: String, val: Boolean) =
+  if (i.onlyCalculator()) then ([BooleanEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func binaryEntry(key: String, val: ByteVector) =
+  if (i.onlyCalculator()) then ([BinaryEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func deleteEntry(key: String) =
+  if (i.onlyCalculator()) then ([DeleteEntry(key)], key) else ([], unit)
+
+@Callable(i)
+func reissue(assetId: ByteVector, amount: Int, reissuable: Boolean) = 
+  if (i.onlyCalculator()) then ([Reissue(assetId, amount, reissuable)], amount) else ([], unit)
+
+@Callable(i)
+func burn(assetId: ByteVector, amount: Int) = 
+  if (i.onlyCalculator()) then ([Burn(assetId, amount)], amount) else ([], unit)
+
+@Callable(i)
+func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 
+  if (i.onlyCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
+
+@Callable(i)
+func transferAssets(recipientBytes: ByteVector, assetsList: List[ByteVector], amountsList: List[Int]) = {
+  if (i.onlyCalculator()) then {
+    func addNewTransfer(acc: (List[ScriptTransfer], Int), nextAssetId: ByteVector) = {
+      let (transfers, j) = acc
+
+      let newTransfer = ScriptTransfer(
+        Address(recipientBytes),
+        amountsList[j],
+        assetsList[j]
+      )
+      let updatedTransfers = transfers :+ newTransfer
+      (updatedTransfers, j + 1)
+    }
+
+    let (assetsTransfers, _lastIndex) = FOLD<10>(assetsList, ([], 0), addNewTransfer)
+    (assetsTransfers, unit)
+  } else {
+    ([], unit)
+  }
+}
+
+@Callable(i)
+func transferWaves(recipientBytes: ByteVector, amount: Int) = 
+  if (i.onlyCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
+
+@Callable(i)
+func init(
+  lpAssetIdStr: String,
+  treasuryAddressStr: String,
+  calculatorAddressStr: String,
+  powerConfigAddressStr: String,
+  powerContractAddress: String, # child
+  poolsFactoryAddressStr: String,
+  periodLength: Int,
+  treasuryValue: Int,
+  assets: List[String]
+) = {
+  strict checkCaller = i.mustThis()
+
+  ([
+    StringEntry(keyLpAssetId(), lpAssetIdStr),
+    StringEntry(keyTreasuryAddress(), treasuryAddressStr),
+    StringEntry(keyCalculatorAddress(), calculatorAddressStr),
+    StringEntry(keyPowerConfigAddress(), powerConfigAddressStr),
+    StringEntry(keyPowerContractAddress(), powerContractAddress),
+    StringEntry(keyPoolsFactoryAddress(), poolsFactoryAddressStr),
+    IntegerEntry(keyPeriodLength(), periodLength),
+    IntegerEntry(keyTreasuryValueByPeriod(0), treasuryValue),
+    IntegerEntry(keyCurrentPeriod(), 0),
+    IntegerEntry(keyStartHeightByPeriod(0), height),
+    StringEntry(keyAssets(), assets.makeString(SEP))
+  ], unit)
+}
+
+@Callable(i)
+func commitAfterStartWithLockRoundFor(
+  contract: String,
+  child: String,
+  address: String,
+  additionalLockRounds: Int,
+  paymentAssetId: ByteVector,
+  paymentAmount: Int
+) = {
+  (
+    nil,
+    addressFromStringValue(contract).invoke(
+      "commitAfterStartWithLockRoundFor",
+      [child, address, additionalLockRounds],
+      [AttachedPayment(paymentAssetId, paymentAmount)]
+    )
+  )
+}
+
+# calculator address should be replaced to change logic
+@Callable(i)
+func call(function: String, args: List[String]) = {
+  let result = calculatorAddressOrFail.reentrantInvoke(function, [i.callerPublicKey, args], i.payments)
+
+  (nil, result)
+}
+
+# Vote for txId that is allowed in Verifier
+@Callable(i)
+func voteForTxId(txId: String) = {
+  let callerAddressString = toBase58String(i.caller.bytes)
+  let keyPrefix = keyAllowedTxIdVotePrefix(txId)
+  let result = [ StringEntry(keyAllowedTxId(), txId) ]
+  let allowedTxIdOption = this.getString(keyAllowedTxId())
+  
+  strict err = [
+    txId.fromBase58String().size() == TXID_BYTES_LENGTH || throwErr(txId + " is not valid txId"),
+    allowedTxIdOption == unit || allowedTxIdOption.value() != txId || throwErr(txId + " is already allowed")
+  ]
+
+  voteINTERNAL(callerAddressString, keyPrefix, QUORUM, result)
+}
+
+@Verifier(tx)
+func verify() = {
+  let byProposal = match (votingResultAddressOption) {
+    case proposalAddress:Address => proposalAddress.getBoolean(keyProposalAllowBroadcast(this, tx.id)).valueOrElse(false)
+    case _ => false
+  }
+  let byAdmins = tx.id == this.getString(keyAllowedTxId()).valueOrElse("").fromBase58String()
+  let byOwner = if (getAdminsList().size() >= QUORUM) then {
+    false
+  } else {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+  }
+
+  byProposal || byAdmins || byOwner
+}

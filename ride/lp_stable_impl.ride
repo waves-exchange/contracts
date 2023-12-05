@@ -192,6 +192,12 @@ let fca = addressFromStringValue(strf(this, fc()))
 let inFee = fca.invoke("getInFeeREADONLY", [this.toString()], []).exactAs[Int]
 let outFee = fca.invoke("getOutFeeREADONLY", [this.toString()], []).exactAs[Int]
 
+func keyAddressWhitelisted(address: Address) = makeString(["%s%s", "whitelisted", address.toString()], SEP)
+
+func isAddressWhitelisted(address: Address) = {
+  fca.getBoolean(keyAddressWhitelisted(address)).valueOrElse(false)
+}
+
 func A(poolAddress: Address) = strf(poolAddress, amp())
 
 # isGlobalShutdown
@@ -507,6 +513,10 @@ func epo(poolAddress: Address,
 
     let lpEm = assetInfo(lpId).valueOrErrorMessage("Wr lp as").quantity
 
+    strict checkAssets = [
+      (inAmId == amIdStr.parseAssetId() && inPrId == prIdStr.parseAssetId()) || throwErr("Invalid amt or price asset passed.")
+    ]
+    
     # get current balances from acc
     let amBalance = if(isEval) then getAccBalance(poolAddress, amIdStr) else
                                                               if(isOneAsset && pmtId == amIdStr) then getAccBalance(poolAddress, amIdStr) - pmtAmt else
@@ -792,6 +802,8 @@ func validateMatcherOrderAllowed(poolAddress: Address, order: Order) = {
 
 # commonGet
 func cg(poolAddress: Address, readonly: Boolean, pmt: AttachedPayment, i: Invocation) = {
+  let userAddress = i.originCaller
+
   let pmtAssetId  = pmt.assetId.value()
   let pmtAmt      = pmt.amount
 
@@ -801,7 +813,8 @@ func cg(poolAddress: Address, readonly: Boolean, pmt: AttachedPayment, i: Invoca
   let sts          = r._9.parseIntValue()
   let state        = r._10
 
-  if(igs() || sts == PoolShutdown) then throw("Admin blocked: " + sts.toString()) else
+  let isGetDisabled = !isAddressWhitelisted(userAddress) && (igs() || sts == PoolShutdown)
+  if (isGetDisabled) then throw("Admin blocked: " + sts.toString()) else
 
   (outAmAmt,
   outPrAmt,
@@ -841,7 +854,10 @@ func cp(poolAddress: Address,
                 pmtId)
 
     let sts  = r._8.parseIntValue()
-    if(igs() || sts == PoolPutDis || sts == PoolShutdown) then throw("Blocked:" + sts.toString()) else
+
+    let isPutDisabled = !isAddressWhitelisted(caller.addressFromStringValue()) && (igs() || sts == PoolShutdown || sts == PoolPutDis)
+    if (isPutDisabled) then throw("Blocked:" + sts.toString()) else
+
     r
 }
 
@@ -1173,6 +1189,7 @@ func calculateAmountOutForSwapAndSendTokens(
     paymentAssetId: String, 
     paymentAmount: Int) = {
   let poolAddress = i.caller
+  let userAddress = i.originCaller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
     cfgPoolAddress,
@@ -1195,7 +1212,7 @@ func calculateAmountOutForSwapAndSendTokens(
     [poolAddress.toString()],
     []
   ).exactAs[Boolean]
-  let isSwapDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolSwapDisabled
+  let isSwapDisabled = !isAddressWhitelisted(userAddress) && (igs() || cfgPoolStatus == PoolShutdown || isPoolSwapDisabled)
 
   strict checks = [
     !isSwapDisabled || i.isManager() || "swap operation is blocked by admin".throwErr(),
@@ -1373,6 +1390,7 @@ func putOneTknV2(
     payment1Amount: Int 
   ) = {
   let poolAddress = i.caller
+  let userAddress = i.originCaller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
     cfgPoolAddress,
@@ -1389,7 +1407,7 @@ func putOneTknV2(
     [poolAddress.toString()],
     []
   ).exactAs[Boolean]
-  let isPutDisabled = igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  let isPutDisabled = !isAddressWhitelisted(userAddress) && (igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
 
   strict checks = [
     !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr()
@@ -1400,8 +1418,6 @@ func putOneTknV2(
   let lpId = cfgLpAssetId
   let amDecimals = cfgAmountAssetDecimals
   let prDecimals = cfgPriceAssetDecimals
-
-  let userAddress = i.originCaller
 
   let pmt = AttachedPayment(payment1AssetId.parseAssetId(), payment1Amount)
   let pmtAssetId = pmt.assetId.value().toBase58String()
@@ -1607,6 +1623,7 @@ func getOneTknV2(
     payment1Amount: Int
   ) = {
   let poolAddress = i.caller
+  let userAddress = i.originCaller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
     cfgPoolAddress,
@@ -1623,7 +1640,7 @@ func getOneTknV2(
     [i.caller.toString()],
     []
   ).exactAs[Boolean]
-  let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  let isGetDisabled = !isAddressWhitelisted(userAddress) && (igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
 
   strict checks = [
     !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr()
@@ -1818,6 +1835,7 @@ func getNoLess(
 @Callable(i)
 func unstakeAndGet(amount: Int) = {
   let poolAddress = i.caller
+  let userAddress = i.originCaller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
     cfgPoolAddress,
@@ -1845,7 +1863,8 @@ func unstakeAndGet(amount: Int) = {
   let sts = r._9.parseIntValue()
   let state = r._10
 
-  strict v = if (igs() || sts == PoolShutdown) then throw("Blocked: " + sts.toString()) else true
+  let isGetDisabled = !isAddressWhitelisted(userAddress) && (igs() || cfgPoolStatus == PoolShutdown)
+  strict v = if (isGetDisabled) then throw("Blocked: " + sts.toString()) else true
 
   strict burnLPAssetOnFactory = poolAddress.invoke(
     "callBurn",
@@ -1863,6 +1882,7 @@ func unstakeAndGet(amount: Int) = {
 @Callable(i)
 func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessThenPriceAsset: Int) = {
   let poolAddress = i.caller
+  let userAddress = i.originCaller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
     cfgPoolAddress,
@@ -1874,7 +1894,7 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
     cfgPriceAssetDecimals
   ) = poolConfigParsed
 
-  let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown
+  let isGetDisabled = !isAddressWhitelisted(userAddress) && (igs() || cfgPoolStatus == PoolShutdown)
 
   strict checks = [
     !isGetDisabled || "get operation is blocked by admin".throw()
@@ -1910,6 +1930,7 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 @Callable(i)
 func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
   let poolAddress = i.caller
+  let userAddress = i.originCaller
   let poolConfigParsed = gpc(poolAddress).parsePoolConfig()
   let (
     cfgPoolAddress,
@@ -1926,7 +1947,7 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
     [poolAddress.toString()],
     []
   ).exactAs[Boolean]
-  let isGetDisabled = igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  let isGetDisabled = !isAddressWhitelisted(userAddress) && (igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
 
   strict checks = [
     !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
@@ -1938,7 +1959,6 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
   let lpAssetId = cfgLpAssetId
   let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
 
-  let userAddress = i.originCaller
   let lpAssetRecipientAddress = poolAddress
   strict unstakeInv = poolAddress.invoke("callUnstakeINTERNAL", [
     staking.bytes,

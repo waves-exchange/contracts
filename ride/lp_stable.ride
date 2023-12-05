@@ -192,6 +192,12 @@ let fca = addressFromStringValue(strf(this, fc()))
 let inFee = fca.invoke("getInFeeREADONLY", [this.toString()], []).exactAs[Int]
 let outFee = fca.invoke("getOutFeeREADONLY", [this.toString()], []).exactAs[Int]
 
+func keyAddressWhitelisted(address: Address) = makeString(["%s%s", "whitelisted", address.toString()], SEP)
+
+func isAddressWhitelisted(address: Address) = {
+  fca.getBoolean(keyAddressWhitelisted(address)).valueOrElse(false)
+}
+
 let A = strf(this, amp())
 
 # isGlobalShutdown
@@ -459,6 +465,10 @@ func epo(txId58: String,
 
     let lpEm = assetInfo(lpId).valueOrErrorMessage("Wr lp as").quantity
 
+    strict checkAssets = [
+      (inAmId == amIdStr.parseAssetId() && inPrId == prIdStr.parseAssetId()) || throwErr("Invalid amt or price asset passed.")
+    ]
+
     # get current balances from acc
     let amBalance = if(isEval) then getAccBalance(amIdStr) else
                                                               if(isOneAsset && pmtId == amIdStr) then getAccBalance(amIdStr) - pmtAmt else
@@ -708,7 +718,8 @@ func cg(i: Invocation) = {
   let sts  = r._9.parseIntValue()
   let state       = r._10
 
-  if(igs() || sts == PoolShutdown) then throw("Admin blocked: " + sts.toString()) else
+  let isGetDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown)
+  if (isGetDisabled) then throw("Admin blocked: " + sts.toString()) else
 
   (outAmAmt,
   outPrAmt,
@@ -745,7 +756,8 @@ func cp(caller: String,
                       pmtId)
 
     let sts  = r._8.parseIntValue()
-    if(igs() || sts == PoolPutDis || sts == PoolShutdown) then throw("Blocked:" + sts.toString()) else
+    let isPutDisabled = !isAddressWhitelisted(caller.addressFromStringValue()) && (igs() || cfgPoolStatus == PoolShutdown || cfgPoolStatus == PoolPutDis)
+    if (isPutDisabled) then throw("Blocked:" + sts.toString()) else
     r
 }
 

@@ -95,6 +95,28 @@ export const mochaHooks = {
     await api.transactions.broadcast(massTransferTxUSDT, {});
     await waitForTx(massTransferTxUSDT.id, { apiBase });
 
+    const otherTknTx = issue({
+      name: 'OTHER',
+      description: '',
+      quantity: 10e16,
+      decimals: 6,
+      chainId,
+    }, seed);
+    await api.transactions.broadcast(otherTknTx, {});
+    await waitForTx(otherTknTx.id, { apiBase });
+    this.otherAssetId = otherTknTx.id;
+
+    const otherAmount = 1e16;
+    const massTransferTxOTHER = massTransfer({
+      transfers: names.map((name) => ({
+        recipient: address(this.accounts[name], chainId), amount: otherAmount,
+      })),
+      assetId: this.otherAssetId,
+      chainId,
+    }, seed);
+    await api.transactions.broadcast(massTransferTxOTHER, {});
+    await waitForTx(massTransferTxOTHER.id, { apiBase });
+
     const constructorFactoryV2InvokeTx = invokeScript({
       dApp: address(this.accounts.factoryV2, chainId),
       additionalFee: 4e5,
