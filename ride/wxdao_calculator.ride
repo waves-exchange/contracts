@@ -1,0 +1,358 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+{-# IMPORT common.lib.ride #-}
+
+let SEP = "__"
+let WAVES = "WAVES"
+let contractFilename = "wxdao_calculator.ride"
+let mult8 = 100_000_000
+let mult18 = 1_000_000_000_000_000_000.toBigInt()
+let wavesDecimals = 8
+let usdtDecimals = 6
+
+func toX18(origVal: Int, origScaleMult: Int) = fraction(origVal.toBigInt(), mult18, origScaleMult.toBigInt())
+func fromX18(val: BigInt, resultScaleMult: Int) = fraction(val, resultScaleMult.toBigInt(), mult18).toInt()
+
+func wrapErr(s: String) = {
+  contractFilename + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
+
+func keyCurrentPeriod() = ["%s", "currentPeriod"].makeString(SEP)
+func keyStartHeightByPeriod(period: Int) = ["%s%d", "startHeight", period.toString()].makeString(SEP)
+func keyPeriodLength() = ["%s", "periodLength"].makeString(SEP)
+func keyTreasuryValueByPeriod(period: Int) = ["%s%d", "treasuryValue", period.toString()].makeString(SEP)
+
+func keyPowerConfigAddress() = "%s__powerConfigAddress"
+func powerConfigAddress(factoryAddress: Address) = {
+  match factoryAddress.getString(keyPowerConfigAddress()) {
+    case s: String => s.addressFromString()
+    case _: Unit => unit
+  }
+}.valueOrErrorMessage(wrapErr("invalid power config address"))
+
+func keyPowerAssetId() = "powerAssetId"
+func getPowerAssetId(factoryAddress: Address) = powerConfigAddress(factoryAddress).getString(
+  keyPowerAssetId()
+).valueOrErrorMessage(wrapErr("invalid power asset id")).fromBase58String()
+
+func keyPowerContractAddress() = "%s__powerContractAddress"
+func powerContractAddress(factoryAddress: Address) = {
+  match factoryAddress.getString(keyPowerContractAddress()) {
+    case s: String => s.addressFromString()
+    case _: Unit => unit
+  }
+}.valueOrErrorMessage(wrapErr("invalid power contract address"))
+
+func keyPoolsFactoryAddress() = "%s__poolsFactoryAddress"
+func getPoolsFactoryAddress(factoryAddress: Address) = {
+  match factoryAddress.getString(keyPoolsFactoryAddress()) {
+    case s: String => s.addressFromString()
+    case _: Unit => unit
+  }
+}.valueOrErrorMessage(wrapErr("invalid pools factory address"))
+
+func keyTreasuryAddress() = "%s__treasuryAddress"
+func getTreasuryAddress(factoryAddress: Address) = {
+  match factoryAddress.getString(keyTreasuryAddress()) {
+    case s: String => s.addressFromString()
+    case _: Unit => unit
+  }
+}.valueOrErrorMessage(wrapErr("invalid treasury address"))
+
+func keyAssets() = "%s__assets"
+func getAssetsStr(factoryAddress: Address) = factoryAddress.getString(
+  keyAssets()
+).valueOrErrorMessage(wrapErr("invalid assets"))
+
+func keyLpAssetId() = "%s__lpAssetId"
+func getLpAssetId(factoryAddress: Address) = factoryAddress.getString(
+  keyLpAssetId()
+).valueOrErrorMessage(wrapErr("invalid lp asset id")).fromBase58String()
+
+func getAssetInfoOrFail(assetId: ByteVector) = {
+  assetInfo(assetId).valueOrErrorMessage(wrapErr("invalid asset info"))
+}
+
+func getAssetsBalances(targetAddress: Address, assetIdList: List[String]) = {
+  func map(acc: List[BigInt], nextAssetIdStr: String) = {
+    let balance = if (nextAssetIdStr == WAVES) then {
+      targetAddress.wavesBalance().available.toX18(pow(10, 0, wavesDecimals, 0, 0, DOWN))
+    } else {
+      let assetId = nextAssetIdStr.fromBase58String()
+      let assetDecimals = getAssetInfoOrFail(assetId).decimals
+      targetAddress.assetBalance(assetId).toX18(pow(10, 0, assetDecimals, 0, 0, DOWN))
+    }
+
+    acc :+ balance
+  }
+
+  FOLD<10>(assetIdList, [], map)
+}
+
+func getAssetsPrices(poolsFactoryAddress: Address, assetIdList: List[String]) = {
+  if (chainId == chainIdW) then {
+    # mainnet
+    # WAVES/USDT
+    # WAVES/XTN -> XTN/USDT
+    let wavesUsdtAddressStr = "3PKfrupEydU2nZAghVjZAfvCwMBkzuR1F52"
+    let wavesUsdtPrice = poolsFactoryAddress.invoke("getPrice", [wavesUsdtAddressStr], []).exactAs[String].parseBigIntValue()
+    let wavesXtnAddressStr = "3PPZWgFNRKHLvM51pwS934C8VZ7d2F4Z58g"
+    let wavesXtnPrice = poolsFactoryAddress.invoke("getPrice", [wavesXtnAddressStr], []).exactAs[String].parseBigIntValue()
+    let xtnUsdtPrice = fraction(wavesUsdtPrice, mult18, wavesXtnPrice)
+
+    func map(acc: List[BigInt], nextAssetId: String) = {
+      let price = match nextAssetId {
+        # PWR 2thsACuHmzDMuNezPM32wg9a3BwUzBWDeSKakgz3cw21
+        # PWR/WAVES -> WAVES/USDT -> PWR/USDT
+        case "2thsACuHmzDMuNezPM32wg9a3BwUzBWDeSKakgz3cw21" => {
+          let pwrWavesAddressStr = "3PDi7Qq8pLQYvtKyTfQuqqPUWyhoYbU957t"
+          let pwrWavesPrice = poolsFactoryAddress.invoke("getPrice", [pwrWavesAddressStr], []).exactAs[String].parseBigIntValue()
+          fraction(pwrWavesPrice, wavesUsdtPrice, mult18)
+        }
+
+        # WX Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on
+        # WX/WAVES -> WAVES/USDT -> WX/USDT
+        case "Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on" => {
+          let wxWavesAddressStr = "3PFzaH2ghpwANHFgjeva83N1yxzErELx2eh"
+          let wxWavesPrice = poolsFactoryAddress.invoke("getPrice", [wxWavesAddressStr], []).exactAs[String].parseBigIntValue()
+          fraction(wxWavesPrice, wavesUsdtPrice, mult18)
+        }
+        # USDT-WXG 34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ
+        # WAVES/USDT-WXG -> WAVES/USDT -> USDT-WXG/USDT
+        case "34N9YcEETLWn93qYQ64EsP1x89tSruJU44RrEMSXXEPJ" => {
+          let wavesUsdtwxgAddressStr = "3PKMVZ7kQeaREajYi8Yc25Ro6mcNw5D6QSa"
+          let wavesUsdtwxgPrice = poolsFactoryAddress.invoke("getPrice", [wavesUsdtwxgAddressStr], []).exactAs[String].parseBigIntValue()
+          fraction(wavesUsdtPrice, mult18, wavesUsdtwxgPrice)
+        }
+
+        # USDC-WXG 6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ
+        # WAVES/USDС-WXG -> WAVES/USDT -> USDС-WXG/USDT
+        case "6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ" => {
+          let wavesUsdcwxgAddressStr = "3P3g3eipfG2NZKKQE8DZXt2E9tRJqii9jcX"
+          let wavesUsdcwxgPrice = poolsFactoryAddress.invoke("getPrice", [wavesUsdcwxgAddressStr], []).exactAs[String].parseBigIntValue()
+          fraction(wavesUsdtPrice, mult18, wavesUsdcwxgPrice)
+        }
+
+        # LTC-WXG HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk
+        # LTC-WXG/XTN -> XTN/USDT -> LTC-WXG/USDT
+        case "HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk" => {
+          let ltcwxgXtnAddressStr = "3P94wvu5gA7VhjPgAB3twaeqdwHCwNK2vsn"
+          let ltcwxgXtnPrice = poolsFactoryAddress.invoke("getPrice", [ltcwxgXtnAddressStr], []).exactAs[String].parseBigIntValue()
+          fraction(ltcwxgXtnPrice, xtnUsdtPrice, mult18)
+        }
+
+        # ETH-WXG 474jTeYx2r2Va35794tCScAXWJG9hU2HcgxzMowaZUnu
+        # ETH-WXG/WAVES -> WAVES/USDT -> ETH-WXG/USDT
+        case "474jTeYx2r2Va35794tCScAXWJG9hU2HcgxzMowaZUnu" => {
+          let ethwxgWavesAddressStr = "3P3XGTN6s292g9iwYhs3TEqJqHiffQYojuE"
+          let ethwxgWavesPrice = poolsFactoryAddress.invoke("getPrice", [ethwxgWavesAddressStr], []).exactAs[String].parseBigIntValue()
+          fraction(ethwxgWavesPrice, wavesUsdtPrice, mult18)
+        }
+
+        # BTC-WXG 8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS
+        # BTC-WXG/XTN -> XTN/USDT -> BTC-WXG/USDT
+        case "8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS" => {
+          let btcwxgXtnAddressStr = "3PCBWDTA6jrFswd7gQgaE3Xk7gLM5RKofvp"
+          let btcwxgXtnPrice = poolsFactoryAddress.invoke("getPrice", [btcwxgXtnAddressStr], []).exactAs[String].parseBigIntValue()
+          fraction(btcwxgXtnPrice, xtnUsdtPrice, mult18)
+        }
+
+        case _ => throwErr("invalid asset id")
+      }
+
+      acc :+ price
+    }
+
+    FOLD<10>(assetIdList, [], map)
+  } else if (chainId == chainIdT) then {
+    # testnet
+    func map(acc: List[BigInt], nextAssetId: String) = {
+      let price = match nextAssetId {
+        # WX EMAMLxDnv3xiz8RXg8Btj33jcEw3wLczL3JKYYmuubpc
+        # WX/USDT
+        case "EMAMLxDnv3xiz8RXg8Btj33jcEw3wLczL3JKYYmuubpc" => {
+          let wxUsdtAddressStr = "3MrULQRLc52GWrJF1tMcAm4M78fPe57o9Kt"
+          let wxUsdtPrice = poolsFactoryAddress.invoke("getPrice", [wxUsdtAddressStr], []).exactAs[String].parseBigIntValue()
+          wxUsdtPrice
+        }
+
+        # USDC A7Ksh7fXyqm1KhKAiK3bAB2aiPSitQQF6v1pyu9SS3FR
+        # USDC/USDT
+        case "A7Ksh7fXyqm1KhKAiK3bAB2aiPSitQQF6v1pyu9SS3FR" => {
+          let usdcUsdtAddressStr = "3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA"
+          let usdcUsdtPrice = poolsFactoryAddress.invoke("getPrice", [usdcUsdtAddressStr], []).exactAs[String].parseBigIntValue()
+          usdcUsdtPrice
+        }
+
+        # PWR
+        case "8Q6SE2ANebufw8JuPjJVRjZD6drD8ihjNjM8xaGUSfdR" => {
+          let price = 100000000
+          price
+        }
+
+        case _ => throwErr("invalid asset id")
+      }
+
+      acc :+ price
+    }
+
+    FOLD<10>(assetIdList, [], map)
+  } else throwErr("invalid chain id")
+}
+
+func calcTreasuryValue(factoryAddress: Address) = {
+  let treasuryAddress = factoryAddress.getTreasuryAddress()
+  let poolsFactoryAddress = factoryAddress.getPoolsFactoryAddress()
+  let assetsStr = getAssetsStr(factoryAddress).split(SEP)
+  let assetsBalances = getAssetsBalances(treasuryAddress, assetsStr)
+  let assetsPrices = getAssetsPrices(poolsFactoryAddress, assetsStr)
+
+  func reduce(acc: BigInt, nextAssetIdStr: String) = {
+    let assetId = nextAssetIdStr.fromBase58String()
+    let index = assetsStr.indexOf(nextAssetIdStr).valueOrErrorMessage(wrapErr("invalid asset id"))
+    let balance = assetsBalances[index]
+    let price = assetsPrices[index]
+    let assetValue = fraction(balance, price, mult18)
+
+    acc + assetValue
+  }
+
+  let treasuryValue = FOLD<10>(assetsStr, 0.toBigInt(), reduce)
+
+  treasuryValue
+}
+
+# withdraw from investment account to specified address
+@Callable(i)
+func withdraw(args: List[String]) = {
+  let recipient = addressFromStringValue(args[0])
+  let amount = parseIntValue(args[1])
+  let result = i.caller.invoke("transferWaves", [recipient.bytes, amount], [])
+
+  (nil, result)
+}
+
+# set param example
+@Callable(i)
+func setIntParam(args: List[String]) = {
+  let key = args[0]
+  let val = parseIntValue(args[1])
+  let result = i.caller.invoke("integerEntry", [key, val], [])
+
+  (nil, result)
+}
+
+# Swap WXDAO token to staked PWR token
+# Stake PWR token, send profit to caller, burn WXDAO token
+# payments:
+# - WXDAO token
+@Callable(i)
+func swap(callerPublicKey: ByteVector, args: List[String]) = {
+  let factoryAddress = i.caller
+  let userAddress = addressFromPublicKey(callerPublicKey)
+
+  let payment = if (i.payments.size() == 1) then i.payments[0] else {
+    throwErr("1 payment is required")
+  }
+
+  let err = wrapErr("invalid payment asset id")
+  let paymentAssetId = if (payment.assetId.valueOrErrorMessage(err) == getLpAssetId(factoryAddress)) then {
+    payment.assetId.value()
+  } else {
+    throwErr(err)
+  }
+
+  let pwrPrice = 100 # 100 WXDAO tokens for 1 PWR token
+  let pwrAmount = payment.amount / pwrPrice
+
+  let assetsStr = getAssetsStr(factoryAddress).split(SEP)
+  strict pwrBalance = factoryAddress.assetBalance(getPowerAssetId(factoryAddress))
+
+  let assetsBalances = getAssetsBalances(factoryAddress, assetsStr)
+
+  func map(acc: (List[ByteVector], List[Int]), nextAssetIdStr: String) = {
+    let assetId = nextAssetIdStr.fromBase58String()
+    let index = assetsStr.indexOf(nextAssetIdStr).valueOrErrorMessage(wrapErr("invalid asset balance"))
+    let assetDecimals = getAssetInfoOrFail(assetId).decimals
+    let balance = assetsBalances[index].fromX18(pow(10, 0, assetDecimals, 0, 0, DOWN))
+    let amount = fraction(balance, pwrAmount, pwrBalance)
+
+    if (amount > 0) then (
+      acc._1 :+ assetId,
+      acc._2 :+ amount
+    ) else acc
+  }
+
+  strict transfers = FOLD<6>(assetsStr, (nil, nil), map)
+
+  let additionalLockRounds = 0
+  let factoryActions = [
+    factoryAddress.invoke(
+      "commitAfterStartWithLockRoundFor",
+      [
+        powerContractAddress(factoryAddress).toString(),
+        factoryAddress.toString(),
+        userAddress.toString(),
+        additionalLockRounds,
+        getPowerAssetId(factoryAddress),
+        pwrAmount
+      ],
+      []
+    )
+  ] ++ if (transfers._1.size() == 0) then [] else [
+    factoryAddress.invoke(
+      "transferAssets",
+      [
+        userAddress.bytes,
+        transfers._1,
+        transfers._2
+      ],
+      []
+    )
+  ]
+
+  ([
+    Burn(paymentAssetId, payment.amount)
+  ], factoryActions)
+}
+
+# returns wxdao token price
+@Callable(i)
+func price(callerPublicKey: ByteVector, args: List[String]) = {
+  let factoryAddress = i.caller
+  let poolsFactoryAddress = factoryAddress.getPoolsFactoryAddress()
+  let currentPeriod = factoryAddress.getInteger(keyCurrentPeriod())
+    .valueOrErrorMessage(wrapErr("invalid current period"))
+  let startTreasuryValue = factoryAddress.getInteger(keyTreasuryValueByPeriod(currentPeriod))
+    .valueOrErrorMessage(wrapErr("invalid treasury value for period " + currentPeriod.toString()))
+  let treasuryValue = calcTreasuryValue(factoryAddress).fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN))
+  let treasuryValueDiff = treasuryValue - startTreasuryValue
+  let pwrPriceRaw = getAssetsPrices(poolsFactoryAddress, [getPowerAssetId(factoryAddress).toBase58String()])[0]
+  let pwrPrice = if (pwrPriceRaw > 0.toBigInt()) then pwrPriceRaw.fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN)) else throwErr("invalid PWR price")
+  let price = if (treasuryValueDiff < 0) then {
+    pwrPrice / 100
+  } else {
+    # ((Sc - So) * 0.2 / 1000 + PWR price) / 100
+    (fraction(treasuryValueDiff, 2, 10000) + pwrPrice) / 100
+  }
+  (nil, price)
+}
+
+# returns current treasury value
+@Callable(i)
+func getTreasuryValue(callerPublicKey: ByteVector, args: List[String]) = {
+  let factoryAddress = i.caller
+  let treasuryValue = calcTreasuryValue(factoryAddress).fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN))
+
+  (nil, treasuryValue)
+}
+
+@Verifier(tx)
+func verify() = {
+  chainId == chainIdT
+}

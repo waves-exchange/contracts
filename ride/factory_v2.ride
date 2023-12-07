@@ -193,6 +193,8 @@ func getManagerVaultAddressOrThis() = {
     case _=> this
   }
 }
+func toX18(origVal: Int, origScaleMult: Int) = fraction(origVal.toBigInt(), MULT18, origScaleMult.toBigInt())
+func fromX18(val: BigInt, resultScaleMult: Int) = fraction(val, resultScaleMult.toBigInt(), MULT18).toInt()
 
 #------------------------
 # CONTRACT FUNCTIONS
@@ -1030,6 +1032,34 @@ func deletePool(poolContractAddress: String) = {
     DeleteEntry(keyChangeAmpDelta(poolContractAddress)),
     DeleteEntry(keyChangeAmpTarget(poolContractAddress))
   ]
+}
+
+@Callable(i)
+func getPrice(poolAddressStr: String) = {
+  let poolAddress = poolAddressStr.addressFromStringValue()
+  let cfg = getPoolConfig(poolAddressStr)
+  let lpAssetId = cfg[idxPoolLPAssetId].fromBase58String()
+  let amtAssetId = cfg[idxAmtAssetId]
+  let priceAssetId = cfg[idxPriceAssetId]
+
+  let poolLpBalance = lpAssetId.assetInfo().value().quantity
+  let accAmtAssetBalance = poolAddress.invoke("getAccBalanceWrapperREADONLY", [amtAssetId], []).exactAs[Int]
+  let accPriceAssetBalance = poolAddress.invoke("getAccBalanceWrapperREADONLY", [priceAssetId], []).exactAs[Int]
+
+  let price = if (poolLpBalance == 0) then {
+    0
+  } else {
+    poolAddress.invoke(
+      "calcPricesWrapperREADONLY",
+      [accAmtAssetBalance, accPriceAssetBalance, poolLpBalance],
+      []
+    ).exactAs[List[Any]][0].exactAs[String]
+  }
+
+  (
+    [],
+    price
+  )
 }
 
 @Verifier(tx)
