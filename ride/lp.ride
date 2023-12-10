@@ -193,6 +193,12 @@ let feeCollectorAddress = factoryContract.getStringOrFail(keyFeeCollectorAddress
 let inFee = factoryContract.invoke("getInFeeREADONLY", [this.toString()], []).exactAs[Int]
 let outFee = factoryContract.invoke("getOutFeeREADONLY", [this.toString()], []).exactAs[Int]
 
+func keyAddressWhitelisted(address: Address) = makeString(["%s%s", "whitelisted", address.toString()], SEP)
+
+func isAddressWhitelisted(address: Address) = {
+  factoryContract.getBoolean(keyAddressWhitelisted(address)).valueOrElse(false)
+}
+
 # check that global shutdown is take place
 func isGlobalShutdown() = {
   factoryContract.getBoolean(keyAllPoolsShutdown()).valueOrElse(false)
@@ -721,10 +727,10 @@ func commonGet(i: Invocation) = {
   let res = estimateGetOperation(i.transactionId.toBase58String(), pmtAssetId.toBase58String(), pmtAmt, i.caller)
   let outAmAmt    = res._1
   let outPrAmt    = res._2
-  let poolStatus  = res._9.parseIntValue()
   let state       = res._10
 
-  if(isGlobalShutdown() || poolStatus == PoolShutdown) then throw("Get operation is blocked by admin. Status = " + poolStatus.toString()) else
+  let isGetDisabled = !isAddressWhitelisted(i.caller) && (isGlobalShutdown() || cfgPoolStatus == PoolShutdown)
+  if (isGetDisabled) then throw("Get operation is blocked by admin. Status = " + cfgPoolStatus.toString()) else
 
   (outAmAmt,
    outPrAmt,
@@ -750,9 +756,8 @@ func commonPut(i: Invocation, slippageTolerance: Int, emitLp: Boolean) = {
                       i.caller.toString(),
                       false,
                       emitLp)
-
-    let poolStatus  = estPut._8.parseIntValue()
-    if(isGlobalShutdown() || poolStatus == PoolPutDisabled || poolStatus == PoolShutdown) then throw("Put operation is blocked by admin. Status = " + poolStatus.toString()) else
+    let isPutDisabled = !isAddressWhitelisted(i.caller) && (isGlobalShutdown() || cfgPoolStatus == PoolPutDisabled || cfgPoolStatus == PoolShutdown)
+    if (isPutDisabled) then throw("Put operation is blocked by admin. Status = " + cfgPoolStatus.toString()) else
 
     estPut
 }
@@ -970,7 +975,7 @@ func rebalance() = {
 }
 
 @Callable(i)
-func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int,  isReverse: Boolean, feePoolAmount: Int) = {
+func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
   let (assetOut, assetIn) = if (isReverse == false) then {
     let assetOut = getStringOrFail(this, pa())
     let assetIn = getStringOrFail(this, aa())
@@ -999,7 +1004,18 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
     [], 
     []
   ).exactAs[String]
+
+  let isPoolSwapDisabled = factoryContract.invoke(
+    "isPoolSwapDisabledREADONLY",
+    [this.toString()],
+    []
+  ).exactAs[Boolean]
+
+  let isSwapDisabled = !isAddressWhitelisted(i.caller)
+    && (isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolSwapDisabled)
+
   strict checks = [
+    !isSwapDisabled || i.isManager() || "swap operation is blocked by admin".throwErr(),
     i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
     i.caller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
   ]
@@ -1011,7 +1027,7 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   } else {
     getStringOrFail(this, aa())
   }
-  let poolAssetInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
+  let poolAssetInBalance = getAccBalance(assetIn) - i.payments[0].value().amount - feePoolAmount
   let poolAssetOutBalance = getAccBalance(assetOut)
   let amountOut = fraction(poolAssetOutBalance, cleanAmountIn, poolAssetInBalance + cleanAmountIn)
 
@@ -1020,6 +1036,18 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
 
   strict checkK = newK >= oldK || "new K is fewer error".throw()
   strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
+
+  let amountAssetBalanceDelta = if (isReverse) then {
+    -amountOut
+  } else {
+    feePoolAmount
+  }
+  let priceAssetBalanceDelta = if (isReverse) then {
+    feePoolAmount
+  } else {
+    -amountOut
+  }
+  strict refreshKLpActions = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)._1
 
   strict rebalanceState = rebalanceAsset(assetIn)
   strict withdrawState = withdrawAndRebalanceAsset(assetOut, amountOut)
@@ -1133,7 +1161,8 @@ func putOneTkn(minOutAmount: Int, autoStake: Boolean) = {
     [this.toString()],
     []
   ).exactAs[Boolean]
-  let isPutDisabled = isGlobalShutdown() || cfgPoolStatus == PoolPutDisabled || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  let isPutDisabled = !isAddressWhitelisted(i.caller)
+    && (isGlobalShutdown() || cfgPoolStatus == PoolPutDisabled || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
 
   strict checks = [
     !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr(),
@@ -1207,7 +1236,7 @@ func getOneTkn(outAssetIdStr: String, minOutAmount: Int) = {
     [this.toString()],
     []
   ).exactAs[Boolean]
-  let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  let isGetDisabled = !isAddressWhitelisted(i.caller) && (isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
 
   strict checks = [
     !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
@@ -1271,7 +1300,7 @@ func unstakeAndGetOneTkn(unstakeAmount: Int, outAssetIdStr: String, minOutAmount
     [this.toString()],
     []
   ).exactAs[Boolean]
-  let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled
+  let isGetDisabled = !isAddressWhitelisted(i.caller) && (isGlobalShutdown() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
 
   strict checks = [
     !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
@@ -1405,7 +1434,8 @@ func unstakeAndGet(amount: Int) = {
   # withdraw Amount and Price assets from proxy if its needed
   let withdrawState = withdrawAndRebalanceAll(outAmAmt, outPrAmt)
 
-  strict checkPoolStatus = if (isGlobalShutdown() || poolStatus == PoolShutdown) then {
+  let isGetDisabled = !isAddressWhitelisted(i.caller) && (isGlobalShutdown() || cfgPoolStatus == PoolShutdown)
+  strict checkPoolStatus = if (isGetDisabled) then {
     throw("Get operation is blocked by admin. Status = " + poolStatus.toString())
   } else true
 
@@ -1420,7 +1450,7 @@ func unstakeAndGet(amount: Int) = {
 
 @Callable(i)
 func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessThenPriceAsset: Int) = {
-  let isGetDisabled = isGlobalShutdown() || cfgPoolStatus == PoolShutdown
+  let isGetDisabled = !isAddressWhitelisted(i.caller) && (isGlobalShutdown() || cfgPoolStatus == PoolShutdown)
 
   strict checks = [
     !isGetDisabled || "get operation is blocked by admin".throw(),

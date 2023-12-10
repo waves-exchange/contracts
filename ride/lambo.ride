@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 6 #-}
+{-# STDLIB_VERSION 4 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -346,7 +346,7 @@ func calcPrice(innerBaseStr: String, baseAssetId: ByteVector, shareAssetId: Byte
 }
 
 func getManagerVaultAddressOrThis() = {
-  match keyManagerVaultAddress().getString() {
+  match this.getString(keyManagerVaultAddress()) {
     case s:String => s.addressFromStringValue()
     case _=> this
   }

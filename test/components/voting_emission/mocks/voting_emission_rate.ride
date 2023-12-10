@@ -1,0 +1,13 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+@Callable(i)
+func finalize() = {
+  let counter = this.getInteger("counter").valueOrElse(0)
+
+  [
+    BooleanEntry("finalized", true),
+    IntegerEntry("counter", counter + 1)
+  ]
+}

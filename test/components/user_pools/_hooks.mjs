@@ -79,6 +79,14 @@ export const mochaHooks = {
         key: '%s__priceAssets',
         type: 'string',
         value: this.usdnAssetId,
+      }, {
+        key: '%s__poolAssetDefaultMinAmount',
+        type: 'integer',
+        value: 100,
+      }, {
+        key: `%s%s__poolAssetMinAmount__${this.usdnAssetId}`,
+        type: 'integer',
+        value: 1000,
       }],
       chainId,
     }, this.accounts.factory);
@@ -106,6 +114,14 @@ export const mochaHooks = {
       chainId,
     }, this.accounts.votingEmission);
     await broadcastAndWait(setVotingEmissionCandidateContractTx);
+
+    const verifyTokenDataTx = data({
+      data: [
+        { key: `status_<${this.usdnAssetId}>`, type: 'integer', value: 2 },
+      ],
+      chainId,
+    }, this.accounts.store);
+    await broadcastAndWait(verifyTokenDataTx);
 
     spinner.succeed('Initialized');
   },

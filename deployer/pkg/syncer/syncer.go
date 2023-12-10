@@ -723,6 +723,33 @@ func (s *Syncer) doFile(
 			if doLpRide || doLpStableRide {
 				er := s.sendTx(
 					ctx,
+					proto.NewUnsignedTransferWithProofs(
+						3,
+						s.feePub,
+						proto.NewOptionalAssetWaves(),
+						proto.NewOptionalAssetWaves(),
+						tools.Timestamp(),
+						setScriptFee,
+						100000,
+						proto.NewRecipientFromAddress(addr),
+						nil,
+					),
+					s.feePrv,
+					false,
+					false,
+					fileName,
+				)
+				if er != nil {
+					return false, fmt.Errorf("s.sendTx (transfer) %s: %w", cont.File, er)
+				}
+
+				s.logger.Info().
+					Str("address", addr.String()).
+					Uint64("amount", setScriptFee).
+					Msg("WAVES to address were sent")
+
+				er = s.sendTx(
+					ctx,
 					unsignedSetScriptTx,
 					crypto.SecretKey{},
 					true,

@@ -310,6 +310,13 @@ func setLogo(assetId: String, logo: String) = {
 }
 
 @Callable(i)
+func getAssetLogoREADONLY(assetId: String) = {
+  let logo = keyLogo(assetId).getString().valueOrElse("")
+
+  (nil, logo)
+}
+
+@Callable(i)
 func setVerified(assetId: String, verified: Boolean) = {
   strict checks = [
     i.mustAdmin(),
@@ -340,6 +347,31 @@ func setAdmins(adminPubKeys: List[String]) = {
 @Callable(i)
 func isVerifiedREADONLY(assetId: String) = {
   (nil, assetId.isVerified())
+}
+
+@Callable(i)
+func deletePool(amountAssetId: String, priceAssetId: String) = {
+  let factoryContract = keyFactoryContract().getStringValue().addressFromStringValue()
+  strict checkCaller = i.caller == factoryContract || i.mustManager()
+
+  let lpAssetId = keyAmountAndPriceAssetsToLpAsset(amountAssetId, priceAssetId).getString().valueOrElse("")
+
+  let poolKeysDeleteActions = if (lpAssetId == "") then [] 
+    else {
+      [
+        DeleteEntry(keyLpAssetToAmountAndPriceAssets(lpAssetId)),
+        DeleteEntry(keyAssetLabels(lpAssetId)),
+        DeleteEntry(keyAssetName(lpAssetId)),
+        DeleteEntry(keyAssetDescription(lpAssetId)),
+        DeleteEntry(keyCreated(lpAssetId)),
+        DeleteEntry(keyStatus(lpAssetId)),
+        DeleteEntry(keyLogo(lpAssetId)),
+        DeleteEntry(keyTicker(lpAssetId)),
+        DeleteEntry(keyAmountAndPriceAssetsToLpAsset(amountAssetId, priceAssetId))
+      ]
+    }
+
+  poolKeysDeleteActions
 }
 
 @Verifier(tx)

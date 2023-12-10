@@ -15,6 +15,7 @@ func keyEpochLengthByEpoch(epoch: Int) = ["%s%d", "epochLength", epoch.toString(
 let keyCurrentEpoch = ["%s", "currentEpoch"].makeString(separator)
 let keyMaxDepth = ["%s", "maxDepth"].makeString(separator)
 let keyVotingEmissionCandidateContract = ["%s", "votingEmissionCandidateContract"].makeString(separator)
+let keyVotingEmissionRateContract = ["%s", "votingEmissionRateContract"].makeString(separator)
 let keyFactoryContract = ["%s", "factoryContract"].makeString(separator)
 let keyBoostingContract = ["%s", "boostingContract"].makeString(separator)
 let keyStakingContract = ["%s", "stakingContract"].makeString(separator)
@@ -89,6 +90,12 @@ func stringToPool(str: String) = {
   if (parts.size() == 2) then (parts[0], parts[1]) else "invalid pool string".throwErr()
 }
 
+let factoryContract = this.getStrOrFail(keyFactoryContract).addressFromStringValue()
+let IdxFactoryCfgGwxRewardDapp = 10
+func keyFactoryCfg() = "%s__factoryConfig"
+func readFactoryCfgOrFail(factory: Address) = factory.getStrOrFail(keyFactoryCfg()).split(separator)
+func getGwxRewardAddressOrFail(factoryCfg: List[String]) = factoryCfg[IdxFactoryCfgGwxRewardDapp].addressFromStringValue()
+
 func getLpAssetByPoolAssets(amountAssetId: String, priceAssetId: String) = {
   func keyMappingsBaseAsset2internalId(baseAssetStr: String) = {
     "%s%s%s__mappings__baseAsset2internalId__" + baseAssetStr
@@ -100,7 +107,6 @@ func getLpAssetByPoolAssets(amountAssetId: String, priceAssetId: String) = {
     "%s%s%s__" + poolContractAddress + "__mappings__poolContract2LpAsset"
   }
 
-  let factoryContract = this.getStrOrFail(keyFactoryContract).addressFromStringValue()
   let amountAssetInternalId = factoryContract.getIntOrFail(amountAssetId.keyMappingsBaseAsset2internalId())
   let priceAssetInternalId = factoryContract.getIntOrFail(priceAssetId.keyMappingsBaseAsset2internalId())
   let poolContractAddress = factoryContract.getStrOrFail(keyMappingPoolAssetsToPoolContractAddress(amountAssetInternalId, priceAssetInternalId))
@@ -111,9 +117,15 @@ func getLpAssetByPoolAssets(amountAssetId: String, priceAssetId: String) = {
 
 func checkWxEmissionPoolLabel(pool: (String, String)) = {
   let (amountAssetId, priceAssetId) = pool
-  let factoryContract = this.getStrOrFail(keyFactoryContract).addressFromStringValue()
 
   factoryContract.invoke("checkWxEmissionPoolLabel", [amountAssetId, priceAssetId], []).exactAs[Boolean]
+}
+
+func gwxRewardDeposit() = {
+  let factoryCfg = factoryContract.readFactoryCfgOrFail()
+  let gwxRewardsContract = factoryCfg.getGwxRewardAddressOrFail()
+
+  gwxRewardsContract.invoke("deposit", [], [])
 }
 
 # Doubly linked list ->
@@ -492,7 +504,6 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
   let (amountAssetId, priceAssetId) = pool
   let stakingContract = this.getStrOrFail(keyStakingContract).addressFromStringValue()
 
-  let factoryContract = this.getStrOrFail(keyFactoryContract).addressFromStringValue()
   let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
   strict r = stakingContract.invoke("usersListTraversal", [lpAssetId], []).exactAs[Boolean]
   if (r) then {
@@ -585,14 +596,13 @@ func finalizeHelper() = {
     match poolOrUnit {
       case _: Unit => {
         match poolsListName.keyListHead().getString() {
-          case _: Unit => (
-            [
+          case _: Unit => {
+            ([
               IntegerEntry(keyFinalizationStage, finalizationStageShares),
               DeleteEntry(keyNextPool),
               DeleteEntry(keyNextUser)
-            ],
-            true
-          )
+            ], true)
+          }
           case poolsHeadStr: String => {
             ([StringEntry(keyNextPool, poolsHeadStr)], true)
           }
@@ -612,14 +622,13 @@ func finalizeHelper() = {
           case _: Unit => {
             let nextPoolOrUnit = poolsListName.keyListNext(poolStr).getString()
             match nextPoolOrUnit {
-              case _: Unit => (
-                [
+              case _: Unit => {
+                ([
                   IntegerEntry(keyFinalizationStage, finalizationStageShares),
                   DeleteEntry(keyNextPool),
                   DeleteEntry(keyNextUser)
-                ],
-                true
-              )
+                ], true)
+              }
               case s: String => {
                 ([
                   StringEntry(keyNextPool, s),
@@ -654,6 +663,7 @@ func finalizeHelper() = {
                 IntegerEntry(keyStartHeightUi, startHeight)
               ]
             }
+            strict gwxRewardDepositInv = gwxRewardDeposit()
             (actions, true)
           }
           case nextPoolStr: String => {
@@ -684,6 +694,7 @@ func finalizeHelper() = {
                   DeleteEntry(keyNextPool)
                 ]
               }
+              strict gwxRewardDepositInv = gwxRewardDeposit()
               (actions, true)
             }
             case nextPoolStr: String => {
@@ -698,11 +709,13 @@ func finalizeHelper() = {
 
 @Callable(i)
 func finalizeWrapper(counter: Int) = {
+  let votingEmissionRateContract = this.getStringValue(keyVotingEmissionRateContract).addressFromStringValue()
   strict result = this.invoke("finalizeHelper", [], []).exactAs[Boolean]
   if (!result) then {
     if (counter == 0) then {
       throwErr("Current voting is not over yet")
     } else {
+      strict inv = votingEmissionRateContract.invoke("finalize", [], [])
       ([], unit)
     }
   } else {
@@ -745,6 +758,29 @@ func deleteNode(listName: String, id: String) = {
   strict checkCaller = i.mustManager()
 
   (listName.deleteNodeActions(id), unit)
+}
+
+@Callable(i)
+func isFinalizationInProgress() = {
+  let finalizationStageOrUnit = this.getInteger(keyFinalizationStage)
+  let finalizationInProgress = finalizationStageOrUnit != unit
+
+  (nil, finalizationInProgress)
+}
+
+@Callable(i)
+func deletePool(amountAssetId: String, priceAssetId: String) = {
+  strict checkCaller = i.caller == factoryContract || i.mustManager() || "Permission denied".throwErr()
+  
+  let listName = "pools"
+  let pool = (amountAssetId, priceAssetId)
+  let id = makeString([amountAssetId, priceAssetId], separator)
+
+  let actions = if (containsNode(listName, id)) then deleteNodeActions(listName, id) else []
+
+  [
+    DeleteEntry(keyInList(pool))
+  ] ++ actions
 }
 
 @Verifier(tx)

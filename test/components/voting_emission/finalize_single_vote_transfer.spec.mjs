@@ -43,6 +43,7 @@ describe(`${process.pid}: voting_emission: finalize: single vote transfer`, () =
       votingEmissionCandidateContract: this.accounts.votingEmissionCandidate.addr,
       boostingContract: this.accounts.boosting.addr,
       stakingContract: this.accounts.staking.addr,
+      votingEmissionRate: this.accounts.votingEmissionRate.addr,
       epochLength,
     });
     await factoryMock.setWxEmissionPoolLabel({

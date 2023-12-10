@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 5 #-}
+{-# STDLIB_VERSION 6 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -17,10 +17,12 @@ func keyFactoryAddress()  = "%s%s__config__factoryAddress"
 let keyVotingVerifiedContract  = "%s%s__config__votingVerifiedContract"
 let keyVotingEmissionCandidateContract  = "%s%s__config__votingEmissionCandidateContract"
 let keyUserPoolsContract  = "%s%s__config__userPoolsContract"
+let keyVotingEmissionRateContract  = "%s%s__config__votingEmissionRateContract"
 
 let votingVerifiedContract = this.getStringOrFail(keyVotingVerifiedContract).addressFromStringValue()
 let votingEmissionCandidateContract = this.getStringOrFail(keyVotingEmissionCandidateContract).addressFromStringValue()
 let userPoolsContract = this.getStringOrFail(keyUserPoolsContract).addressFromStringValue()
+let votingEmissionRateContract = this.getStringOrFail(keyVotingEmissionRateContract).addressFromStringValue()
 
 let IdxFactoryCfgStakingDapp    = 1
 let IdxFactoryCfgBoostingDapp   = 2
@@ -53,6 +55,7 @@ func keyRatePerBlockMaxStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__rateP
 
 # call boosting.onBoostEmissionUpdate rate per block changes
 func keyRatePerBlockCurrent() = "%s%s__ratePerBlock__current"
+func keyRatePerBlockNext() = "%s%s__ratePerBlock__next"
 func keyRatePerBlockStartFrom(timestamp: Int, block: Int) = ["%s%s%d%d__ratePerBlock__start", timestamp.toString(), block.toString()].makeString(SEP)
 
 func keyEmissionStartBlock() = "%s%s__emission__startBlock"
@@ -63,6 +66,10 @@ func keyEmissionEndBlock() = "%s%s__emission__endBlock"
 func keyBoostCoeff() = "%s__boostCoeff"
 let boostCoeffDefault = 3
 let boostCoeff = this.getInteger(keyBoostCoeff()).valueOrElse(boostCoeffDefault)
+
+# share multiplied by 1e8
+func keyGwxHoldersRewardCurrent() = "%s%s__gwxHoldersReward__current"
+func keyGwxHoldersRewardNext() = "%s%s__gwxHoldersReward__next"
 
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyManagerVaultAddress() = "%s__managerVaultAddress"
@@ -160,8 +167,48 @@ func burn() = {
 }
 
 @Callable(i)
+func gwxHoldersRewardUpdate() = {
+  let factoryContract = readFactoryAddressOrFail()
+  let factoryCfg = factoryContract.readFactoryCfgOrFail()
+  let gwxRewardsContract = factoryCfg.getGwxRewardAddressOrFail()
+  strict checkCaller = i.caller == gwxRewardsContract || i.mustManager()
+  let gwxHolderRewardCurrent = keyGwxHoldersRewardCurrent().getInteger().valueOrElse(0)
+  let gwxHolderRewardNext = keyGwxHoldersRewardNext().getInteger().valueOrElse(gwxHolderRewardCurrent)
+
+  let shouldBeUpdated = gwxHolderRewardCurrent != gwxHolderRewardNext
+
+  let actions = if (shouldBeUpdated) then [
+    IntegerEntry(keyGwxHoldersRewardCurrent(), gwxHolderRewardNext),
+    DeleteEntry(keyGwxHoldersRewardNext())
+  ] else []
+
+  (actions, shouldBeUpdated)
+}
+
+@Callable(i)
 func getBoostCoeffREADONLY() = {
   ([], boostCoeff)
+}
+
+@Callable(i)
+func changeRatePerBlock(newRatePerBlock: Int) = {
+  strict check = i.caller == votingEmissionRateContract || i.mustManager() || throwErr("should be invoked by votingEmissionRateContract")
+
+  let factoryContract = readFactoryAddressOrFail()
+  let factoryCfg = factoryContract.readFactoryCfgOrFail()
+  let boostingContract = factoryCfg.getBoostingAddressOrFail()
+  
+  strict boostingInvoke = boostingContract.reentrantInvoke("onBoostEmissionUpdate", [], [])
+  
+  let blockTimestamp = match(blockInfoByHeight(height)) {
+      case bi:BlockInfo => bi.timestamp
+      case _ => throwErr("BlockInfo.timestamp error")
+  }
+
+  [
+    IntegerEntry(keyRatePerBlockStartFrom(blockTimestamp, height), newRatePerBlock),
+    IntegerEntry(keyRatePerBlockCurrent(), newRatePerBlock)
+  ]
 }
 
 @Verifier(tx)

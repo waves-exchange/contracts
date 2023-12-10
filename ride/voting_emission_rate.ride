@@ -1,0 +1,289 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let separator = "__"
+let contractFilename = "voting_emission_rate.ride"
+let DEFAULT_EPOCH_COUNT = 4
+
+let keyEpochLength              = ["%s", "epochLength"].makeString(separator)
+let keyEmissionContract         = ["%s", "emissionContract"].makeString(separator)
+let keyVotingEmissionContract   = ["%s", "votingEmissionContract"].makeString(separator)
+let keyBoostingContract         = ["%s", "boostingContract"].makeString(separator)
+let keyThreshold                = ["%s", "votingThreshold"].makeString(separator)
+let keyRatePerBlock             = ["%s%s", "ratePerBlock", "current"].makeString(separator)
+let keyRatePerBlockMax          = ["%s%s", "ratePerBlockMax", "current"].makeString(separator)
+let keyRateChangeStep           = ["%s", "rateChangeStep"].makeString(separator)
+let keyStartHeight              = ["%s", "startHeight"].makeString(separator)
+let keyVotingResult             = ["%s", "votingResult"].makeString(separator)
+let keyVotingEmissionEpochCount = ["%s", "votingEmissionEpochCount"].makeString(separator)
+
+func throwErr(s: String) = {
+  throw(contractFilename + ": " + s)
+}
+func getStringOrFail(key: String) = this.getString(key).valueOrErrorMessage(key + " is not defined")
+func getIntOrFail(key: String) = this.getInteger(key).valueOrErrorMessage(key + " is not defined")
+
+func totalVotes(
+  totalIncrease: String,
+  totalCurrent: String,
+  totalDecrease: String
+) = ["%d%d%d", totalIncrease, totalCurrent, totalDecrease].makeString(separator)
+
+func keyVote(
+  voterAddress: String,
+  startHeight: Int
+) = ["%s%s%d", "vote", voterAddress, startHeight.toString()].makeString(separator)
+func keyVoteValue(gwxAmount: String, vote: Int) = {
+  let key = if (vote == 1) then {
+    ["%d%s", gwxAmount, "increase"].makeString(separator)
+  } else if (vote == -1) then {
+    ["%d%s", gwxAmount, "decrease"].makeString(separator)
+  } else {
+    ["%d%s", gwxAmount, "current"].makeString(separator)
+  }
+  key
+}
+
+let boostingContract       = keyBoostingContract.getStringOrFail().addressFromStringValue()
+let emissionContract       = keyEmissionContract.getStringOrFail().addressFromStringValue()
+let votingEmissionContract = keyVotingEmissionContract.getStringOrFail().addressFromStringValue()
+
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
+
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
+
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
+}
+
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
+
+func mustManager(i: Invocation) = {
+  i.isManager() || "permission denied".throwErr()
+}
+
+func asInt(val: Any) = {
+  match val {
+    case valInt: Int => valInt
+    case _ => "failed to cast into Integer".throwErr()
+  }
+}
+
+func calcNewRate(ratePerBlockMax: Int, ratePerBlock: Int, changeStep: Int) = {
+  let maxAllowed = fraction(100, ratePerBlockMax, 120)
+  let increasedRate = min([fraction(100 + changeStep, ratePerBlock, 100), maxAllowed])
+  let decreasedRate = max([fraction(100 - changeStep, ratePerBlock, 100), 0])
+
+  (increasedRate, ratePerBlock, decreasedRate)
+}
+
+func getRateChangeAmountsINTERNAL() = {
+  let ratePerBlockMax = emissionContract.getIntegerValue(keyRatePerBlockMax)
+  let ratePerBlock    = emissionContract.getIntegerValue(keyRatePerBlock)
+  let rateChangeStep  = this.getIntegerValue(keyRateChangeStep)
+
+  (calcNewRate(ratePerBlockMax, ratePerBlock, rateChangeStep))
+}
+
+func getEpochLength(votingEmissionContract: Address) = {
+  let votingEpochLength = votingEmissionContract.getIntegerValue(keyEpochLength)
+  let votingStartLength = votingEmissionContract.getIntegerValue(keyStartHeight)
+  let votingEmissionEpochCount = this.getInteger(keyVotingEmissionEpochCount).valueOrElse(DEFAULT_EPOCH_COUNT)
+
+  votingStartLength + (votingEpochLength * votingEmissionEpochCount) - height - 1
+}
+
+@Callable(i)
+func constructor(
+  boostingContractPrm: String,
+  emissionContractPrm: String,
+  votingEmissionContractPrm: String,
+  threshold: Int,
+  rateChangeStep: Int,
+  votingEmissionEpochCount: Int
+) = {
+  strict checks = [
+    i.mustManager(),
+    boostingContractPrm.addressFromString().isDefined()       || "Invalid boosting contract address".throwErr(),
+    emissionContractPrm.addressFromString().isDefined()       || "Invalid emission contract address".throwErr(),
+    votingEmissionContractPrm.addressFromString().isDefined() || "Invalid emission contract address".throwErr(),
+    threshold > 0                                             || "invalid threshold".throwErr(),
+    rateChangeStep > 0                                        || "invalid rateChangeStep".throwErr(),
+    votingEmissionEpochCount > 0                              || "invalid votingEmissionEpochCount".throwErr()
+  ]
+
+  let votingEmission = votingEmissionContractPrm.addressFromStringValue()
+  ([
+      StringEntry(keyBoostingContract, boostingContractPrm),
+      StringEntry(keyEmissionContract, emissionContractPrm),
+      StringEntry(keyVotingEmissionContract, votingEmissionContractPrm),
+      IntegerEntry(keyEpochLength, getEpochLength(votingEmission)),
+      IntegerEntry(keyThreshold, threshold),
+      IntegerEntry(keyRateChangeStep, rateChangeStep),
+      IntegerEntry(keyVotingEmissionEpochCount, votingEmissionEpochCount),
+      IntegerEntry(keyStartHeight, height),
+      StringEntry(keyVotingResult, totalVotes("0", "0", "0"))
+    ], unit)
+}
+
+@Callable(i)
+func getRateChangeAmountsREADONLY() = {
+
+  ([], getRateChangeAmountsINTERNAL())
+}
+
+@Callable(i)
+func vote(inFavor: Int) = {
+  let startHeight = keyStartHeight.getIntegerValue()
+  let votingFinishHeight = startHeight + keyEpochLength.getIntegerValue()
+  let userAddress = i.caller.toString()
+  strict checks = [
+    votingFinishHeight > height || "too late to vote".throwErr(),
+    [1, 0 , -1].containsElement(inFavor) || "not valid argument".throwErr(),
+    !keyVote(userAddress, startHeight).getString().isDefined() || "you already voted".throwErr()
+  ]
+
+  let gwxAmount = boostingContract.invoke("getUserGwxAmountAtHeightREADONLY", [userAddress, votingFinishHeight], [])
+  strict notZero = gwxAmount.asInt() > 0 || "you don't have gwx".throwErr()
+
+  let votingResult = keyVotingResult.getStringValue().split(separator)
+  let votesForIncrease = votingResult[1]
+  let votesForCurrent  = votingResult[2]
+  let votesForDecrease = votingResult[3]
+
+  let newPositiveAndNegativeVotes = if (inFavor == 1) then {
+    let newIncreaseVotes = parseIntValue(votesForIncrease) + gwxAmount.asInt()
+    [ newIncreaseVotes.toString(), votesForCurrent, votesForDecrease ]
+  }
+  else if (inFavor == -1) then {
+    let newDecreaseVotes = parseIntValue(votesForDecrease) + gwxAmount.asInt()
+    [ votesForIncrease, votesForCurrent, newDecreaseVotes.toString() ]
+  } else {
+    let newCurrentVotes = parseIntValue(votesForCurrent) + gwxAmount.asInt()
+    [ votesForIncrease, newCurrentVotes.toString(), votesForDecrease ]
+  }
+
+  let voteKey = keyVote(i.caller.toString(), startHeight)
+  let voteValue = keyVoteValue(gwxAmount.asInt().toString(), inFavor)
+
+  ([
+    StringEntry(keyVotingResult,
+      totalVotes(newPositiveAndNegativeVotes[0], newPositiveAndNegativeVotes[1], newPositiveAndNegativeVotes[2])),
+    StringEntry(voteKey, voteValue)
+  ], unit)
+}
+
+@Callable(i)
+func cancelVote() = {
+  let startHeight = keyStartHeight.getIntegerValue()
+  let votingFinishHeight = startHeight + keyEpochLength.getIntegerValue()
+  let userAddress = if (i.caller == this) then i.originCaller.toString() else i.caller.toString()
+  strict checks = [
+    votingFinishHeight > height || "too late to cancel vote".throwErr(),
+    keyVotingResult.getString().isDefined() || "no vote".throwErr(),
+    keyVote(userAddress, startHeight).getString().isDefined() || "no user vote".throwErr()
+  ]
+
+  let vote = keyVote(userAddress, startHeight).getStringValue().split(separator)
+  let voteValue = vote[1]
+  let voteType  = vote[2]
+
+  let votingResult = keyVotingResult.getStringValue().split(separator)
+  let votesForIncrease = votingResult[1]
+  let votesForCurrent  = votingResult[2]
+  let votesForDecrease = votingResult[3]
+
+  let actions = if (voteType == "increase") then {
+    let newIncreaseVotes = parseIntValue(votesForIncrease) - parseIntValue(voteValue)
+    [ StringEntry(keyVotingResult, totalVotes(newIncreaseVotes.toString(), votesForCurrent, votesForDecrease)) ]
+  } else if (voteType == "decrease") then {
+    let newDecreaseVotes = parseIntValue(votesForDecrease) - parseIntValue(voteValue)
+    [ StringEntry(keyVotingResult, totalVotes(votesForIncrease, votesForCurrent, newDecreaseVotes.toString())) ]
+  } else {
+    let newCurrentVotes = parseIntValue(votesForCurrent) - parseIntValue(voteValue)
+    [ StringEntry(keyVotingResult, totalVotes(votesForIncrease, newCurrentVotes.toString(), votesForDecrease)) ]
+  }
+
+  let defaultActions = [ DeleteEntry(keyVote(userAddress, startHeight)) ]
+
+  actions ++ defaultActions
+}
+
+@Callable(i)
+func setThreshold(newThreshold: Int) = {
+  strict checks = [
+    i.mustManager(),
+    newThreshold > 0 || "invalid threshold".throwErr()
+  ]
+
+  ([
+    IntegerEntry(keyThreshold, newThreshold)
+  ], unit)
+}
+
+@Callable(i)
+func finalize() = {
+  strict check = i.caller == votingEmissionContract || i.mustManager() || "Permission denied".throwErr()
+  let votingFinishHeight = keyStartHeight.getIntegerValue() + keyEpochLength.getInteger().value()
+  
+  if (votingFinishHeight <= height) then {
+    let votingResult = keyVotingResult.getString().value().split(separator)
+    let votesForIncrease = parseIntValue(votingResult[1])
+    let votesForCurrent  = parseIntValue(votingResult[2])
+    let votesForDecrease = parseIntValue(votingResult[3])
+    let allVotes = votesForIncrease + votesForCurrent + votesForDecrease
+    let threshold = keyThreshold.getIntOrFail()
+
+    let (increasedRate, currentRate, decreasedRate) = getRateChangeAmountsINTERNAL()
+    let votesList = [votesForIncrease, votesForCurrent, votesForDecrease]
+
+    let newRate = if (allVotes < threshold || votesForCurrent == max(votesList)) then {
+      unit
+    } else if (votesForIncrease == max(votesList)) then {
+      increasedRate
+    } else {
+      decreasedRate
+    }
+
+    strict changeRateInvokes = match (newRate) {
+      case r:Int => {
+        strict emissionChangeRate = emissionContract.invoke("changeRatePerBlock", [r], [])
+        emissionChangeRate
+      }
+      case _ => unit
+    }
+
+    [
+      IntegerEntry(keyStartHeight, height),
+      IntegerEntry(keyEpochLength, getEpochLength(votingEmissionContract)),
+      StringEntry(keyVotingResult, totalVotes("0","0","0"))
+    ]
+    } else {
+    []
+  }
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}
