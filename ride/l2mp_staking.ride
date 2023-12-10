@@ -1,0 +1,539 @@
+# {-# STDLIB_VERSION 6 #-}
+# {-# CONTENT_TYPE DAPP #-}
+# {-# SCRIPT_TYPE ACCOUNT #-}
+
+# let contractFile = "l2mp_staking.ride"
+# let SEP = "__"
+# let scale8 = 1_0000_0000
+# let scale18 = 1_000_000_000_000_000_000
+# let scale18BigInt = scale18.toBigInt()
+# let ADDRESS_BYTES_SIZE = 26
+# let BLOCKS_IN_DAY = 1440
+
+# func throwErr(msg: String) = {
+#     throw(contractFile + ": " + msg)
+# }
+
+# let keyAssetId = ["%s", "assetId"].makeString(SEP)
+
+# let keyEmissionPerBlock       = ["%s", "emissionPerBlock"].makeString(SEP)
+# let keyEmissionPeriodInBlocks = ["%s", "emissionPeriodInBlocks"].makeString(SEP)
+# let keyStartBlock             = ["%s", "startBlock"].makeString(SEP)
+# let keyTotalLpAmount          = ["%s", "totalLpAmount"].makeString(SEP)
+# let keyTotalAssetAmount       = ["%s", "totalAssetAmount"].makeString(SEP)
+# let keyTotalLockedLpAmount    = ["%s", "totalLockedLpAmount"].makeString(SEP)
+
+# func keyUserLpAmount(userAddress: String)            = ["%s%s", "userLpAmount", userAddress].makeString(SEP)
+# func keyUserLockedLpAmount(userAddress: String)      = ["%s%s", "userLockedLpAmount", userAddress].makeString(SEP)
+# func keyUserStakingNodes(userAddress: String)        = ["%s%s", "userStakingNodes", userAddress].makeString(SEP)
+# func keyUserStakingNodesShares(userAddress: String)  = ["%s%s", "userStakingNodesShares", userAddress].makeString(SEP)
+# func keyUserTotalAssetWithdrawn(userAddress: String) = ["%s%s", "totalAssetWithdrawn", userAddress].makeString(SEP)
+# func keyUserTotalAssetStaked(userAddress: String)    = ["%s%s", "totalAssetStaked", userAddress].makeString(SEP)
+
+# func keyHistory(type: String, userAddress: String, txId: ByteVector) = [
+#   "%s%s%s",
+#   type,
+#   userAddress,
+#   txId.toBase58String()
+# ].makeString(SEP)
+
+# func formatHistory(
+#   totalProfit: Int,
+#   price: BigInt,
+#   totalAssetAmount: Int,
+#   totalLpAmount: Int
+# ) = [
+#   "%d%d%d%d",
+#   totalProfit.toString(),
+#   price.toString(),
+#   totalAssetAmount.toString(),
+#   totalLpAmount.toString()
+# ].makeString(SEP)
+
+# let totalLpAmount = this.getInteger(keyTotalLpAmount).valueOrElse(0)
+# let totalAssetAmount = this.getInteger(keyTotalAssetAmount).valueOrElse(0)
+# let totalLockedLpAmount = this.getInteger(keyTotalLockedLpAmount).valueOrElse(0)
+# let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
+# let assetIdBytes = if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
+# let emissionPeriodInBlocks = this.getInteger(keyEmissionPeriodInBlocks).valueOrElse(BLOCKS_IN_DAY)
+# let emissionPerBlock = this.getInteger(keyEmissionPerBlock).valueOrElse(0)
+# let emissionPerPeriod = emissionPerBlock * emissionPeriodInBlocks
+
+# ######################
+# # MULTISIG FUNCTIONS #
+# ######################
+# let ADMIN_LIST_SIZE = 5
+# let QUORUM = 3
+# let TXID_BYTES_LENGTH = 32
+
+# func keyAllowedTxIdVotePrefix(txId: String) = makeString(["%s%s%s", "allowTxId", txId], SEP)
+# # Make Admin vote key 
+# func keyFullAdminVote(prefix: String, adminAddress: String) = makeString([prefix, adminAddress], SEP)
+# # Admin List key
+# func keyAdminAddressList() = makeString(["%s", "adminAddressList"], SEP)
+# # Allowed TXID key
+# func keyAllowedTxId() = makeString(["%s", "txId"], SEP)
+
+# func getAdminVote(prefix: String, admin: String) = {
+#   let voteKey = keyFullAdminVote(prefix, admin)
+#   getInteger(voteKey).valueOrElse(0)
+# }
+
+# func getAdminsList() = {
+#   match (this.getString(keyAdminAddressList())) {
+#     case s:String => s.split(SEP)
+#     case _ => []
+#   }
+# }
+
+# func isInAdminList(address: String) = {
+#   getAdminsList().containsElement(address)
+# }
+
+# # Generate List of keys with same prefix for all admins
+# func genVotesKeysHelper(a: (List[String], String), adminAddress: String) = {
+#   let (result, prefix) = a
+#   (result :+ keyFullAdminVote(prefix, adminAddress), prefix)
+# }
+# func genVotesKeys(keyPrefix: String) = {
+#   let adminList = keyAdminAddressList()
+#   let (result, prefix) = FOLD<5>(getAdminsList(), ([], keyPrefix), genVotesKeysHelper)
+#   result
+# }
+
+# # Count all votes for Prefix
+# func countVotesHelper(result: Int, voteKey: String) = {
+#   result + getInteger(voteKey).valueOrElse(0)
+# }
+# func countVotes(prefix: String) = {
+#   let votes = genVotesKeys(prefix)
+#   FOLD<5>(votes, 0, countVotesHelper)
+# }
+
+# # Generate DeleteEntry for all votes with Prefix
+# func clearVotesHelper(result: List[DeleteEntry], key: String) = {
+#   result :+ DeleteEntry(key) 
+# }
+# func getClearVoteEntries(prefix: String) = {
+#   let votes = genVotesKeys(prefix)
+#   FOLD<5>(votes, [], clearVotesHelper)
+# }
+
+# func voteINTERNAL(
+#   callerAddressString: String, 
+#   keyPrefix: String, 
+#   minVotes: Int, 
+#   voteResult: List[StringEntry|IntegerEntry|DeleteEntry]
+# ) = {
+#   let voteKey = keyFullAdminVote(keyPrefix, callerAddressString)
+#   let adminCurrentVote = getAdminVote(keyPrefix, callerAddressString)
+
+#   strict err = if (!isInAdminList(callerAddressString)) then {
+#     throwErr("Address: " + callerAddressString + " not in Admin list")
+#   } else if (adminCurrentVote == 1) then {
+#     throwErr(voteKey + " you already voted")
+#   } else { unit }
+
+#   let votes = countVotes(keyPrefix)
+#   if (votes + 1 >= minVotes) then {
+#     let clearVoteEntries = getClearVoteEntries(keyPrefix)
+#     clearVoteEntries ++ voteResult
+#   } else {
+#     [ IntegerEntry(voteKey, 1) ]
+#   }
+# }
+# ##########################
+# # MULTISIG FUNCTIONS END #
+# ##########################
+
+# func stringListToIntListHelper(acc: List[Int], value: String) = acc :+ value.parseIntValue()
+
+# func calcTotalProfitForHeight(h: Int) = {
+#   let startBlock = this.getInteger(keyStartBlock).valueOrElse(height)
+#   let startPeriod = fraction(startBlock, 1, emissionPeriodInBlocks)
+#   let elapsedPeriods = h / emissionPeriodInBlocks - startPeriod
+
+#   max([0, emissionPerPeriod * elapsedPeriods])
+# }
+
+# func calcTotalProfit() = {
+#   calcTotalProfitForHeight(height)
+# }
+
+# func getMaxAssetAvailable() = {
+#     match(assetIdBytes) {
+#         case u: Unit => this.wavesBalance().available
+#         case b: ByteVector => this.assetBalance(b)
+#     }
+# }
+
+# func getTotalAssetAmountWithProfitOrMaxAvailable() = {
+#     let totalAssetAmountWithProfit = totalAssetAmount + calcTotalProfit()
+#     let totalAmount = min([totalAssetAmountWithProfit, getMaxAssetAvailable()])
+
+#     if (totalLpAmount == 0) then 0 else totalAmount
+# }
+
+# func getCurrentPrice() = {
+#     if (totalLpAmount != 0) then {
+#         fraction(
+#           getTotalAssetAmountWithProfitOrMaxAvailable().toBigInt(),
+#           scale18BigInt,
+#           totalLpAmount.toBigInt()
+#         )
+#     } else {
+#         scale18BigInt
+#     }
+# }
+
+# func getRemainingBlocks() = {
+#     if (emissionPerBlock == 0) 
+#         then 0 
+#         else fraction((getMaxAssetAvailable() - getTotalAssetAmountWithProfitOrMaxAvailable()), 1, emissionPerBlock)
+# }
+
+# func getUserStakingNodesData(userAddress: String) = {
+#     let nodesRaw = this.getString(keyUserStakingNodes(userAddress)).valueOrElse("")
+#     let sharesRaw = this.getString(keyUserStakingNodesShares(userAddress)).valueOrElse("")
+
+#     let nodesList = if (nodesRaw == "") then [] else nodesRaw.split(SEP)
+#     let sharesStringList = if (sharesRaw == "") then [] else sharesRaw.split(SEP)
+
+#     let sharesList = FOLD<20>(sharesStringList, [], stringListToIntListHelper)
+
+#     (nodesList, sharesList)
+# }
+
+# func calcAssetFromLp(lpAmount: Int) = {
+#   max([0, fraction(lpAmount.toBigInt(), getCurrentPrice(), scale18BigInt).toInt()])
+# }
+
+# func calcLpFromAsset(assetAmount: Int) = {
+#   max([0, fraction(assetAmount.toBigInt(), scale18BigInt, getCurrentPrice()).toInt()])
+# }
+
+# func getUserLpAmount(userAddress: String) = this.getInteger(keyUserLpAmount(userAddress)).valueOrElse(0)
+# func getUserLockedLpAmount(userAddress: String) = this.getInteger(keyUserLockedLpAmount(userAddress)).valueOrElse(0)
+
+# func getUserAvailableAssetsToWithdraw(userAddress: String) = {
+#   let userLpAmount = getUserLpAmount(userAddress)
+  
+#   calcAssetFromLp(userLpAmount)
+# }
+
+# func getClearStakingNodesActions(userAddress: String) = {
+#   [
+#     DeleteEntry(keyUserStakingNodes(userAddress)),
+#     DeleteEntry(keyUserStakingNodesShares(userAddress))
+#   ]
+# }
+
+# func getStakeActions(i: Invocation, userAddress: String) = {
+#     strict checks = [
+#         i.payments.size() == 1 || "should include 1 payment".throwErr(),
+#         i.payments[0].assetId == assetIdBytes || ("payment should be in " + assetIdString).throwErr(),
+#         i.payments[0].amount > 0 || "payment amount should be greater than 0",
+#         userAddress.fromBase58String().size() == ADDRESS_BYTES_SIZE || "user address is not valid".throwErr()
+#     ]
+
+#     let paymentAmount = i.payments[0].amount
+#     let paymentLpAmount = calcLpFromAsset(paymentAmount)
+#     let userLpAmount = getUserLpAmount(userAddress)
+#     let userTotalStakedAmount = this.getInteger(keyUserTotalAssetStaked(userAddress)).valueOrElse(0)
+
+#     let newTotalLpAmount= totalLpAmount + paymentLpAmount
+#     let newTotalAssetAmount = calcAssetFromLp(newTotalLpAmount)
+#     let newUserLpAmount = userLpAmount + paymentLpAmount
+#     let newUserTotalStakedAmount = userTotalStakedAmount + paymentAmount
+
+#     [
+#         StringEntry(
+#           keyHistory("stake", userAddress, i.transactionId),
+#           formatHistory(
+#             calcTotalProfit(),
+#             getCurrentPrice(),
+#             totalLpAmount,
+#             totalAssetAmount
+#           )
+#         ),
+#         IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
+#         IntegerEntry(keyTotalAssetAmount, newTotalAssetAmount),
+#         IntegerEntry(keyUserLpAmount(userAddress), newUserLpAmount),
+#         IntegerEntry(keyUserTotalAssetStaked(userAddress), newUserTotalStakedAmount),
+#         IntegerEntry(keyStartBlock, height)
+#     ]
+# }
+
+# func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
+#     let userAddress = i.caller.toString()
+#     let userLpAmount = getUserLpAmount(userAddress)
+#     strict check = [
+#         lpAssetWithdrawAmount > 0 || "LP amount should be more than 0".throwErr(),
+#         lpAssetWithdrawAmount <= userLpAmount || ("cannot withdraw more than available LP (" + userLpAmount.toString() + ")").throwErr()
+#     ]
+
+#     let newUserLpAmount = userLpAmount - lpAssetWithdrawAmount
+#     let withdrawAssetAmount = calcAssetFromLp(lpAssetWithdrawAmount)
+#     let newTotalLpAmount = totalLpAmount - lpAssetWithdrawAmount
+#     let newTotalAssetAmount = calcAssetFromLp(newTotalLpAmount)
+    
+#     let userTotalAssetWithdrawn = this.getInteger(keyUserTotalAssetWithdrawn(userAddress)).valueOrElse(0)
+#     let newUserTotalAssetWithdrawn = userTotalAssetWithdrawn + withdrawAssetAmount
+
+#     let clearStakingNodesAction = if (newUserLpAmount == 0) then getClearStakingNodesActions(userAddress) else []
+
+#     [
+#         StringEntry(
+#           keyHistory("withdraw", userAddress, i.transactionId),
+#           formatHistory(
+#             calcTotalProfit(),
+#             getCurrentPrice(),
+#             totalLpAmount,
+#             totalAssetAmount
+#           )
+#         ),
+#         IntegerEntry(keyTotalLpAmount, newTotalLpAmount),
+#         IntegerEntry(keyTotalAssetAmount, newTotalAssetAmount),
+#         IntegerEntry(keyUserLpAmount(userAddress), newUserLpAmount),
+#         IntegerEntry(keyUserTotalAssetWithdrawn(userAddress), newUserTotalAssetWithdrawn),
+#         IntegerEntry(keyStartBlock, height),
+#         ScriptTransfer(i.caller, withdrawAssetAmount, assetIdBytes)
+#     ] ++ clearStakingNodesAction
+# }
+
+# func getSetStakingNodeActions(userAddress: String, nodeAddress: String, nodeShare: Int) = {
+#   strict check = [
+#     userAddress.fromBase58String().size() == ADDRESS_BYTES_SIZE || "user address is not valid".throwErr(),
+#     nodeAddress.fromBase58String().size() == ADDRESS_BYTES_SIZE || "node address is not valid".throwErr()
+#   ]
+
+#   [
+#     StringEntry(keyUserStakingNodes(userAddress), nodeAddress),
+#     StringEntry(keyUserStakingNodesShares(userAddress), nodeShare.toString())
+#   ]
+# }
+
+# @Callable(i)
+# func setEmissionPerBlock(emissionPerBlock: Int) = {
+#     strict check = [
+#         i.caller == this || "permission denied".throwErr()
+#     ]
+
+#     [
+#         IntegerEntry(keyTotalAssetAmount, getTotalAssetAmountWithProfitOrMaxAvailable()),
+#         IntegerEntry(keyStartBlock, height),
+#         IntegerEntry(keyEmissionPerBlock, max([0, emissionPerBlock]))
+#     ]
+# }
+
+# @Callable(i)
+# func setEmissionPeriodInBlocks(p: Int) = {
+#   strict check = [
+#     p > 0 || "emission period should be greater than 0".throwErr(),
+#     i.caller == this || "permission denied".throwErr()
+#   ]
+
+#   [
+#     IntegerEntry(keyTotalAssetAmount, getTotalAssetAmountWithProfitOrMaxAvailable()),
+#     IntegerEntry(keyStartBlock, height),
+#     IntegerEntry(keyEmissionPeriodInBlocks, p)
+#   ]
+# }
+
+# @Callable(i)
+# func stake() = {
+#     let userAddress = i.caller.toString()
+
+#     getStakeActions(i, userAddress)
+# }
+
+# @Callable(i)
+# func stakeFor(userAddress: String) = {
+#     getStakeActions(i, userAddress)
+# }
+
+# @Callable(i)
+# func withdraw(withdrawAssetAmount: Int) = {
+#   let userAddress = i.caller.toString()
+#   let userLpAmount = getUserLpAmount(userAddress)
+#   let lpAmountToWithdraw = calcLpFromAsset(withdrawAssetAmount)
+#   let userAvailableAssetToWithdraw = getUserAvailableAssetsToWithdraw(userAddress)
+#   let minWithdrawAssetAmount = fraction(getCurrentPrice(), 1.toBigInt(), scale18BigInt, CEILING).toInt()
+#   strict check = [
+#       withdrawAssetAmount > 0 || "withdraw amount should be more than 0".throwErr(),
+#       withdrawAssetAmount <= userAvailableAssetToWithdraw || ("cannot withdraw more than available (" + userAvailableAssetToWithdraw.toString() + ")").throwErr(),
+#       withdrawAssetAmount >= minWithdrawAssetAmount || ("withdraw amount is too small. Min: (" + minWithdrawAssetAmount.toString() + ")").throwErr()
+#   ]
+
+#   getWithdrawActions(i, min([userLpAmount, lpAmountToWithdraw + 1]))
+# }
+
+# @Callable(i)
+# func setStakingNode(nodeAddress: String) = {
+#     let userAddress = i.caller.toString()
+
+#     getSetStakingNodeActions(userAddress, nodeAddress, 100)
+# }
+
+# @Callable(i)
+# func stakeAndSetStakingNode(nodeAddress: String) = {
+#     let userAddress = i.caller.toString()
+
+#     getStakeActions(i, userAddress) ++ getSetStakingNodeActions(userAddress, nodeAddress, 100)
+# }
+
+# # Used in l2mp_swap.ride
+# @Callable(i)
+# func stakeForSwapHELPER(userAddress: String, nodeAddress: String) = {
+#     strict check = [
+#       i.originCaller.toString() == userAddress || "i.originCaller should be equal to userAddress".throwErr()
+#     ]
+
+#     let setStakingNodeActions = if (nodeAddress == "") then [] else getSetStakingNodeActions(userAddress, nodeAddress, 100)
+
+#     getStakeActions(i, userAddress) ++ setStakingNodeActions
+# }
+
+# @Callable(i)
+# func airdrop(addressList: List[String], amountList: List[Int]) = {
+#     func sum(accum: Int, next: Int) = {
+#       if (next < 0) then "negative amount value in amountList".throwErr() else accum + next
+#     }
+#     let amountListSum = FOLD<90>(amountList, 0, sum)
+
+#     strict check = [
+#         i.payments.size() == 1 || "should include 1 payment".throwErr(),
+#         i.payments[0].assetId == assetIdBytes || ("payment should be in " + assetIdString).throwErr(),
+#         i.payments[0].amount > 0 || "payment amount should be greater than 0",
+#         addressList.size() == amountList.size() || "addressList should be same size as amountList".throwErr(),
+#         amountListSum <= i.payments[0].amount || "payment amount is less than sum of amountList".throwErr()
+#     ]
+
+#     func getAirdropStateChanges(accum: (List[IntegerEntry], Int, Int, List[Address]), assetAmount: Int) = {
+#         let (result, index, totalLp, processedList) = accum
+#         let addressString = addressList[index]
+        
+#         let address = match (addressString.addressFromString()) {
+#           case adr:Address => adr
+#           case _ => "invalid address in addressList".throwErr()
+#         }
+
+#         strict ch = [
+#           !processedList.containsElement(address) || "duplicate address is addressList".throwErr()
+#         ]
+
+#         let addedLpAmount = calcLpFromAsset(assetAmount)
+#         let userLockedLpKey = keyUserLockedLpAmount(addressString)
+#         let oldLpAmount = this.getInteger(userLockedLpKey).valueOrElse(0)
+
+#         (
+#           result :+ IntegerEntry(userLockedLpKey, oldLpAmount + addedLpAmount),
+#           index + 1,
+#           totalLp + addedLpAmount,
+#           processedList :+ address
+#         )
+#     }
+#     let (airdropEntries, _a, addedTotalLockedLpAmount, _b) = FOLD<90>(amountList, ([], 0, 0, []), getAirdropStateChanges)
+
+#     let newTotalAsset = calcAssetFromLp(totalLpAmount + addedTotalLockedLpAmount)
+#     [
+#         IntegerEntry(keyTotalLockedLpAmount, totalLockedLpAmount + addedTotalLockedLpAmount),
+#         IntegerEntry(keyTotalLpAmount, totalLpAmount + addedTotalLockedLpAmount),
+#         IntegerEntry(keyTotalAssetAmount, newTotalAsset),
+#         IntegerEntry(keyStartBlock, height)
+#     ] ++ airdropEntries
+# }
+
+# # Return tuple: 
+# # _1  = user available internal LP amount
+# # _2  = user available tokens to withdraw
+# # _3  = current internal LP price
+# # _4  = user total staked token amount
+# # _5  = user total withdrawn token amount
+# # _6  = user locked internal LP amount
+# # _7  = user locked token amount
+# # _8  = string list of user staking nodes
+# # _9  = int list of user staking nodes shares
+# # _10 = interest remaining blocks
+# @Callable(i)
+# func getUserAssetsREADONLY(userAddress: String) = {
+#     let userLpAmount = getUserLpAmount(userAddress)
+#     let userLockedLpAmount = getUserLockedLpAmount(userAddress)
+#     let userLockedAssetAmount = calcAssetFromLp(userLockedLpAmount)
+#     let userAvailableAssetToWithdraw = getUserAvailableAssetsToWithdraw(userAddress)
+#     let userTotalStakedAmount = this.getInteger(keyUserTotalAssetStaked(userAddress)).valueOrElse(0)
+#     let userTotalAssetWithdrawn = this.getInteger(keyUserTotalAssetWithdrawn(userAddress)).valueOrElse(0)
+#     let (userStakingNodesList, userStakingNodeSharesList) = getUserStakingNodesData(userAddress)
+
+#     (
+#       nil, 
+#       (
+#         userLpAmount, 
+#         userAvailableAssetToWithdraw, 
+#         getCurrentPrice(), 
+#         userTotalStakedAmount, 
+#         userTotalAssetWithdrawn,
+#         userLockedLpAmount,
+#         userLockedAssetAmount,
+#         userStakingNodesList,
+#         userStakingNodeSharesList,
+#         getRemainingBlocks()
+#       )
+#     )
+# }
+
+# # Return tuple: 
+# # _1 = total available internal LP amount
+# # _2 = total available tokens to withdraw
+# # _3 = current internal LP price
+# # _4 = total locked internal LP amount
+# # _5 = total locked tokens amount
+# # _6 = interest remaining blocks
+# @Callable(i)
+# func getTotalAssetsREADONLY() = {
+#     (
+#       nil, 
+#       (
+#         totalLpAmount, 
+#         getTotalAssetAmountWithProfitOrMaxAvailable(), 
+#         getCurrentPrice(),
+#         totalLockedLpAmount,
+#         calcAssetFromLp(totalLockedLpAmount),
+#         getRemainingBlocks()
+#       )
+#     )
+# }
+
+# ######################
+# # MULTISIG FUNCTIONS #
+# ######################
+# # Vote for txId that is allowed in Verifier
+# @Callable(i)
+# func voteForTxId(txId: String) = {
+#   let callerAddressString = toBase58String(i.caller.bytes)
+#   let keyPrefix = keyAllowedTxIdVotePrefix(txId)
+#   let result = [ StringEntry(keyAllowedTxId(), txId) ]
+#   let allowedTxIdOption = this.getString(keyAllowedTxId())
+  
+#   strict err = [
+#     txId.fromBase58String().size() == TXID_BYTES_LENGTH || throwErr(txId + " is not valid txId"),
+#     allowedTxIdOption == unit || allowedTxIdOption.value() != txId || throwErr(txId + " is already allowed")
+#   ]
+
+#   voteINTERNAL(callerAddressString, keyPrefix, QUORUM, result)
+# }
+# ##########################
+# # MULTISIG FUNCTIONS END #
+# ##########################
+
+# @Verifier(tx)
+# func verify() = {
+#   let byAdmins = (tx.id == this.getString(keyAllowedTxId()).valueOrElse("").fromBase58String())
+#   let byOwner = (if (getAdminsList().size() >= QUORUM) then {
+#       false
+#     } else {
+#       sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+#   })
+
+#   byAdmins || byOwner
+# }
