@@ -3,6 +3,10 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 
 let contractFile = "l2mp_staking.ride"
+let SEP = "__"
+
+let keyL2mpSwapContract = ["%s", "l2mpSwapContract"].makeString(SEP)
+let l2mpSwapContract = this.getString(keyL2mpSwapContract).valueOrElse("")
 
 func wrapErr(msg: String) = {
   contractFile + ": " + msg
@@ -20,7 +24,8 @@ func stakeFor(userAddressStr: String) = {
 @Callable(i)
 func stakeForSwapHELPER(userAddress: String, nodeAddress: String) = {
   strict check = [
-    i.originCaller.toString() == userAddress || "i.originCaller should be equal to userAddress".throwErr()
+    i.originCaller.toString() == userAddress || "i.originCaller should be equal to userAddress".throwErr(),
+    l2mpSwapContract == "" || i.caller.toString() == l2mpSwapContract || "i.caller should be equal l2mpSwapContract".throwErr()
   ]
 
   (nil, unit)

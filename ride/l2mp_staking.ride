@@ -21,6 +21,7 @@ let keyStartBlock             = ["%s", "startBlock"].makeString(SEP)
 let keyTotalLpAmount          = ["%s", "totalLpAmount"].makeString(SEP)
 let keyTotalAssetAmount       = ["%s", "totalAssetAmount"].makeString(SEP)
 let keyTotalLockedLpAmount    = ["%s", "totalLockedLpAmount"].makeString(SEP)
+let keyL2mpSwapContract       = ["%s", "l2mpSwapContract"].makeString(SEP)
 
 func keyUserLpAmount(userAddress: String)            = ["%s%s", "userLpAmount", userAddress].makeString(SEP)
 func keyUserLockedLpAmount(userAddress: String)      = ["%s%s", "userLockedLpAmount", userAddress].makeString(SEP)
@@ -57,6 +58,7 @@ let assetIdBytes = if (assetIdString == "WAVES") then unit else assetIdString.fr
 let emissionPeriodInBlocks = this.getInteger(keyEmissionPeriodInBlocks).valueOrElse(BLOCKS_IN_DAY)
 let emissionPerBlock = this.getInteger(keyEmissionPerBlock).valueOrElse(0)
 let emissionPerPeriod = emissionPerBlock * emissionPeriodInBlocks
+let l2mpSwapContract = this.getString(keyL2mpSwapContract).valueOrElse("")
 
 ######################
 # MULTISIG FUNCTIONS #
@@ -399,7 +401,8 @@ func stakeAndSetStakingNode(nodeAddress: String) = {
 @Callable(i)
 func stakeForSwapHELPER(userAddress: String, nodeAddress: String) = {
     strict check = [
-      i.originCaller.toString() == userAddress || "i.originCaller should be equal to userAddress".throwErr()
+      i.originCaller.toString() == userAddress || "i.originCaller should be equal to userAddress".throwErr(),
+      l2mpSwapContract == "" || i.caller.toString() == l2mpSwapContract || "i.caller should be equal l2mpSwapContract".throwErr()
     ]
 
     let setStakingNodeActions = if (nodeAddress == "") then [] else getSetStakingNodeActions(userAddress, nodeAddress, 100)
