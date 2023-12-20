@@ -145,7 +145,7 @@ func voteINTERNAL(
 }
 
 func getSwapActions(i: Invocation, stake: Boolean, stakingNode: String) = {
-    let userAddress = i.caller
+  let userAddress = i.caller
   let paymentSizeExpected = 1
   if (i.payments.size() != paymentSizeExpected) then throwErr("invalid payments") else
   let payment = i.payments[0]

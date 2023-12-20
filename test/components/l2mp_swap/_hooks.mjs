@@ -100,6 +100,18 @@ export const mochaHooks = {
       chainId,
     }, this.accounts.l2mpSwap.seed));
 
+    await broadcastAndWait(data({
+      additionalFee: 4e5,
+      data: [
+        {
+          key: '%s__l2mpSwapContract',
+          type: 'string',
+          value: this.accounts.l2mpSwap.addr,
+        },
+      ],
+      chainId,
+    }, this.accounts.l2mpStaking.seed));
+
     await setScriptFromFile(l2mpSwapPath, this.accounts.l2mpSwap.seed);
     await setScriptFromFile(l2mpStakingMockPath, this.accounts.l2mpStaking.seed);
   },
