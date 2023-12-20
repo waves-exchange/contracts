@@ -55,5 +55,5 @@ func onVerificationLoss(assetId: String) = {
 
 @Callable(i)
 func checkBalance(lpAssetIdStr: String) = {
-  (nil, this.getBoolean("checkBalanceResult").valueOrElse(true))
+  (nil, this.getBoolean("checkBalanceResult__" + lpAssetIdStr).valueOrElse(true))
 }
