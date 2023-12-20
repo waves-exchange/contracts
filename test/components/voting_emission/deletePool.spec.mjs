@@ -57,7 +57,6 @@ describe(`${process.pid}: voting_emission: deletePool`, () => {
 
     await api.transactions.broadcast(deletePoolInvokeTx, {});
     const { stateChanges } = await waitForTx(deletePoolInvokeTx.id, { chainId });
-    console.log(stateChanges);
 
     expect(stateChanges.data).to.deep.eql([
       { key: '%s%s%s__inList__amountAssetId__priceAssetId', value: null },
