@@ -473,8 +473,11 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
     IntegerEntry(lpAssetIdStr.keyVotingResultStaked(epochPrevious), votingResultStakedPrevious + votePrevious)
   ]
 
+  let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
+  let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
+
   let newVote = if (gwxAmountAtEndTotalPrevious > 0) then fraction(votePrevious, gwxAmountAtEndTotal, gwxAmountAtEndTotalPrevious) else 0
-  let actions = if (newVote > 0 && wxEmission) then {
+  let actions = if (newVote > 0 && wxEmission && balanceIsOk) then {
     [
       IntegerEntry(pool.keyVote(userAddress, epoch), newVote),
       IntegerEntry(epoch.keyTotalVotes(), totalVotes + newVote),
@@ -509,11 +512,10 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
   if (r) then {
     ([], true)
   } else {
-    let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
     let wxEmission = pool.checkWxEmissionPoolLabel()
     let totalVotes = this.getInteger(targetEpoch.keyTotalVotes()).valueOrElse(0)
     let votingResult = this.getInteger(pool.keyVotingResult(targetEpoch)).valueOrElse(0)
-    let share = if (totalVotes == 0 || !wxEmission || !balanceIsOk) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
+    let share = if (totalVotes == 0 || !wxEmission) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
     strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, share], [])
     let poolsListActions = if (wxEmission || force) then [] else {
       [
