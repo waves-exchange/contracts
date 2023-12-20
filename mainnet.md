@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **18:50 19.12.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **11:51 20.12.2023** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -179,6 +179,7 @@ AVTOP/WX pool | [`3PENwginFeAgmcHFJZU7JeQ9Vdi4qLo5NPu`](https://wavesexplorer.co
 ACRES/WAVES pool | [`3PM9EWk2TnAdEgQ1PRHsQosgGSE6wJ9V7Ni`](https://wavesexplorer.com/addresses/3PM9EWk2TnAdEgQ1PRHsQosgGSE6wJ9V7Ni) | `J4hwBkaKL5mg6d7vdgT8yquBtYH3xP8Nn8rC7FiH77Qf` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 STEMX/WAVES pool | [`3PHk6vuypfjuKpH3sh1RbqyueuDoA964ThM`](https://wavesexplorer.com/addresses/3PHk6vuypfjuKpH3sh1RbqyueuDoA964ThM) | `BQhmuTGhhV3BSmc7xfxRhdFHoYA9e8VoCmy71ePvxzdb` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 L2MP/WX pool | [`3PBvLFhiMBNd7qgYwef6nPENjvUsDwg4NUU`](https://wavesexplorer.com/addresses/3PBvLFhiMBNd7qgYwef6nPENjvUsDwg4NUU) | `H3LUggN7TYL7RjYqwFTK39esfGT1NYyisdB4w1UTXRx6` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+Marquise Museum/WAVES pool | [`3PHs47C48cquSmrBjCpY1FhckwT1hkSyXhH`](https://wavesexplorer.com/addresses/3PHs47C48cquSmrBjCpY1FhckwT1hkSyXhH) | `AAgnQ4e6DQDmGhungoq7ZaTcDC5aokQpkYvih2GWrN6u` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -419,6 +420,7 @@ LTCXTNLP | [`CNkqC6GPi888WdJ1EuVtu9JGZ9VHpAn8eTHwR8YZxXbv`](https://wavesexplore
 LUNCUSDNLP | [`EJfotnMGepQxZTBsqbYjrEbbhzWd7oS6GAQcPZBsWmqh`](https://wavesexplorer.com/assets/EJfotnMGepQxZTBsqbYjrEbbhzWd7oS6GAQcPZBsWmqh) | WX LUNC/USDN pool liquidity provider token 
 MANAXTNLP | [`HsYqCzcJyRKPaBfFksSqAw9rHb2HrWXi4hAkUCdS3dUK`](https://wavesexplorer.com/assets/HsYqCzcJyRKPaBfFksSqAw9rHb2HrWXi4hAkUCdS3dUK) | WX MANA/XTN pool liquidity provider token 
 Marquise Mu~WXLP | [`FovtGTNBFPdj53FU9tiyBzYnY4UuW8P4pumGKjsmzz5B`](https://wavesexplorer.com/assets/FovtGTNBFPdj53FU9tiyBzYnY4UuW8P4pumGKjsmzz5B) | Marquise Mu~/WX pool liquidity provider token 
+Marquise~WAVESLP | [`CYVkTU4nYQ95sb5Xf7KTYvvPWAthefjuRb9UcAAB6A1e`](https://wavesexplorer.com/assets/CYVkTU4nYQ95sb5Xf7KTYvvPWAthefjuRb9UcAAB6A1e) | Marquise~/WAVES pool liquidity provider token 
 MATIC-POL~USDTLP | [`91W4JjLLFHaUxJ2qJEuKiUifxzuUAGAdKeaAmg7QzqHh`](https://wavesexplorer.com/assets/91W4JjLLFHaUxJ2qJEuKiUifxzuUAGAdKeaAmg7QzqHh) | MATIC-POL~/USDT pool liquidity provider token 
 MATICXTNLP | [`CPdRfmhbBTTZtjEz3FZeNNjCSimn66dfHnyKA4Y8biar`](https://wavesexplorer.com/assets/CPdRfmhbBTTZtjEz3FZeNNjCSimn66dfHnyKA4Y8biar) | WX MATIC/XTN pool liquidity provider token 
 MKRXTNLP | [`2X9uZByRQAcpzXXpHv9rLwN3xvkXC7WTKPRkQyFQmFXE`](https://wavesexplorer.com/assets/2X9uZByRQAcpzXXpHv9rLwN3xvkXC7WTKPRkQyFQmFXE) | WX MKR/XTN pool liquidity provider token 
