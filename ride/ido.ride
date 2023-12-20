@@ -150,6 +150,9 @@ func keyTotalRemainingAmount() = ["%s", "totalRemainingAmount"].makeString(SEP)
 func keyManagerPublicKey() = "%s__managerPublicKey"
 func keyManagerVaultAddress() = "%s__managerVaultAddress"
 
+func keyClaimClosingHeight() = "%s__claimClosingHeight"
+let claimClosingHeight = this.getInteger(keyClaimClosingHeight()).valueOrElse(0)
+
 # State Reading Functions
 func readConfigArray() = {
   getStringOrFail(keyConfig()).split(SEP)
@@ -559,7 +562,8 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
       periodTotalAvailableToClaim > 0 || "unavailable to claim because total period allowance reached".throwErr(),
       periodMinAvailableToClaim > 0 || "nothing to claim".throwErr(),
       currentUsdtPriceAssetRatio < usdtPriceAssetAllowableRatio ||
-        "unavailable to claim because usdn price lower than usdtPriceAssetAllowableRatio".throwErr()
+        "unavailable to claim because usdn price lower than usdtPriceAssetAllowableRatio".throwErr(),
+      claimClosingHeight == 0 || claimClosingHeight > height || "Claim is disabled".throwErr()
     ]
 
     let updatedPeriodTotalAvailableToClaim = periodTotalAvailableToClaim - periodMinAvailableToClaim
