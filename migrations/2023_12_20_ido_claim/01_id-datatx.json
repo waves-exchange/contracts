@@ -1,0 +1,13 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "version": 2,
+    "senderPublicKey": "8ZLAVkwG8sZ97hmBdGRkQpYTp5En9xgEYX4PeupqxpFw",
+    "data": [
+        {
+            "key": "%s__claimClosingHeight",
+            "type": "integer",
+            "value": 1234567
+        }
+    ]
+}
