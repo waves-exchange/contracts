@@ -513,9 +513,10 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
     ([], true)
   } else {
     let wxEmission = pool.checkWxEmissionPoolLabel()
+    let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
     let totalVotes = this.getInteger(targetEpoch.keyTotalVotes()).valueOrElse(0)
     let votingResult = this.getInteger(pool.keyVotingResult(targetEpoch)).valueOrElse(0)
-    let share = if (totalVotes == 0 || !wxEmission) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
+    let share = if (totalVotes == 0 || !wxEmission || !balanceIsOk) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
     strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, share], [])
     let poolsListActions = if (wxEmission || force) then [] else {
       [
