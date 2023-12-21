@@ -1,4 +1,4 @@
-import { address, publicKey, randomSeed } from '@waves/ts-lib-crypto';
+import { address, randomSeed } from '@waves/ts-lib-crypto';
 import {
   data,
   issue,
@@ -148,17 +148,5 @@ export const mochaHooks = {
     }, this.accounts.ido);
     await api.transactions.broadcast(setIdoKeysTx, {});
     await waitForTx(setIdoKeysTx.id, { apiBase });
-
-    const setManagerIdoTx = data({
-      additionalFee: 4e5,
-      data: [{
-        key: '%s__managerPublicKey',
-        type: 'string',
-        value: publicKey(this.accounts.manager),
-      }],
-      chainId,
-    }, this.accounts.ido);
-    await api.transactions.broadcast(setManagerIdoTx, {});
-    await waitForTx(setManagerIdoTx.id, { apiBase });
   },
 };
