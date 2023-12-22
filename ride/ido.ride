@@ -563,7 +563,7 @@ func claim(claimedAssetId58: String, userAddress58: String) = {
       periodMinAvailableToClaim > 0 || "nothing to claim".throwErr(),
       currentUsdtPriceAssetRatio < usdtPriceAssetAllowableRatio ||
         "unavailable to claim because usdn price lower than usdtPriceAssetAllowableRatio".throwErr(),
-      claimClosingHeight == 0 || claimClosingHeight > height || "Claim is disabled".throwErr()
+      claimedAssetId58 != priceAssetId58 || claimClosingHeight == 0 || claimClosingHeight > height || "Claim is disabled".throwErr()
     ]
 
     let updatedPeriodTotalAvailableToClaim = periodTotalAvailableToClaim - periodMinAvailableToClaim
