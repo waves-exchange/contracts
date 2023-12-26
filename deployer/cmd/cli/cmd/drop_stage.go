@@ -93,6 +93,7 @@ var dropStageCmd = &cobra.Command{
 		cl, err := client.NewClient(client.Options{
 			BaseUrl: node,
 			Client:  &http.Client{Timeout: time.Minute},
+			ChainID: proto.TestNetScheme,
 		})
 		if err != nil {
 			printAndExit(err)
