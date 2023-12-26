@@ -7,7 +7,6 @@ import (
 	"github.com/waves-exchange/contracts/deployer/pkg/branch"
 	"github.com/waves-exchange/contracts/deployer/pkg/config"
 	"github.com/waves-exchange/contracts/deployer/pkg/contract"
-	"github.com/waves-exchange/contracts/deployer/pkg/docs"
 	"github.com/waves-exchange/contracts/deployer/pkg/logger"
 	"github.com/waves-exchange/contracts/deployer/pkg/mongo"
 	"github.com/waves-exchange/contracts/deployer/pkg/syncer"
@@ -32,33 +31,33 @@ func main() {
 		panic(fmt.Errorf("mongo.NewConn: %w", err))
 	}
 
-	testnetDB, err := mongo.NewConn(ctx, cfg.MongoDatabaseName, cfg.TestnetMongoURI)
-	if err != nil {
-		panic(fmt.Errorf("mongo.NewConn: %w", err))
-	}
+	// testnetDB, err := mongo.NewConn(ctx, cfg.MongoDatabaseName, cfg.TestnetMongoURI)
+	// if err != nil {
+	// 	panic(fmt.Errorf("mongo.NewConn: %w", err))
+	// }
 
-	mainnetDB, err := mongo.NewConn(ctx, cfg.MongoDatabaseName, cfg.MainnetMongoURI)
-	if err != nil {
-		panic(fmt.Errorf("mongo.NewConn: %w", err))
-	}
+	// mainnetDB, err := mongo.NewConn(ctx, cfg.MongoDatabaseName, cfg.MainnetMongoURI)
+	// if err != nil {
+	// 	panic(fmt.Errorf("mongo.NewConn: %w", err))
+	// }
 
-	dc, err := docs.NewDocs(
-		logg.ZL,
-		branch.NewModel(testnetDB.Collection(cfg.MongoCollectionBranches)),
-		contract.NewModel(testnetDB.Collection(cfg.MongoCollectionContracts)),
-		cfg.TestnetNode,
-		branch.NewModel(mainnetDB.Collection(cfg.MongoCollectionBranches)),
-		contract.NewModel(mainnetDB.Collection(cfg.MongoCollectionContracts)),
-		cfg.MainnetNode,
-	)
-	if err != nil {
-		panic(fmt.Errorf("docs.NewDocs: %w", err))
-	}
+	// dc, err := docs.NewDocs(
+	// 	logg.ZL,
+	// 	branch.NewModel(testnetDB.Collection(cfg.MongoCollectionBranches)),
+	// 	contract.NewModel(testnetDB.Collection(cfg.MongoCollectionContracts)),
+	// 	cfg.TestnetNode,
+	// 	branch.NewModel(mainnetDB.Collection(cfg.MongoCollectionBranches)),
+	// 	contract.NewModel(mainnetDB.Collection(cfg.MongoCollectionContracts)),
+	// 	cfg.MainnetNode,
+	// )
+	// if err != nil {
+	// 	panic(fmt.Errorf("docs.NewDocs: %w", err))
+	// }
 
-	err = dc.Update(ctx)
-	if err != nil {
-		panic(fmt.Errorf("dc.Update: %w", err))
-	}
+	// err = dc.Update(ctx)
+	// if err != nil {
+	// 	panic(fmt.Errorf("dc.Update: %w", err))
+	// }
 
 	sc, err := syncer.NewSyncer(
 		logg.ZL,

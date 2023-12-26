@@ -651,7 +651,6 @@ func (s *Syncer) doFile(
 				ctx,
 				proto.NewUnsignedSetScriptWithProofs(
 					2,
-					proto.TestNetScheme,
 					pub,
 					scriptBytes,
 					setScriptFee,
@@ -712,7 +711,6 @@ func (s *Syncer) doFile(
 
 			unsignedSetScriptTx := proto.NewUnsignedSetScriptWithProofs(
 				2,
-				proto.MainNetScheme,
 				pub,
 				scriptBytes,
 				setScriptFee,
@@ -915,6 +913,10 @@ func (s *Syncer) sendTx(
 		return fmt.Errorf("crypto.NewDigestFromBytes: %w", err)
 	}
 
+	fmt.Printf("%d\n", s.networkByte)
+	fmt.Printf("%s\n", txHash)
+	fmt.Printf("%+v\n", tx)
+
 	fn := func() error {
 		sender, e := tx.GetSender(s.networkByte)
 		if e != nil {
@@ -935,7 +937,7 @@ func (s *Syncer) sendTx(
 
 		_, e = s.client().Transactions.Broadcast(ctx, tx)
 		if e != nil {
-			return fmt.Errorf("s.client().Transactions.Broadcast (file: %s, sender: %s): %w", fileName, senderAddr.String(), e)
+			return fmt.Errorf("s.client().Transactions.Broadcast (file: %s, sender: %s, txId: %s, chainId: %d, tx: %+v): %w", fileName, senderAddr.String(), txHash, s.networkByte, tx, e)
 		}
 
 		e = s.waitMined(ctx, txHash)
