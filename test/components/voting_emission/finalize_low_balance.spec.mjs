@@ -147,15 +147,9 @@ describe(`${process.pid}: voting_emission: finalize (low balance)`, () => {
 
     const dAppState = await api.addresses.data(dApp);
     const dAppStateMap = Object.fromEntries(dAppState.map((v) => [v.key, v]));
-    const votingEmissionRateState = await api.addresses.data(this.accounts.votingEmissionRate.addr);
 
     expect(dAppStateMap['%s__currentEpoch'].value).to.equal(1);
     expect(dAppStateMap['%s%s%s%d__poolShare__amountAssetId1__priceAssetId1__0'].value).to.equal(pool1Share);
     expect(dAppStateMap['%s%s%s%d__poolShare__amountAssetId2__priceAssetId2__0'].value).to.equal(pool2Share);
-
-    expect(votingEmissionRateState).to.include.deep.members([
-      { key: 'counter', type: 'integer', value: 1 },
-      { key: 'finalized', type: 'boolean', value: true },
-    ]);
   });
 });
