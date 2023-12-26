@@ -229,7 +229,6 @@ func (c Contract) setScript(ctx context.Context) error {
 		c.client,
 		proto.NewUnsignedSetScriptWithProofs(
 			2,
-			c.networkByte,
 			crypto.GeneratePublicKey(c.basePrv),
 			scriptBytes,
 			setScriptFee,

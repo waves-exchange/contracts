@@ -171,11 +171,10 @@ func dropContract(privateKeyBase58 string, publicKeyBase58 string, ctx context.C
 
 	dropScriptTx := proto.NewUnsignedSetScriptWithProofs(
 		2,
-		proto.TestNetScheme,
 		publicKey,
 		nil,
 		500000,
-		client.NewTimestampFromTime(time.Now()),
+		tools.Timestamp(),
 	)
 
 	err = tools.SignBroadcastWait(ctx, proto.TestNetScheme, cl, dropScriptTx, secretKey)
