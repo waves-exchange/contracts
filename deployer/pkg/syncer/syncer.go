@@ -67,8 +67,17 @@ func NewSyncer(
 	compareLpScriptAddress, compareLpStableScriptAddress string,
 	feeSeed string,
 ) (*Syncer, error) {
+	var networkByte proto.Scheme
+	switch network {
+	case config.Testnet:
+		networkByte = proto.TestNetScheme
+	case config.Mainnet:
+		networkByte = proto.MainNetScheme
+	default:
+		return nil, fmt.Errorf("unknown network: %s", network)
+	}
 	cl, err := client.NewClient(
-		client.Options{BaseUrl: node, Client: &http.Client{Timeout: time.Minute}},
+		client.Options{BaseUrl: node, Client: &http.Client{Timeout: time.Minute}, ChainID: networkByte},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("client.NewClient: %w", err)
@@ -86,16 +95,6 @@ func NewSyncer(
 	feePrv, feePub, err := tools.GetPrivateAndPublicKey([]byte(feeSeed))
 	if err != nil {
 		return nil, fmt.Errorf("crypto.GenerateKeyPair: %w", err)
-	}
-
-	var networkByte proto.Scheme
-	switch network {
-	case config.Testnet:
-		networkByte = proto.TestNetScheme
-	case config.Mainnet:
-		networkByte = proto.MainNetScheme
-	default:
-		return nil, fmt.Errorf("unknown network: %s", network)
 	}
 
 	return &Syncer{
