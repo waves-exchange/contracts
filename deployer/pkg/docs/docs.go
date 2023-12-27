@@ -48,6 +48,7 @@ func NewDocs(
 	testnetClient, err := client.NewClient(client.Options{
 		BaseUrl: testnetNode,
 		Client:  &http.Client{Timeout: time.Minute},
+		ChainID: proto.TestNetScheme,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("client.NewClient: %w", err)
@@ -56,6 +57,7 @@ func NewDocs(
 	mainnetClient, err := client.NewClient(client.Options{
 		BaseUrl: mainnetNode,
 		Client:  &http.Client{Timeout: time.Minute},
+		ChainID: proto.MainNetScheme,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("client.NewClient: %w", err)

@@ -93,6 +93,7 @@ var dropStageCmd = &cobra.Command{
 		cl, err := client.NewClient(client.Options{
 			BaseUrl: node,
 			Client:  &http.Client{Timeout: time.Minute},
+			ChainID: proto.TestNetScheme,
 		})
 		if err != nil {
 			printAndExit(err)
@@ -171,11 +172,10 @@ func dropContract(privateKeyBase58 string, publicKeyBase58 string, ctx context.C
 
 	dropScriptTx := proto.NewUnsignedSetScriptWithProofs(
 		2,
-		proto.TestNetScheme,
 		publicKey,
 		nil,
 		500000,
-		client.NewTimestampFromTime(time.Now()),
+		tools.Timestamp(),
 	)
 
 	err = tools.SignBroadcastWait(ctx, proto.TestNetScheme, cl, dropScriptTx, secretKey)

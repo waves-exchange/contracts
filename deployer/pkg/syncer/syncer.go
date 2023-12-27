@@ -67,8 +67,17 @@ func NewSyncer(
 	compareLpScriptAddress, compareLpStableScriptAddress string,
 	feeSeed string,
 ) (*Syncer, error) {
+	var networkByte proto.Scheme
+	switch network {
+	case config.Testnet:
+		networkByte = proto.TestNetScheme
+	case config.Mainnet:
+		networkByte = proto.MainNetScheme
+	default:
+		return nil, fmt.Errorf("unknown network: %s", network)
+	}
 	cl, err := client.NewClient(
-		client.Options{BaseUrl: node, Client: &http.Client{Timeout: time.Minute}},
+		client.Options{BaseUrl: node, Client: &http.Client{Timeout: time.Minute}, ChainID: networkByte},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("client.NewClient: %w", err)
@@ -86,16 +95,6 @@ func NewSyncer(
 	feePrv, feePub, err := tools.GetPrivateAndPublicKey([]byte(feeSeed))
 	if err != nil {
 		return nil, fmt.Errorf("crypto.GenerateKeyPair: %w", err)
-	}
-
-	var networkByte proto.Scheme
-	switch network {
-	case config.Testnet:
-		networkByte = proto.TestNetScheme
-	case config.Mainnet:
-		networkByte = proto.MainNetScheme
-	default:
-		return nil, fmt.Errorf("unknown network: %s", network)
 	}
 
 	return &Syncer{
@@ -651,7 +650,6 @@ func (s *Syncer) doFile(
 				ctx,
 				proto.NewUnsignedSetScriptWithProofs(
 					2,
-					proto.TestNetScheme,
 					pub,
 					scriptBytes,
 					setScriptFee,
@@ -712,7 +710,6 @@ func (s *Syncer) doFile(
 
 			unsignedSetScriptTx := proto.NewUnsignedSetScriptWithProofs(
 				2,
-				proto.MainNetScheme,
 				pub,
 				scriptBytes,
 				setScriptFee,
@@ -915,6 +912,10 @@ func (s *Syncer) sendTx(
 		return fmt.Errorf("crypto.NewDigestFromBytes: %w", err)
 	}
 
+	fmt.Printf("%d\n", s.networkByte)
+	fmt.Printf("%s\n", txHash)
+	fmt.Printf("%+v\n", tx)
+
 	fn := func() error {
 		sender, e := tx.GetSender(s.networkByte)
 		if e != nil {
@@ -935,7 +936,7 @@ func (s *Syncer) sendTx(
 
 		_, e = s.client().Transactions.Broadcast(ctx, tx)
 		if e != nil {
-			return fmt.Errorf("s.client().Transactions.Broadcast (file: %s, sender: %s): %w", fileName, senderAddr.String(), e)
+			return fmt.Errorf("s.client().Transactions.Broadcast (file: %s, sender: %s, txId: %s, chainId: %d, tx: %+v): %w", fileName, senderAddr.String(), txHash, s.networkByte, tx, e)
 		}
 
 		e = s.waitMined(ctx, txHash)
