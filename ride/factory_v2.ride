@@ -848,7 +848,7 @@ func setWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
 
 @Callable(i)
 func deleteWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
-  strict checkCaller = i.caller == this || i.mustAdmin()
+  strict checkCaller = i.caller.toString() == this.getStringValue(keyVotingEmissionContract()) || i.caller == this || i.mustAdmin()
 
   ([DeleteEntry(keyWxEmission(amountAssetId, priceAssetId))], unit)
 }
