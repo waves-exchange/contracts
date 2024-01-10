@@ -1,0 +1,320 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let contractFile = "vesting_neo.ride"
+let SEP = "__"
+let IDS_LIST = [
+   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 
+  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 
+  20, 21, 22, 23, 24, 25, 26, 27, 28, 29 
+]
+let MAX_VESTING_COUNT = IDS_LIST.size()
+
+func throwErr(msg: String) = {
+    throw(contractFile + ": " + msg)
+}
+
+let keyAssetId = ["%s", "assetId"].makeString(SEP)
+let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
+let assetIdBytes = if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
+let keyAdminList = ["%s", "adminAddressList"].makeString(SEP)
+let keyBanList = ["%s", "banList"].makeString(SEP)
+
+let adminList = (
+  match (this.getString(keyAdminList)) {
+      case s:String => s.split(SEP)
+      case _ => []
+  }
+)
+
+let banList = (
+  match (this.getString(keyBanList)) {
+      case s:String => if (s == "") then [] else s.split_51C(SEP)
+      case _ => []
+  }
+)
+
+func isValidAddressString(addressString: String) = {
+  match (addressString.addressFromString()) {
+      case a:Address => true
+      case _ => false
+    }
+}
+
+func keyUserVesting(userAddress: String, id: Int) = {
+  strict checks = [
+    userAddress.isValidAddressString()  || ["address is not valid:", userAddress].makeString(" ").throwErr(),
+    (id >= 0 && id < MAX_VESTING_COUNT) || ["id should be less than", MAX_VESTING_COUNT.toString(), "got:", id.toString()].makeString(" ").throwErr()
+  ]
+
+  ["%s%s%d", "vesting", userAddress, id.toString()].makeString(SEP)
+}
+
+func keyUserAccumulated(userAddress: String) = {
+  strict checks = [
+    userAddress.isValidAddressString()  || ["address is not valid:", userAddress].makeString(" ").throwErr()
+  ]
+
+  ["%s%s", "accumulated", userAddress].makeString(SEP)
+}
+
+func formatUserVesting(vestingAmount: Int, startBlock: Int, lockLength: Int) = {
+  strict checks = [
+    vestingAmount >= 0 || "vesting amount cannot be negative".throwErr(),
+    startBlock    >= 0 || "start block cannot be negative".throwErr(),
+    lockLength    >= 0 || "lock length cannot be negative".throwErr()
+  ]
+
+  [
+    "%d%d%d",
+    vestingAmount.toString(),
+    startBlock.toString(),
+    lockLength.toString()
+  ].makeString(SEP)
+}
+
+func parseUserVesting(userAddress: String, id: Int) = {
+  match (this.getString(keyUserVesting(userAddress, id))) {
+    case rawString:String => {
+      let splitString = rawString.split(SEP)
+      let vestingAmount = splitString[1].parseIntValue()
+      let startBlock    = splitString[2].parseIntValue()
+      let lockLength    = splitString[3].parseIntValue()
+
+      (vestingAmount, startBlock, lockLength)
+    }
+    case _ => (0, 0, 0)
+  }
+}
+
+func keyVestingHistory(action: String, userAddress: String, txId: String) = 
+  ["%s%s%s%s", "history", userAddress, action, txId].makeString(SEP)
+
+func calcUnlockedAmount(amount: Int, startBlock: Int, lockLength: Int) = {
+  let elapsedBlocks = height - startBlock
+
+  let unlockedAmount = if(lockLength != 0 && elapsedBlocks > 0) then 
+      min([fraction(amount, elapsedBlocks, lockLength), amount])
+    else 0
+  
+  (unlockedAmount, (amount - unlockedAmount))
+}
+
+func getUserUnlockedAmount(userAddress: String, id: Int) = {
+  let (vestingAmount, startBlock, lockLength) = parseUserVesting(userAddress, id)
+  let (unlockedAmount, remainingAmount) = calcUnlockedAmount(vestingAmount, startBlock, lockLength) 
+
+  (unlockedAmount, remainingAmount)
+}
+
+func getUpdateVestingActions(userAddress: String, id: Int) = {
+  let (vestingAmount, startBlock, lockLength) = parseUserVesting(userAddress, id)
+  let (unlockedAmount, remainingAmount) = getUserUnlockedAmount(userAddress, id)
+  let remainingBlocks = max([(startBlock + lockLength - height), 0])
+
+  let updateVestingActions = if (unlockedAmount != 0) then 
+    if (remainingBlocks != 0) then 
+      [StringEntry(keyUserVesting(userAddress, id), formatUserVesting(remainingAmount, height, remainingBlocks))]
+    else 
+      [DeleteEntry(keyUserVesting(userAddress, id))]
+  else
+    []
+
+  (updateVestingActions, unlockedAmount)
+}
+
+func getUserClaimActions(userAddress: String, id: Int) = {
+  let (updateVestingActions, unlockedAmount) = getUpdateVestingActions(userAddress, id)
+
+  let transferActions = if (unlockedAmount != 0) then 
+    [ScriptTransfer(userAddress.addressFromStringValue(), unlockedAmount, assetIdBytes)]
+  else
+    []
+
+  (updateVestingActions ++ transferActions, unlockedAmount)
+}
+
+func getAllUserClaimActions(userAddress: String) = {
+  func actionsHelper(acc: (List[ScriptTransfer|StringEntry|IntegerEntry], Int), id: Int) = {
+    let (allVestingsClaimActions, sum) = acc
+    let (vestingClaimActions, claimAmount) = getUserClaimActions(userAddress, id)
+
+    (allVestingsClaimActions ++ vestingClaimActions, sum + claimAmount)
+  }
+
+  FOLD<30>(IDS_LIST, ([], 0), actionsHelper)
+}
+
+func getMoveAllUnlockedToAccumulatorActions(userAddress: String) = {
+  func actionsHelper(acc: (List[ScriptTransfer|StringEntry|IntegerEntry], Int), id: Int) = {
+    let (updateAllVestingsActions, sum) = acc
+    let (updateVestingActions, unlockedAmount) = getUpdateVestingActions(userAddress, id)
+
+    (updateAllVestingsActions ++ updateVestingActions, sum + unlockedAmount)
+  }
+
+  let (updateAllVestingsActions, unlockedSum) = FOLD<30>(IDS_LIST, ([], 0), actionsHelper)
+
+  let oldAccumulated = this.getInteger(keyUserAccumulated(userAddress)).valueOrElse(0)
+  let updateAccumulatedActions = if (unlockedSum != 0) then
+    [IntegerEntry(keyUserAccumulated(userAddress), oldAccumulated + unlockedSum)]
+  else 
+    []
+
+  (updateAllVestingsActions ++ updateAccumulatedActions, unlockedSum)
+}
+
+func getClaimAccumulatedActions(userAddress: String) = {
+  let oldAccumulated = this.getInteger(keyUserAccumulated(userAddress)).valueOrElse(0)
+
+  if (oldAccumulated != 0) then 
+    (
+      [
+        ScriptTransfer(userAddress.addressFromStringValue(), oldAccumulated, assetIdBytes),
+        DeleteEntry(keyUserAccumulated(userAddress))
+      ], 
+      oldAccumulated
+    )
+  else 
+    ([], 0)
+}
+
+func getClaimAllActions(userAddress: String) = {
+  let (claimActions, unlockedAmount) = if (!banList.containsElement(userAddress)) then getAllUserClaimActions(userAddress) else ([], 0)
+  let (claimAccumulatedActions, accumulatedAmount) = getClaimAccumulatedActions(userAddress)
+
+  let totalAmount = unlockedAmount + accumulatedAmount
+
+  (claimActions ++ claimAccumulatedActions, totalAmount)
+}
+
+func getVestingUserInfo(userAddress: String) = {
+  func helper(acc: List[Any], id: Int) = {
+    let (vestingAmount, startBlock, lockLength) = parseUserVesting(userAddress, id)
+    let (unlockedAmount, remainingAmount) = getUserUnlockedAmount(userAddress, id)
+
+    if (vestingAmount == 0 || banList.containsElement(userAddress)) then 
+      acc
+    else
+      acc :+ [vestingAmount, startBlock + lockLength, unlockedAmount, remainingAmount]
+  }
+
+  FOLD<30>(IDS_LIST, [], helper)
+}
+
+func getAvailableVestingId(userAddress: String) = {
+  func helper(availableId: Int, id: Int) = {
+    let (vestingAmount, startBlock, lockLength) = parseUserVesting(userAddress, id)
+
+    if (vestingAmount > 0) then 
+      availableId
+    else {
+      if (availableId == -1) then id else min([availableId, id])
+    }
+  }
+
+  let availableId = FOLD<30>(IDS_LIST, -1, helper)
+
+  if (availableId == -1) then 
+    ["user exceeded max active vesting count: ", userAddress].makeString(" ").throwErr()
+  else 
+    availableId
+}
+
+func getNewVestingActions(userAddress: String, id: Int, vestingAmount: Int, startBlock: Int, lockLength: Int) = {
+  [
+    StringEntry(keyUserVesting(userAddress, id), formatUserVesting(vestingAmount, startBlock, lockLength))
+  ]
+}
+
+# history data contains:
+# (vestingAmount)__(startBlock)__(lockLength)
+@Callable(i)
+func vestingForUser(userAddress: String, vestingAmount: Int, startBlock: Int, lockLength: Int) = {
+  strict check = [
+    i.payments.size() == 1 || "should be with exactly 1 payment".throwErr(),
+    i.payments[0].assetId == assetIdBytes || ["payment assetId should be: ", assetIdString].makeString(" ").throwErr(),
+    i.payments[0].amount == vestingAmount || "payment amount should be equal to vestingAmount".throwErr(),
+    adminList == [] || adminList.containsElement(i.caller.toString()) || "you must be admin".throwErr()
+  ]
+  
+  let id = getAvailableVestingId(userAddress)
+  let historyActions = [
+    StringEntry(
+      keyVestingHistory("vested", userAddress, i.transactionId.toBase58String()),
+      [vestingAmount.toString(), startBlock.toString(), lockLength.toString()].makeString(SEP)
+    )
+  ]
+
+  getNewVestingActions(userAddress, id, vestingAmount, startBlock, lockLength) ++ historyActions
+}
+
+@Callable(i)
+func ban(userAddress: String) = {
+  strict checks = [
+    adminList == [] || adminList.containsElement(i.caller.toString()) || "you must be admin".throwErr(),
+    (!banList.containsElement(userAddress)) || ["user already in a ban list:", userAddress].makeString(" ").throwErr()
+  ]
+
+  let (moveToAccumulatedActions, _a) = getMoveAllUnlockedToAccumulatorActions(userAddress)
+  let addToBanListActions = [
+    StringEntry(keyBanList, (banList :+ userAddress).makeString_11C("__"))
+  ]
+
+  moveToAccumulatedActions ++ addToBanListActions
+}
+
+@Callable(i)
+func unban(userAddress: String) = {
+  strict checks = [
+    adminList == [] || adminList.containsElement(i.caller.toString()) || "you must be admin".throwErr(),
+    banList.containsElement(userAddress) || ["user not in a ban list:", userAddress].makeString(" ").throwErr()
+  ]
+
+  let newBanList = match (banList.indexOf(userAddress)) {
+      case ind:Int => banList.removeByIndex(ind)
+      case _ => "user address index in ban list is not found".throwErr()
+    }
+
+  if (newBanList == []) then 
+    [DeleteEntry(keyBanList)]
+  else
+    [StringEntry(keyBanList, newBanList.makeString_11C("__"))]
+}
+
+# history data contains:
+# (claimedAmount)
+@Callable(i)
+func claimAll() = {
+  let userAddress = i.caller.toString()
+  let (claimActions, totalAmount) = getClaimAllActions(userAddress)
+  
+  let historyActions = [
+    StringEntry(
+      keyVestingHistory("claimed", userAddress, i.transactionId.toBase58String()), 
+      totalAmount.toString()
+    )
+  ]
+
+  if (totalAmount > 0) then
+    claimActions ++ historyActions
+  else 
+    "nothing to claim".throwErr()
+}
+
+# Return tuple: 
+# _1 = total amount available to claim
+# _2 = accumulated part available to claim
+# _3 = list of active vestings
+#    + _1 = total amount remaining in vesting
+#    + _2 = full unlock height
+#    + _3 = unlocked amount
+#    + _4 = locked amount
+@Callable(i)
+func userInfoREADONLY(userAddress: String) = {
+  let (_a, totalAmount) = getClaimAllActions(userAddress)
+  let accumulatedAmount = this.getInteger(keyUserAccumulated(userAddress)).valueOrElse(0)
+
+  ([], (totalAmount, accumulatedAmount, getVestingUserInfo(userAddress)))
+}
