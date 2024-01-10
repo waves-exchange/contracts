@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **13:34 29.12.2023** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **15:15 10.01.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -183,6 +183,8 @@ Marquise Museum/WAVES pool | [`3PHs47C48cquSmrBjCpY1FhckwT1hkSyXhH`](https://wav
 PETE/WX pool | [`3P5THXc2UVS4o7CxBxsLAYCPLRBCnqJS7QJ`](https://wavesexplorer.com/addresses/3P5THXc2UVS4o7CxBxsLAYCPLRBCnqJS7QJ) | `8EWHxzpVCvHikCkp5coqM5gtdEiq3sG2TFDp1CtMpaB7` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 WXDAO/USDT-ERC20 pool | [`3PHqNkDeWZddqMvGH497wbJVzRsC5kiG4Fd`](https://wavesexplorer.com/addresses/3PHqNkDeWZddqMvGH497wbJVzRsC5kiG4Fd) | `3n7WDwzGnLFoDu6Kba98MnCLXDTDjewbhDABbs1A5Cq4` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 WLGOLD/WAVES pool | [`3PNNufgTD78GZTU3jHQu9z3KQUKFZ68AEJj`](https://wavesexplorer.com/addresses/3PNNufgTD78GZTU3jHQu9z3KQUKFZ68AEJj) | `339Cau1PhNEeUeLdv2pTyA2hv3W7ubHK7q5UvW5Ash9u` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+Sanchos/USDT-ERC20 pool | [`3P3ZoAiKRzqr83ViPksdY6irVn8Cah1NqLt`](https://wavesexplorer.com/addresses/3P3ZoAiKRzqr83ViPksdY6irVn8Cah1NqLt) | `9Wi9XhsqMCkADUnsg5mvnq9GGCTywESoo2g3wbR7YPx2` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+PETE/Bones-X pool | [`3PLMwbRtB7DHKCHRDprdJgATyMr8CR5Xmpt`](https://wavesexplorer.com/addresses/3PLMwbRtB7DHKCHRDprdJgATyMr8CR5Xmpt) | `2P2XXx62wYkYAd71GKvWXT1U1AbwA8nGnCShrhm1wtD7` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -232,6 +234,7 @@ ATOM | [`47cyc68FWJszCWEwMWVsD9CadjS2M1XtgANuRGbEW8UH`](https://wavesexplorer.co
 AVTOP | [`8hCYLtTBa9RyJAEeqHUC4VKpZVMhNdx2rUHmHHwvmgMJ`](https://wavesexplorer.com/assets/8hCYLtTBa9RyJAEeqHUC4VKpZVMhNdx2rUHmHHwvmgMJ) | AVTOP - is the digital stocks of the project avtoporogi.ru - the largest manufacturer of car body parts in CIS. 
 AXLY | [`DcAbWMXrfMeooG1BrZ9ipiseFSVm7zxTs1XZKRp6DVeZ`](https://wavesexplorer.com/assets/DcAbWMXrfMeooG1BrZ9ipiseFSVm7zxTs1XZKRp6DVeZ) | AXLY protocol token 
 BNB-BSC-PPT | [`66a1br3BrkoaJgP7yEar9hJcSTvJPoH6PYBLqscXcMGo`](https://wavesexplorer.com/assets/66a1br3BrkoaJgP7yEar9hJcSTvJPoH6PYBLqscXcMGo) | BNB Token from Binance Smart Chain network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/BNB-BSC-PPT 
+Bones-X | [`Fix5Sa55Ra7vrpZhEECEJ5V3AVmQJonpqJASSpWbMb1y`](https://wavesexplorer.com/assets/Fix5Sa55Ra7vrpZhEECEJ5V3AVmQJonpqJASSpWbMb1y) | Bones are bonuses of the Dobercoin project, which you can win for participating in competitions in groups in Telegam (t.me/dobercoinwx and t.me/dobercoin_eng) as well as on the website dobercoin.com Bones will be provided with Pete coins, which we will buy for these purposes, help the same two projects. Happy new year friends) 
 BTCB-BSC-PPT | [`EW1uGLVo21Wd9i2Rhq8o4VKDTCQTGCGXE8DqayHGrLg8`](https://wavesexplorer.com/assets/EW1uGLVo21Wd9i2Rhq8o4VKDTCQTGCGXE8DqayHGrLg8) | BTCB Token from Binance Smart Chain network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/BTCB-BSC-PPT 
 BURN-XTN | [`3SjxA2YLdfF9fTRbzLm9xFn27C6MW34W1YsdJ6Axefns`](https://wavesexplorer.com/assets/3SjxA2YLdfF9fTRbzLm9xFn27C6MW34W1YsdJ6Axefns) | Constantly burn more XTN without draining collateral from Neutrino treasury and make a profit while doing so. Support Neutrino and the Waves ecosystem. For more info go to: www.burnxtn.tech 
 BUSD | [`8DLiYZjo3UUaRBTHU7Ayoqg4ihwb6YH1AfXrrhdjQ7K1`](https://wavesexplorer.com/assets/8DLiYZjo3UUaRBTHU7Ayoqg4ihwb6YH1AfXrrhdjQ7K1) | Wrapped BUSD token 
@@ -300,6 +303,7 @@ Transparency and accountability: Blockchain technology will ensure the traceabil
 ROME | [`AP4Cb5xLYGH6ZigHreCZHoXpQTWDkPsG2BHqfDUx6taJ`](https://wavesexplorer.com/assets/AP4Cb5xLYGH6ZigHreCZHoXpQTWDkPsG2BHqfDUx6taJ) | Rome. Res Stabilis Ultima. 
 RoyalGacoin | [`G1tyWnzaEfWNevesep8d13MAhsrxSoS7QDBUtEQ7vA1d`](https://wavesexplorer.com/assets/G1tyWnzaEfWNevesep8d13MAhsrxSoS7QDBUtEQ7vA1d) | La crypto monnaie royal du peuple Ga est une crypto monnaie qui intervient dans plusieurs projets lucratives tout genre d'investissement inclus, la monnaie ce veut participante à la lutte contre la pauvreté et encourager les jeunes entrepreneurs et investisseurs. Les parts des investisseurs seront reversés selon la participation du capital émis par chacun. RoyalGacoin  http://gakingdomcoin.news.blog/   email : 
 gabusinesspeuple@gmail.com  
+Sanchos | [`7KA6AQziGz3aPbzyHszoi4hdF9q4kCNPJWLUACuCJB4n`](https://wavesexplorer.com/assets/7KA6AQziGz3aPbzyHszoi4hdF9q4kCNPJWLUACuCJB4n) | Sanchos, a promising cryptocurrency with high potential. The cryptocurrency will be useful for mining. 
 SAND | [`8YyrMfuBdZ5gtMWkynLTveRvGb6LJ4Aff9rpz46UUMW`](https://wavesexplorer.com/assets/8YyrMfuBdZ5gtMWkynLTveRvGb6LJ4Aff9rpz46UUMW) | Wrapped SAND token 
 Sasha-X | [`Fz1S3rRAF8RaBoFSKoohDxzfPBX4Jj8mCTFn1Mab8H3x`](https://wavesexplorer.com/assets/Fz1S3rRAF8RaBoFSKoohDxzfPBX4Jj8mCTFn1Mab8H3x) | I am Sasha sturgeon, a very valuable fish in the Waves network.  I have 52,653 eggs - a limited collection.  IDO will automatically launch after verification.  The entire issue will be offered at a fixed price.  The offer period is one month. 
 SBT  | [`vAYvjoLheNuvi2wRdQYK9NUjJ6ZQ5EkAtx7jy36rK13`](https://wavesexplorer.com/assets/vAYvjoLheNuvi2wRdQYK9NUjJ6ZQ5EkAtx7jy36rK13) | SBT is the native platform token for StakeBooster - https://stakebooster.com/
@@ -439,6 +443,7 @@ PETEWAVESLP | [`CxQZw8ApLNgg6v3ttoTZWuoQ9RcUTNnfCuRUoWiDxC9G`](https://wavesexpl
 PETEWXLP | [`Dj32br9jAootBGyoimaPruYCJLDfSdLax96sRR9PU8GR`](https://wavesexplorer.com/assets/Dj32br9jAootBGyoimaPruYCJLDfSdLax96sRR9PU8GR) | PETE/WX pool liquidity provider token 
 PETEXTNLP | [`Haw7ivNhsXXie8oyewvyPYp4K52PmBBdafuFLDjS4NzB`](https://wavesexplorer.com/assets/Haw7ivNhsXXie8oyewvyPYp4K52PmBBdafuFLDjS4NzB) | PETE/XTN pool liquidity provider token 
 PETE~AVTOPLP | [`CfUQQ5th1NZ2KKiTA55USGyAjq945Ym8Nac4K5kvN5Q3`](https://wavesexplorer.com/assets/CfUQQ5th1NZ2KKiTA55USGyAjq945Ym8Nac4K5kvN5Q3) | PETE/~AVTOP pool liquidity provider token 
+PETE~Bones-XLP | [`HbCHGpnyf7X8cCgnmvTBHWneqMmYsg8UTRhSWLxk4dR9`](https://wavesexplorer.com/assets/HbCHGpnyf7X8cCgnmvTBHWneqMmYsg8UTRhSWLxk4dR9) | PETE/~Bones-X pool liquidity provider token 
 PETE~BURN-XTNLP | [`3MPHMJVwYGyeBLRsH1RsYhrTmemv752AEBwuFFV7g49Z`](https://wavesexplorer.com/assets/3MPHMJVwYGyeBLRsH1RsYhrTmemv752AEBwuFFV7g49Z) | PETE/~BURN-XTN pool liquidity provider token 
 PETE~DEPSLP | [`9H1xHzKBhoDcAgWA9VeDdZ8BfL937bqpuPaqtmFhfP7a`](https://wavesexplorer.com/assets/9H1xHzKBhoDcAgWA9VeDdZ8BfL937bqpuPaqtmFhfP7a) | PETE/~DEPS pool liquidity provider token 
 PETE~DOBERCOINLP | [`JCBYSQA6p2CH3LYVDaVwjrYzj7nqZTLCNkgkUWSW5vtR`](https://wavesexplorer.com/assets/JCBYSQA6p2CH3LYVDaVwjrYzj7nqZTLCNkgkUWSW5vtR) | PETE/~DOBERCOIN pool liquidity provider token 
@@ -469,6 +474,7 @@ ROME~XTNLP | [`DzRKHSQ4wibtJ3F1Y3jh5R8uSJpaQYuwVtfd9BHDqGAC`](https://wavesexplo
 ROM~USDT-ERC20LP | [`DsDN5YwWZQiTY5WJAVD5rd6WHKAZuuLYQK7v7YDGxFtR`](https://wavesexplorer.com/assets/DsDN5YwWZQiTY5WJAVD5rd6WHKAZuuLYQK7v7YDGxFtR) | ROM~/USDT-ERC20 pool liquidity provider token 
 RUBNUSDNLP | [`7ZHWXXrftxaeGjyJgguVU5vE1pja2AWEPKyohLWRTnhz`](https://wavesexplorer.com/assets/7ZHWXXrftxaeGjyJgguVU5vE1pja2AWEPKyohLWRTnhz) | WX RUBN/USDN pool liquidity provider token 
 SANDXTNLP | [`BN9s7S1KSY3qoSJo19wz9yBCNStMHAzTDwdWBtbjf6Nv`](https://wavesexplorer.com/assets/BN9s7S1KSY3qoSJo19wz9yBCNStMHAzTDwdWBtbjf6Nv) | WX SAND/XTN pool liquidity provider token 
+San~USDT-ERC20LP | [`5GgSDRsWj7P59pf7fJQhBLaEB2aHJDRaR1cVw4dzxg8d`](https://wavesexplorer.com/assets/5GgSDRsWj7P59pf7fJQhBLaEB2aHJDRaR1cVw4dzxg8d) | San~/USDT-ERC20 pool liquidity provider token 
 Sasha-X~WAVESLP | [`27MHAaZfMjczaqMM2RT7JPoHqUT5UArwKj1A65MaEUNV`](https://wavesexplorer.com/assets/27MHAaZfMjczaqMM2RT7JPoHqUT5UArwKj1A65MaEUNV) | Sasha-X~/WAVES pool liquidity provider token 
 Sasha-X~WXLP | [`AVaBph1q3cLSt7wUshi26dzFDNoR6sSUgq38ddY6SQGV`](https://wavesexplorer.com/assets/AVaBph1q3cLSt7wUshi26dzFDNoR6sSUgq38ddY6SQGV) | Sasha-X~/WX pool liquidity provider token 
 SBT~WAVESLP | [`2eaAmK1xQ253BVQrqx1LRLEEr3CAcxc6jnxfz9MtsJf8`](https://wavesexplorer.com/assets/2eaAmK1xQ253BVQrqx1LRLEEr3CAcxc6jnxfz9MtsJf8) | SBT~/WAVES pool liquidity provider token 
