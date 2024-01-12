@@ -15,6 +15,27 @@ func throwErr(msg: String) = {
     throw(contractFile + ": " + msg)
 }
 
+### Manager Vault block ###
+func keyManagerPublicKey() = "%s__managerPublicKey"
+func keyManagerVaultAddress() = "%s__managerVaultAddress"
+
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
+
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
+}
+### Manager Vault block end ###
+
+
 let keyAssetId = ["%s", "assetId"].makeString(SEP)
 let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
 let assetIdBytes = if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
@@ -29,10 +50,9 @@ let adminList = (
 )
 
 let banList = (
-  match (this.getString(keyBanList)) {
-      case s:String => if (s == "") then [] else s.split_51C(SEP)
-      case _ => []
-  }
+  let banListRaw = this.getString(keyBanList).valueOrElse("")
+
+  if (banListRaw == "") then [] else banListRaw.split_51C(SEP)
 )
 
 func isValidAddressString(addressString: String) = {
@@ -317,4 +337,13 @@ func userInfoREADONLY(userAddress: String) = {
   let accumulatedAmount = this.getInteger(keyUserAccumulated(userAddress)).valueOrElse(0)
 
   ([], (totalAmount, accumulatedAmount, getVestingUserInfo(userAddress)))
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
 }
