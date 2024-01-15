@@ -439,7 +439,7 @@ func mustManager(i: Invocation) = {
   }
 }
 
-func getClaimForState(userAddress58: String, txId: ByteVector) = {
+func getClaimForActions(userAddress58: String, txId: ByteVector) = {
   let idoAssetId58 = readConfigArray()[IdxCfgIdoAssetId]
   let fallback = ["%d%d%d%d%d", "0", "0", "0", "0", "0"].makeString(SEP)
   let investor = keyInvestor(userAddress58).getString().valueOrElse(fallback).split(SEP)
@@ -838,8 +838,20 @@ func cleanRemaingAmount(userAddress58: String) = {
 }
 
 @Callable(i)
-func claimFor(userAddress58: List[String]) = {
-  []
+func claimFor(userList: List[String]) = {
+  func helper(acc: (List[StringEntry|IntegerEntry], Int, List[String]), user: String) = {
+    let (allActions, totalSum, addrList) = acc
+    let (investorRemainingAmount, priceAssetAmount, investorKeyRemainingAmount, userActions) = getClaimForActions(user, i.transactionId)
+    let addSum = investorRemainingAmount + investorKeyRemainingAmount
+    strict ch = !addrList.containsElement(user) || "duplicate address in list".throwErr()
+
+    (allActions ++ userActions, totalSum + addSum, addrList :+ user)
+  }
+
+  let (allActions, sum, _a) = FOLD<19>(userList, ([], 0, []), helper)
+  let totalsAction = if (sum != 0) then [TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), [0, -sum, 0, sum], height, 0)] else []
+
+  allActions ++ totalsAction
 }
 
 @Callable(i)
