@@ -19,6 +19,7 @@ let keyVotingEmissionRateContract = ["%s", "votingEmissionRateContract"].makeStr
 let keyFactoryContract = ["%s", "factoryContract"].makeString(separator)
 let keyBoostingContract = ["%s", "boostingContract"].makeString(separator)
 let keyStakingContract = ["%s", "stakingContract"].makeString(separator)
+let keyAssetsStoreContract = ["%s", "assetsStoreContract"].makeString(separator)
 let keyFinalizationStage = ["%s", "finalizationStage"].makeString(separator)
 let keyNextPool = ["%s", "nextPool"].makeString(separator)
 let keyNextUser = ["%s", "nextUser"].makeString(separator)
@@ -512,22 +513,23 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
   if (r) then {
     ([], true)
   } else {
+    let assetsStoreContract = this.getString(keyAssetsStoreContract).valueOrElse("invalid assets store contract").addressFromStringValue()
     let wxEmission = pool.checkWxEmissionPoolLabel()
     let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
+    let amountAssetVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [amountAssetId], []).exactAs[Boolean]
+    let priceAssetVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [priceAssetId], []).exactAs[Boolean]
+    strict setWxEmissionInv = if (!wxEmission && balanceIsOk && amountAssetVerified && priceAssetVerified) then {
+      factoryContract.invoke("setWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
+    } else unit
     let totalVotes = this.getInteger(targetEpoch.keyTotalVotes()).valueOrElse(0)
     let votingResult = this.getInteger(pool.keyVotingResult(targetEpoch)).valueOrElse(0)
     let share = if (totalVotes == 0 || !wxEmission || !balanceIsOk) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
     strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, share], [])
-    let poolsListActions = if (wxEmission || force) then [] else {
-      [
-        DeleteEntry(pool.keyInList())
-      ] ++ poolsListName.deleteNodeActions(poolStr)
-    }
 
     (
       [
         IntegerEntry(pool.keyPoolShare(targetEpoch), share)
-      ] ++ poolsListActions,
+      ],
       false
     )
   }
