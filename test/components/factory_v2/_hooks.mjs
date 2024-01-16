@@ -6,6 +6,7 @@ import { create } from '@waves/node-api-js';
 import { format } from 'path';
 import ora from 'ora';
 import { setScriptFromFile } from '../../utils/utils.mjs';
+import { broadcastAndWait } from '../../utils/api.mjs';
 
 const { waitForTx } = nodeInteraction;
 const apiBase = process.env.API_NODE_URL;
@@ -33,8 +34,7 @@ export const mochaHooks = {
       transfers: seeds.map((item) => ({ recipient: address(item, chainId), amount })),
       chainId,
     }, seed);
-    await api.transactions.broadcast(massTransferTx, {});
-    await waitForTx(massTransferTx.id, { apiBase });
+    await broadcastAndWait(massTransferTx);
 
     const dataTx = data({
       data: [

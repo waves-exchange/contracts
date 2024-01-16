@@ -149,6 +149,9 @@ func keyOutFee(poolAddress: String)
 func keyOutFeeDefault()
       = "%s__outFeeDefault"
 
+func keyPoolAssetDefaultMinAmount() = ["%s", "poolAssetDefaultMinAmount"].makeString(SEP)
+func keyPoolAssetsMinAmount(assetId: String) = ["%s%s", "poolAssetMinAmount", assetId].makeString(SEP)
+
 func keySkipOrderValidation(poolAddress: String)
       = "%s%s__skipOrderValidation__" + poolAddress
 
@@ -1060,6 +1063,29 @@ func getPrice(poolAddressStr: String) = {
     [],
     price
   )
+}
+
+# for voting_emission.ride
+@Callable(i)
+func checkBalance(lpAssetIdStr: String) = {
+  let poolAddressStr = keyMappingPoolLPAssetToPoolContractAddress(lpAssetIdStr).getStringOrFail()
+  let poolAddress = addressFromStringValue(poolAddressStr)
+  let cfg = getPoolConfig(poolAddressStr)
+  let amountAssetIdStr = cfg[idxAmtAssetId]
+  let priceAssetIdStr = cfg[idxPriceAssetId]
+
+  let assetMinAmountDefault = this.getIntegerValue(keyPoolAssetDefaultMinAmount())
+  let amountAssetMinAmount = this.getInteger(keyPoolAssetsMinAmount(amountAssetIdStr)).valueOrElse(assetMinAmountDefault)
+  let priceAssetMinAmount = this.getInteger(keyPoolAssetsMinAmount(priceAssetIdStr)).valueOrElse(assetMinAmountDefault)
+
+  let amountAssetBalance = poolAddress.invoke("getAccBalanceWrapperREADONLY", [amountAssetIdStr], []).exactAs[Int]
+  let priceAssetBalance = poolAddress.invoke("getAccBalanceWrapperREADONLY", [priceAssetIdStr], []).exactAs[Int]
+
+  let amountAssetBalanceIsOk = amountAssetBalance >= amountAssetMinAmount / 2
+  let priceAssetBalanceIsOk = priceAssetBalance >= priceAssetMinAmount / 2
+  let balanceIsOk = amountAssetBalanceIsOk && priceAssetBalanceIsOk
+
+  (nil, balanceIsOk)
 }
 
 @Verifier(tx)
