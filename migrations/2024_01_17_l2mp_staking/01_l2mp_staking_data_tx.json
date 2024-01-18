@@ -5,9 +5,9 @@
     "senderPublicKey": "5erVrXGwDf4uTNPpGnGNKjHcwFUTztTpFTvj8ZBrLq57",
     "data": [
         {
-            "key": "%s__withdrawLock",
-            "type": "boolean",
-            "value": true
+            "key": "%s__withdrawLockHeight",
+            "type": "integer",
+            "value": 12345678
         }
     ]
 }
