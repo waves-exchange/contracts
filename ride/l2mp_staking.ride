@@ -22,6 +22,7 @@ let keyStartBlock             = ["%s", "startBlock"].makeString(SEP)
 let keyTotalLpAmount          = ["%s", "totalLpAmount"].makeString(SEP)
 let keyTotalAssetAmount       = ["%s", "totalAssetAmount"].makeString(SEP)
 let keyTotalLockedLpAmount    = ["%s", "totalLockedLpAmount"].makeString(SEP)
+let keyWithdrawLockHeight     = ["%s", "withdrawLockHeight"].makeString(SEP)
 
 func keyUserLpAmount(userAddress: String)            = ["%s%s", "userLpAmount", userAddress].makeString(SEP)
 func keyUserLockedLpAmount(userAddress: String)      = ["%s%s", "userLockedLpAmount", userAddress].makeString(SEP)
@@ -58,6 +59,7 @@ let assetIdBytes = if (assetIdString == "WAVES") then unit else assetIdString.fr
 let emissionPeriodInBlocks = this.getInteger(keyEmissionPeriodInBlocks).valueOrElse(BLOCKS_IN_DAY)
 let emissionPerBlock = this.getInteger(keyEmissionPerBlock).valueOrElse(0)
 let emissionPerPeriod = emissionPerBlock * emissionPeriodInBlocks
+let withdrawLockHeight = this.getInteger(keyWithdrawLockHeight).valueOrElse(0)
 
 ######################
 # MULTISIG FUNCTIONS #
@@ -360,6 +362,7 @@ func withdraw(withdrawAssetAmount: Int) = {
   let userAvailableAssetToWithdraw = getUserAvailableAssetsToWithdraw(userAddress)
   let minWithdrawAssetAmount = fraction(getCurrentPrice(), 1.toBigInt(), scale18BigInt, CEILING).toInt()
   strict check = [
+      withdrawLockHeight == 0 || withdrawLockHeight > height || ["withdraw is locked at height:", withdrawLockHeight.toString()].makeString(" ").throwErr(),
       withdrawAssetAmount > 0 || "withdraw amount should be more than 0".throwErr(),
       withdrawAssetAmount <= userAvailableAssetToWithdraw || ("cannot withdraw more than available (" + userAvailableAssetToWithdraw.toString() + ")").throwErr(),
       withdrawAssetAmount >= minWithdrawAssetAmount || ("withdraw amount is too small. Min: (" + minWithdrawAssetAmount.toString() + ")").throwErr()
