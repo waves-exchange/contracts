@@ -396,7 +396,9 @@ func stakeForSwapHELPER(userAddress: String, nodeAddress: String) = {
 
 @Callable(i)
 func airdrop(addressList: List[String], amountList: List[Int]) = {
-    func sum(accum: Int, next: Int) = accum + next
+    func sum(accum: Int, next: Int) = {
+      if (next < 0) then "negative amount value in amountList".throwErr() else accum + next
+    }
     let amountListSum = FOLD<90>(amountList, 0, sum)
 
     strict check = [
@@ -407,16 +409,31 @@ func airdrop(addressList: List[String], amountList: List[Int]) = {
         amountListSum <= i.payments[0].amount || "payment amount is less than sum of amountList".throwErr()
     ]
 
-    func getAirdropStateChanges(accum: (List[IntegerEntry], Int, Int), assetAmount: Int) = {
-        let (result, index, totalLp) = accum
+    func getAirdropStateChanges(accum: (List[IntegerEntry], Int, Int, List[Address]), assetAmount: Int) = {
+        let (result, index, totalLp, processedList) = accum
+        let addressString = addressList[index]
+        
+        let address = match (addressString.addressFromString()) {
+          case adr:Address => adr
+          case _ => "invalid address in addressList".throwErr()
+        }
+
+        strict ch = [
+          !processedList.containsElement(address) || "duplicate address is addressList".throwErr()
+        ]
 
         let addedLpAmount = calcLpFromAsset(assetAmount)
-        let userLockedLpKey = keyUserLockedLpAmount(addressList[index])
+        let userLockedLpKey = keyUserLockedLpAmount(addressString)
         let oldLpAmount = this.getInteger(userLockedLpKey).valueOrElse(0)
 
-        (result :+ IntegerEntry(userLockedLpKey, oldLpAmount + addedLpAmount), index + 1, totalLp + addedLpAmount)
+        (
+          result :+ IntegerEntry(userLockedLpKey, oldLpAmount + addedLpAmount),
+          index + 1,
+          totalLp + addedLpAmount,
+          processedList :+ address
+        )
     }
-    let (airdropEntries, _a, addedTotalLockedLpAmount) = FOLD<90>(amountList, ([], 0, 0), getAirdropStateChanges)
+    let (airdropEntries, _a, addedTotalLockedLpAmount, _b) = FOLD<90>(amountList, ([], 0, 0, []), getAirdropStateChanges)
 
     let newTotalAsset = calcAssetFromLp(totalLpAmount + addedTotalLockedLpAmount)
     [

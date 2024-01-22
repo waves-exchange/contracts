@@ -8,7 +8,6 @@ import {
 import { format } from 'path';
 import { table, getBorderCharacters } from 'table';
 
-import { readFile } from 'fs/promises';
 import {
   chainId, broadcastAndWait, baseSeed,
 } from '../../utils/api.mjs';
@@ -23,7 +22,6 @@ const mockPath = './components/wxdao/mock';
 const factoryPath = format({ dir: ridePath, base: 'wxdao_factory.ride' });
 const calculatorPath = format({ dir: ridePath, base: 'wxdao_calculator.ride' });
 const powerMockPath = format({ dir: mockPath, base: 'pwr.ride' });
-const commonLibPath = format({ dir: ridePath, base: 'common.lib.ride' });
 
 export const setup = async ({
   periodLength = 10800,
@@ -55,9 +53,7 @@ export const setup = async ({
   }, baseSeed);
   await broadcastAndWait(massTransferTx);
 
-  const libraries = {
-    'common.lib.ride': await readFile(commonLibPath, { encoding: 'utf-8' }),
-  };
+  const libraries = {};
 
   const [
     { id: wxdaoAssetId },

@@ -1,7 +1,10 @@
 {-# STDLIB_VERSION 7 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
-{-# IMPORT common.lib.ride #-}
+
+let chainId = this.bytes.drop(1).take(1)
+let chainIdT = base16'54'
+let chainIdW = base16'57'
 
 let SEP = "__"
 let WAVES = "WAVES"

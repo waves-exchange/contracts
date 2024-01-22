@@ -52,3 +52,8 @@ func poolExistsREADONLY(amountAssetId: String, priceAssetId: String) = {
 func onVerificationLoss(assetId: String) = {
   (nil, unit)
 }
+
+@Callable(i)
+func checkBalance(lpAssetIdStr: String) = {
+  (nil, this.getBoolean("checkBalanceResult__" + lpAssetIdStr).valueOrElse(true))
+}
