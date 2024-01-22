@@ -1,7 +1,20 @@
 {-# STDLIB_VERSION 7 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
-{-# IMPORT common.lib.ride #-}
+
+let separator = "__"
+let chainId = this.bytes.drop(1).take(1)
+let chainIdT = base16'54'
+let chainIdW = base16'57'
+
+func mustAddress(i: Invocation, address: Address) = {
+  i.caller == address || throw("permission denied")
+}
+
+func mustThis(i: Invocation) = {
+  mustAddress(i, this)
+}
+
 
 let wavesString = "WAVES"
 let queueItemSize = 32
