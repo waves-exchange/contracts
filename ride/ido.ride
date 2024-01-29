@@ -439,6 +439,55 @@ func mustManager(i: Invocation) = {
   }
 }
 
+func getClaimForActions(userAddress58: String, txId: ByteVector) = {
+  let idoAssetId58 = readConfigArray()[IdxCfgIdoAssetId]
+  let fallback = ["%d%d%d%d%d", "0", "0", "0", "0", "0"].makeString(SEP)
+  let investor = keyInvestor(userAddress58).getString().valueOrElse(fallback).split(SEP)
+  let investorTotalAmount       = investor[IdxInvTotalAmount].parseIntValue()
+  let investorRemainingAmount   = investor[IdxInvRemainingAmount].parseIntValue()
+  let investorPriceAssetBalance = investor[IdxInvClaimedPriceAssetAmount].parseIntValue()
+  let investorIdoAssetBalance   = investor[IdxInvClaimedIdoAssetAmount].parseIntValue()
+  let investorLastClaimedHeight = investor[IdxInvLastClaimedHeight].parseIntValue()
+
+  let priceAssetAmount = keyPriceAssetBalance(userAddress58).getInteger().valueOrElse(0)
+  let priceAssetActions = if (priceAssetAmount != 0) 
+    then [IntegerEntry(keyPriceAssetBalance(userAddress58), 0)]
+    else []
+
+  let investorKeyRemainingAmount = keyInvestorRemainingAmount(userAddress58).getString().valueOrElse("0").parseIntValue()
+  let investorKeyRemainingActions = if(investorKeyRemainingAmount != 0)
+  then [StringEntry(keyInvestorRemainingAmount(userAddress58), "0")]
+  else []
+
+  let totalIdoAssetSendAmount = (investorRemainingAmount + priceAssetAmount + investorKeyRemainingAmount) * 100
+  let totalIdoAssetForInvestorData = (investorRemainingAmount + investorKeyRemainingAmount) * 100
+
+  let newInvestor = [
+    "%d%d%d%d%d",
+    investorTotalAmount.toString(),
+    "0",
+    investorPriceAssetBalance.toString(),
+    (investorIdoAssetBalance + totalIdoAssetForInvestorData).toString(),
+    height.toString()
+  ].makeString(SEP)
+
+  let investorDataActions = if (totalIdoAssetForInvestorData != 0) 
+    then [StringEntry(keyInvestor(userAddress58), newInvestor)] 
+    else []
+
+  let sendIdoAssetActions = if (totalIdoAssetSendAmount != 0) 
+    then [
+      ScriptTransfer(userAddress58.addressFromStringValue(), totalIdoAssetSendAmount, idoAssetId58.fromBase58String()),
+      ClaimOperationHistoryEntry(userAddress58, 0, totalIdoAssetSendAmount, txId)
+    ] 
+    else []
+
+  (
+    investorRemainingAmount, priceAssetAmount, investorKeyRemainingAmount,
+    sendIdoAssetActions ++ investorDataActions ++ investorKeyRemainingActions ++ priceAssetActions
+  )
+}
+
 # constructor is not working, use dataTx and transfer instead
 # @param idoStart
 # @param idoDuration
@@ -786,6 +835,23 @@ func cleanRemaingAmount(userAddress58: String) = {
     StringEntry(keyInvestor(userAddress58), newInvestor),
     StringEntry(keyTotals(), newTotals)
   ]
+}
+
+@Callable(i)
+func claimFor(userList: List[String]) = {
+  func helper(acc: (List[StringEntry|IntegerEntry], Int, List[String]), user: String) = {
+    let (allActions, totalSum, addrList) = acc
+    let (investorRemainingAmount, priceAssetAmount, investorKeyRemainingAmount, userActions) = getClaimForActions(user, i.transactionId)
+    let addSum = investorRemainingAmount + investorKeyRemainingAmount
+    strict ch = !addrList.containsElement(user) || "duplicate address in list".throwErr()
+
+    (allActions ++ userActions, totalSum + addSum, addrList :+ user)
+  }
+
+  let (allActions, sum, _a) = FOLD<19>(userList, ([], 0, []), helper)
+  let totalsAction = if (sum != 0) then [TotalsEntry(keyTotals(), readTotalsArrayOrDefault(), [0, -sum, 0, sum], height, 0)] else []
+
+  allActions ++ totalsAction
 }
 
 @Callable(i)

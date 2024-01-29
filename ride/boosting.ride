@@ -160,6 +160,7 @@ let IdxLockDuration     = 4
 let IdxLockParamK       = 5
 let IdxLockParamB       = 6
 
+# format: %s%s__lock__<userAddress>
 func keyLockParamsRecord(userAddress: String) = makeString(["%s%s__lock", userAddress], SEP)
 func readLockParamsRecordOrFail(userAddress: String) = this.strf(keyLockParamsRecord(userAddress)).split(SEP)
 
@@ -212,7 +213,9 @@ func keyStatsLocksCount()                                     = "%s%s__stats__lo
 func keyStatsUsersCount()                                     = "%s%s__stats__activeUsersCount"
 
 # boost integral
+# format: %s%d__userBoostEmissionLastIntV2__<userNum>
 func keyUserBoostEmissionLastINTEGRAL(userNum: String)        = makeString(["%s%d__userBoostEmissionLastIntV2", userNum], SEP)
+# format: %s%d__userBoostEmissionLastIntV2__<userNum>__<lpAssetId>
 func keyUserLpBoostEmissionLastINTEGRAL(userNum: String, lpAssetId: String) = makeString(["%s%d__userBoostEmissionLastIntV2", userNum, lpAssetId], SEP)
 func keyUserMaxBoostINTEGRAL(userNum: String)                 = makeString(["%s%d__maxBoostInt", userNum], SEP)
 func keyTotalMaxBoostINTEGRAL()                               = "%s%s__maxBoostInt__total"
@@ -238,24 +241,30 @@ func keyVotingResultStaked(lpAssetIdStr: String, epoch: Int) = {
 
 # this
 # We need to save integral to handle changing value
+# format: %s%s%d__votingResultStakedIntegral__<lpAssetId>__<epoch>
 func keyVotingResultStakedIntegral(lpAssetIdStr: String, epoch: Int) = {
   ["%s%s%d", "votingResultStakedIntegral", lpAssetIdStr, epoch.toString()].makeString(SEP)
 }
 # Height at which voting result staked was last changed
+# format: %s%s%d__votingResultStakedIntegralLastUpdateHeight__<lpAssetId>__<epoch>
 func keyVotingResultStakedLastUpdateHeight(lpAssetIdStr: String, epoch: Int) = {
   ["%s%s%d", "votingResultStakedIntegralLastUpdateHeight", lpAssetIdStr, epoch.toString()].makeString(SEP)
 }
 # Last integral value used by user
 # This value is needed to calculate unclaimed boost
+# format: %s%s%s%d__votingResultStakedIntegralLast__<lpAssetId>__<userAddress>__<epoch>
 func keyVotingResultStakedIntegralLast(lpAssetIdStr: String, address: Address, epoch: Int) = {
   ["%s%s%s%d", "votingResultStakedIntegralLast", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
 }
+# format: %s%s%s%d__voteStakedIntegral__<lpAssetId>__<userAddress>__<epoch>
 func keyVoteStakedIntegral(lpAssetIdStr: String, address: Address, epoch: Int) = {
   ["%s%s%s%d", "voteStakedIntegral", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
 }
+# format: %s%s%s%d__voteStakedIntegralLastUpdateHeight__<lpAssetId>__<userAddress>__<epoch>
 func keyVoteStakedLastUpdateHeight(lpAssetIdStr: String, address: Address, epoch: Int) = {
   ["%s%s%s%d", "voteStakedIntegralLastUpdateHeight", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
 }
+# format: %s%s%s%d__voteStakedIntegralLast__<lpAssetId>__<userAddress>__<epoch>
 func keyVoteStakedIntegralLast(lpAssetIdStr: String, address: Address, epoch: Int) = {
   ["%s%s%s%d", "voteStakedIntegralLast", lpAssetIdStr, address.toString(), epoch.toString()].makeString(SEP)
 }
