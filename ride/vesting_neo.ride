@@ -336,6 +336,7 @@ func claimAll() = {
 #    + _2 = full unlock height
 #    + _3 = unlocked amount
 #    + _4 = locked amount
+#    + _5 = claimed amount
 @Callable(i)
 func userInfoREADONLY(userAddress: String) = {
   let (_a, totalAmount) = getClaimAllActions(userAddress)
