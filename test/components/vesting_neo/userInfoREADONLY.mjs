@@ -53,6 +53,8 @@ describe('vesting_neo: userInfoREADONLY', /** @this {MochaSuiteModified} */() =>
       expect(checkData.value._3.value[0].value[2].value).to.be.equal(expectedUnlockedAmount);
       expect(checkData.value._3.value[0].value[3].value)
         .to.be.equal(vestingAmount - expectedUnlockedAmount);
+      expect(checkData.value._3.value[0].value[4].value)
+        .to.be.equal(0);
     },
   );
 

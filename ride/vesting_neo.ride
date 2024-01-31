@@ -79,18 +79,20 @@ func keyUserAccumulated(userAddress: String) = {
   ["%s%s", "accumulated", userAddress].makeString(SEP)
 }
 
-func formatUserVesting(vestingAmount: Int, startBlock: Int, lockLength: Int) = {
+func formatUserVesting(vestingAmount: Int, startBlock: Int, lockLength: Int, totalClaimed: Int) = {
   strict checks = [
     vestingAmount >= 0 || "vesting amount cannot be negative".throwErr(),
     startBlock    >= 0 || "start block cannot be negative".throwErr(),
-    lockLength    >= 0 || "lock length cannot be negative".throwErr()
+    lockLength    >= 0 || "lock length cannot be negative".throwErr(),
+    totalClaimed  >= 0 || "total claimed cannot be negative".throwErr()
   ]
 
   [
-    "%d%d%d",
+    "%d%d%d%d",
     vestingAmount.toString(),
     startBlock.toString(),
-    lockLength.toString()
+    lockLength.toString(),
+    totalClaimed.toString()
   ].makeString(SEP)
 }
 
@@ -101,10 +103,12 @@ func parseUserVesting(userAddress: String, id: Int) = {
       let vestingAmount = splitString[1].parseIntValue()
       let startBlock    = splitString[2].parseIntValue()
       let lockLength    = splitString[3].parseIntValue()
+      # Hack to parse old string format
+      let totalClaimed  = if (splitString.size() < 5) then 0 else splitString[4].parseIntValue()
 
-      (vestingAmount, startBlock, lockLength)
+      (vestingAmount, startBlock, lockLength, totalClaimed)
     }
-    case _ => (0, 0, 0)
+    case _ => (0, 0, 0, 0)
   }
 }
 
@@ -122,20 +126,21 @@ func calcUnlockedAmount(amount: Int, startBlock: Int, lockLength: Int) = {
 }
 
 func getUserUnlockedAmount(userAddress: String, id: Int) = {
-  let (vestingAmount, startBlock, lockLength) = parseUserVesting(userAddress, id)
+  let (vestingAmount, startBlock, lockLength, totalClaimed) = parseUserVesting(userAddress, id)
   let (unlockedAmount, remainingAmount) = calcUnlockedAmount(vestingAmount, startBlock, lockLength) 
 
   (unlockedAmount, remainingAmount)
 }
 
 func getUpdateVestingActions(userAddress: String, id: Int) = {
-  let (vestingAmount, startBlock, lockLength) = parseUserVesting(userAddress, id)
+  let (vestingAmount, startBlock, lockLength, totalClaimed) = parseUserVesting(userAddress, id)
   let (unlockedAmount, remainingAmount) = getUserUnlockedAmount(userAddress, id)
   let remainingBlocks = max([(startBlock + lockLength - height), 0])
+  let newTotalClaimed = totalClaimed + unlockedAmount
 
   let updateVestingActions = if (unlockedAmount != 0) then 
     if (remainingBlocks != 0) then 
-      [StringEntry(keyUserVesting(userAddress, id), formatUserVesting(remainingAmount, height, remainingBlocks))]
+      [StringEntry(keyUserVesting(userAddress, id), formatUserVesting(remainingAmount, height, remainingBlocks, newTotalClaimed))]
     else 
       [DeleteEntry(keyUserVesting(userAddress, id))]
   else
@@ -211,13 +216,13 @@ func getClaimAllActions(userAddress: String) = {
 
 func getVestingUserInfo(userAddress: String) = {
   func helper(acc: List[Any], id: Int) = {
-    let (vestingAmount, startBlock, lockLength) = parseUserVesting(userAddress, id)
+    let (vestingAmount, startBlock, lockLength, totalClaimed) = parseUserVesting(userAddress, id)
     let (unlockedAmount, remainingAmount) = getUserUnlockedAmount(userAddress, id)
 
     if (vestingAmount == 0 || banList.containsElement(userAddress)) then 
       acc
     else
-      acc :+ [vestingAmount, startBlock + lockLength, unlockedAmount, remainingAmount]
+      acc :+ [vestingAmount, startBlock + lockLength, unlockedAmount, remainingAmount, totalClaimed]
   }
 
   FOLD<30>(IDS_LIST, [], helper)
@@ -225,7 +230,7 @@ func getVestingUserInfo(userAddress: String) = {
 
 func getAvailableVestingId(userAddress: String) = {
   func helper(availableId: Int, id: Int) = {
-    let (vestingAmount, startBlock, lockLength) = parseUserVesting(userAddress, id)
+    let (vestingAmount, startBlock, lockLength, totalClaimed) = parseUserVesting(userAddress, id)
 
     if (vestingAmount > 0) then 
       availableId
@@ -244,7 +249,7 @@ func getAvailableVestingId(userAddress: String) = {
 
 func getNewVestingActions(userAddress: String, id: Int, vestingAmount: Int, startBlock: Int, lockLength: Int) = {
   [
-    StringEntry(keyUserVesting(userAddress, id), formatUserVesting(vestingAmount, startBlock, lockLength))
+    StringEntry(keyUserVesting(userAddress, id), formatUserVesting(vestingAmount, startBlock, lockLength, 0))
   ]
 }
 

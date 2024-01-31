@@ -39,7 +39,7 @@ describe('vesting_neo: vestingForUser', /** @this {MochaSuiteModified} */() => {
         {
           key: `%s%s%d__vesting__${this.accounts.user1.addr}__0`,
           type: 'string',
-          value: `%d%d%d__${vestingAmount}__${startHeight}__${lockLength}`,
+          value: `%d%d%d%d__${vestingAmount}__${startHeight}__${lockLength}__0`,
         },
         {
           key: `%s%s%s%s__history__${this.accounts.user1.addr}__vested__${id}`,
