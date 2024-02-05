@@ -200,7 +200,7 @@ func getAssetsPrices(poolsFactoryAddress: Address, assetIdList: List[String]) = 
 
         # PWR
         case "8Q6SE2ANebufw8JuPjJVRjZD6drD8ihjNjM8xaGUSfdR" => {
-          let price = 100000000.toBigInt()
+          let price = 150000000.toX18(pow(10, 0, usdtDecimals, 0, 0, DOWN))
           price
         }
 
@@ -244,6 +244,7 @@ func calcPrice(factoryAddress: Address) = {
     .valueOrErrorMessage(wrapErr("invalid treasury value for period " + currentPeriod.toString()))
   let treasuryValue = calcTreasuryValue(factoryAddress).fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN))
   let treasuryValueDiff = treasuryValue - startTreasuryValue
+  let treasuryValueDiffRaw = treasuryValueDiff.toX18(pow(10, 0, usdtDecimals, 0, 0, DOWN))
   let pwrAssetId = getPowerAssetId(factoryAddress)
   let pwrPriceRaw = getAssetsPrices(poolsFactoryAddress, [pwrAssetId.toBase58String()])[0]
   let pwrPrice = if (pwrPriceRaw > 0.toBigInt()) then pwrPriceRaw.fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN)) else throwErr("invalid PWR price")
@@ -251,14 +252,17 @@ func calcPrice(factoryAddress: Address) = {
   let skinTotal = powerContractAddress(factoryAddress).getInteger(keySkinTotal(treasuryAddress)).valueOrElse(0)
   let pwrRemaining = getAssetInfoOrFail(getLpAssetId(factoryAddress)).quantity / 100
   let pwrAmount = skinTotal + pwrRemaining
+  let pwrAmountRaw = pwrAmount.toX18(pow(10, 0, getAssetInfoOrFail(getLpAssetId(factoryAddress)).decimals, 0, 0, DOWN))
   let factoryAddressWxBalanceRaw = getAssetsBalances(factoryAddress, [wxAssetId.toBase58String()])[0]
-  let factoryAddressWxBalance = if (factoryAddressWxBalanceRaw > 0.toBigInt()) then factoryAddressWxBalanceRaw.fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN)) else throwErr("invalid factory wx balance")
+  let factoryAddressWxBalance = factoryAddressWxBalanceRaw.fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN))
   let wxPriceRaw = getAssetsPrices(poolsFactoryAddress, [wxAssetId.toBase58String()])[0]
   let wxPrice = if (wxPriceRaw > 0.toBigInt()) then wxPriceRaw.fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN)) else throwErr("invalid wx price")
   let wxdaoQuantity = getAssetInfoOrFail(getLpAssetId(factoryAddress)).quantity
-  let wxDaoPrice = (pwrPrice + fraction(factoryAddressWxBalance * 100, wxPrice, wxdaoQuantity) + fraction(max([treasuryValueDiff, 0]), 2, 10 * pwrAmount)) / 100
+  let wxdaoQuantityRaw = wxdaoQuantity.toX18(pow(10, 0, getAssetInfoOrFail(getLpAssetId(factoryAddress)).decimals, 0, 0, DOWN))
+  let wxDaoPriceRaw = (pwrPriceRaw + fraction(factoryAddressWxBalanceRaw * 100.toBigInt(), wxPriceRaw, wxdaoQuantityRaw) + fraction(max([treasuryValueDiffRaw, 0.toBigInt()]), 2.toBigInt() * mult18, 10.toBigInt() * pwrAmountRaw)) / 100.toBigInt()
+  let wxDaoPrice = wxDaoPriceRaw.fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN))
 
-  (wxDaoPrice, [["wxDaoPrice", wxDaoPrice], ["pwrPrice", pwrPrice], ["factoryAddressWxBalance", factoryAddressWxBalance], ["wxPrice", wxPrice], ["wxdaoQuantity", wxdaoQuantity], ["treasuryValueDiff", treasuryValueDiff], ["pwrAmount", pwrAmount]])
+  (wxDaoPrice, [["wxDaoPrice", wxDaoPrice], ["pwrPrice", pwrPrice], ["factoryAddressWxBalance", factoryAddressWxBalance], ["wxPrice", wxPrice], ["wxdaoQuantity", wxdaoQuantity], ["treasuryValueDiff", treasuryValueDiff], ["pwrAmount", pwrAmount], ["skinTotal", skinTotal], ["pwrRemaining", pwrRemaining]])
 }
 
 # withdraw from investment account to specified address
