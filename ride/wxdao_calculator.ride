@@ -335,7 +335,7 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
       "commitAfterStartWithLockRoundFor",
       [
         powerContractAddress(factoryAddress).toString(),
-        factoryAddress.toString(),
+        factoryAddress.getTreasuryAddress().toString(),
         userAddress.toString(),
         additionalLockRounds,
         getPowerAssetId(factoryAddress),
