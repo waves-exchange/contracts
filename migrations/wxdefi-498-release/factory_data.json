@@ -1,0 +1,35 @@
+{
+  "type": 12,
+  "fee": 500000,
+  "feeAssetId": null,
+  "version": 2,
+  "senderPublicKey": "8Y62huyQ3xnFnUw2FnZPHuWMsUy1c8t343UdWrHMgsq4",
+  "chainId": 87,
+  "data": [
+    {
+      "key": "%s__assets",
+      "type": "string",
+      "value": "Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on"
+    },
+    {
+      "key": "%s%d__startHeight__0",
+      "type": "integer",
+      "value": 0
+    },
+    {
+      "key": "%s%d__treasuryValue__0",
+      "type": "integer",
+      "value": 0
+    },
+    {
+      "key": "%s__currentPeriod",
+      "type": "integer",
+      "value": 1
+    },
+    {
+      "key": "%s__calculatorAddress",
+      "type": "string",
+      "value": ""
+    }
+  ]
+}
