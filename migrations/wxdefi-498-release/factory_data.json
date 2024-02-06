@@ -14,12 +14,12 @@
     {
       "key": "%s%d__startHeight__1",
       "type": "integer",
-      "value": 0
+      "value": 4029955
     },
     {
       "key": "%s%d__treasuryValue__1",
       "type": "integer",
-      "value": 0
+      "value": 161759000000
     },
     {
       "key": "%s__currentPeriod",
@@ -29,7 +29,7 @@
     {
       "key": "%s__calculatorAddress",
       "type": "string",
-      "value": ""
+      "value": "3PEWpQi3QptntrersmgAgDEgrTSRf4pyXMz"
     }
   ]
 }
