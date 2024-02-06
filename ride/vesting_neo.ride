@@ -351,5 +351,11 @@ func verify() = {
     case pk: ByteVector => pk
     case _: Unit => tx.senderPublicKey
   }
-  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+
+  let tempPublicKey = match this.getString("%s__tempManagerPubKey") {
+    case s: String => s.fromBase58String()
+    case _: Unit => targetPublicKey
+  }
+
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey) || sigVerify(tx.bodyBytes, tx.proofs[0], tempPublicKey)
 }
