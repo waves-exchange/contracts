@@ -1,0 +1,122 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let chainId = this.bytes.drop(1).take(1)
+let chainIdT = base16'54'
+let chainIdW = base16'57'
+
+func mustAddress(i: Invocation, address: Address) = {
+  i.caller == address || throw("permission denied")
+}
+
+let SEP = "__"
+let WAVES = "WAVES"
+let contractFilename = "wxdao_lock.ride"
+
+func wrapErr(s: String) = {
+  contractFilename + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
+
+func stringToAssetId(s: String) = {
+  if (s == WAVES) then unit else s.fromBase58String()
+}
+
+func keyCalculatorAddress() = "%s__calculatorAddress"
+func keyFactoryAddress() = "%s__factoryAddress"
+
+func keyCurrentPeriod() = ["%s", "currentPeriod"].makeString(SEP)
+func keyStartHeightByPeriod(period: Int) = ["%s%d", "startHeight", period.toString()].makeString(SEP)
+func keyPeriodLength() = ["%s", "periodLength"].makeString(SEP)
+func keyTreasuryValueByPeriod(period: Int) = ["%s%d", "treasuryValue", period.toString()].makeString(SEP)
+
+let factoryAddressOption = match this.getString(keyFactoryAddress()) {
+  case s: String => s.addressFromString()
+  case _: Unit => unit
+}
+let factoryAddressOrFail = factoryAddressOption.valueOrErrorMessage(wrapErr("invalid calculator address"))
+
+let calculatorAddressOption = match factoryAddressOrFail.getString(keyCalculatorAddress()) {
+  case s: String => s.addressFromString()
+  case _: Unit => unit
+}
+let calculatorAddressOrFail = calculatorAddressOption.valueOrErrorMessage(wrapErr("invalid calculator address"))
+
+func onlyAddress(i: Invocation, address: Address) = {
+  i.caller == address || throwErr("permission denied")
+}
+
+func onlyThis(i: Invocation) = {
+  onlyAddress(i, this)
+}
+
+func onlyCalculator(i: Invocation) = {
+  onlyAddress(i, calculatorAddressOrFail)
+}
+
+@Callable(i)
+func stringEntry(key: String, val: String) =
+  if (i.onlyCalculator()) then ([StringEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func integerEntry(key: String, val: Int) =
+  if (i.onlyCalculator()) then ([IntegerEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func booleanEntry(key: String, val: Boolean) =
+  if (i.onlyCalculator()) then ([BooleanEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func binaryEntry(key: String, val: ByteVector) =
+  if (i.onlyCalculator()) then ([BinaryEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func deleteEntry(key: String) =
+  if (i.onlyCalculator()) then ([DeleteEntry(key)], key) else ([], unit)
+
+@Callable(i)
+func reissue(assetId: ByteVector, amount: Int, reissuable: Boolean) = 
+  if (i.onlyCalculator()) then ([Reissue(assetId, amount, reissuable)], amount) else ([], unit)
+
+@Callable(i)
+func burn(assetId: ByteVector, amount: Int) = 
+  if (i.onlyCalculator()) then ([Burn(assetId, amount)], amount) else ([], unit)
+
+@Callable(i)
+func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 
+  if (i.onlyCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
+
+@Callable(i)
+func transferAssets(recipientBytes: ByteVector, assetsList: List[ByteVector], amountsList: List[Int]) = {
+  if (i.onlyCalculator()) then {
+    func addNewTransfer(acc: (List[ScriptTransfer], Int), nextAssetId: ByteVector) = {
+      let (transfers, j) = acc
+
+      let newTransfer = ScriptTransfer(
+        Address(recipientBytes),
+        amountsList[j],
+        assetsList[j]
+      )
+      let updatedTransfers = transfers :+ newTransfer
+      (updatedTransfers, j + 1)
+    }
+
+    let (assetsTransfers, _lastIndex) = FOLD<10>(assetsList, ([], 0), addNewTransfer)
+    (assetsTransfers, unit)
+  } else {
+    ([], unit)
+  }
+}
+
+@Callable(i)
+func transferWaves(recipientBytes: ByteVector, amount: Int) = 
+  if (i.onlyCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
+
+@Verifier(tx)
+func verify() = {
+  chainId == chainIdT
+}
