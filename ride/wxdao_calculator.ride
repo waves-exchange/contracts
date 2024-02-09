@@ -370,14 +370,12 @@ func lockInternal(userAddressBytes: ByteVector, assetId: ByteVector, amount: Int
   ]
 
   # адрес_счетчик: блок разблок_ассет_эмоунт
-  let k = ""
-  let v = ""
   let factoryActions = [
     factoryAddress.invoke(
       "stringEntry",
       [
-        k,
-        v
+        [userAddress.toString(), lockGlobalCounter.toString()].makeString(SEP),
+        ""
       ],
       []
     ),
