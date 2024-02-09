@@ -57,6 +57,14 @@ func powerContractAddress(factoryAddress: Address) = {
   }
 }.valueOrErrorMessage(wrapErr("invalid power contract address"))
 
+func keyLockAddress() = "%s__lockAddress"
+func lockAddress(factoryAddress: Address) = {
+  match factoryAddress.getString(keyLockAddress()) {
+    case s: String => s.addressFromString()
+    case _: Unit => unit
+  }
+}.valueOrErrorMessage(wrapErr("invalid lock contract address"))
+
 func keyPoolsFactoryAddress() = "%s__poolsFactoryAddress"
 func getPoolsFactoryAddress(factoryAddress: Address) = {
   match factoryAddress.getString(keyPoolsFactoryAddress()) {
