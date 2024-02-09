@@ -41,6 +41,7 @@ func keyCurrentPeriod() = ["%s", "currentPeriod"].makeString(SEP)
 func keyStartHeightByPeriod(period: Int) = ["%s%d", "startHeight", period.toString()].makeString(SEP)
 func keyPeriodLength() = ["%s", "periodLength"].makeString(SEP)
 func keyTreasuryValueByPeriod(period: Int) = ["%s%d", "treasuryValue", period.toString()].makeString(SEP)
+func keyLockGlobalCounter() = ["%s", "lockGlobalCounter"].makeString(SEP)
 
 func keySkinTotal(treasuryAddress: Address) = "skin_total_" + treasuryAddress.toString()
 
@@ -362,6 +363,8 @@ func lockInternal(userAddressBytes: ByteVector, assetId: ByteVector, amount: Int
   let factoryAddress = i.caller
   let userAddress = Address(userAddressBytes)
 
+  let lockGlobalCounter = factoryAddress.getInteger(keyLockGlobalCounter()).valueOrElse(0)
+
   let actions = [
     ScriptTransfer(lockAddress(factoryAddress), amount, assetId)
   ]
@@ -375,6 +378,14 @@ func lockInternal(userAddressBytes: ByteVector, assetId: ByteVector, amount: Int
       [
         k,
         v
+      ],
+      []
+    ),
+    factoryAddress.invoke(
+      "integerEntry",
+      [
+        keyLockGlobalCounter(),
+        lockGlobalCounter + 1
       ],
       []
     )
