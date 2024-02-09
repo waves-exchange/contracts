@@ -25,6 +25,14 @@ func throwErr(s: String) = {
   throw(wrapErr(s))
 }
 
+func onlyAddress(i: Invocation, address: Address) = {
+  i.caller == address || throwErr("permission denied")
+}
+
+func onlyThis(i: Invocation) = {
+  onlyAddress(i, this)
+}
+
 let wxAssetId = if (chainId == chainIdW) then base58'Atqv59EYzjFGuitKVnMRk6H8FukjoV3ktPorbEys25on'
   else if (chainId == chainIdT) then base58'EMAMLxDnv3xiz8RXg8Btj33jcEw3wLczL3JKYYmuubpc'
   else throwErr("invalid chain id")
@@ -244,7 +252,7 @@ func calcTreasuryValue(factoryAddress: Address) = {
   treasuryValue
 }
 
-func calcRewards(factoryAddress: Address, paymentAmount: Int) = {
+func calcRewardsAndLock(factoryAddress: Address, paymentAmount: Int, userAddressOption: Address|Unit) = {
   let assetsStr = getAssetsStr(factoryAddress).split(SEP)
   strict wxdaoQuantity = getAssetInfoOrFail(getLpAssetId(factoryAddress)).quantity
 
@@ -256,6 +264,9 @@ func calcRewards(factoryAddress: Address, paymentAmount: Int) = {
     let assetDecimals = getAssetInfoOrFail(assetId).decimals
     let balance = assetsBalances[index].fromX18(pow(10, 0, assetDecimals, 0, 0, DOWN))
     let amount = fraction(balance, paymentAmount, wxdaoQuantity)
+    strict lock = if (userAddressOption == unit) then unit else {
+      this.invoke("lockInternal", [userAddressOption.value().bytes, assetId, amount], [])
+    }
 
     if (amount > 0) then (
       acc._1 :+ assetId,
@@ -293,7 +304,7 @@ func calcPrice(factoryAddress: Address) = {
   let wxdaoQuantityX18 = wxdaoQuantity.toX18(pow(10, 0, wxdaoInfo.decimals, 0, 0, DOWN))
   let wxDaoPriceX18 = (pwrPriceX18 + fraction(factoryAddressWxBalanceX18 * 100.toBigInt(), wxPriceX18, wxdaoQuantityX18) + fraction(max([treasuryValueDiffX18, 0.toBigInt()]), 2.toBigInt() * mult18, 10.toBigInt() * pwrAmountX18)) / 100.toBigInt()
   let wxDaoPrice = wxDaoPriceX18.fromX18(pow(10, 0, usdtDecimals, 0, 0, DOWN))
-  let rewardsPrices = factoryAddress.calcRewards(pow(10, 0, wxdaoInfo.decimals, 0, 0, DOWN))
+  let rewardsPrices = factoryAddress.calcRewardsAndLock(pow(10, 0, wxdaoInfo.decimals, 0, 0, DOWN), unit)
 
   ([wxDaoPrice, rewardsPrices], [["wxDaoPrice", wxDaoPrice], ["pwrPrice", pwrPrice], ["factoryAddressWxBalance", factoryAddressWxBalance], ["wxPrice", wxPrice], ["wxdaoQuantity", wxdaoQuantity], ["treasuryValueDiff", treasuryValueDiff], ["pwrAmount", pwrAmount], ["skinTotal", skinTotal], ["pwrRemaining", pwrRemaining]])
 }
@@ -321,7 +332,7 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
   let pwrPrice = 100 # 100 WXDAO tokens for 1 PWR token
   let pwrAmount = payment.amount / pwrPrice
 
-  strict transfers = factoryAddress.calcRewards(payment.amount)
+  strict rewards = factoryAddress.calcRewardsAndLock(payment.amount, userAddress)
 
   let additionalLockRounds = 0
   let factoryActions = [
@@ -337,21 +348,43 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
       ],
       []
     )
-  ] ++ if (transfers._1.size() == 0) then [] else [
-    factoryAddress.invoke(
-      "transferAssets",
-      [
-        userAddress.bytes,
-        transfers._1,
-        transfers._2
-      ],
-      []
-    )
   ]
 
   ([
     Burn(paymentAssetId, payment.amount)
   ], factoryActions)
+}
+
+@Callable(i)
+func lockInternal(userAddressBytes: ByteVector, assetId: ByteVector, amount: Int) = {
+  strict checkCaller = i.onlyThis()
+
+  let factoryAddress = i.caller
+  let userAddress = Address(userAddressBytes)
+
+  let actions = [
+    ScriptTransfer(lockAddress(factoryAddress), amount, assetId)
+  ]
+
+  # адрес_счетчик: блок разблок_ассет_эмоунт
+  let k = ""
+  let v = ""
+  let factoryActions = [
+    factoryAddress.invoke(
+      "stringEntry",
+      [
+        k,
+        v
+      ],
+      []
+    )
+  ]
+  (nil, unit)
+}
+
+@Callable(i)
+func unlock(callerPublicKey: ByteVector, args: List[String]) = {
+  (nil, unit)
 }
 
 # returns wxdao token price
