@@ -4,7 +4,6 @@
 
 let contractFile = "l2mp_leasing.ride"
 let SEP = "__"
-let scale8 = 1_0000_0000
 
 func throwErr(msg: String) = {
     throw(contractFile + ": " + msg)
@@ -25,13 +24,18 @@ let currentPeriodId = {
     else
         max([0, periodOffsetId - 1])
 }
+let currentPeriodHeight = {
+    periodOffsetHeight + ((currentPeriodId - periodOffsetId) * periodLength)
+}
+let nextPeriodHeight = {
+    currentPeriodHeight + periodLength
+}
 
-func keyLeasingNodeData(nodeAddress: String) = ["%s", "leasingNode", nodeAddress].makeString(SEP)
+func keyLeasingNodeData(nodeAddress: String) = ["%s", nodeAddress].makeString(SEP)
 
-func keyUserLeasingNodeList(userAddress: String) = ["%s%s", "userLeasingNodeList", userAddress].makeString(SEP)
-func keyUserLeasingNodeData(userAddress: String, nodeAddress: String) = ["%s%s", "userLeasingNodeData", userAddress, nodeAddress].makeString(SEP)
+func keyUserToClaim(userAddress: String) = ["%s%s", "toClaim", userAddress].makeString(SEP)
 
-func keyUserBalances(userAddress: String) = ["%s%s", "userBalances", userAddress].makeString(SEP)
+func keyUserLeasingNodeData(userAddress: String, nodeAddress: String) = ["%s%s", nodeAddress, userAddress].makeString(SEP)
 
 let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
 let assetIdBytes  = if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
@@ -43,114 +47,101 @@ func isValidAddress(address: String) = {
       }
 }
 
-func getLeasingNodeEntry(nodeAddress: String, totalLeased: Int) = {
-    let valueString = ["%d", totalLeased.toString()].makeString(SEP)
+func getLeasingNodeEntry(nodeAddress: String, currentLeased: Int, nextLeased: Int) = {
+    let valueString = [
+        "%d%d%d%d",
+        currentPeriodHeight.toString(),
+        currentLeased.toString(),
+        nextPeriodHeight.toString(),
+        nextLeased.toString()
+    ].makeString(SEP)
 
-    if (totalLeased != 0)
-        then StringEntry(keyLeasingNodeData(nodeAddress), valueString)
-        else DeleteEntry(keyLeasingNodeData(nodeAddress))
+    StringEntry(keyLeasingNodeData(nodeAddress), valueString)
 }
 
 func getLeasingNodeData(nodeAddress: String) = {
-    let leasingDataStringRaw = this.getString(keyLeasingNodeData(nodeAddress))
+    let leasingNodeDataStringRaw = this.getString(keyLeasingNodeData(nodeAddress))
 
-    match (leasingDataStringRaw) {
+    match (leasingNodeDataStringRaw) {
         case ds:String => {
             let dataList = ds.split(SEP)
-            let totalLeased = dataList[1].parseIntValue()
+            let nodeCurrentPeriod = dataList[1].parseIntValue()
+            let nodeCurrentLeased = dataList[2].parseIntValue()
+            let nodeNextPeriod    = dataList[3].parseIntValue()
+            let nodeNextLeased    = dataList[4].parseIntValue()
 
-            (totalLeased)
+            if (height < nodeNextPeriod) 
+            then (nodeCurrentLeased, nodeNextLeased)
+            else (nodeNextLeased, nodeNextLeased)
         }
-        case _ => (0)
+        case _ => (0, 0)
       }
 }
 
-func getUserLeasingEntry(nodeAddress: String, userAddress: String, totalUserLeased: Int) = {
-    let valueString = ["%d", totalUserLeased.toString()].makeString(SEP)
+func getUserLeasingEntry(
+        nodeAddress: String, 
+        userAddress: String, 
+        userCurrentLeased: Int, 
+        userNextLeased: Int
+    ) = {
+    let valueString = [
+        "%d%d%d%d",
+        currentPeriodHeight.toString(),
+        userCurrentLeased.toString(),
+        nextPeriodHeight.toString(),
+        userNextLeased.toString()
+    ].makeString(SEP)
 
-    if (totalUserLeased != 0)
-        then StringEntry(keyUserLeasingNodeData(userAddress, nodeAddress), valueString)
-        else DeleteEntry(keyUserLeasingNodeData(userAddress, nodeAddress))
+    StringEntry(keyUserLeasingNodeData(userAddress, nodeAddress), valueString)
 }
 
 func getUserLeasingData(nodeAddress: String, userAddress: String) = {
-    let leasingDataStringRaw = this.getString(keyUserLeasingNodeData(userAddress, nodeAddress))
+    let leasingUserDataStringRaw = this.getString(keyUserLeasingNodeData(userAddress, nodeAddress))
 
-    match (leasingDataStringRaw) {
+    match (leasingUserDataStringRaw) {
         case ds:String => {
             let dataList = ds.split(SEP)
-            let totalLeased = dataList[1].parseIntValue()
+            let userCurrentPeriod = dataList[1].parseIntValue()
+            let userCurrentLeased = dataList[2].parseIntValue()
+            let userNextPeriod    = dataList[3].parseIntValue()
+            let userNextLeased    = dataList[4].parseIntValue()
 
-            (totalLeased)
+            if (height < userNextPeriod) 
+            then (userCurrentLeased, userNextLeased)
+            else (userNextLeased, userNextLeased)
         }
-        case _ => (0)
+        case _ => (0, 0)
       }
 }
 
-func getUserBalancesEntry(userAddress: String, periodId: Int, leased: Int, toUnlock: Int, toClaim: Int) = {
+func getUserToClaimEntry(userAddress: String, toClaim: Int, toUnlock: Int) = {
     let valueString = [
         "%d%d%d%d", 
-        periodId.toString(),
-        leased.toString(),
-        toUnlock.toString(),
-        toClaim.toString()
+        currentPeriodHeight.toString(),
+        toClaim.toString(),
+        nextPeriodHeight.toString(),
+        toUnlock.toString()
     ].makeString(SEP)
 
-    StringEntry(keyUserBalances(userAddress), valueString)
+    StringEntry(keyUserToClaim(userAddress), valueString)
 }
 
-func getUserBalances(userAddress: String) = {
-    let leasingDataStringRaw = this.getString(keyUserBalances(userAddress))
+func getUserToClaimBalance(userAddress: String) = {
+    let userToClaimDataStringRaw = this.getString(keyUserToClaim(userAddress))
 
-    match (leasingDataStringRaw) {
+    match (userToClaimDataStringRaw) {
         case ds:String => {
             let dataList = ds.split(SEP)
-            let periodId = dataList[1].parseIntValue()
-            let leased   = dataList[2].parseIntValue()
-            let toUnlock = dataList[3].parseIntValue()
-            let toClaim  = dataList[4].parseIntValue()
+            let currentPeriod = dataList[1].parseIntValue()
+            let toClaim       = dataList[2].parseIntValue()
+            let nextPeriod    = dataList[3].parseIntValue()
+            let toUnlock      = dataList[4].parseIntValue()
 
-            if ((currentPeriodId - periodId) > 0) 
-                then (periodId, leased, 0, toClaim + toUnlock)
-                else (periodId, leased, toUnlock, toClaim)
+            if (height < nextPeriod) 
+                then (toClaim, toUnlock)
+                else (toClaim + toUnlock, 0)
         }
-        case _ => (0, 0, 0, 0)
-      }
-}
-
-func getUserLeasingNodeList(userAddress: String) = {
-    let leasingDataStringRaw = this.getString(keyUserLeasingNodeList(userAddress))
-
-    match (leasingDataStringRaw) {
-        case ds:String => {
-            let dataList = ds.split_51C(SEP)
-
-            (dataList)
-        }
-        case _ => ([])
-      }
-}
-
-func getUserNodeListEntry(userAddress: String, nodeList: List[String]) = {
-    if (nodeList.size() == 0) 
-        then DeleteEntry(keyUserLeasingNodeList(userAddress))
-        else StringEntry(keyUserLeasingNodeList(userAddress), nodeList.makeString_11C(SEP))
-}
-
-func addNodeToNodeList(userAddress: String, nodeAddress: String) = {
-    let nodeList = getUserLeasingNodeList(userAddress)
-
-    if (nodeList.containsElement(nodeAddress)) 
-        then nodeList 
-        else nodeList :+ nodeAddress
-}
-
-func removeNodeFromNodeList(userAddress: String, nodeAddress: String) = {
-    let nodeList = getUserLeasingNodeList(userAddress)
-
-    match (nodeList.indexOf(nodeAddress)) {
-        case index:Int => nodeList.removeByIndex(index)
-        case _ => nodeList
+        case _ => (0, 0)
       }
 }
 
@@ -164,54 +155,46 @@ func getStakeActions(nodeAddress: String, userAddress: String, i: Invocation) = 
 
     let userLeasingAmount = i.payments[0].amount
 
-    let totalNodeLeased = getLeasingNodeData(nodeAddress)
-    let newTotalLease = totalNodeLeased + userLeasingAmount
+    let (nodeCurrentLeased, nodeNextLeased) = getLeasingNodeData(nodeAddress)
+    let newNodeNextLease = nodeNextLeased + userLeasingAmount
 
-    let userTotalLeased = getUserLeasingData(nodeAddress, userAddress)
-    let newUserTotalLease = userTotalLeased + userLeasingAmount
-
-    let (periodId, leased, toUnlock, toClaim) = getUserBalances(userAddress)
-    let newLeased = leased + userLeasingAmount
+    let (userCurrentLeased, userNextLeased) = getUserLeasingData(nodeAddress, userAddress)
+    let newUserNextLeased = userNextLeased + userLeasingAmount
 
     [
-        getLeasingNodeEntry(nodeAddress, newTotalLease),
-        getUserLeasingEntry(nodeAddress, userAddress, newUserTotalLease),
-        getUserBalancesEntry(userAddress, periodId, newLeased, toUnlock, toClaim),
-        getUserNodeListEntry(userAddress, addNodeToNodeList(userAddress, nodeAddress))
+        getLeasingNodeEntry(nodeAddress, nodeCurrentLeased, newNodeNextLease),
+        getUserLeasingEntry(nodeAddress, userAddress, userCurrentLeased, newUserNextLeased)
     ]
 }
 
 func getUnstakeActions(nodeAddress: String, userAddress: String, unstakeAmount: Int) = {
-    let totalNodeLeased = getLeasingNodeData(nodeAddress)
-    let userTotalLeased = getUserLeasingData(nodeAddress, userAddress)
+    let (nodeCurrentLeased, nodeNextLeased) = getLeasingNodeData(nodeAddress)
+    let (userCurrentLeased, userNextLeased) = getUserLeasingData(nodeAddress, userAddress)
     
     strict checks = [
         unstakeAmount > 0 || "unstake amount should be greater than 0".throwErr(),
-        unstakeAmount <= userTotalLeased || "unstake amount should be less or equal user staked amount".throwErr(),
-        unstakeAmount <= totalNodeLeased || "unstake amount should be less or equal node staked amount".throwErr(),
+        unstakeAmount <= userNextLeased || "unstake amount should be less or equal user staked amount".throwErr(),
+        unstakeAmount <= nodeNextLeased || "unstake amount should be less or equal node staked amount".throwErr(),
         nodeAddress.isValidAddress() || ["node address is not valid:", nodeAddress].makeString(" ").throwErr(),
         userAddress.isValidAddress() || ["user address is not valid:", userAddress].makeString(" ").throwErr()
     ]
 
-    let newTotalLease = totalNodeLeased - unstakeAmount
-    let newUserTotalLease = userTotalLeased - unstakeAmount
+    let newNodeNextLease = nodeNextLeased - unstakeAmount
+    let newUserNextLeased = userNextLeased - unstakeAmount
 
-    let (periodId, leased, toUnlock, toClaim) = getUserBalances(userAddress)
-    let newLeased = leased - unstakeAmount
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
+    # let newLeased = leased - unstakeAmount
     let newToUnlock = toUnlock + unstakeAmount
 
-    let removeNodeActions = if (newUserTotalLease == 0) 
-        then [ getUserNodeListEntry(userAddress, removeNodeFromNodeList(userAddress, nodeAddress)) ]
-        else []
     [
-        getLeasingNodeEntry(nodeAddress, newTotalLease),
-        getUserLeasingEntry(nodeAddress, userAddress, newUserTotalLease),
-        getUserBalancesEntry(userAddress, currentPeriodId, newLeased, newToUnlock, toClaim)
-    ] ++ removeNodeActions
+        getLeasingNodeEntry(nodeAddress, nodeCurrentLeased, newNodeNextLease),
+        getUserLeasingEntry(nodeAddress, userAddress, userCurrentLeased, newUserNextLeased),
+        getUserToClaimEntry(userAddress, toClaim, newToUnlock)
+    ]
 }
 
 func getClaimUnlockedActions(userAddress: String, claimAmount: Int) = {
-    let (periodId, leased, toUnlock, toClaim) = getUserBalances(userAddress)
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
 
     strict checks = [
         claimAmount > 0 || "claim amount should be greater than 0".throwErr(),
@@ -222,13 +205,14 @@ func getClaimUnlockedActions(userAddress: String, claimAmount: Int) = {
     let newToClaim = toClaim - claimAmount
 
     [
-        getUserBalancesEntry(userAddress, currentPeriodId, leased, toUnlock, newToClaim),
+        getUserToClaimEntry(userAddress, newToClaim, toUnlock),
         ScriptTransfer(userAddress.addressFromStringValue(), claimAmount, assetIdBytes)
     ]
 }
 
 func getStakeFromUnlockedActions(nodeAddress: String, userAddress: String, userLeasingAmount: Int) = {
-    let (periodId, leased, toUnlock, toClaim) = getUserBalances(userAddress)
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
+
     let available = toUnlock + toClaim
 
     strict checks = [
@@ -238,21 +222,19 @@ func getStakeFromUnlockedActions(nodeAddress: String, userAddress: String, userL
         userAddress.isValidAddress() || ["user address is not valid:", userAddress].makeString(" ").throwErr()
     ]
 
-    let totalNodeLeased = getLeasingNodeData(nodeAddress)
-    let newTotalLease = totalNodeLeased + userLeasingAmount
+    let (nodeCurrentLeased, nodeNextLeased) = getLeasingNodeData(nodeAddress)
+    let newNodeNextLease = nodeNextLeased + userLeasingAmount
 
-    let userTotalLeased = getUserLeasingData(nodeAddress, userAddress)
-    let newUserTotalLease = userTotalLeased + userLeasingAmount
+    let (userCurrentLeased, userNextLeased) = getUserLeasingData(nodeAddress, userAddress)
+    let newUserNextLeased = userNextLeased + userLeasingAmount
 
-    let newLeased = leased + userLeasingAmount
     let newToUnlock = max([0, (toUnlock - userLeasingAmount)])
     let newToClaim = min([toClaim, (toClaim + (toUnlock - userLeasingAmount))])
 
     [
-        getLeasingNodeEntry(nodeAddress, newTotalLease),
-        getUserLeasingEntry(nodeAddress, userAddress, newUserTotalLease),
-        getUserBalancesEntry(userAddress, periodId, newLeased, newToUnlock, newToClaim),
-        getUserNodeListEntry(userAddress, addNodeToNodeList(userAddress, nodeAddress))
+        getLeasingNodeEntry(nodeAddress, nodeCurrentLeased, newNodeNextLease),
+        getUserLeasingEntry(nodeAddress, userAddress, userCurrentLeased, newUserNextLeased),
+        getUserToClaimEntry(userAddress, newToClaim, newToUnlock)
     ]
 }
 
@@ -267,12 +249,9 @@ func getSetNewPeriodLengthActions(newPeriodLength: Int) = {
             IntegerEntry(keyPeriodOffsetHeight, height)
         ]
     } else {
-        let newPeriodOffsetId = currentPeriodId + 1
-        let newOffsetHeight = (periodLength * (newPeriodOffsetId - periodOffsetId)) + periodOffsetHeight
-
         [
-            IntegerEntry(keyPeriodOffsetId, newPeriodOffsetId),
-            IntegerEntry(keyPeriodOffsetHeight, newOffsetHeight),
+            IntegerEntry(keyPeriodOffsetId, currentPeriodId + 1),
+            IntegerEntry(keyPeriodOffsetHeight, nextPeriodHeight),
             IntegerEntry(keyPeriodLength, newPeriodLength)
         ]
     }
@@ -284,11 +263,17 @@ func setNewPeriodLength(newPeriodLength: Int) = {
 }
 
 @Callable(i)
-func getUserData(userAddress: String) = {
-    let (periodId, leased, toUnlock, toClaim) = getUserBalances(userAddress)
-    let nodeList = getUserLeasingNodeList(userAddress)
+func getNodeDataREADONLY(nodeAddress: String) = {
+    let (currentLease, nextLeased) = getLeasingNodeData(nodeAddress)
 
-    ([], ((currentPeriodId, periodLength), leased, toUnlock, toClaim, (toUnlock + toClaim), nodeList))
+    ([], (currentPeriodHeight, currentLease, nextPeriodHeight, nextLeased, height))
+}
+
+@Callable(i)
+func getUserDataREADONLY(userAddress: String) = {
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
+
+    ([], (currentPeriodHeight, toClaim, nextPeriodHeight, toUnlock, height))
 }
 
 @Callable(i)
@@ -327,7 +312,11 @@ func claim(amount: Int) = {
 @Callable(i)
 func claimAll() = {
     let userAddress = i.caller.toString()
-    let (periodId, leased, toUnlock, toClaim) = getUserBalances(userAddress)
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
+
+    strict checks = [
+        toClaim > 0 || "nothing to claim".throwErr()
+    ]
 
     getClaimUnlockedActions(userAddress, toClaim)
 }
