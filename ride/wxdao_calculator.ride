@@ -414,21 +414,39 @@ func lockInternal(factoryAddressBytes: ByteVector, userAddressBytes: ByteVector,
     )
   ]
 
-  (nil, factoryActions)
+  (actions, factoryActions)
 }
 
 @Callable(i)
 func unlock(callerPublicKey: ByteVector, args: List[String]) = {
   let factoryAddress = i.caller
-  let userAddress = Address(args[0].fromBase58String())
-  let counter = args[1].parseInt().valueOrErrorMessage(wrapErr("invalid counter"))
+  let userAddress = addressFromPublicKey(callerPublicKey)
+  let counter = args[0].parseInt().valueOrErrorMessage(wrapErr("invalid counter"))
   let (from, to, assetId, amount) = lockParse(
     factoryAddress.getString(
       keyLock(userAddress, counter)
     ).valueOrErrorMessage(wrapErr("invalid lock"))
   )
+  let result = if (height > to) then [
+    lockAddress(factoryAddress).invoke(
+      "transferAsset",
+      [
+        userAddress.bytes,
+        amount,
+        assetId
+      ],
+      []
+    ),
+    factoryAddress.invoke(
+      "deleteEntry",
+      [
+        keyLock(userAddress, counter)
+      ],
+      []
+    )
+  ] else unit
 
-  (nil, unit)
+  (nil, result)
 }
 
 # returns wxdao token price
