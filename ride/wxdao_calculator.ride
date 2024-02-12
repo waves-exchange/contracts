@@ -266,14 +266,17 @@ func calcRewardsAndLock(factoryAddress: Address, paymentAmount: Int, userAddress
     let assetDecimals = getAssetInfoOrFail(assetId).decimals
     let balance = assetsBalances[index].fromX18(pow(10, 0, assetDecimals, 0, 0, DOWN))
     let amount = fraction(balance, paymentAmount, wxdaoQuantity)
-    strict lock = if (userAddressOption == unit) then unit else {
-      this.invoke("lockInternal", [userAddressOption.value().bytes, assetId, amount], [])
-    }
 
-    if (amount > 0) then (
-      acc._1 :+ assetId,
-      acc._2 :+ amount
-    ) else acc
+    if (amount > 0) then {
+      strict lock = if (userAddressOption == unit) then unit else {
+        this.invoke("lockInternal", [factoryAddress.bytes, userAddressOption.value().bytes, assetId, amount], [])
+      }
+
+      (
+        acc._1 :+ assetId,
+        acc._2 :+ amount
+      )
+    } else acc
   }
 
   FOLD<6>(assetsStr, (nil, nil), map)
@@ -358,10 +361,10 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
 }
 
 @Callable(i)
-func lockInternal(userAddressBytes: ByteVector, assetId: ByteVector, amount: Int) = {
+func lockInternal(factoryAddressBytes: ByteVector, userAddressBytes: ByteVector, assetId: ByteVector, amount: Int) = {
   strict checkCaller = i.onlyThis()
 
-  let factoryAddress = i.caller
+  let factoryAddress = Address(factoryAddressBytes)
   let userAddress = Address(userAddressBytes)
 
   let lockGlobalCounter = factoryAddress.getInteger(keyLockGlobalCounter()).valueOrElse(0)
@@ -371,13 +374,12 @@ func lockInternal(userAddressBytes: ByteVector, assetId: ByteVector, amount: Int
     ScriptTransfer(lockAddress(factoryAddress), amount, assetId)
   ]
 
-  # адрес_счетчик: блок разблок_ассет_эмоунт
   let factoryActions = [
     factoryAddress.invoke(
       "stringEntry",
       [
-        [userAddress.toString(), lockGlobalCounter.toString()].makeString(SEP),
-        [height.toString(), { height + lockDuration }.toString()]
+        ["%s%s%d", "lock", userAddress.toString(), lockGlobalCounter.toString()].makeString(SEP),
+        [height.toString(), { height + lockDuration }.toString(), assetId.toBase58String(), amount.toString()]
       ],
       []
     ),
@@ -390,7 +392,8 @@ func lockInternal(userAddressBytes: ByteVector, assetId: ByteVector, amount: Int
       []
     )
   ]
-  (nil, unit)
+
+  (nil, factoryActions)
 }
 
 @Callable(i)
