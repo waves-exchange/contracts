@@ -43,6 +43,7 @@ func keyPeriodLength() = ["%s", "periodLength"].makeString(SEP)
 func keyTreasuryValueByPeriod(period: Int) = ["%s%d", "treasuryValue", period.toString()].makeString(SEP)
 func keyLockGlobalCounter() = ["%s", "lockGlobalCounter"].makeString(SEP)
 func keyLockDuration() = ["%s", "lockDuration"].makeString(SEP)
+func keyLock(userAddress: Address, counter: Int) = ["%s%s%d", "lock", userAddress.toString(), counter.toString()].makeString(SEP)
 
 func keySkinTotal(treasuryAddress: Address) = "skin_total_" + treasuryAddress.toString()
 
@@ -103,6 +104,26 @@ func getLpAssetId(factoryAddress: Address) = factoryAddress.getString(
 
 func getAssetInfoOrFail(assetId: ByteVector) = {
   assetInfo(assetId).valueOrErrorMessage(wrapErr("invalid asset info"))
+}
+
+func lockFormat(from: Int, to: Int, assetId: ByteVector, amount: Int) = {
+  [
+    from.toString(),
+    to.toString(),
+    assetId.toBase58String(),
+    amount.toString()
+  ]
+}
+
+func lockParse(s: String) = {
+  let parts = s.split(SEP)
+
+  (
+    parts[0].parseInt().valueOrErrorMessage(wrapErr("error during processing lock start height")),
+    parts[1].parseInt().valueOrErrorMessage(wrapErr("error during processing lock end height")),
+    parts[2].fromBase58String(),
+    parts[3].parseInt().valueOrErrorMessage(wrapErr("error during processing lock amount"))
+  )
 }
 
 func getAssetsBalances(targetAddress: Address, assetIdList: List[String]) = {
@@ -378,8 +399,8 @@ func lockInternal(factoryAddressBytes: ByteVector, userAddressBytes: ByteVector,
     factoryAddress.invoke(
       "stringEntry",
       [
-        ["%s%s%d", "lock", userAddress.toString(), lockGlobalCounter.toString()].makeString(SEP),
-        [height.toString(), { height + lockDuration }.toString(), assetId.toBase58String(), amount.toString()]
+        keyLock(userAddress, lockGlobalCounter),
+        lockFormat(height, height + lockDuration, assetId, amount)
       ],
       []
     ),
@@ -398,6 +419,15 @@ func lockInternal(factoryAddressBytes: ByteVector, userAddressBytes: ByteVector,
 
 @Callable(i)
 func unlock(callerPublicKey: ByteVector, args: List[String]) = {
+  let factoryAddress = i.caller
+  let userAddress = Address(args[0].fromBase58String())
+  let counter = args[1].parseInt().valueOrErrorMessage(wrapErr("invalid counter"))
+  let (from, to, assetId, amount) = lockParse(
+    factoryAddress.getString(
+      keyLock(userAddress, counter)
+    ).valueOrErrorMessage(wrapErr("invalid lock"))
+  )
+
   (nil, unit)
 }
 
