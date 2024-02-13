@@ -389,7 +389,7 @@ func lockInternal(factoryAddressBytes: ByteVector, userAddressBytes: ByteVector,
   let userAddress = Address(userAddressBytes)
 
   let lockGlobalCounter = factoryAddress.getInteger(keyLockGlobalCounter()).valueOrElse(0)
-  let lockDuration = factoryAddress.getInteger(keyLockGlobalCounter()).valueOrErrorMessage(wrapErr("invalid lock duration"))
+  let lockDuration = factoryAddress.getInteger(keyLockDuration()).valueOrErrorMessage(wrapErr("invalid lock duration"))
 
   let actions = [
     ScriptTransfer(lockAddress(factoryAddress), amount, assetId)
