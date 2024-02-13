@@ -21,16 +21,21 @@ const ridePath = '../ride';
 const mockPath = './components/wxdao/mock';
 const factoryPath = format({ dir: ridePath, base: 'wxdao_factory.ride' });
 const calculatorPath = format({ dir: ridePath, base: 'wxdao_calculator.ride' });
+const lockPath = format({ dir: ridePath, base: 'wxdao_lock.ride' });
 const powerMockPath = format({ dir: mockPath, base: 'pwr.ride' });
 
 export const setup = async ({
   periodLength = 10800,
   treasuryValue = 0,
+  lockDuration = 1,
 } = {}) => {
   const nonce = wc.random(nonceLength, 'Buffer').toString('hex');
   const names = [
     'factory',
     'calculator',
+    'lock',
+    'treasury',
+    'poolsFactory',
     'power',
     'user1',
     'user2',
@@ -102,6 +107,12 @@ export const setup = async ({
       libraries,
     ),
     setScriptFromFile(
+      lockPath,
+      accounts.lock.seed,
+      null,
+      libraries,
+    ),
+    setScriptFromFile(
       powerMockPath,
       accounts.power.seed,
       null,
@@ -123,10 +134,14 @@ export const setup = async ({
       function: 'init',
       args: [
         { type: 'string', value: wxdaoAssetId },
+        { type: 'string', value: accounts.treasury.address },
         { type: 'string', value: accounts.calculator.address },
+        { type: 'string', value: accounts.lock.address },
         { type: 'string', value: accounts.power.address },
         { type: 'string', value: accounts.power.address },
+        { type: 'string', value: accounts.poolsFactory.address },
         { type: 'integer', value: periodLength },
+        { type: 'integer', value: lockDuration },
         { type: 'integer', value: treasuryValue },
         { type: 'list', value: Object.values(assets).map((value) => ({ type: 'string', value })) },
       ],
@@ -149,6 +164,7 @@ export const setup = async ({
     pwrAssetId,
     periodLength,
     treasuryValue,
+    lockDuration,
     assets,
   };
 };
