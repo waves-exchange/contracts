@@ -112,7 +112,7 @@ func lockFormat(from: Int, to: Int, assetId: ByteVector, amount: Int) = {
     to.toString(),
     assetId.toBase58String(),
     amount.toString()
-  ]
+  ].makeString(SEP)
 }
 
 func lockParse(s: String) = {
