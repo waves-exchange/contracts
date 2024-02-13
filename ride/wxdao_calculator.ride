@@ -450,7 +450,7 @@ func unlock(callerPublicKey: ByteVector, args: List[String]) = {
       ],
       []
     )
-  ] else unit
+  ] else throwErr("invalid height")
 
   (nil, result)
 }

@@ -38,7 +38,7 @@ let factoryAddressOption = match this.getString(keyFactoryAddress()) {
   case s: String => s.addressFromString()
   case _: Unit => unit
 }
-let factoryAddressOrFail = factoryAddressOption.valueOrErrorMessage(wrapErr("invalid calculator address"))
+let factoryAddressOrFail = factoryAddressOption.valueOrErrorMessage(wrapErr("invalid factory address"))
 
 let calculatorAddressOption = match factoryAddressOrFail.getString(keyCalculatorAddress()) {
   case s: String => s.addressFromString()
