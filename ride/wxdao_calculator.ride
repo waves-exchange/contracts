@@ -427,30 +427,36 @@ func lockInternal(factoryAddressBytes: ByteVector, userAddressBytes: ByteVector,
 func unlock(callerPublicKey: ByteVector, args: List[String]) = {
   let factoryAddress = i.caller
   let userAddress = addressFromPublicKey(callerPublicKey)
-  let counter = args[0].parseInt().valueOrErrorMessage(wrapErr("invalid counter"))
-  let (from, to, assetId, amount) = lockParse(
-    factoryAddress.getString(
-      keyLock(userAddress, counter)
-    ).valueOrErrorMessage(wrapErr("invalid lock"))
-  )
-  let result = if (height > to) then [
-    lockAddress(factoryAddress).invoke(
-      "transferAsset",
-      [
-        userAddress.bytes,
-        amount,
-        assetId
-      ],
-      []
-    ),
-    factoryAddress.invoke(
-      "deleteEntry",
-      [
+  func fold(acc: List[Any], next: String) = {
+    let counter = next.parseInt().valueOrErrorMessage(wrapErr("invalid counter"))
+    let (from, to, assetId, amount) = lockParse(
+      factoryAddress.getString(
         keyLock(userAddress, counter)
-      ],
-      []
+      ).valueOrErrorMessage(wrapErr("invalid lock"))
     )
-  ] else throwErr("invalid height")
+    let result = if (height > to) then [
+      lockAddress(factoryAddress).invoke(
+        "transferAsset",
+        [
+          userAddress.bytes,
+          amount,
+          assetId
+        ],
+        []
+      ),
+      factoryAddress.invoke(
+        "deleteEntry",
+        [
+          keyLock(userAddress, counter)
+        ],
+        []
+      )
+    ] else throwErr("invalid height")
+
+    acc :+ result
+  }
+
+  let result = FOLD<30>(args, nil, fold)
 
   (nil, result)
 }
