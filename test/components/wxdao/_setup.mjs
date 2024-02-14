@@ -60,6 +60,14 @@ export const setup = async ({
 
   const libraries = {};
 
+  await broadcastAndWait(data({
+    data: [
+      { key: '%s__factoryAddress', type: 'string', value: accounts.factory.address },
+    ],
+    chainId,
+    additionalFee: 4e5,
+  }, accounts.lock.seed));
+
   const [
     { id: wxdaoAssetId },
     { id: pwrAssetId },
@@ -162,6 +170,7 @@ export const setup = async ({
     accounts,
     wxdaoAssetId,
     pwrAssetId,
+    wxAssetId,
     periodLength,
     treasuryValue,
     lockDuration,

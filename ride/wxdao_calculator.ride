@@ -433,7 +433,7 @@ func unlock(callerPublicKey: ByteVector, args: List[String]) = {
     let (from, to, assetId, amount) = lockParse(
       factoryAddress.getString(
         keyLock(userAddress, counter)
-      ).valueOrErrorMessage(wrapErr("invalid lock"))
+      ).valueOrErrorMessage(wrapErr("invalid lock: " + keyLock(userAddress, counter)))
     )
     let result = if (height > to) then [
       lockAddress(factoryAddress).invoke(
