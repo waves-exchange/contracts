@@ -108,6 +108,7 @@ func getAssetInfoOrFail(assetId: ByteVector) = {
 
 func lockFormat(from: Int, to: Int, assetId: ByteVector, amount: Int) = {
   [
+    "%d%d%s%d",
     from.toString(),
     to.toString(),
     assetId.toBase58String(),
@@ -119,10 +120,10 @@ func lockParse(s: String) = {
   let parts = s.split(SEP)
 
   (
-    parts[0].parseInt().valueOrErrorMessage(wrapErr("error during processing lock start height")),
-    parts[1].parseInt().valueOrErrorMessage(wrapErr("error during processing lock end height")),
-    parts[2].fromBase58String(),
-    parts[3].parseInt().valueOrErrorMessage(wrapErr("error during processing lock amount"))
+    parts[1].parseInt().valueOrErrorMessage(wrapErr("error during processing lock start height")),
+    parts[2].parseInt().valueOrErrorMessage(wrapErr("error during processing lock end height")),
+    parts[3].fromBase58String(),
+    parts[4].parseInt().valueOrErrorMessage(wrapErr("error during processing lock amount"))
   )
 }
 
