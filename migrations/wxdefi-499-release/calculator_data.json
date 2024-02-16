@@ -1,0 +1,15 @@
+{
+  "type": 12,
+  "fee": 500000,
+  "feeAssetId": null,
+  "version": 2,
+  "senderPublicKey": "",
+  "chainId": 87,
+  "data": [
+    {
+      "key": "%s__factoryAddress",
+      "type": "string",
+      "value": "3PEhMFF2mfSWVxWqbW8guXVYcNeoW77ga7T"
+    }
+  ]
+}

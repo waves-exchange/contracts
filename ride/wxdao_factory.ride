@@ -2,14 +2,6 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-func mustAddress(i: Invocation, address: Address) = {
-  i.caller == address || throw("permission denied")
-}
-
-func mustThis(i: Invocation) = {
-  mustAddress(i, this)
-}
-
 let SEP = "__"
 let WAVES = "WAVES"
 let contractFilename = "wxdao_factory.ride"
@@ -236,7 +228,7 @@ func init(
   treasuryValue: Int,
   assets: List[String]
 ) = {
-  strict checkCaller = i.mustThis()
+  strict checkCaller = i.onlyThis()
 
   ([
     StringEntry(keyLpAssetId(), lpAssetIdStr),
