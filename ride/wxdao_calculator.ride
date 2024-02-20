@@ -118,13 +118,14 @@ func getAssetInfoOrFail(assetId: ByteVector) = {
   assetInfo(assetId).valueOrErrorMessage(wrapErr("invalid asset info"))
 }
 
-func lockFormat(from: Int, to: Int, assetId: ByteVector, amount: Int) = {
+func lockFormat(from: Int, to: Int, assetId: ByteVector, amount: Int, lpAssetAmount: Int) = {
   [
-    "%d%d%s%d",
+    "%d%d%s%d%d",
     from.toString(),
     to.toString(),
     assetId.toBase58String(),
-    amount.toString()
+    amount.toString(),
+    lpAssetAmount.toString()
   ].makeString(SEP)
 }
 
@@ -303,7 +304,7 @@ func calcRewardsAndLock(paymentAmount: Int, userAddressOption: Address|Unit) = {
 
     if (amount > 0) then {
       strict lock = if (userAddressOption == unit) then unit else {
-        this.invoke("lockInternal", [userAddressOption.value().bytes, assetId, amount], [])
+        this.invoke("lockInternal", [userAddressOption.value().bytes, assetId, amount, paymentAmount], [])
       }
 
       (
@@ -395,7 +396,7 @@ func swap(callerPublicKey: ByteVector, args: List[String]) = {
 }
 
 @Callable(i)
-func lockInternal(userAddressBytes: ByteVector, assetId: ByteVector, amount: Int) = {
+func lockInternal(userAddressBytes: ByteVector, assetId: ByteVector, amount: Int, lpAssetAmount: Int) = {
   strict checkCaller = i.onlyThis()
 
   let userAddress = Address(userAddressBytes)
@@ -418,7 +419,7 @@ func lockInternal(userAddressBytes: ByteVector, assetId: ByteVector, amount: Int
       "stringEntry",
       [
         keyLock(userAddress, lockGlobalCounter),
-        lockFormat(height, height + lockDuration, assetId, amount)
+        lockFormat(height, height + lockDuration, assetId, amount, lpAssetAmount)
       ],
       []
     ),
