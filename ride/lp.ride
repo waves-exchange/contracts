@@ -363,8 +363,8 @@ func getLeaseProxyConfig(assetId: String) = {
 
 # Rebalance assetId to targetRatio and minBalance through Proxy
 func rebalanceInternal(targetRatio: Int, assetId: String, stakingAssetId: String, minBalance: Int, proxy: Address, proxyRateMul: Int, profitAddress: Address) = {
-  strict currentAdditionalBalance = getAdditionalBalanceOrZero(assetId)
   strict currentStakingAssetBalance = getStakingAssetBalanceOrZero(stakingAssetId)
+  strict currentAdditionalBalance = if (currentStakingAssetBalance != 0) then getAdditionalBalanceOrZero(assetId) else 0
 
   let leasableTotalBalance = max([0, getAccBalance(assetId) - minBalance])
   let targetAdditionalBalance = fraction(targetRatio, leasableTotalBalance, 100)
@@ -394,10 +394,12 @@ func rebalanceAsset(assetId: String) = {
 func withdrawAndRebalanceAsset(assetId: String, getAmount: Int) = {
   let (isLeasable, leasedRatio, minBalance, proxyAddress, proxyAssetId, proxyRateMul, stakingProfitAddress) = getLeaseProxyConfig(assetId)
   if (isLeasable) then {
+    strict currentStakingAssetBalance = getStakingAssetBalanceOrZero(proxyAssetId)
+    strict currentAdditionalBalance = if (currentStakingAssetBalance != 0) then getAdditionalBalanceOrZero(assetId) else 0
     strict newTotalLeasableBalance = max([0, getAccBalance(assetId) - getAmount - minBalance])
     strict newAdditionalBalance = fraction(leasedRatio, newTotalLeasableBalance, 100)
-    strict withdrawAmount = getAdditionalBalanceOrZero(assetId) - newAdditionalBalance
-    if (withdrawAmount < 0) then { 
+    strict withdrawAmount = currentAdditionalBalance - newAdditionalBalance
+    if (withdrawAmount == 0) then { [] } else if (withdrawAmount < 0) then { 
       deposit(assetId, -withdrawAmount, proxyAssetId, addressFromStringValue(proxyAddress))
     } else {
       withdraw(assetId, withdrawAmount, proxyAssetId, addressFromStringValue(proxyAddress), proxyRateMul, addressFromStringValue(stakingProfitAddress))
