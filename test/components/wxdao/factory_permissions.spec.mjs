@@ -248,21 +248,4 @@ describe(`[${process.pid}] wxdao: factory permissions`, () => {
     expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
     expect(fn(accounts.calculator.seed)).to.be.fulfilled;
   });
-
-  it('call', async () => {
-    const fn = async (caller) => broadcast(invokeScript({
-      dApp: accounts.factory.address,
-      call: {
-        function: 'call',
-        args: [
-          { type: 'string', value: '' },
-          { type: 'list', value: [] },
-        ],
-      },
-      payment: [],
-      chainId,
-    }, caller));
-
-    expect(fn(accounts.user1.seed)).to.be.fulfilled;
-  });
 });

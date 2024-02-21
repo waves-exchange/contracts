@@ -68,6 +68,14 @@ export const setup = async ({
     additionalFee: 4e5,
   }, accounts.lock.seed));
 
+  await broadcastAndWait(data({
+    data: [
+      { key: '%s__factoryAddress', type: 'string', value: accounts.factory.address },
+    ],
+    chainId,
+    additionalFee: 4e5,
+  }, accounts.calculator.seed));
+
   const [
     { id: wxdaoAssetId },
     { id: pwrAssetId },
