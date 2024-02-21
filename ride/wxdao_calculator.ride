@@ -3,6 +3,7 @@
 {-# SCRIPT_TYPE ACCOUNT #-}
 
 let chainId = this.bytes.drop(1).take(1)
+let chainIdR = base16'52'
 let chainIdT = base16'54'
 let chainIdW = base16'57'
 
@@ -500,5 +501,5 @@ func getTreasuryValue(callerPublicKey: ByteVector, args: List[String]) = {
 
 @Verifier(tx)
 func verify() = {
-  chainId == chainIdT
+  chainId == chainIdT || chainId == chainIdR
 }
