@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-495-low-balance**](https://github.com/waves-exchange/contracts/tree/wxdefi-495-low-balance) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **11:35 16.02.2024** (GMT+4)
+[**wxdefi-495-low-balance**](https://github.com/waves-exchange/contracts/tree/wxdefi-495-low-balance) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **15:00 21.02.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -39,6 +39,9 @@ WX/vasya pool | [`3Mryap2q46HZfgP18KzaYeM2daZNY3ixUXC`](https://wavesexplorer.co
 WX/MinersReward pool | [`3N6NUxQDvC2oHbVAJV2R6fUoVhMNc2ycV46`](https://wavesexplorer.com/addresses/3N6NUxQDvC2oHbVAJV2R6fUoVhMNc2ycV46?network=testnet) | `2JzjUjJLQipraCHUrSSJ7xVZX6SAcVnZ5y13M957VNmJ` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp.ride) 
 WX/Hope Long name pool | [`3N3zgjU1ttesNXdcLjgti4MkkGE1cuDpW23`](https://wavesexplorer.com/addresses/3N3zgjU1ttesNXdcLjgti4MkkGE1cuDpW23?network=testnet) | `CRYQ9KiKLVmBkNk4gXDfG4VSJAgSutig6iqg9uz8imuC` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp.ride) 
 WX/4324234 pool | [`3N3yFkFYsgMURLMPuq3KHDL6gbR5iDZnAeM`](https://wavesexplorer.com/addresses/3N3yFkFYsgMURLMPuq3KHDL6gbR5iDZnAeM?network=testnet) | `cNC2pqfGCBmy796rc2fMyuxG6LN632HDSw4hZSv6pED` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp.ride) 
+SUSDT/SBTC pool | [`3N4fjtbSScYeo4FjiqnrbWN3SKWSdKKZzJe`](https://wavesexplorer.com/addresses/3N4fjtbSScYeo4FjiqnrbWN3SKWSdKKZzJe?network=testnet) | `5CfxywSuGhYoM5Z3qDR1nywNdn6vX6Uw2VjcPiTrjdB6` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp.ride) 
+SUSDT/SETH pool | [`3N2gQWudwG37hrU8aoR8CnJW9FmNQy2Mxhb`](https://wavesexplorer.com/addresses/3N2gQWudwG37hrU8aoR8CnJW9FmNQy2Mxhb?network=testnet) | `EewG6VXZ1khSFSnG6nJrTLYzVMPm6cg9rimefsF9c8g4` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp.ride) 
+SUSDT/SBTC pool | [`3N6o3KJ5gTYEKMJyaJCQ8bBCkoDwfX575LL`](https://wavesexplorer.com/addresses/3N6o3KJ5gTYEKMJyaJCQ8bBCkoDwfX575LL?network=testnet) | `Dh3L5qJ9eGwae5Fc2SxU19orgsp9FZSaDrqnPCKzeRsR` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp.ride) 
 USDC/USDT pool | [`3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA`](https://wavesexplorer.com/addresses/3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA?network=testnet) | `35yd3qw1gxKDxKwGAykHN9fANbXNWwseaUwbWDj24o3x` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp_stable.ride) 
 USDT/USDN pool | [`3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT`](https://wavesexplorer.com/addresses/3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT?network=testnet) | `D1BL65meykxFZTCuq7jq9HSGLLnWvQamQPUNrguW5w39` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp_stable.ride) 
 lp_staking | [`3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL`](https://wavesexplorer.com/addresses/3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL?network=testnet) | `ER6eHxtBYJ4JakpeheRtGgvT5AeP1S4g44VxoNJo14kd` | [lp_staking.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp_staking.ride) 
@@ -78,6 +81,9 @@ moneta | [`AaoDrVavfxkJwVBV5zthxkY9seCQeWyF89t7kxLcnhPg`](https://wavesexplorer.
 MYCOIN | [`6B1HUt9VTUa2x9Rg8EwfY9u6RYsWag1A6GiRrjKxneNH`](https://wavesexplorer.com/assets/6B1HUt9VTUa2x9Rg8EwfY9u6RYsWag1A6GiRrjKxneNH?network=testnet) | Test MYCOIN 
 Nigga Hope | [`9457rs52YU52oEYySuFYztNBaFkEMyXuknZF4kDx79qC`](https://wavesexplorer.com/assets/9457rs52YU52oEYySuFYztNBaFkEMyXuknZF4kDx79qC?network=testnet) | — 
 PCBT | [`AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8`](https://wavesexplorer.com/assets/AcbY5hJy7zzAirZhT49WfYpMKxeer86EQkUWnFipZZ8?network=testnet) | PepeTeam Crosschain Bridge Token 
+SBTC | [`6PkGTCJMnfhmTB3YZ9945J7sqeJeMaoo2c6jhkWU4iJv`](https://wavesexplorer.com/assets/6PkGTCJMnfhmTB3YZ9945J7sqeJeMaoo2c6jhkWU4iJv?network=testnet) | Synthetic BTC 
+SETH | [`8LPQ4M2K3YaeLaq6pmk6V6YbNETeRxaoKSbWueLBoaRs`](https://wavesexplorer.com/assets/8LPQ4M2K3YaeLaq6pmk6V6YbNETeRxaoKSbWueLBoaRs?network=testnet) | Synthetic ETH 
+SUSDT | [`HqJKjF9qiALuFe8q5vBarh7SZQaJkwXbzefWywSMJ9Gt`](https://wavesexplorer.com/assets/HqJKjF9qiALuFe8q5vBarh7SZQaJkwXbzefWywSMJ9Gt?network=testnet) | Synthetic USDT 
 sWAVES | [`FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm`](https://wavesexplorer.com/assets/FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm?network=testnet) | sWAVES is the tokenized form of staked WAVES powered by PepeTeam. See details at https://swaves.pepe.team 
 TESTEAST | [`Ago2eaFkPqiiDnHej9NzMfqYEA7Y9qsAdqJhSWvmwtfQ`](https://wavesexplorer.com/assets/Ago2eaFkPqiiDnHej9NzMfqYEA7Y9qsAdqJhSWvmwtfQ?network=testnet) | Stable token 
 Tether USD | [`5Sh9KghfkZyhjwuodovDhB6PghDUGBHiAPZ4MkrPgKtX`](https://wavesexplorer.com/assets/5Sh9KghfkZyhjwuodovDhB6PghDUGBHiAPZ4MkrPgKtX?network=testnet) | — 
@@ -101,6 +107,8 @@ ETHWXLP | [`D7qTknoXn5iQMiUeQvx33kFGiR6zmjTsuAmwB8KxgCz2`](https://wavesexplorer
 MYCOI~TESTEASTLP | [`3HhsydweErB43KJTW7K7X66G2rZ2mxte9TiQdnSruUtc`](https://wavesexplorer.com/assets/3HhsydweErB43KJTW7K7X66G2rZ2mxte9TiQdnSruUtc?network=testnet) | MYCOI~/TESTEAST pool liquidity provider token 
 PCBTWAVESLP | [`5SHBveQyZVVMvL7jaDqtkT6bH1gpPPJaiMgMnZjp724s`](https://wavesexplorer.com/assets/5SHBveQyZVVMvL7jaDqtkT6bH1gpPPJaiMgMnZjp724s?network=testnet) | PCBT/WAVES pool liquidity provider token 
 PCBT~XTNLP | [`Ay9XtP9qPyHHZNG3wKbCTt7cQGqk19pmqoFUDSQnwy1j`](https://wavesexplorer.com/assets/Ay9XtP9qPyHHZNG3wKbCTt7cQGqk19pmqoFUDSQnwy1j?network=testnet) | PCBT~/XTN pool liquidity provider token 
+SUSDTSBTCLP | [`8zZysArhhtSjTfwmwNqwprATnXMVb8sHnJsCphYHSSKr`](https://wavesexplorer.com/assets/8zZysArhhtSjTfwmwNqwprATnXMVb8sHnJsCphYHSSKr?network=testnet) | SUSDT/SBTC pool liquidity provider token 
+SUSDTSETHLP | [`BrVcqTVDf2oYRVVUn39hzUMQPmEaiAqnRFbB3aFU2iYs`](https://wavesexplorer.com/assets/BrVcqTVDf2oYRVVUn39hzUMQPmEaiAqnRFbB3aFU2iYs?network=testnet) | SUSDT/SETH pool liquidity provider token 
 sWAVESWAVESLP | [`6oXgVr7nAK1uCjfttUSonPxcyfM6NyV7tQ8nC4zFvcX3`](https://wavesexplorer.com/assets/6oXgVr7nAK1uCjfttUSonPxcyfM6NyV7tQ8nC4zFvcX3?network=testnet) | sWAVES/WAVES pool liquidity provider token 
 TXW-DEVa~WAVESLP | [`GKxF718hhjSNscZmJUfTd4ovuQNLAkTU7zf3Y14UzTTh`](https://wavesexplorer.com/assets/GKxF718hhjSNscZmJUfTd4ovuQNLAkTU7zf3Y14UzTTh?network=testnet) | TXW-DEVa~/WAVES pool liquidity provider token 
 URHere~WAVESLP | [`JBk4X4opjdM9tJ3vcLiRSiD6LxPj8dsF5knAHgreBSho`](https://wavesexplorer.com/assets/JBk4X4opjdM9tJ3vcLiRSiD6LxPj8dsF5knAHgreBSho?network=testnet) | URHere~/WAVES pool liquidity provider token 
