@@ -44,6 +44,41 @@ describe(`[${process.pid}] wxdao: swap`, () => {
     }, baseSeed));
   });
 
+  it('1 payment is required', async () => {
+    expect(broadcastAndWait(invokeScript({
+      dApp: accounts.factory.address,
+      call: {
+        function: 'call',
+        args: [
+          { type: 'string', value: 'swap' },
+          { type: 'list', value: [] },
+        ],
+      },
+      payment: [],
+      chainId,
+    }, accounts.user1.seed))).to.be.rejectedWith('1 payment is required');
+  });
+
+  it('invalid payment asset id', async () => {
+    const amount = 1e8;
+    expect(broadcastAndWait(invokeScript({
+      dApp: accounts.factory.address,
+      call: {
+        function: 'call',
+        args: [
+          { type: 'string', value: 'swap' },
+          { type: 'list', value: [] },
+        ],
+      },
+      payment: [
+        {
+          amount,
+        },
+      ],
+      chainId,
+    }, accounts.user1.seed))).to.be.rejectedWith('invalid payment asset id');
+  });
+
   it('successfully swap', async () => {
     const amount = 1e8;
     const { stateChanges, height } = await broadcastAndWait(invokeScript({
