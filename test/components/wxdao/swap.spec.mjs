@@ -108,4 +108,25 @@ describe(`[${process.pid}] wxdao: swap`, () => {
       value: null,
     });
   });
+
+  it('invalid lock', async () => {
+    const index = 1;
+    expect(broadcastAndWait(invokeScript({
+      dApp: accounts.factory.address,
+      call: {
+        function: 'call',
+        args: [
+          { type: 'string', value: 'unlock' },
+          {
+            type: 'list',
+            value: [
+              { type: 'string', value: index.toString() },
+            ],
+          },
+        ],
+      },
+      payment: [],
+      chainId,
+    }, accounts.user1.seed))).to.be.rejectedWith('invalid lock');
+  });
 });
