@@ -71,6 +71,27 @@ describe(`[${process.pid}] wxdao: swap`, () => {
     });
   });
 
+  it('invalid height', async () => {
+    const index = 0;
+    expect(broadcastAndWait(invokeScript({
+      dApp: accounts.factory.address,
+      call: {
+        function: 'call',
+        args: [
+          { type: 'string', value: 'unlock' },
+          {
+            type: 'list',
+            value: [
+              { type: 'string', value: index.toString() },
+            ],
+          },
+        ],
+      },
+      payment: [],
+      chainId,
+    }, accounts.user1.seed))).to.be.rejectedWith('invalid lock');
+  });
+
   it('successfully unlock', async () => {
     await waitForHeight(lockFrom + lockDuration + 1);
     const index = 0;
