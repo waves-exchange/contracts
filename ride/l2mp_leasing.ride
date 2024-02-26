@@ -239,10 +239,12 @@ func getStakeActions(
 
     strict checks = [
         !isForceStop || "contract is temporary stopped".throwErr(),
-        i.payments.size() <= 1 || "maximum 1 payment".throwErr(),
+        i.payments.size() <= 1 || 
+            "maximum 1 payment".throwErr(),
         i.payments.size() == 0 || i.payments[0].assetId == assetIdBytes ||
             ["payment assetId should be:", assetIdString].makeString(" ").throwErr(),
-        userLeasingAmount > 0 || "amount should be greater than 0".throwErr(),
+        userLeasingAmount > 0 ||
+            "amount should be greater than 0".throwErr(),
         userLeasingAmount <= available || 
             "amount should be less or equal (payment + available) amount".throwErr(),
         userLeasingAmount >= paymentAmount || 
@@ -315,7 +317,7 @@ func setNewPeriodLength(newPeriodLength: Int) = {
 @Callable(i)
 func setForceStopFlag(stop: Boolean) = {
     strict check = [
-        isAdmin(i.caller.toString()) || "caller is not an admin".throwErr()
+        isAdmin(i.caller.toString()) || "caller is not in adminList".throwErr()
     ]
 
     [

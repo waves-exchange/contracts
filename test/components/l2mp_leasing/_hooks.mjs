@@ -20,9 +20,12 @@ export const mochaHooks = {
     const names = [
       'l2mpLeasing',
       'admin1',
+      'admin2',
+      'admin3',
       'user1',
       'user2',
       'node1',
+      'node2',
     ];
     this.accounts = Object.fromEntries(names.map((item) => {
       const itemSeed = randomSeed(seedWordsCount);
@@ -57,31 +60,26 @@ export const mochaHooks = {
     }, this.accounts.l2mpLeasing.seed);
     await broadcastAndWait(massTransferAssetTx);
 
-    await setScriptFromFile(l2mpLeasingPath, this.accounts.l2mpStaking.seed);
+    await setScriptFromFile(l2mpLeasingPath, this.accounts.l2mpLeasing.seed);
 
-    // const adminsListString = [
-    //   this.accounts.admin1.addr,
-    //   this.accounts.admin2.addr,
-    //   this.accounts.admin3.addr,
-    // ].join('__');
+    const adminsListString = [
+      this.accounts.admin1.addr,
+      this.accounts.admin2.addr,
+      this.accounts.admin3.addr,
+    ].join('__');
 
     const dataTx = data({
       additionalFee: 4e5,
       data: [
-        // {
-        //   key: '%s__adminAddressList',
-        //   type: 'string',
-        //   value: adminsListString,
-        // },
+        {
+          key: '%s__adminList',
+          type: 'string',
+          value: adminsListString,
+        },
         {
           key: '%s__assetId',
           type: 'string',
           value: this.l2mpAssetId,
-        },
-        {
-          key: '%s__emissionPeriodInBlocks',
-          type: 'integer',
-          value: 1,
         },
       ],
       chainId,
