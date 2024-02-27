@@ -7,9 +7,14 @@
   "chainId": 87,
   "data": [
     {
+      "key": "%s__calculatorAddress",
+      "type": "string",
+      "value": "3PQtGwmFsbKygGi8wPfUxz4bTUNgYodK3je"
+    },
+    {
       "key": "%s__lockAddress",
       "type": "string",
-      "value": ""
+      "value": "3PAqCJQC1rmfWsNvqepBG4bhiFAzSHGSQkm"
     },
     {
       "key": "%s__lockDuration",
