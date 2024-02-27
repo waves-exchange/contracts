@@ -21,7 +21,6 @@ export const mochaHooks = {
       'l2mpLeasing',
       'admin1',
       'admin2',
-      'admin3',
       'user1',
       'user2',
       'node1',
@@ -65,14 +64,13 @@ export const mochaHooks = {
     const adminsListString = [
       this.accounts.admin1.addr,
       this.accounts.admin2.addr,
-      this.accounts.admin3.addr,
     ].join('__');
 
     const dataTx = data({
       additionalFee: 4e5,
       data: [
         {
-          key: '%s__adminList',
+          key: '%s__adminAddressList',
           type: 'string',
           value: adminsListString,
         },
