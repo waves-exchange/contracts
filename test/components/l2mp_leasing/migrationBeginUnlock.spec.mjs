@@ -2,30 +2,22 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { data, invokeScript } from '@waves/waves-transactions';
 import {
-  api, chainId, broadcastAndWait,
+  chainId, broadcastAndWait,
 } from '../../utils/api.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('l2mp_leasing migration', /** @this {MochaSuiteModified} */() => {
+describe('l2mp_leasing migration begin', /** @this {MochaSuiteModified} */() => {
   const stakeAmount1 = 12345678;
   const stakeAmount2 = 54321;
   const totalStaked = stakeAmount1 + stakeAmount2;
   const periodLength = 2;
-  let periodStart;
 
   before(
     async function () {
-      const { height: currentHeight } = await api.blocks.fetchHeight();
-      periodStart = currentHeight + 10;
       const dataTx = data({
         data: [
-          {
-            key: '%s__offsetHeight',
-            type: 'integer',
-            value: Number(periodStart),
-          },
           {
             key: '%s__periodLength',
             type: 'integer',
@@ -85,26 +77,23 @@ describe('l2mp_leasing migration', /** @this {MochaSuiteModified} */() => {
         chainId,
       }, this.accounts.user1.seed);
 
-      const { stateChanges, height } = await broadcastAndWait(cancelLeaseTx);
-
-      const currentPeriod = periodStart;
-      const nextPeriod = periodStart + periodLength;
+      const { stateChanges } = await broadcastAndWait(cancelLeaseTx);
 
       expect(stateChanges.data).to.be.deep.equal([
         {
           key: `%s__${this.accounts.node1.addr}`,
           type: 'string',
-          value: `%d%d%d%d__${currentPeriod}__${totalStaked}__${nextPeriod}__${totalStaked - cancelAmount}`,
+          value: `%d%d%d%d__0__${totalStaked}__0__${totalStaked - cancelAmount}`,
         },
         {
           key: `%s%s__${this.accounts.node1.addr}__${this.accounts.user1.addr}`,
           type: 'string',
-          value: `%d%d%d%d__${currentPeriod}__${stakeAmount1}__${nextPeriod}__${stakeAmount1 - cancelAmount}`,
+          value: `%d%d%d%d__0__${stakeAmount1}__0__${stakeAmount1 - cancelAmount}`,
         },
         {
           key: `%s%s__toClaim__${this.accounts.user1.addr}`,
           type: 'string',
-          value: `%d%d%d%d__${currentPeriod}__0__${nextPeriod}__${cancelAmount}`,
+          value: `%d%d%d%d__0__0__0__${cancelAmount}`,
         },
         {
           key: `%s%s__userTotalLocked__${this.accounts.user1.addr}`,
@@ -112,12 +101,12 @@ describe('l2mp_leasing migration', /** @this {MochaSuiteModified} */() => {
           value: stakeAmount1 - cancelAmount,
         },
         {
-          key: `%s%d__${this.accounts.node1.addr}__${height}`,
+          key: `%s%d__${this.accounts.node1.addr}__0`,
           type: 'integer',
           value: totalStaked - cancelAmount,
         },
         {
-          key: `%s%s%d__${this.accounts.node1.addr}__${this.accounts.user1.addr}__${height}`,
+          key: `%s%s%d__${this.accounts.node1.addr}__${this.accounts.user1.addr}__0`,
           type: 'integer',
           value: stakeAmount1 - cancelAmount,
         },

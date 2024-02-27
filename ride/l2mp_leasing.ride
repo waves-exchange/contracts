@@ -26,9 +26,15 @@ let currentPeriodId = {
         max([0, periodOffsetId - 1])
 }
 let currentPeriodHeight = {
-    periodOffsetHeight + ((currentPeriodId - periodOffsetId) * periodLength)
+    if (periodOffsetHeight == -1) 
+    then 0
+    else periodOffsetHeight + ((currentPeriodId - periodOffsetId) * periodLength)
 }
-let nextPeriodHeight = (currentPeriodHeight + periodLength)
+let nextPeriodHeight = {
+    if (periodOffsetHeight == -1) 
+    then 0
+    else (currentPeriodHeight + periodLength)
+}
 
 func keyLeasingNodeData(nodeAddress: String) = ["%s", nodeAddress].makeString(SEP)
 
@@ -40,10 +46,14 @@ func keyUserTotalLocked(userAddress: String) =
     ["%s%s", "userTotalLocked", userAddress].makeString(SEP)
 
 # History keys
-func keyNodeLeasingByHeight(nodeAddress: String) = 
-    ["%s%d", nodeAddress, height.toString()].makeString(SEP)
-func keyUserLeasingByHeight(nodeAddress: String, userAddress: String) = 
-    ["%s%s%d", nodeAddress, userAddress, height.toString()].makeString(SEP)
+func keyNodeLeasingByHeight(nodeAddress: String) = {
+    let h = if (periodOffsetHeight == -1) then 0 else height
+    ["%s%d", nodeAddress, h.toString()].makeString(SEP)
+}
+func keyUserLeasingByHeight(nodeAddress: String, userAddress: String) = {
+    let h = if (periodOffsetHeight == -1) then 0 else height
+    ["%s%s%d", nodeAddress, userAddress, h.toString()].makeString(SEP)
+}
 
 let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
 let assetIdBytes  = if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
@@ -166,7 +176,7 @@ func getLeasingNodeData(nodeAddress: String) = {
             let nodeNextPeriod    = dataList[3].parseIntValue()
             let nodeNextLeased    = dataList[4].parseIntValue()
 
-            if (height < nodeNextPeriod)
+            if (height < nodeNextPeriod || periodOffsetHeight == -1)
                 then (nodeCurrentLeased, nodeNextLeased)
                 else (nodeNextLeased, nodeNextLeased)
         }
@@ -203,7 +213,7 @@ func getUserLeasingData(nodeAddress: String, userAddress: String) = {
             let userNextPeriod    = dataList[3].parseIntValue()
             let userNextLeased    = dataList[4].parseIntValue()
 
-            if (height < userNextPeriod)
+            if (height < userNextPeriod || periodOffsetHeight == -1)
                 then (userCurrentLeased, userNextLeased)
                 else (userNextLeased, userNextLeased)
         }
@@ -234,7 +244,7 @@ func getUserToClaimBalance(userAddress: String) = {
             let nextPeriod    = dataList[3].parseIntValue()
             let toUnlock      = dataList[4].parseIntValue()
 
-            if (height < nextPeriod) 
+            if (height < nextPeriod || periodOffsetHeight == -1) 
                 then (toClaim, toUnlock)
                 else (toClaim + toUnlock, 0)
         }
