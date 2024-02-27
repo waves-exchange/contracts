@@ -2,14 +2,6 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-func mustAddress(i: Invocation, address: Address) = {
-  i.caller == address || throw("permission denied")
-}
-
-func mustThis(i: Invocation) = {
-  mustAddress(i, this)
-}
-
 let SEP = "__"
 let WAVES = "WAVES"
 let contractFilename = "wxdao_factory.ride"
@@ -102,6 +94,7 @@ func voteINTERNAL(
 }
 
 func keyCalculatorAddress() = "%s__calculatorAddress"
+func keyLockAddress() = "%s__lockAddress"
 func keyPoolsFactoryAddress() = "%s__poolsFactoryAddress"
 func keyTreasuryAddress() = "%s__treasuryAddress"
 
@@ -111,6 +104,7 @@ func keyCurrentPeriod() = ["%s", "currentPeriod"].makeString(SEP)
 func keyStartHeightByPeriod(period: Int) = ["%s%d", "startHeight", period.toString()].makeString(SEP)
 func keyPeriodLength() = ["%s", "periodLength"].makeString(SEP)
 func keyTreasuryValueByPeriod(period: Int) = ["%s%d", "treasuryValue", period.toString()].makeString(SEP)
+func keyLockDuration() = ["%s", "lockDuration"].makeString(SEP)
 
 let calculatorAddressOption = match this.getString(keyCalculatorAddress()) {
   case s: String => s.addressFromString()
@@ -225,23 +219,27 @@ func init(
   lpAssetIdStr: String,
   treasuryAddressStr: String,
   calculatorAddressStr: String,
+  lockAddressStr: String,
   powerConfigAddressStr: String,
   powerContractAddress: String, # child
   poolsFactoryAddressStr: String,
   periodLength: Int,
+  lockDuration: Int,
   treasuryValue: Int,
   assets: List[String]
 ) = {
-  strict checkCaller = i.mustThis()
+  strict checkCaller = i.onlyThis()
 
   ([
     StringEntry(keyLpAssetId(), lpAssetIdStr),
     StringEntry(keyTreasuryAddress(), treasuryAddressStr),
     StringEntry(keyCalculatorAddress(), calculatorAddressStr),
+    StringEntry(keyLockAddress(), lockAddressStr),
     StringEntry(keyPowerConfigAddress(), powerConfigAddressStr),
     StringEntry(keyPowerContractAddress(), powerContractAddress),
     StringEntry(keyPoolsFactoryAddress(), poolsFactoryAddressStr),
     IntegerEntry(keyPeriodLength(), periodLength),
+    IntegerEntry(keyLockDuration(), lockDuration),
     IntegerEntry(keyTreasuryValueByPeriod(0), treasuryValue),
     IntegerEntry(keyCurrentPeriod(), 0),
     IntegerEntry(keyStartHeightByPeriod(0), height),
@@ -258,14 +256,14 @@ func commitAfterStartWithLockRoundFor(
   paymentAssetId: ByteVector,
   paymentAmount: Int
 ) = {
-  (
+  if (i.onlyCalculator()) then (
     nil,
     addressFromStringValue(contract).invoke(
       "commitAfterStartWithLockRoundFor",
       [child, address, additionalLockRounds],
       [AttachedPayment(paymentAssetId, paymentAmount)]
     )
-  )
+  ) else (nil, unit)
 }
 
 # calculator address should be replaced to change logic
