@@ -8,17 +8,17 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('l2mp_leasing migration end', /** @this {MochaSuiteModified} */() => {
+describe('l2mp_leasing migration future', /** @this {MochaSuiteModified} */() => {
   const stakeAmount1 = 12345678;
   const stakeAmount2 = 54321;
   const totalStaked = stakeAmount1 + stakeAmount2;
-  const periodLength = 10;
+  const periodLength = 2;
   let periodStart;
 
   before(
     async function () {
       const { height: currentHeight } = await api.blocks.fetchHeight();
-      periodStart = currentHeight - 1;
+      periodStart = currentHeight + 100;
       const dataTx = data({
         data: [
           {
@@ -87,8 +87,8 @@ describe('l2mp_leasing migration end', /** @this {MochaSuiteModified} */() => {
 
       const { stateChanges, height } = await broadcastAndWait(cancelLeaseTx);
 
-      const currentPeriod = periodStart;
-      const nextPeriod = periodStart + periodLength;
+      const currentPeriod = 0;
+      const nextPeriod = 0;
 
       expect(stateChanges.data).to.be.deep.equal([
         {

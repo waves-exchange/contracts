@@ -26,12 +26,12 @@ let currentPeriodId = {
         max([0, periodOffsetId - 1])
 }
 let currentPeriodHeight = {
-    if (periodOffsetHeight == -1) 
+    if (periodOffsetHeight == -1 || (currentPeriodId == 0 && height < periodOffsetHeight)) 
     then 0
     else periodOffsetHeight + ((currentPeriodId - periodOffsetId) * periodLength)
 }
 let nextPeriodHeight = {
-    if (periodOffsetHeight == -1) 
+    if (periodOffsetHeight == -1 || (currentPeriodId == 0 && height < periodOffsetHeight)) 
     then 0
     else (currentPeriodHeight + periodLength)
 }
@@ -244,7 +244,7 @@ func getUserToClaimBalance(userAddress: String) = {
             let nextPeriod    = dataList[3].parseIntValue()
             let toUnlock      = dataList[4].parseIntValue()
 
-            if (height < nextPeriod || periodOffsetHeight == -1) 
+            if (height < nextPeriod || currentPeriodId == 0) 
                 then (toClaim, toUnlock)
                 else (toClaim + toUnlock, 0)
         }

@@ -8,7 +8,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('l2mp_leasing migration end', /** @this {MochaSuiteModified} */() => {
+describe('l2mp_leasing migration future', /** @this {MochaSuiteModified} */() => {
   const stakeAmount1 = 12345678;
   const stakeAmount2 = 54321;
   const periodLength = 100;
@@ -19,7 +19,7 @@ describe('l2mp_leasing migration end', /** @this {MochaSuiteModified} */() => {
     async function () {
       const totalStaked = stakeAmount1 + stakeAmount2;
       const { height: currentHeight } = await api.blocks.fetchHeight();
-      periodStart = currentHeight - 1;
+      periodStart = currentHeight + 100;
       const dataTx = data({
         data: [
           {
@@ -85,9 +85,9 @@ describe('l2mp_leasing migration end', /** @this {MochaSuiteModified} */() => {
       expect(checkData).to.eql({
         type: 'Tuple',
         value: {
-          _1: { type: 'Int', value: periodStart },
+          _1: { type: 'Int', value: 0 },
           _2: { type: 'Int', value: stakeAmount1 },
-          _3: { type: 'Int', value: periodStart + periodLength },
+          _3: { type: 'Int', value: 0 },
           _4: { type: 'Int', value: stakeAmount1 },
           _5: { type: 'Int', value: currentHeight },
         },
@@ -109,9 +109,9 @@ describe('l2mp_leasing migration end', /** @this {MochaSuiteModified} */() => {
       expect(checkData).to.eql({
         type: 'Tuple',
         value: {
-          _1: { type: 'Int', value: periodStart },
+          _1: { type: 'Int', value: 0 },
           _2: { type: 'Int', value: stakeAmount1 + stakeAmount2 },
-          _3: { type: 'Int', value: periodStart + periodLength },
+          _3: { type: 'Int', value: 0 },
           _4: { type: 'Int', value: stakeAmount1 + stakeAmount2 },
           _5: { type: 'Int', value: currentHeight },
         },
@@ -133,9 +133,9 @@ describe('l2mp_leasing migration end', /** @this {MochaSuiteModified} */() => {
       expect(checkData).to.eql({
         type: 'Tuple',
         value: {
-          _1: { type: 'Int', value: periodStart },
+          _1: { type: 'Int', value: 0 },
           _2: { type: 'Int', value: 0 },
-          _3: { type: 'Int', value: periodStart + periodLength },
+          _3: { type: 'Int', value: 0 },
           _4: { type: 'Int', value: toUnlock1 },
           _5: { type: 'Int', value: stakeAmount1 },
           _6: { type: 'Int', value: currentHeight },
