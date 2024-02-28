@@ -232,6 +232,7 @@ func getClearStakingNodesActions(userAddress: String) = {
 
 func getStakeActions(i: Invocation, userAddress: String) = {
     strict checks = [
+        withdrawLockHeight == 0 || withdrawLockHeight > height || "stake is locked".throwErr(),
         i.payments.size() == 1 || "should include 1 payment".throwErr(),
         i.payments[0].assetId == assetIdBytes || ("payment should be in " + assetIdString).throwErr(),
         i.payments[0].amount > 0 || "payment amount should be greater than 0",
@@ -270,6 +271,7 @@ func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
     let userAddress = i.caller.toString()
     let userLpAmount = getUserLpAmount(userAddress)
     strict check = [
+        withdrawLockHeight == 0 || withdrawLockHeight > height || "withdraw is locked".throwErr(),
         lpAssetWithdrawAmount > 0 || "LP amount should be more than 0".throwErr(),
         lpAssetWithdrawAmount <= userLpAmount || ("cannot withdraw more than available LP (" + userLpAmount.toString() + ")").throwErr()
     ]
@@ -305,6 +307,7 @@ func getWithdrawActions(i: Invocation, lpAssetWithdrawAmount: Int) = {
 
 func getSetStakingNodeActions(userAddress: String, nodeAddress: String, nodeShare: Int) = {
   strict check = [
+    withdrawLockHeight == 0 || withdrawLockHeight > height || "changing staking node is locked".throwErr(),
     userAddress.fromBase58String().size() == ADDRESS_BYTES_SIZE || "user address is not valid".throwErr(),
     nodeAddress.fromBase58String().size() == ADDRESS_BYTES_SIZE || "node address is not valid".throwErr()
   ]
@@ -362,7 +365,6 @@ func withdraw(withdrawAssetAmount: Int) = {
   let userAvailableAssetToWithdraw = getUserAvailableAssetsToWithdraw(userAddress)
   let minWithdrawAssetAmount = fraction(getCurrentPrice(), 1.toBigInt(), scale18BigInt, CEILING).toInt()
   strict check = [
-      withdrawLockHeight == 0 || withdrawLockHeight > height || ["withdraw is locked at height:", withdrawLockHeight.toString()].makeString(" ").throwErr(),
       withdrawAssetAmount > 0 || "withdraw amount should be more than 0".throwErr(),
       withdrawAssetAmount <= userAvailableAssetToWithdraw || ("cannot withdraw more than available (" + userAvailableAssetToWithdraw.toString() + ")").throwErr(),
       withdrawAssetAmount >= minWithdrawAssetAmount || ("withdraw amount is too small. Min: (" + minWithdrawAssetAmount.toString() + ")").throwErr()
@@ -405,6 +407,7 @@ func airdrop(addressList: List[String], amountList: List[Int]) = {
     let amountListSum = FOLD<90>(amountList, 0, sum)
 
     strict check = [
+        withdrawLockHeight == 0 || withdrawLockHeight > height || "airdrop is locked:".throwErr(),
         i.payments.size() == 1 || "should include 1 payment".throwErr(),
         i.payments[0].assetId == assetIdBytes || ("payment should be in " + assetIdString).throwErr(),
         i.payments[0].amount > 0 || "payment amount should be greater than 0",
