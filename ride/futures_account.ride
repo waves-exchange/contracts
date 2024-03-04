@@ -48,6 +48,26 @@ func integerEntry(key: String, val: Int) =
   if (i.mustFactory()) then ([IntegerEntry(key, val)], key) else ([], unit)
 
 @Callable(i)
+func booleanEntry(key: String, val: Boolean) =
+  if (i.mustFactory()) then ([BooleanEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func binaryEntry(key: String, val: ByteVector) =
+  if (i.mustFactory()) then ([BinaryEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func deleteEntry(key: String) =
+  if (i.mustFactory()) then ([DeleteEntry(key)], key) else ([], unit)
+
+@Callable(i)
+func reissue(assetId: ByteVector, amount: Int, reissuable: Boolean) = 
+  if (i.mustFactory()) then ([Reissue(assetId, amount, reissuable)], amount) else ([], unit)
+
+@Callable(i)
+func burn(assetId: ByteVector, amount: Int) = 
+  if (i.mustFactory()) then ([Burn(assetId, amount)], amount) else ([], unit)
+
+@Callable(i)
 func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 
   if (i.mustFactory()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
 
@@ -69,7 +89,6 @@ func init(factoryPublicKey: ByteVector, creatorPublicKey: ByteVector) = {
   ], unit)
 }
 
-# bot can trade
 @Verifier(tx)
 func verify() = {
   match tx {
