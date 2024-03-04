@@ -1,0 +1,84 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let separator = "__"
+let chainId = this.bytes.drop(1).take(1)
+let chainIdT = base16'54'
+let chainIdW = base16'57'
+
+func mustAddress(i: Invocation, address: Address) = {
+  i.caller == address || throw("permission denied")
+}
+
+func mustThis(i: Invocation) = {
+  mustAddress(i, this)
+}
+
+let kFactoryPublicKey = "%s__factoryPublicKey"
+let kOwnerPublicKey = "%s__ownerPublicKey"
+
+func kAccountAddressToRequestId(accountAddress: Address) = {
+  ["%s%s", accountAddress.toString(), "accountAddressToRequestId"].makeString(separator)
+}
+func kAccountOwner(requestId: String) = {
+  ["%s%s", requestId, "ownerPublicKey"].makeString(separator)
+}
+
+let factoryAddress = addressFromPublicKey(this.getBinaryValue(kFactoryPublicKey))
+
+let requestId = factoryAddress.getStringValue(kAccountAddressToRequestId(this))
+let ownerPublicKey = factoryAddress.getBinaryValue(kAccountOwner(requestId))
+let ownerAddress = addressFromPublicKey(ownerPublicKey)
+
+func mustFactory(i: Invocation) = {
+  mustAddress(i, factoryAddress)
+}
+
+func mustOwner(i: Invocation) = {
+  mustAddress(i, ownerAddress)
+}
+
+@Callable(i)
+func stringEntry(key: String, val: String) =
+  if (i.mustFactory()) then ([StringEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func integerEntry(key: String, val: Int) =
+  if (i.mustFactory()) then ([IntegerEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 
+  if (i.mustFactory()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
+
+@Callable(i)
+func transferWaves(recipientBytes: ByteVector, amount: Int) = 
+  if (i.mustFactory()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
+
+@Callable(i)
+func init(factoryPublicKey: ByteVector, creatorPublicKey: ByteVector) = {
+  strict checkCaller = i.mustThis()
+
+  # throws if accounts is not ok
+  strict completeRequest = addressFromPublicKey(
+    factoryPublicKey
+  ).invoke("addAccount", [creatorPublicKey], [])
+
+  ([
+    BinaryEntry(kFactoryPublicKey, factoryPublicKey)
+  ], unit)
+}
+
+# bot can trade
+@Verifier(tx)
+func verify() = {
+  match tx {
+    case _: Order => sigVerify(tx.bodyBytes, tx.proofs[0], ownerPublicKey)
+    case _: InvokeScriptTransaction => if (this.getBinary(kFactoryPublicKey).isDefined()) then false else {
+      sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+    }
+    case _ => if (chainId == chainIdW) then false else {
+      sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+    }
+  }
+}
