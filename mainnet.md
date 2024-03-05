@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **17:05 04.03.2024** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **19:36 05.03.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -197,6 +197,7 @@ STEMX/USDT-ERC20 pool | [`3PR1XcqtuMBCcLVLXX759kJTLhDafAkFPtr`](https://wavesexp
 XBTC/USDT-ERC20 pool | [`3P6SewCLotq8AzoGhzM7Ge5pVDkhuxYeHMJ`](https://wavesexplorer.com/addresses/3P6SewCLotq8AzoGhzM7Ge5pVDkhuxYeHMJ) | `25HwUc2D4NBTwMUPS2gtSuNtMhyZpAWJ3bv1LdbAbXn2` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 XBTC/USDT pool | [`3PBawEwnfp5UXnyW3bRi993oAbzZaGBaQ7B`](https://wavesexplorer.com/addresses/3PBawEwnfp5UXnyW3bRi993oAbzZaGBaQ7B) | `988hzHvLuCg1YNWLf9GZQv7cWHx96t5WsEsXbScqi4su` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 WIND/WAVES pool | [`3PEtzvd7onMdQ3RiQLhkE8we5jSWxzcZ6UM`](https://wavesexplorer.com/addresses/3PEtzvd7onMdQ3RiQLhkE8we5jSWxzcZ6UM) | `E9XoApxTAEat8RWGem1g7Jdb39nCJHRD8yAbnTvgAyoL` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+DAXCOIN/USDT-ERC20 pool | [`3P6qCt7DJNZ5tkwa4g4yohQAW1DrrULQe86`](https://wavesexplorer.com/addresses/3P6qCt7DJNZ5tkwa4g4yohQAW1DrrULQe86) | `7yEAE5kjdyzGgoPA8VQkH25KoZq932XTPeQhhi5J9CGh` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -250,6 +251,7 @@ BTCB-BSC-PPT | [`EW1uGLVo21Wd9i2Rhq8o4VKDTCQTGCGXE8DqayHGrLg8`](https://wavesexp
 BURN-XTN | [`3SjxA2YLdfF9fTRbzLm9xFn27C6MW34W1YsdJ6Axefns`](https://wavesexplorer.com/assets/3SjxA2YLdfF9fTRbzLm9xFn27C6MW34W1YsdJ6Axefns) | Constantly burn more XTN without draining collateral from Neutrino treasury and make a profit while doing so. Support Neutrino and the Waves ecosystem. For more info go to: www.burnxtn.tech 
 Cloud | [`HtcYCnSzEVu93915Je8L8GjdoygZKSTLYDiKvQUmbrhE`](https://wavesexplorer.com/assets/HtcYCnSzEVu93915Je8L8GjdoygZKSTLYDiKvQUmbrhE) | Cloud  is a modern token that will change the world. It can help in the field of education, medicine, science. With its help it will be possible to earn money for medical and educational services.  
 CRV-ERC20-PPT | [`FmsB2B21fVVetWvZm7Q48cC2Bvs2hEZtft49TBn3guV1`](https://wavesexplorer.com/assets/FmsB2B21fVVetWvZm7Q48cC2Bvs2hEZtft49TBn3guV1) | CRV ERC20 Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/CRV-ERC20-PPT 
+DAXCOIN | [`G6fYqzJsD142ZCb4tSv4cyfQqLGFThvDZQwRqKKk2Wfn`](https://wavesexplorer.com/assets/G6fYqzJsD142ZCb4tSv4cyfQqLGFThvDZQwRqKKk2Wfn) | innovation, speed, safety and overvaluation. come to daxcoin. 
 DecentralCoin | [`GhWsqQ3g23jwaAiYT5P3p5sWVwViCp64C6SDy3o1VZ7N`](https://wavesexplorer.com/assets/GhWsqQ3g23jwaAiYT5P3p5sWVwViCp64C6SDy3o1VZ7N) | Official DecentralCoin Gateway Token of the DecentralChain Blockchain.
 
 Website: https://DecentralChain.io
@@ -390,6 +392,7 @@ BURN-XTN~XTNLP | [`7BLynNvde1NTBbaivX9zj1h1rrN9L1kWeWkFzpFhpJBz`](https://wavese
 Cloud~PETELP | [`9GrpJ4rcZXQCL5KapvK6et9EjMSj2McwYb8BXde356os`](https://wavesexplorer.com/assets/9GrpJ4rcZXQCL5KapvK6et9EjMSj2McwYb8BXde356os) | Cloud~/PETE pool liquidity provider token 
 CROXTNLP | [`Bv1h21xvJ6Hj5WUhih42Wo8NHRjtETjFYn4J3QgD5Wua`](https://wavesexplorer.com/assets/Bv1h21xvJ6Hj5WUhih42Wo8NHRjtETjFYn4J3QgD5Wua) | WX CRO/XTN pool liquidity provider token 
 CRV-ERC2~WAVESLP | [`5sbHqAx17SzdgSDKoxC8QJvTpoWByL1kriu3D53v84xx`](https://wavesexplorer.com/assets/5sbHqAx17SzdgSDKoxC8QJvTpoWByL1kriu3D53v84xx) | CRV-ERC2~/WAVES pool liquidity provider token 
+DAX~USDT-ERC20LP | [`9xqTtF4MuNZCW7H1A8r9YiUJnQZcrZiyPUrUTvA8nF5X`](https://wavesexplorer.com/assets/9xqTtF4MuNZCW7H1A8r9YiUJnQZcrZiyPUrUTvA8nF5X) | DAX~/USDT-ERC20 pool liquidity provider token 
 Decentra~WAVESLP | [`BcNS3tawfQcyeHodM2shss5Fr97SaAYtpKyFgZ6zRwHP`](https://wavesexplorer.com/assets/BcNS3tawfQcyeHodM2shss5Fr97SaAYtpKyFgZ6zRwHP) | Decentra~/WAVES pool liquidity provider token 
 Dec~USDC-ERC20LP | [`4kcqhYEXscoU2xeuKmZ1G97T9X3nFLYa6KMWd4busxz2`](https://wavesexplorer.com/assets/4kcqhYEXscoU2xeuKmZ1G97T9X3nFLYa6KMWd4busxz2) | Dec~/USDC-ERC20 pool liquidity provider token 
 DOBERCOIN~WXLP | [`2gd6VPFh5unXiBngb92X9qiRXN7pYGDtYAeWzPAD4aGo`](https://wavesexplorer.com/assets/2gd6VPFh5unXiBngb92X9qiRXN7pYGDtYAeWzPAD4aGo) | DOBERCOIN~/WX pool liquidity provider token 
