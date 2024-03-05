@@ -2,7 +2,7 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
-let contractFile = "l2mp_staking.ride"
+let contractFile = "l2mp_leasing.ride"
 
 func wrapErr(msg: String) = {
   contractFile + ": " + msg
@@ -13,12 +13,7 @@ func throwErr(msg: String) = {
 }
 
 @Callable(i)
-func stakeFor(userAddressStr: String) = {
-  (nil, unit)
-}
-
-@Callable(i)
-func stakeForSwapHELPER(userAddress: String, nodeAddress: String) = {
+func leaseByAddress(userAddress: String, nodeAddress: String) = {
   strict check = [
     i.originCaller.toString() == userAddress || "i.originCaller should be equal to userAddress".throwErr()
   ]

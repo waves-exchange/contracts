@@ -16,13 +16,13 @@ const seedWordsCount = 5;
 const ridePath = '../ride';
 const mockPath = 'components/l2mp_swap/mock';
 const l2mpSwapPath = format({ dir: ridePath, base: 'l2mp_swap.ride' });
-const l2mpStakingMockPath = format({ dir: mockPath, base: 'l2mp_staking.mock.ride' });
+const l2mpLeasingMockPath = format({ dir: mockPath, base: 'l2mp_leasing.mock.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
     const names = [
       'l2mpSwap',
-      'l2mpStaking',
+      'l2mpLeasing',
       'admin1',
       'admin2',
       'admin3',
@@ -92,15 +92,15 @@ export const mochaHooks = {
           value: 1e6,
         },
         {
-          key: '%s__stakingAddress',
+          key: '%s__leasingAddress',
           type: 'string',
-          value: this.accounts.l2mpStaking.addr,
+          value: this.accounts.l2mpLeasing.addr,
         },
       ],
       chainId,
     }, this.accounts.l2mpSwap.seed));
 
     await setScriptFromFile(l2mpSwapPath, this.accounts.l2mpSwap.seed);
-    await setScriptFromFile(l2mpStakingMockPath, this.accounts.l2mpStaking.seed);
+    await setScriptFromFile(l2mpLeasingMockPath, this.accounts.l2mpLeasing.seed);
   },
 };
