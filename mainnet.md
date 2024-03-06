@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **11:03 06.03.2024** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **18:10 06.03.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -198,6 +198,7 @@ XBTC/USDT-ERC20 pool | [`3P6SewCLotq8AzoGhzM7Ge5pVDkhuxYeHMJ`](https://wavesexpl
 XBTC/USDT pool | [`3PBawEwnfp5UXnyW3bRi993oAbzZaGBaQ7B`](https://wavesexplorer.com/addresses/3PBawEwnfp5UXnyW3bRi993oAbzZaGBaQ7B) | `988hzHvLuCg1YNWLf9GZQv7cWHx96t5WsEsXbScqi4su` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 WIND/WAVES pool | [`3PEtzvd7onMdQ3RiQLhkE8we5jSWxzcZ6UM`](https://wavesexplorer.com/addresses/3PEtzvd7onMdQ3RiQLhkE8we5jSWxzcZ6UM) | `E9XoApxTAEat8RWGem1g7Jdb39nCJHRD8yAbnTvgAyoL` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 DAXCOIN/USDT-ERC20 pool | [`3P6qCt7DJNZ5tkwa4g4yohQAW1DrrULQe86`](https://wavesexplorer.com/addresses/3P6qCt7DJNZ5tkwa4g4yohQAW1DrrULQe86) | `7yEAE5kjdyzGgoPA8VQkH25KoZq932XTPeQhhi5J9CGh` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+FUDT/USDT pool | [`3PEZHTgxTzMCZ1o2hYFcJDa4LSUxUXS4oY3`](https://wavesexplorer.com/addresses/3PEZHTgxTzMCZ1o2hYFcJDa4LSUxUXS4oY3) | `EynvZbtaxLi7kCv49aHrrzZaJLFT5CQ2RDxKLY5z9Fp4` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -269,6 +270,7 @@ EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.co
 EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.com/assets/3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK) | Enterprise Algorithmic Stable Token 
 ENNO | [`7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg`](https://wavesexplorer.com/assets/7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg) | Native utility and governance token of Enno Wallet 
 ETH-Ethereum-PPT | [`3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13`](https://wavesexplorer.com/assets/3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
+FUDT | [`5Lhv8uKnvGxA2cjbFXXKZFASk1cAFp9dRWkmLYhULtSX`](https://wavesexplorer.com/assets/5Lhv8uKnvGxA2cjbFXXKZFASk1cAFp9dRWkmLYhULtSX) | FUDT is a community token. The token is using for activities in WAVES ecosystem like votings, advertising, activities etc. The token is an integral part of the FUD DAO. 
 gxWX | [`3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii`](https://wavesexplorer.com/assets/3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii) | xWX - purpose of the token, increase the value and liquidity of the WX token.  The program will launch after the implementation of 15% of the emission of 1 xWX -1 WX with the support of the private capital community 
 InfinityCoin | [`7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF`](https://wavesexplorer.com/assets/7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF) | 
 InfinityCoin: la criptovaluta del futuro. Sicura, veloce e senza intermediari, ti consente di trasferire valore in tutto il mondo con un semplice clic. Con la sua piattaforma di contratti intelligenti, puoi creare token personalizzati e avviare la tua attività basata su blockchain. Partecipa attivamente alle decisioni del progetto e godi di un ecosistema inclusivo. Lasciati trasportare verso l'infinito con InfinityCoin, dove le possibilità sono illimitate e il potenziale è senza confini. Unisciti a noi nella rivoluzione criptovalutaria e scopri l'eccitante futuro della finanza decentralizzata. 
@@ -412,6 +414,7 @@ ETHWAVESLP | [`E6MUGSUieSsq6QiJcbp6REdQXyjp6uPWLitnp9Gdtsuh`](https://wavesexplo
 EURNXTNLP | [`EvcYEnUDWEfUrLTkGaDcEFLDPa8Yt2biD33gVoziezjE`](https://wavesexplorer.com/assets/EvcYEnUDWEfUrLTkGaDcEFLDPa8Yt2biD33gVoziezjE) | WX EURN/XTN pool liquidity provider token 
 FTMXTNLP | [`9s3j75byznhtBHfwerKirr6VbRgYkk8Y7AWd2wVL3vvL`](https://wavesexplorer.com/assets/9s3j75byznhtBHfwerKirr6VbRgYkk8Y7AWd2wVL3vvL) | WX FTM/XTN pool liquidity provider token 
 FTTXTNLP | [`BvydnzP19hvrrALiT3FeUBut4gU1efTPb29gVFbKgxJg`](https://wavesexplorer.com/assets/BvydnzP19hvrrALiT3FeUBut4gU1efTPb29gVFbKgxJg) | WX FTT/XTN pool liquidity provider token 
+FUDT~USDTLP | [`3b6sGQhCk8rYsU9cCpsX85uT2UX9g7B3ecn6pnUkfRYR`](https://wavesexplorer.com/assets/3b6sGQhCk8rYsU9cCpsX85uT2UX9g7B3ecn6pnUkfRYR) | FUDT~/USDT pool liquidity provider token 
 GRTXTNLP | [`J3G5P19GvBHREKMxC4CWKfAULx5dHHePSPoEymJWBxue`](https://wavesexplorer.com/assets/J3G5P19GvBHREKMxC4CWKfAULx5dHHePSPoEymJWBxue) | WX GRT/XTN pool liquidity provider token 
 gxWX~WAVESLP | [`HVCywoFAXk9g2n8pyGwF1ZjHqrL29WfsbqQCf1xQDBhB`](https://wavesexplorer.com/assets/HVCywoFAXk9g2n8pyGwF1ZjHqrL29WfsbqQCf1xQDBhB) | gxWX~/WAVES pool liquidity provider token 
 gxWX~WXLP | [`HP9eDx6sovyRCRLrsNrcwJs4BVi4Yu686AXvZ5N8awKm`](https://wavesexplorer.com/assets/HP9eDx6sovyRCRLrsNrcwJs4BVi4Yu686AXvZ5N8awKm) | gxWX~/WX pool liquidity provider token 
