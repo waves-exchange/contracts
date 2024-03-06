@@ -8,9 +8,9 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
+describe('l2mp_swap: swapAndStake', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully swap token and set staking node',
+    'should successfully swap and stake to staking node',
     async function () {
       const assetInAmount = 1e6;
       const price = 1e6;
