@@ -5,6 +5,15 @@
 let separator = "__"
 let chainId = this.bytes.drop(1).take(1)
 let chainIdW = base16'57'
+let contractFilename = "futures_account.ride"
+
+func wrapErr(s: String) = {
+  contractFilename + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
 
 func mustAddress(i: Invocation, address: Address) = {
   i.caller == address || throw("permission denied")
@@ -26,6 +35,13 @@ func kAccountOwner(requestId: String) = {
 
 let factoryAddress = addressFromPublicKey(this.getBinaryValue(kFactoryPublicKey))
 
+let kCalculatorAddress = "%s__calculatorAddress"
+let calculatorAddressOption = match factoryAddress.getString(kCalculatorAddress) {
+  case s: String => s.addressFromString()
+  case _: Unit => unit
+}
+let calculatorAddress = calculatorAddressOption.valueOrErrorMessage(wrapErr("invalid calculator address"))
+
 let requestId = factoryAddress.getStringValue(kAccountAddressToRequestId(this))
 let ownerPublicKey = factoryAddress.getBinaryValue(kAccountOwner(requestId))
 let ownerAddress = addressFromPublicKey(ownerPublicKey)
@@ -34,45 +50,49 @@ func mustFactory(i: Invocation) = {
   mustAddress(i, factoryAddress)
 }
 
+func mustCalculator(i: Invocation) = {
+  mustAddress(i, calculatorAddress)
+}
+
 func mustOwner(i: Invocation) = {
   mustAddress(i, ownerAddress)
 }
 
 @Callable(i)
 func stringEntry(key: String, val: String) =
-  if (i.mustFactory()) then ([StringEntry(key, val)], key) else ([], unit)
+  if (i.mustCalculator()) then ([StringEntry(key, val)], key) else ([], unit)
 
 @Callable(i)
 func integerEntry(key: String, val: Int) =
-  if (i.mustFactory()) then ([IntegerEntry(key, val)], key) else ([], unit)
+  if (i.mustCalculator()) then ([IntegerEntry(key, val)], key) else ([], unit)
 
 @Callable(i)
 func booleanEntry(key: String, val: Boolean) =
-  if (i.mustFactory()) then ([BooleanEntry(key, val)], key) else ([], unit)
+  if (i.mustCalculator()) then ([BooleanEntry(key, val)], key) else ([], unit)
 
 @Callable(i)
 func binaryEntry(key: String, val: ByteVector) =
-  if (i.mustFactory()) then ([BinaryEntry(key, val)], key) else ([], unit)
+  if (i.mustCalculator()) then ([BinaryEntry(key, val)], key) else ([], unit)
 
 @Callable(i)
 func deleteEntry(key: String) =
-  if (i.mustFactory()) then ([DeleteEntry(key)], key) else ([], unit)
+  if (i.mustCalculator()) then ([DeleteEntry(key)], key) else ([], unit)
 
 @Callable(i)
 func reissue(assetId: ByteVector, amount: Int, reissuable: Boolean) = 
-  if (i.mustFactory()) then ([Reissue(assetId, amount, reissuable)], amount) else ([], unit)
+  if (i.mustCalculator()) then ([Reissue(assetId, amount, reissuable)], amount) else ([], unit)
 
 @Callable(i)
 func burn(assetId: ByteVector, amount: Int) = 
-  if (i.mustFactory()) then ([Burn(assetId, amount)], amount) else ([], unit)
+  if (i.mustCalculator()) then ([Burn(assetId, amount)], amount) else ([], unit)
 
 @Callable(i)
 func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 
-  if (i.mustFactory()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
+  if (i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
 
 @Callable(i)
 func transferWaves(recipientBytes: ByteVector, amount: Int) = 
-  if (i.mustFactory()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
+  if (i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
 
 @Callable(i)
 func init(factoryPublicKey: ByteVector, creatorPublicKey: ByteVector) = {

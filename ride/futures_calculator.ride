@@ -1,0 +1,208 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let separator = "__"
+let chainId = this.bytes.drop(1).take(1)
+let chainIdW = base16'57'
+let contractFilename = "futures_calculator.ride"
+
+func wrapErr(s: String) = {
+  contractFilename + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
+
+let kFactoryAddress = "%s__factoryAddress"
+let factoryAddressOption = match this.getString(kFactoryAddress) {
+  case s: String => s.addressFromString()
+  case _: Unit => unit
+}
+let factoryAddress = factoryAddressOption.valueOrErrorMessage(wrapErr("invalid factory address"))
+
+func mustAddress(i: Invocation, address: Address) = {
+  i.caller == address || throw("permission denied")
+}
+
+func mustThis(i: Invocation) = {
+  mustAddress(i, this)
+}
+
+let wavesString = "WAVES"
+let queueItemSize = 32
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
+let kAccountScript = "%s__accountScript"
+func accountScript() = this.getBinary(
+  kAccountScript
+).valueOrErrorMessage("account script is not set")
+
+let kRewardAmount = "%s__rewardAmount"
+func rewardAmount() = this.getInteger(
+  kRewardAmount
+).valueOrErrorMessage("reward amount is not set")
+
+let REQUEST_STATUS_EMPTY = 0
+let REQUEST_STATUS_READY = 1
+func kRequestStatus(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "status"].makeString(separator)
+}
+
+func kAccountCreatorPublicKey(accountAddress: Address) = {
+  ["%s%s", accountAddress.toString(), "creatorPublicKey"].makeString(separator)
+}
+func kRequestOwnerPublicKey(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "ownerPublicKey"].makeString(separator)
+}
+func kRequestAmountAssetId(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "amountAssetId"].makeString(separator)
+}
+func kRequestPriceAssetId(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "priceAssetId"].makeString(separator)
+}
+func kRequestIdToAccountPublicKey(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "requestIdToAccountPublicKey"].makeString(separator)
+}
+func kAccountAddressToRequestId(accountAddress: Address) = {
+  ["%s%s", accountAddress.toString(), "accountAddressToRequestId"].makeString(separator)
+}
+
+func kRequestsQueue() = {
+  ["%s", "requestsQueue"].makeString(separator)
+}
+func requestsQueue() = this.getBinary(kRequestsQueue()).valueOrElse(base58'')
+
+func kAccountsQueue() = {
+  ["%s", "accountsQueue"].makeString(separator)
+}
+func accountsQueue() = this.getBinary(kAccountsQueue()).valueOrElse(base58'')
+
+func kPairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
+  ["%s%s%s", assetIdToString(amountAssetId), assetIdToString(priceAssetId), "pairAllowed"].makeString(separator)
+}
+func pairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
+  this.getBoolean(
+    kPairAllowed(amountAssetId, priceAssetId)
+  ).valueOrElse(false)
+}
+
+@Callable(i)
+func init(
+  factoryAddressStr: String
+) = {
+  strict checkCaller = i.mustThis()
+
+  ([
+    StringEntry(kFactoryAddress, factoryAddressStr)
+  ], unit)
+}
+
+# called by user
+# additional fee in payment
+@Callable(i)
+func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
+  let amountAssetIdStr = args[0]
+  let priceAssetIdStr = args[1]
+  let requestId = sha256(callerPublicKey + amountAssetIdStr.fromBase58String() + priceAssetIdStr.fromBase58String())
+  let amountAssetId = parseAssetId(amountAssetIdStr)
+  let priceAssetId = parseAssetId(priceAssetIdStr)
+
+  strict checks = [
+    i.payments.size() == 1 || throw("1 payment is required"),
+    i.payments[0].assetId == unit || throw("invalid asset"),
+    i.payments[0].amount == rewardAmount() || throw("invalid amount"),
+    pairAllowed(amountAssetId, priceAssetId) || throw("pair is not allowed"),
+    this.getInteger(kRequestStatus(requestId)) == unit || throw("account is already exists")
+  ]
+
+  # add request to queue or match with account immediately
+
+  let (actions, factoryActions) = if (accountsQueue().size() == 0) then { # if the accounts queue is empty
+    # then add request to requests queue
+    ([
+      ScriptTransfer(factoryAddress, rewardAmount(), unit)
+    ],
+    [
+      factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_EMPTY], []),
+      factoryAddress.invoke("binaryEntry", [kRequestsQueue(), requestsQueue() + requestId], [])
+    ])
+  } else { # if the accounts queue is not empty
+    # then fullfill request
+    let accountPublicKey = accountsQueue().take(queueItemSize)
+    let accountAddress = addressFromPublicKey(accountPublicKey)
+    let creatorAddress = addressFromPublicKey(
+      this.getBinary(
+        kAccountCreatorPublicKey(accountAddress)
+      ).valueOrErrorMessage("invalid creator public key")
+    )
+    ([
+      ScriptTransfer(creatorAddress, rewardAmount(), unit)
+    ],
+    [
+      factoryAddress.invoke("binaryEntry", [kAccountsQueue(), accountsQueue().drop(queueItemSize)], []),
+      factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_READY], []),
+      factoryAddress.invoke("binaryEntry", [kRequestIdToAccountPublicKey(requestId), accountPublicKey], []),
+      factoryAddress.invoke("stringEntry", [kAccountAddressToRequestId(accountAddress), requestId.toBase58String()], [])
+    ])
+  }
+
+  (actions, factoryActions ++ [
+    factoryAddress.invoke("binaryEntry", [kRequestOwnerPublicKey(requestId), callerPublicKey], []),
+    factoryAddress.invoke("stringEntry", [kRequestAmountAssetId(requestId), amountAssetIdStr], []),
+    factoryAddress.invoke("stringEntry", [kRequestPriceAssetId(requestId), priceAssetIdStr], [])
+  ])
+}
+
+# called by account script
+# additional fee is sent to recipient
+@Callable(i)
+func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
+  let creatorPublicKey = args[0].fromBase58String()
+  let accountPublicKey = callerPublicKey
+  let accountAddress = addressFromPublicKey(callerPublicKey)
+  let creatorAddress = addressFromPublicKey(creatorPublicKey)
+
+  strict checks = [
+    this.getBinary(kAccountCreatorPublicKey(accountAddress)) == unit || throw("account is already exists"),
+    match scriptHash(accountAddress) {
+      case b: ByteVector => b == blake2b256_32Kb(accountScript())
+      case _ => false
+    } || throw("invalid script")
+  ]
+
+  let (actions, factoryActions) = if (requestsQueue().size() == 0) then { # if the requests queue is empty
+    # then add account to accounts queue
+    (
+      [],
+      [
+        factoryAddress.invoke("binaryEntry", [kAccountsQueue(), accountsQueue() + accountPublicKey], [])
+      ]
+    )
+  } else { # if the requests queue is not empty
+    # then fullfill next request
+    let requestId = requestsQueue().take(queueItemSize)
+    (
+      [],
+      [
+        factoryAddress.invoke("binaryEntry", [kRequestsQueue(), requestsQueue().drop(queueItemSize)], []),
+        factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_READY], []),
+        factoryAddress.invoke("binaryEntry", [kRequestIdToAccountPublicKey(requestId), accountPublicKey], []),
+        factoryAddress.invoke("stringEntry", [kAccountAddressToRequestId(accountAddress), requestId.toBase58String()], []),
+        factoryAddress.invoke("transferWaves", [creatorAddress.bytes, rewardAmount()], [])
+      ]
+    )
+  }
+
+  (actions, factoryActions ++ [
+    factoryAddress.invoke("binaryEntry", [kAccountCreatorPublicKey(accountAddress), creatorPublicKey], [])
+  ])
+}
