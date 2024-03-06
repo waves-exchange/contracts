@@ -17,7 +17,7 @@ func throwErr(msg: String) = {
 let keyAssetInId = ["%s", "assetInId"].makeString(SEP)
 let keyAssetOutId = ["%s", "assetOutId"].makeString(SEP)
 let keyAssetOutPrice = ["%s", "assetOutPrice"].makeString(SEP)
-let keyLeasingAddress = ["%s", "leasingAddress"].makeString(SEP)
+let keyStakingAddress = ["%s", "stakingAddress"].makeString(SEP)
 let keyStatsTotalIn = ["%s%s", "stats", "totalIn"].makeString(SEP)
 let keyStatsTotalOut = ["%s%s", "stats", "totalOut"].makeString(SEP)
 let keyAllowedAddress = ["%s", "allowedAddress"].makeString(SEP)
@@ -32,7 +32,7 @@ func keyHistory(address: Address, txId: ByteVector) = {
   ["%s%s%s", "history", address.toString(), txId.toBase58String()].makeString(SEP)
 }
 func formatHistory(amountIn: Int, amountOut: Int, stake: Boolean, stakingNode: String) = {
-  ["%d%d%d", amountIn.toString(), amountOut.toString(), stake.toString(), stakingNode].makeString(SEP)
+  ["%d%d%b%s", amountIn.toString(), amountOut.toString(), stake.toString(), stakingNode].makeString(SEP)
 }
 
 let assetInId = this.getString(keyAssetInId)
@@ -47,12 +47,12 @@ let assetOutInfo = assetInfo(assetOutId)
   .valueOrErrorMessage(wrapErr("invalid assetOutInfo"))
 let assetOutPrice = this.getInteger(keyAssetOutPrice)
   .valueOrErrorMessage(wrapErr("invalid assetOutPrice"))
-let leasingAddressOption = match this.getString(keyLeasingAddress) {
+let stakingAddressOption = match this.getString(keyStakingAddress) {
   case s: String => addressFromString(s)
   case _: Unit => unit
 }
-let leasingAddress = leasingAddressOption
-  .valueOrErrorMessage(wrapErr("invalid leasingAddress"))
+let stakingAddress = stakingAddressOption
+  .valueOrErrorMessage(wrapErr("invalid stakingAddress"))
 let allowedAddressOption = match this.getString(keyAllowedAddress) {
   case s: String => addressFromString(s)
   case _: Unit => unit
@@ -155,11 +155,12 @@ func voteINTERNAL(
 ##########################
 
 
-func getSwapActions(i: Invocation, stake: Boolean, stakingNode: String) = {
+func getSwapActions(i: Invocation, stakingNode: String) = {
   let userAddress = i.originCaller
   let payment = i.payments[0]
   let assetInAmount = payment.amount
   let assetOutAmount = fraction(assetInAmount, scale8, assetOutPrice)
+  let stake = if (stakingNode.isValidAddress()) then true else false
 
   strict checks = [
     i.payments.size() == 1       || throwErr("invalid payments size"),
@@ -171,7 +172,7 @@ func getSwapActions(i: Invocation, stake: Boolean, stakingNode: String) = {
   let stakeAction = if (!stake) 
     then [ ScriptTransfer(userAddress, assetOutAmount, assetOutId) ]
     else {
-      strict stakeInvoke = leasingAddress.invoke(
+      strict stakeInvoke = stakingAddress.invoke(
       "leaseByAddress",
       [userAddress.toString(), stakingNode],
       [AttachedPayment(assetOutId, assetOutAmount)])
@@ -207,10 +208,19 @@ func getSwapActions(i: Invocation, stake: Boolean, stakingNode: String) = {
 }
 
 @Callable(i)
-func swap(stake: Boolean, stakingNode: String) = {
-  let node = if (stakingNode.isValidAddress()) then stakingNode else "NULL"
+func swap() = {
+  getSwapActions(i, "NULL")
+}
 
-  getSwapActions(i, stake, node)
+@Callable(i)
+func swapAndStake(stakingNode: String) = {
+  strict check = [
+    stakingNode.isValidAddress() || stakingNode == "" || "staking node address is no valid".throwErr()
+  ]
+
+  let node = if (stakingNode == "") then "NULL" else stakingNode
+
+  getSwapActions(i, node)
 }
 
 @Callable(i)

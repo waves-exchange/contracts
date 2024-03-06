@@ -92,7 +92,7 @@ export const mochaHooks = {
           value: 1e6,
         },
         {
-          key: '%s__leasingAddress',
+          key: '%s__stakingAddress',
           type: 'string',
           value: this.accounts.l2mpLeasing.addr,
         },

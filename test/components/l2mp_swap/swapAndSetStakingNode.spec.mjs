@@ -19,9 +19,8 @@ describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
       const { id: txId, stateChanges } = await broadcastAndWait(invokeScript({
         dApp: this.accounts.l2mpSwap.addr,
         call: {
-          function: 'swap',
+          function: 'swapAndStake',
           args: [
-            { type: 'boolean', value: true },
             { type: 'string', value: this.accounts.node1.addr },
           ],
         },
@@ -64,7 +63,7 @@ describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
         {
           key: `%s%s%s__history__${this.accounts.user1.addr}__${txId}`,
           type: 'string',
-          value: `%d%d%d__${assetInAmount}__${expectedAssetOutAmount}__true__${this.accounts.node1.addr}`,
+          value: `%d%d%b%s__${assetInAmount}__${expectedAssetOutAmount}__true__${this.accounts.node1.addr}`,
         },
       ]);
     },

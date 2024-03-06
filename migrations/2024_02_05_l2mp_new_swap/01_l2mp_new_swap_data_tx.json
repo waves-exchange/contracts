@@ -2,7 +2,7 @@
     "type": 12,
     "fee": 500000,
     "version": 2,
-    "senderPublicKey": "",
+    "senderPublicKey": "EfRKQWb1FWaWmo9fkorRwMA4BrSzUWNAVhXqB9vLmv7g",
     "data": [
         {
             "key": "%s__assetInId",
@@ -20,7 +20,7 @@
             "value": 1000000
         },
         {
-            "key": "%s__leasingAddress",
+            "key": "%s__stakingAddress",
             "type": "string",
             "value": "3PF1QWiN4A3CCJoKh1kGtqYqMNaBnRZbC6t"
         },

@@ -20,10 +20,6 @@ describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
         dApp: this.accounts.l2mpSwap.addr,
         call: {
           function: 'swap',
-          args: [
-            { type: 'boolean', value: false },
-            { type: 'string', value: '' },
-          ],
         },
         payment: [
           { assetId: this.xtnAssetId, amount: assetInAmount },
@@ -62,7 +58,7 @@ describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
         {
           key: `%s%s%s__history__${this.accounts.user1.addr}__${txId}`,
           type: 'string',
-          value: `%d%d%d__${assetInAmount}__${expectedAssetOutAmount}__false__NULL`,
+          value: `%d%d%b%s__${assetInAmount}__${expectedAssetOutAmount}__false__NULL`,
         },
       ]);
     },
