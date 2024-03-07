@@ -19,6 +19,7 @@ import {
 const nonceLength = 3;
 const ridePath = '../ride';
 const factoryPath = format({ dir: ridePath, base: 'futures_factory.ride' });
+const calculatorPath = format({ dir: ridePath, base: 'futures_calculator.ride' });
 const accountPath = format({ dir: ridePath, base: 'futures_account.ride' });
 
 export const setup = async ({
@@ -27,6 +28,7 @@ export const setup = async ({
   const nonce = wc.random(nonceLength, 'Buffer').toString('hex');
   const names = [
     'factory',
+    'calculator',
     'creator',
     'user1',
     'user2',
@@ -79,6 +81,12 @@ export const setup = async ({
       null,
       libraries,
     ),
+    setScriptFromFile(
+      calculatorPath,
+      accounts.calculator.seed,
+      null,
+      libraries,
+    ),
   ]);
 
   const { base64: accountScript } = await compileScriptFromFile(accountPath, null, libraries);
@@ -87,12 +95,24 @@ export const setup = async ({
     call: {
       function: 'init',
       args: [
+        { type: 'string', value: accounts.calculator.address },
         { type: 'binary', value: accountScript },
         { type: 'integer', value: rewardAmount },
       ],
     },
     chainId,
   }, accounts.factory.seed));
+
+  await broadcastAndWait(invokeScript({
+    dApp: accounts.calculator.address,
+    call: {
+      function: 'init',
+      args: [
+        { type: 'string', value: accounts.factory.address },
+      ],
+    },
+    chainId,
+  }, accounts.calculator.seed));
 
   return {
     accounts, rewardAmount, assetId1, assetId2,

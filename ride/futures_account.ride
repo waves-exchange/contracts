@@ -101,7 +101,7 @@ func init(factoryPublicKey: ByteVector, creatorPublicKey: ByteVector) = {
   # throws if accounts is not ok
   strict completeRequest = addressFromPublicKey(
     factoryPublicKey
-  ).invoke("addAccount", [creatorPublicKey], [])
+  ).invoke("call", ["addAccount", [creatorPublicKey.toBase58String()]], [])
 
   ([
     BinaryEntry(kFactoryPublicKey, factoryPublicKey)

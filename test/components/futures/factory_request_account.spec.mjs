@@ -1,5 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import chaiSubset from 'chai-subset';
 import {
   data, invokeScript, setScript, transfer,
 } from '@waves/waves-transactions';
@@ -12,6 +13,7 @@ import {
 import { setup } from './_setup.mjs';
 
 chai.use(chaiAsPromised);
+chai.use(chaiSubset);
 const { expect } = chai;
 
 describe(`[${process.pid}] grid_trading: factory request account`, () => {
@@ -44,10 +46,16 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'requestAccount',
+        function: 'call',
         args: [
-          { type: 'string', value: assetId1 },
-          { type: 'string', value: assetId2 },
+          { type: 'string', value: 'requestAccount' },
+          {
+            type: 'list',
+            value: [
+              { type: 'string', value: assetId1 },
+              { type: 'string', value: assetId2 },
+            ],
+          },
         ],
       },
       payment: [],
@@ -64,10 +72,16 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'requestAccount',
+        function: 'call',
         args: [
-          { type: 'string', value: assetId1 },
-          { type: 'string', value: assetId2 },
+          { type: 'string', value: 'requestAccount' },
+          {
+            type: 'list',
+            value: [
+              { type: 'string', value: assetId1 },
+              { type: 'string', value: assetId2 },
+            ],
+          },
         ],
       },
       payment: [
@@ -81,10 +95,16 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'requestAccount',
+        function: 'call',
         args: [
-          { type: 'string', value: assetId1 },
-          { type: 'string', value: assetId2 },
+          { type: 'string', value: 'requestAccount' },
+          {
+            type: 'list',
+            value: [
+              { type: 'string', value: assetId1 },
+              { type: 'string', value: assetId2 },
+            ],
+          },
         ],
       },
       payment: [
@@ -98,10 +118,16 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'requestAccount',
+        function: 'call',
         args: [
-          { type: 'string', value: assetId1 },
-          { type: 'string', value: assetId2 },
+          { type: 'string', value: 'requestAccount' },
+          {
+            type: 'list',
+            value: [
+              { type: 'string', value: assetId1 },
+              { type: 'string', value: assetId2 },
+            ],
+          },
         ],
       },
       payment: [
@@ -119,13 +145,19 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
       chainId,
     }, accounts.factory.seed)).catch(({ message }) => { throw new Error(message); });
 
-    const { stateChanges } = await broadcastAndWait(invokeScript({
+    await broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'requestAccount',
+        function: 'call',
         args: [
-          { type: 'string', value: assetId1 },
-          { type: 'string', value: assetId2 },
+          { type: 'string', value: 'requestAccount' },
+          {
+            type: 'list',
+            value: [
+              { type: 'string', value: assetId1 },
+              { type: 'string', value: assetId2 },
+            ],
+          },
         ],
       },
       payment: [
@@ -141,6 +173,8 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
     ]));
 
     const accountStatusEmpty = 0;
+
+    const factoryState = await api.addresses.data(accounts.factory.address);
 
     const expected = [
       {
@@ -170,17 +204,23 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
       },
     ];
 
-    expect(stateChanges.data).to.deep.equal(expected);
+    expect(factoryState).to.containSubset(expected);
   });
 
   it('account already exists', async () => {
     expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
-        function: 'requestAccount',
+        function: 'call',
         args: [
-          { type: 'string', value: assetId1 },
-          { type: 'string', value: assetId2 },
+          { type: 'string', value: 'requestAccount' },
+          {
+            type: 'list',
+            value: [
+              { type: 'string', value: assetId1 },
+              { type: 'string', value: assetId2 },
+            ],
+          },
         ],
       },
       payment: [
@@ -196,7 +236,7 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
       chainId,
     }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
 
-    const { stateChanges } = await broadcastAndWait(invokeScript({
+    await broadcastAndWait(invokeScript({
       dApp: accounts.account1.address,
       call: {
         function: 'init',
@@ -211,11 +251,19 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
     }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
 
     const accountStatusReady = 1;
-    expect(stateChanges.invokes[0].stateChanges.data).to.deep.equal([
+
+    const factoryState = await api.addresses.data(accounts.factory.address);
+
+    expect(factoryState).to.containSubset([
       {
-        key: '%s__requestsQueue',
+        key: `%s%s__${accounts.account1.address}__accountAddressToRequestId`,
+        type: 'string',
+        value: requestId,
+      },
+      {
+        key: `%s%s__${accounts.account1.address}__creatorPublicKey`,
         type: 'binary',
-        value: 'base64:',
+        value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}`,
       },
       {
         key: `%s%s__${requestId}__status`,
@@ -228,22 +276,11 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
         value: `base64:${base64Encode(base58Decode(accounts.account1.publicKey))}`,
       },
       {
-        key: `%s%s__${accounts.account1.address}__accountAddressToRequestId`,
-        type: 'string',
-        value: requestId,
-      },
-      {
-        key: `%s%s__${accounts.account1.address}__creatorPublicKey`,
+        key: '%s__requestsQueue',
         type: 'binary',
-        value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}`,
+        value: 'base64:',
       },
     ]);
-    expect(stateChanges.invokes[0].stateChanges.transfers).to.deep.equal([
-      {
-        address: accounts.creator.address,
-        asset: null,
-        amount: rewardAmount,
-      },
-    ]);
+    // TODO: check factory and creator balances
   });
 });

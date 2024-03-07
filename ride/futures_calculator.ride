@@ -42,12 +42,12 @@ func assetIdToString(input: ByteVector|Unit) = {
 }
 
 let kAccountScript = "%s__accountScript"
-func accountScript() = this.getBinary(
+func accountScript() = factoryAddress.getBinary(
   kAccountScript
 ).valueOrErrorMessage("account script is not set")
 
 let kRewardAmount = "%s__rewardAmount"
-func rewardAmount() = this.getInteger(
+func rewardAmount() = factoryAddress.getInteger(
   kRewardAmount
 ).valueOrErrorMessage("reward amount is not set")
 
@@ -79,18 +79,18 @@ func kAccountAddressToRequestId(accountAddress: Address) = {
 func kRequestsQueue() = {
   ["%s", "requestsQueue"].makeString(separator)
 }
-func requestsQueue() = this.getBinary(kRequestsQueue()).valueOrElse(base58'')
+func requestsQueue() = factoryAddress.getBinary(kRequestsQueue()).valueOrElse(base58'')
 
 func kAccountsQueue() = {
   ["%s", "accountsQueue"].makeString(separator)
 }
-func accountsQueue() = this.getBinary(kAccountsQueue()).valueOrElse(base58'')
+func accountsQueue() = factoryAddress.getBinary(kAccountsQueue()).valueOrElse(base58'')
 
 func kPairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
   ["%s%s%s", assetIdToString(amountAssetId), assetIdToString(priceAssetId), "pairAllowed"].makeString(separator)
 }
 func pairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
-  this.getBoolean(
+  factoryAddress.getBoolean(
     kPairAllowed(amountAssetId, priceAssetId)
   ).valueOrElse(false)
 }
@@ -112,7 +112,8 @@ func init(
 func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
   let amountAssetIdStr = args[0]
   let priceAssetIdStr = args[1]
-  let requestId = sha256(callerPublicKey + amountAssetIdStr.fromBase58String() + priceAssetIdStr.fromBase58String())
+  let userAddress = addressFromPublicKey(callerPublicKey)
+  let requestId = sha256(userAddress.bytes + amountAssetIdStr.fromBase58String() + priceAssetIdStr.fromBase58String())
   let amountAssetId = parseAssetId(amountAssetIdStr)
   let priceAssetId = parseAssetId(priceAssetIdStr)
 
@@ -121,7 +122,7 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
     i.payments[0].assetId == unit || throw("invalid asset"),
     i.payments[0].amount == rewardAmount() || throw("invalid amount"),
     pairAllowed(amountAssetId, priceAssetId) || throw("pair is not allowed"),
-    this.getInteger(kRequestStatus(requestId)) == unit || throw("account is already exists")
+    factoryAddress.getInteger(kRequestStatus(requestId)) == unit || throw("account is already exists")
   ]
 
   # add request to queue or match with account immediately
@@ -140,7 +141,7 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
     let accountPublicKey = accountsQueue().take(queueItemSize)
     let accountAddress = addressFromPublicKey(accountPublicKey)
     let creatorAddress = addressFromPublicKey(
-      this.getBinary(
+      factoryAddress.getBinary(
         kAccountCreatorPublicKey(accountAddress)
       ).valueOrErrorMessage("invalid creator public key")
     )
@@ -172,7 +173,7 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
   let creatorAddress = addressFromPublicKey(creatorPublicKey)
 
   strict checks = [
-    this.getBinary(kAccountCreatorPublicKey(accountAddress)) == unit || throw("account is already exists"),
+    factoryAddress.getBinary(kAccountCreatorPublicKey(accountAddress)) == unit || throw("account is already exists"),
     match scriptHash(accountAddress) {
       case b: ByteVector => b == blake2b256_32Kb(accountScript())
       case _ => false
@@ -193,9 +194,9 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
     (
       [],
       [
-        factoryAddress.invoke("binaryEntry", [kRequestsQueue(), requestsQueue().drop(queueItemSize)], []),
         factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_READY], []),
         factoryAddress.invoke("binaryEntry", [kRequestIdToAccountPublicKey(requestId), accountPublicKey], []),
+        factoryAddress.invoke("binaryEntry", [kRequestsQueue(), requestsQueue().drop(queueItemSize)], []),
         factoryAddress.invoke("stringEntry", [kAccountAddressToRequestId(accountAddress), requestId.toBase58String()], []),
         factoryAddress.invoke("transferWaves", [creatorAddress.bytes, rewardAmount()], [])
       ]
