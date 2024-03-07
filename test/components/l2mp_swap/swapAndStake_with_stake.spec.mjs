@@ -35,8 +35,8 @@ describe('l2mp_swap: swapAndStake', /** @this {MochaSuiteModified} */() => {
       expect(stateChanges.transfers).to.have.lengthOf(0);
       expect(stateChanges.invokes[0].dApp).to.equal(this.accounts.l2mpLeasing.addr);
       expect(stateChanges.invokes[0].call.function).to.equal('leaseByAddress');
-      expect(stateChanges.invokes[0].call.args[0].value).to.equal(this.accounts.user1.addr);
-      expect(stateChanges.invokes[0].call.args[1].value).to.equal(this.accounts.node1.addr);
+      expect(stateChanges.invokes[0].call.args[0].value).to.equal(this.accounts.node1.addr);
+      expect(stateChanges.invokes[0].call.args[1].value).to.equal(this.accounts.user1.addr);
       expect(stateChanges.invokes[0].payment[0].assetId).to.equal(this.l2mpAssetId);
       expect(stateChanges.invokes[0].payment[0].amount).to.equal(expectedAssetOutAmount);
       expect(stateChanges.data).to.deep.equal([

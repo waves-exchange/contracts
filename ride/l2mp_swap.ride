@@ -174,7 +174,7 @@ func getSwapActions(i: Invocation, stakingNode: String) = {
     else {
       strict stakeInvoke = stakingAddress.invoke(
       "leaseByAddress",
-      [userAddress.toString(), stakingNode],
+      [stakingNode, userAddress.toString()],
       [AttachedPayment(assetOutId, assetOutAmount)])
 
       []

@@ -13,10 +13,6 @@ func throwErr(msg: String) = {
 }
 
 @Callable(i)
-func leaseByAddress(userAddress: String, nodeAddress: String) = {
-  strict check = [
-    i.originCaller.toString() == userAddress || "i.originCaller should be equal to userAddress".throwErr()
-  ]
-
+func leaseByAddress(nodeAddress: String, userAddress: String) = {
   (nil, unit)
 }
