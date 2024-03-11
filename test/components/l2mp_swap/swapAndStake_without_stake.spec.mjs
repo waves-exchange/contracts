@@ -8,7 +8,7 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
+describe('l2mp_swap: swapAndStake', /** @this {MochaSuiteModified} */() => {
   it(
     'should successfully swap without staking and receive tokens',
     async function () {
@@ -19,7 +19,10 @@ describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
       const { id: txId, stateChanges } = await broadcastAndWait(invokeScript({
         dApp: this.accounts.l2mpSwap.addr,
         call: {
-          function: 'swap',
+          function: 'swapAndStake',
+          args: [
+            { type: 'string', value: '' },
+          ],
         },
         payment: [
           { assetId: this.xtnAssetId, amount: assetInAmount },
@@ -29,6 +32,7 @@ describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
       }, this.accounts.user1.seed));
 
       expect(stateChanges.burns).to.have.lengthOf(0);
+      expect(stateChanges.invokes).to.have.lengthOf(0);
       expect(stateChanges.transfers).to.deep.equal([{
         asset: this.l2mpAssetId,
         amount: expectedAssetOutAmount,
