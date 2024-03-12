@@ -8,9 +8,9 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
+describe('l2mp_swap: swapAndStake', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully swap without staking and receive tokens',
+    'should successfully swap and stake to staking node',
     async function () {
       const assetInAmount = 1e6;
       const price = 1e6;
@@ -19,7 +19,10 @@ describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
       const { id: txId, stateChanges } = await broadcastAndWait(invokeScript({
         dApp: this.accounts.l2mpSwap.addr,
         call: {
-          function: 'swap',
+          function: 'swapAndStake',
+          args: [
+            { type: 'string', value: this.accounts.node1.addr },
+          ],
         },
         payment: [
           { assetId: this.xtnAssetId, amount: assetInAmount },
@@ -29,11 +32,13 @@ describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
       }, this.accounts.user1.seed));
 
       expect(stateChanges.burns).to.have.lengthOf(0);
-      expect(stateChanges.transfers).to.deep.equal([{
-        asset: this.l2mpAssetId,
-        amount: expectedAssetOutAmount,
-        address: this.accounts.user1.addr,
-      }]);
+      expect(stateChanges.transfers).to.have.lengthOf(0);
+      expect(stateChanges.invokes[0].dApp).to.equal(this.accounts.l2mpLeasing.addr);
+      expect(stateChanges.invokes[0].call.function).to.equal('leaseByAddress');
+      expect(stateChanges.invokes[0].call.args[0].value).to.equal(this.accounts.node1.addr);
+      expect(stateChanges.invokes[0].call.args[1].value).to.equal(this.accounts.user1.addr);
+      expect(stateChanges.invokes[0].payment[0].assetId).to.equal(this.l2mpAssetId);
+      expect(stateChanges.invokes[0].payment[0].amount).to.equal(expectedAssetOutAmount);
       expect(stateChanges.data).to.deep.equal([
         {
           key: '%s%s__stats__totalIn',
@@ -58,7 +63,7 @@ describe('l2mp_swap: swap', /** @this {MochaSuiteModified} */() => {
         {
           key: `%s%s%s__history__${this.accounts.user1.addr}__${txId}`,
           type: 'string',
-          value: `%d%d%b%s__${assetInAmount}__${expectedAssetOutAmount}__false__NULL`,
+          value: `%d%d%b%s__${assetInAmount}__${expectedAssetOutAmount}__true__${this.accounts.node1.addr}`,
         },
       ]);
     },

@@ -1,0 +1,18 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let contractFile = "l2mp_leasing.ride"
+
+func wrapErr(msg: String) = {
+  contractFile + ": " + msg
+}
+
+func throwErr(msg: String) = {
+  throw(wrapErr(msg))
+}
+
+@Callable(i)
+func leaseByAddress(nodeAddress: String, userAddress: String) = {
+  (nil, unit)
+}
