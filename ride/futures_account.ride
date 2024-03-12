@@ -23,6 +23,16 @@ func mustThis(i: Invocation) = {
   mustAddress(i, this)
 }
 
+let wavesString = "WAVES"
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
 let kFactoryPublicKey = "%s__factoryPublicKey"
 let kOwnerPublicKey = "%s__ownerPublicKey"
 
@@ -31,6 +41,12 @@ func kAccountAddressToRequestId(accountAddress: Address) = {
 }
 func kAccountOwner(requestId: String) = {
   ["%s%s", requestId, "ownerPublicKey"].makeString(separator)
+}
+func kRequestAmountAssetId(requestId: String) = {
+  ["%s%s", requestId, "amountAssetId"].makeString(separator)
+}
+func kRequestPriceAssetId(requestId: String) = {
+  ["%s%s", requestId, "priceAssetId"].makeString(separator)
 }
 
 let factoryAddress = addressFromPublicKey(this.getBinaryValue(kFactoryPublicKey))
@@ -42,9 +58,18 @@ let calculatorAddressOption = match factoryAddress.getString(kCalculatorAddress)
 }
 let calculatorAddress = calculatorAddressOption.valueOrErrorMessage(wrapErr("invalid calculator address"))
 
+let kMatcherPublicKey = "%s__matcherPublicKey"
+let matcherPublicKeyOption = match factoryAddress.getString(kMatcherPublicKey) {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+let matcherPublicKey = matcherPublicKeyOption.valueOrErrorMessage(wrapErr("invalid matcher public key"))
+
 let requestId = factoryAddress.getStringValue(kAccountAddressToRequestId(this))
 let ownerPublicKey = factoryAddress.getBinaryValue(kAccountOwner(requestId))
 let ownerAddress = addressFromPublicKey(ownerPublicKey)
+let amountAssetId = factoryAddress.getStringValue(kRequestAmountAssetId(requestId)).parseAssetId()
+let priceAssetId = factoryAddress.getStringValue(kRequestPriceAssetId(requestId)).parseAssetId()
 
 func mustFactory(i: Invocation) = {
   mustAddress(i, factoryAddress)
@@ -110,12 +135,32 @@ func init(factoryPublicKey: ByteVector, creatorPublicKey: ByteVector) = {
 
 @Verifier(tx)
 func verify() = {
+  let factoryPublicKeyOption = this.getBinary(kFactoryPublicKey)
   match tx {
-    case _: Order => sigVerify(tx.bodyBytes, tx.proofs[0], ownerPublicKey)
-    case _: InvokeScriptTransaction => if (this.getBinary(kFactoryPublicKey).isDefined()) then false else {
+    case o: Order => {
+      strict checks = [
+        o.matcherPublicKey == matcherPublicKey || throwErr(
+          "matcher public key must be " + matcherPublicKey.toBase58String()
+        ),
+        o.assetPair.amountAsset == amountAssetId || throwErr(
+          "amount asset id have must be " + amountAssetId.assetIdToString()
+        ),
+        o.assetPair.priceAsset == priceAssetId || throwErr(
+          "price asset id have must be" + priceAssetId.assetIdToString()
+        ),
+        sigVerify(tx.bodyBytes, tx.proofs[0], ownerPublicKey) || throwErr(
+          "tx have must be signed by account owner " + ownerPublicKey.toBase58String()
+        )
+      ]
+      
+      true
+    }
+    case _: InvokeScriptTransaction => if (factoryPublicKeyOption.isDefined()) then false else {
       sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
     }
-    case _ => if (chainId == chainIdW) then false else {
+    case _ => if (chainId == chainIdW) then {
+      sigVerify(tx.bodyBytes, tx.proofs[0], factoryPublicKeyOption.value())
+    } else {
       sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
     }
   }

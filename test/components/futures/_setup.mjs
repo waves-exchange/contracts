@@ -29,6 +29,7 @@ export const setup = async ({
   const names = [
     'factory',
     'calculator',
+    'matcher',
     'creator',
     'user1',
     'user2',
@@ -96,6 +97,7 @@ export const setup = async ({
       function: 'init',
       args: [
         { type: 'string', value: accounts.calculator.address },
+        { type: 'string', value: accounts.matcher.publicKey },
         { type: 'binary', value: accountScript },
         { type: 'integer', value: rewardAmount },
       ],

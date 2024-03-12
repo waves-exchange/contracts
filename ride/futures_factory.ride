@@ -15,6 +15,7 @@ func throwErr(s: String) = {
   throw(wrapErr(s))
 }
 
+let kMatcherPublicKey = "%s__matcherPublicKey"
 let kCalculatorAddress = "%s__calculatorAddress"
 let calculatorAddressOption = match this.getString(kCalculatorAddress) {
   case s: String => s.addressFromString()
@@ -51,6 +52,7 @@ func assetIdToString(input: ByteVector|Unit) = {
 @Callable(i)
 func init(
   calculatorAddressStr: String,
+  matcherPublicKeyStr: String,
   accountScript: ByteVector,
   rewardAmount: Int
 ) = {
@@ -58,6 +60,7 @@ func init(
 
   ([
     StringEntry(kCalculatorAddress, calculatorAddressStr),
+    StringEntry(kMatcherPublicKey, matcherPublicKeyStr),
     BinaryEntry(kAccountScript, accountScript),
     IntegerEntry(kRewardAmount, rewardAmount)
   ], unit)
