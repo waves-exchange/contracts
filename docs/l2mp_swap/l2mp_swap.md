@@ -15,20 +15,12 @@
 
 # Functions
 
-## Swap
-- Should be with 1 payment in XTN
-```
-@Callable(i)
-func swap() 
-```
-
 ## Swap and Stake
 - Should be with 1 payment in XTN
 
 Arguments:
 - `stakingNode` - base58 string of staking node address 
 
-_Note: If `stakingNode` is equal to empty string (`""`) it swaps without staking_
 ```
 @Callable(i)
 func swapAndStake(stakingNode: String)
