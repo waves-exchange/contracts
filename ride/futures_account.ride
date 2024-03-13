@@ -16,7 +16,7 @@ func throwErr(s: String) = {
 }
 
 func mustAddress(i: Invocation, address: Address) = {
-  i.caller == address || throw("permission denied")
+  i.caller == address || throwErr("permission denied")
 }
 
 func mustThis(i: Invocation) = {

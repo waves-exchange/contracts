@@ -23,7 +23,7 @@ let factoryAddressOption = match this.getString(kFactoryAddress) {
 let factoryAddress = factoryAddressOption.valueOrErrorMessage(wrapErr("invalid factory address"))
 
 func mustAddress(i: Invocation, address: Address) = {
-  i.caller == address || throw("permission denied")
+  i.caller == address || throwErr("permission denied")
 }
 
 func mustThis(i: Invocation) = {
@@ -44,12 +44,12 @@ func assetIdToString(input: ByteVector|Unit) = {
 let kAccountScript = "%s__accountScript"
 func accountScript() = factoryAddress.getBinary(
   kAccountScript
-).valueOrErrorMessage("account script is not set")
+).valueOrErrorMessage(wrapErr("account script is not set"))
 
 let kRewardAmount = "%s__rewardAmount"
 func rewardAmount() = factoryAddress.getInteger(
   kRewardAmount
-).valueOrErrorMessage("reward amount is not set")
+).valueOrErrorMessage(wrapErr("reward amount is not set"))
 
 let kAccountsLimit = "%s__accountsLimit"
 let accountsLimitDefault = 20
@@ -132,11 +132,11 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
   let userRequestsNumber = kRequestsByOwner(userAddress).size() / queueItemSize
 
   strict checks = [
-    i.payments.size() == 1 || throw("1 payment is required"),
-    i.payments[0].assetId == unit || throw("invalid asset"),
-    i.payments[0].amount == rewardAmount() || throw("invalid amount"),
-    pairAllowed(amountAssetId, priceAssetId) || throw("pair is not allowed"),
-    factoryAddress.getInteger(kRequestStatus(requestId)) == unit || throw("account is already exists"),
+    i.payments.size() == 1 || throwErr("1 payment is required"),
+    i.payments[0].assetId == unit || throwErr("invalid asset"),
+    i.payments[0].amount == rewardAmount() || throwErr("invalid amount"),
+    pairAllowed(amountAssetId, priceAssetId) || throwErr("pair is not allowed"),
+    factoryAddress.getInteger(kRequestStatus(requestId)) == unit || throwErr("account is already exists"),
     userRequestsNumber < accountsLimit() || throwErr("accounts limit is " + accountsLimit().toString())
   ]
 
@@ -158,7 +158,7 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
     let creatorAddress = addressFromPublicKey(
       factoryAddress.getBinary(
         kAccountCreatorPublicKey(accountAddress)
-      ).valueOrErrorMessage("invalid creator public key")
+      ).valueOrErrorMessage(wrapErr("invalid creator public key"))
     )
     ([
       ScriptTransfer(creatorAddress, rewardAmount(), unit)
@@ -189,11 +189,11 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
   let creatorAddress = addressFromPublicKey(creatorPublicKey)
 
   strict checks = [
-    factoryAddress.getBinary(kAccountCreatorPublicKey(accountAddress)) == unit || throw("account is already exists"),
+    factoryAddress.getBinary(kAccountCreatorPublicKey(accountAddress)) == unit || throwErr("account is already exists"),
     match scriptHash(accountAddress) {
       case b: ByteVector => b == blake2b256_32Kb(accountScript())
       case _ => false
-    } || throw("invalid script")
+    } || throwErr("invalid script")
   ]
 
   let (actions, factoryActions) = if (requestsQueue().size() == 0) then { # if the requests queue is empty

@@ -27,7 +27,7 @@ let kAccountScript = "%s__accountScript"
 let kRewardAmount = "%s__rewardAmount"
 
 func mustAddress(i: Invocation, address: Address) = {
-  i.caller == address || throw("permission denied")
+  i.caller == address || throwErr("permission denied")
 }
 
 func mustThis(i: Invocation) = {
