@@ -51,6 +51,12 @@ func rewardAmount() = factoryAddress.getInteger(
   kRewardAmount
 ).valueOrErrorMessage("reward amount is not set")
 
+let kAccountsLimit = "%s__accountsLimit"
+let accountsLimitDefault = 20
+func accountsLimit() = factoryAddress.getInteger(
+  kAccountsLimit
+).valueOrElse(accountsLimitDefault)
+
 let REQUEST_STATUS_EMPTY = 0
 let REQUEST_STATUS_READY = 1
 func kRequestStatus(requestId: ByteVector) = {
@@ -86,6 +92,13 @@ func kAccountsQueue() = {
 }
 func accountsQueue() = factoryAddress.getBinary(kAccountsQueue()).valueOrElse(base58'')
 
+func kRequestsByOwner(ownerAddress: Address) = {
+  ["%s%s", "accounts", ownerAddress.toString()].makeString(separator)
+}
+func requestsByOwner(ownerAddress: Address) = factoryAddress.getBinary(
+  kRequestsByOwner(ownerAddress)
+).valueOrElse(base58'')
+
 func kPairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
   ["%s%s%s", assetIdToString(amountAssetId), assetIdToString(priceAssetId), "pairAllowed"].makeString(separator)
 }
@@ -116,13 +129,15 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
   let requestId = sha256(userAddress.bytes + amountAssetIdStr.fromBase58String() + priceAssetIdStr.fromBase58String())
   let amountAssetId = parseAssetId(amountAssetIdStr)
   let priceAssetId = parseAssetId(priceAssetIdStr)
+  let userRequestsNumber = kRequestsByOwner(userAddress).size() / queueItemSize
 
   strict checks = [
     i.payments.size() == 1 || throw("1 payment is required"),
     i.payments[0].assetId == unit || throw("invalid asset"),
     i.payments[0].amount == rewardAmount() || throw("invalid amount"),
     pairAllowed(amountAssetId, priceAssetId) || throw("pair is not allowed"),
-    factoryAddress.getInteger(kRequestStatus(requestId)) == unit || throw("account is already exists")
+    factoryAddress.getInteger(kRequestStatus(requestId)) == unit || throw("account is already exists"),
+    userRequestsNumber < accountsLimit() || throwErr("accounts limit is " + accountsLimit().toString())
   ]
 
   # add request to queue or match with account immediately
@@ -158,6 +173,7 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
 
   (actions, factoryActions ++ [
     factoryAddress.invoke("binaryEntry", [kRequestOwnerPublicKey(requestId), callerPublicKey], []),
+    factoryAddress.invoke("binaryEntry", [kRequestsByOwner(userAddress), requestsByOwner(userAddress) + requestId], []),
     factoryAddress.invoke("stringEntry", [kRequestAmountAssetId(requestId), amountAssetIdStr], []),
     factoryAddress.invoke("stringEntry", [kRequestPriceAssetId(requestId), priceAssetIdStr], [])
   ])
