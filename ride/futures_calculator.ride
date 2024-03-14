@@ -125,6 +125,7 @@ func init(
 
 # called by user
 # additional fee in payment
+# args: [amountAssetId, priceAssetId]
 @Callable(i)
 func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
   strict checkCaller = i.mustFactory()
@@ -186,6 +187,7 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
 
 # called by account script
 # additional fee is sent to recipient
+# args: [creatorPublicKey]
 @Callable(i)
 func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
   strict checkCaller = i.mustFactory()
@@ -231,6 +233,7 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
 }
 
 # TODO: validate payment (payment asset id - usdt)
+# args: [accountAddress]
 @Callable(i)
 func deposit(callerPublicKey: ByteVector, args: List[String]) = {
   strict checkCaller = i.mustFactory()
