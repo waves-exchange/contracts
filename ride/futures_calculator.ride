@@ -229,3 +229,44 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
     factoryAddress.invoke("binaryEntry", [kAccountCreatorPublicKey(accountAddress), creatorPublicKey], [])
   ])
 }
+
+# TODO: validate payment (payment asset id - usdt)
+@Callable(i)
+func deposit(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checkCaller = i.mustFactory()
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+  let payment = i.payments[0]
+
+  let actions = [
+    ScriptTransfer(accountAddress, payment.amount, payment.assetId)
+  ]
+
+  let factoryActions = [
+    # factoryAddress.invoke("integerEntry", [kDeposited(requestId), deposited(requestId) + payment.amount], [])
+  ]
+
+  (actions, factoryActions)
+}
+
+# TODO: validate asset id
+# args: [accountAddress, amount, assetId]
+@Callable(i)
+func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checkCaller = i.mustFactory()
+  let userAddress = addressFromPublicKey(callerPublicKey)
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+  let amount = parseInt(args[1]).valueOrErrorMessage(
+    wrapErr("invalid amount")
+  )
+  let assetId = parseAssetId(args[2])
+
+  let invocations = [
+    accountAddress.invoke("transferAsset", [userAddress.bytes, amount, assetId], [])
+  ]
+
+  (nil, invocations)
+}
