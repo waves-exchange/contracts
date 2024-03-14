@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **11:21 14.03.2024** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **14:25 14.03.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -200,6 +200,7 @@ WIND/WAVES pool | [`3PEtzvd7onMdQ3RiQLhkE8we5jSWxzcZ6UM`](https://wavesexplorer.
 DAXCOIN/USDT-ERC20 pool | [`3P6qCt7DJNZ5tkwa4g4yohQAW1DrrULQe86`](https://wavesexplorer.com/addresses/3P6qCt7DJNZ5tkwa4g4yohQAW1DrrULQe86) | `7yEAE5kjdyzGgoPA8VQkH25KoZq932XTPeQhhi5J9CGh` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 FUDT/USDT pool | [`3PEZHTgxTzMCZ1o2hYFcJDa4LSUxUXS4oY3`](https://wavesexplorer.com/addresses/3PEZHTgxTzMCZ1o2hYFcJDa4LSUxUXS4oY3) | `EynvZbtaxLi7kCv49aHrrzZaJLFT5CQ2RDxKLY5z9Fp4` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 WX/USDT pool | [`3PKRMbFnVaccD73qAfK6F6xyDdyKBhWYrZE`](https://wavesexplorer.com/addresses/3PKRMbFnVaccD73qAfK6F6xyDdyKBhWYrZE) | `FA9KdHTHVc7eG2TrF2koWF6H9KkhNwMxPs5ofpE9Zory` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+PETE/USDT pool | [`3PBAFJc6Zshsgimrn3azb5YV3CBhV9ERfwY`](https://wavesexplorer.com/addresses/3PBAFJc6Zshsgimrn3azb5YV3CBhV9ERfwY) | `4yDDvZopTuVx9rmhPL66AYhyTtF3dSsUj91Ja2ijeyx4` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -267,8 +268,8 @@ Explorer: https://DecentralScan.com
 DEPS | [`C5Z9rc59bQgNF5GHsHxtRXJboGTMyXCFopsd7moevx4F`](https://wavesexplorer.com/assets/C5Z9rc59bQgNF5GHsHxtRXJboGTMyXCFopsd7moevx4F) | Deposit Coin 
 DOBERCOIN | [`AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc`](https://wavesexplorer.com/assets/AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc) | A digital meme coin. Created in honor of a beloved pet. 
 Duck Egg | [`C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS`](https://wavesexplorer.com/assets/C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS) | Utility and Reward token @ WavesDucks.com game. The duckiest token in the world. 
-EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
 EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.com/assets/3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK) | Enterprise Algorithmic Stable Token 
+EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
 ENNO | [`7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg`](https://wavesexplorer.com/assets/7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg) | Native utility and governance token of Enno Wallet 
 ETH-Ethereum-PPT | [`3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13`](https://wavesexplorer.com/assets/3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
 FUDT | [`5Lhv8uKnvGxA2cjbFXXKZFASk1cAFp9dRWkmLYhULtSX`](https://wavesexplorer.com/assets/5Lhv8uKnvGxA2cjbFXXKZFASk1cAFp9dRWkmLYhULtSX) | FUDT is a community token. The token is using for activities in WAVES ecosystem like votings, advertising, activities etc. The token is an integral part of the FUD DAO. 
@@ -435,6 +436,7 @@ NSBTXTNLP | [`AGo49HCtQUghfxHSpUXub3KBaMXyunJmTxQ4azgU5Ax5`](https://wavesexplor
 PCBTWAVESLP | [`4oLuufBogbf294QTsmXobvoMHSMzoNtPMqQMJs5L55FR`](https://wavesexplorer.com/assets/4oLuufBogbf294QTsmXobvoMHSMzoNtPMqQMJs5L55FR) | PCBT/WAVES pool liquidity provider token 
 PCBT~USDT-PPTLP | [`CkrDxF4882mQoqruSfutqjbiAcemkov23rZzUxp6u5Lu`](https://wavesexplorer.com/assets/CkrDxF4882mQoqruSfutqjbiAcemkov23rZzUxp6u5Lu) | PCBT~/USDT-PPT pool liquidity provider token 
 PETEUSDT-ERC20LP | [`7FAAChNCHekbkWg7RoAW3crDwpzCT8y7onsbWnNTpwgp`](https://wavesexplorer.com/assets/7FAAChNCHekbkWg7RoAW3crDwpzCT8y7onsbWnNTpwgp) | PETE/USDT-ERC20 pool liquidity provider token 
+PETEUSDTLP | [`DsoZxgANW4hLS8NmicqmXULu6YrgTxQj1Y64sdmkusaE`](https://wavesexplorer.com/assets/DsoZxgANW4hLS8NmicqmXULu6YrgTxQj1Y64sdmkusaE) | PETE/USDT pool liquidity provider token 
 PETEWAVESLP | [`CxQZw8ApLNgg6v3ttoTZWuoQ9RcUTNnfCuRUoWiDxC9G`](https://wavesexplorer.com/assets/CxQZw8ApLNgg6v3ttoTZWuoQ9RcUTNnfCuRUoWiDxC9G) | PETE/WAVES pool liquidity provider token 
 PETEWXLP | [`Dj32br9jAootBGyoimaPruYCJLDfSdLax96sRR9PU8GR`](https://wavesexplorer.com/assets/Dj32br9jAootBGyoimaPruYCJLDfSdLax96sRR9PU8GR) | PETE/WX pool liquidity provider token 
 PETEXTNLP | [`Haw7ivNhsXXie8oyewvyPYp4K52PmBBdafuFLDjS4NzB`](https://wavesexplorer.com/assets/Haw7ivNhsXXie8oyewvyPYp4K52PmBBdafuFLDjS4NzB) | PETE/XTN pool liquidity provider token 
