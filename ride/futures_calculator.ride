@@ -30,6 +30,10 @@ func mustThis(i: Invocation) = {
   mustAddress(i, this)
 }
 
+func mustFactory(i: Invocation) = {
+  mustAddress(i, factoryAddress)
+}
+
 let wavesString = "WAVES"
 let queueItemSize = 32
 
@@ -123,6 +127,7 @@ func init(
 # additional fee in payment
 @Callable(i)
 func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checkCaller = i.mustFactory()
   let amountAssetIdStr = args[0]
   let priceAssetIdStr = args[1]
   let userAddress = addressFromPublicKey(callerPublicKey)
@@ -183,6 +188,7 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
 # additional fee is sent to recipient
 @Callable(i)
 func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checkCaller = i.mustFactory()
   let creatorPublicKey = args[0].fromBase58String()
   let accountPublicKey = callerPublicKey
   let accountAddress = addressFromPublicKey(callerPublicKey)
