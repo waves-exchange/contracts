@@ -273,3 +273,21 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
 
   (nil, invocations)
 }
+
+# args: [amountAssetId, priceAssetId, allow]
+@Callable(i)
+func pairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checkCaller = i.mustFactory()
+  let amountAssetIdStr = args[0]
+  let priceAssetIdStr = args[1]
+  let allowStr = args[2]
+  let amountAssetId = parseAssetId(amountAssetIdStr)
+  let priceAssetId = parseAssetId(priceAssetIdStr)
+  let allow = allowStr == "true"
+
+  let invocations = [
+    factoryAddress.invoke("booleanEntry", [kPairAllowed(amountAssetId, priceAssetId), allow], [])
+  ]
+
+  (nil, invocations)
+}
