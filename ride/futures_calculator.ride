@@ -274,6 +274,7 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
   (nil, invocations)
 }
 
+# TODO: validate callerPublicKey
 # args: [amountAssetId, priceAssetId, allow]
 @Callable(i)
 func pairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
