@@ -122,7 +122,6 @@ func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector)
 func transferWaves(recipientBytes: ByteVector, amount: Int) = 
   if (i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
 
-# TODO: set multisig address
 @Callable(i)
 func init(factoryPublicKey: ByteVector, creatorPublicKey: ByteVector) = {
   strict checkCaller = i.mustThis()
