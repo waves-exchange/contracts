@@ -7,6 +7,14 @@ let chainId = this.bytes.drop(1).take(1)
 let chainIdW = base16'57'
 let contractFilename = "futures_calculator.ride"
 
+let kMultisig = "%s__multisig"
+func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
+
+func validateAddress(address: String) = {
+  addressFromString(address).isDefined()
+}
+
+
 func wrapErr(s: String) = {
   contractFilename + ": " + s
 }
@@ -291,4 +299,29 @@ func pairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
   ]
 
   (nil, invocations)
+}
+
+@Callable(i)
+func setMultisig(multisig: String) = {
+  strict checks = [
+    i.mustThis(),
+    validateAddress(multisig) || throwErr("setMultisig: invalid multisig address")
+  ]
+
+  ([
+    StringEntry(kMultisig, multisig)
+  ], unit)
+}
+
+@Verifier(tx)
+func verify() = {
+  match getString(kMultisig) {
+    case multisig: String => {
+      let statusKey = kStatus(this.toString(), tx.id.toBase58String())
+      let status = multisig.addressFromStringValue().getBoolean(statusKey).valueOrElse(false)
+
+      status
+    }
+    case _ => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+  }
 }
