@@ -10,10 +10,11 @@ let contractFilename = "futures_calculator.ride"
 let kMultisig = "%s__multisig"
 func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
 
+let kShutdown = "%s__shutdown"
+
 func validateAddress(address: String) = {
   addressFromString(address).isDefined()
 }
-
 
 func wrapErr(s: String) = {
   contractFilename + ": " + s
@@ -29,6 +30,8 @@ let factoryAddressOption = match this.getString(kFactoryAddress) {
   case _: Unit => unit
 }
 let factoryAddress = factoryAddressOption.valueOrErrorMessage(wrapErr("invalid factory address"))
+
+let shutdown = factoryAddress.getBoolean(kShutdown).valueOrElse(false)
 
 func mustAddress(i: Invocation, address: Address) = {
   i.caller == address || throwErr("permission denied")
@@ -136,7 +139,10 @@ func init(
 # args: [amountAssetId, priceAssetId]
 @Callable(i)
 func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
-  strict checkCaller = i.mustFactory()
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.mustFactory()
+  ]
   let amountAssetIdStr = args[0]
   let priceAssetIdStr = args[1]
   let userAddress = addressFromPublicKey(callerPublicKey)
@@ -198,7 +204,10 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
 # args: [creatorPublicKey]
 @Callable(i)
 func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
-  strict checkCaller = i.mustFactory()
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.mustFactory()
+  ]
   let creatorPublicKey = args[0].fromBase58String()
   let accountPublicKey = callerPublicKey
   let accountAddress = addressFromPublicKey(callerPublicKey)
@@ -244,7 +253,10 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
 # args: [accountAddress]
 @Callable(i)
 func deposit(callerPublicKey: ByteVector, args: List[String]) = {
-  strict checkCaller = i.mustFactory()
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.mustFactory()
+  ]
   let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
     wrapErr("invalid account address")
   )
@@ -265,7 +277,10 @@ func deposit(callerPublicKey: ByteVector, args: List[String]) = {
 # args: [accountAddress, amount, assetId]
 @Callable(i)
 func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
-  strict checkCaller = i.mustFactory()
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.mustFactory()
+  ]
   let userAddress = addressFromPublicKey(callerPublicKey)
   let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
     wrapErr("invalid account address")
@@ -286,7 +301,10 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
 # args: [amountAssetId, priceAssetId, allow]
 @Callable(i)
 func pairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
-  strict checkCaller = i.mustFactory()
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.mustFactory()
+  ]
   let amountAssetIdStr = args[0]
   let priceAssetIdStr = args[1]
   let allowStr = args[2]

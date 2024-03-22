@@ -10,6 +10,11 @@ let contractFilename = "futures_factory.ride"
 let kMultisig = "%s__multisig"
 func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
 
+let kShutdown = "%s__shutdown"
+let kPublicKeys = "%s__publicKeys"
+
+let shutdown = getBoolean(kShutdown).valueOrElse(false)
+
 func validateAddress(address: String) = {
   addressFromString(address).isDefined()
 }
@@ -75,39 +80,39 @@ func init(
 
 @Callable(i)
 func stringEntry(key: String, val: String) =
-  if (i.mustCalculator()) then ([StringEntry(key, val)], key) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([StringEntry(key, val)], key) else ([], unit)
 
 @Callable(i)
 func integerEntry(key: String, val: Int) =
-  if (i.mustCalculator()) then ([IntegerEntry(key, val)], key) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([IntegerEntry(key, val)], key) else ([], unit)
 
 @Callable(i)
 func booleanEntry(key: String, val: Boolean) =
-  if (i.mustCalculator()) then ([BooleanEntry(key, val)], key) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([BooleanEntry(key, val)], key) else ([], unit)
 
 @Callable(i)
 func binaryEntry(key: String, val: ByteVector) =
-  if (i.mustCalculator()) then ([BinaryEntry(key, val)], key) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([BinaryEntry(key, val)], key) else ([], unit)
 
 @Callable(i)
 func deleteEntry(key: String) =
-  if (i.mustCalculator()) then ([DeleteEntry(key)], key) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([DeleteEntry(key)], key) else ([], unit)
 
 @Callable(i)
 func reissue(assetId: ByteVector, amount: Int, reissuable: Boolean) = 
-  if (i.mustCalculator()) then ([Reissue(assetId, amount, reissuable)], amount) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([Reissue(assetId, amount, reissuable)], amount) else ([], unit)
 
 @Callable(i)
 func burn(assetId: ByteVector, amount: Int) = 
-  if (i.mustCalculator()) then ([Burn(assetId, amount)], amount) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([Burn(assetId, amount)], amount) else ([], unit)
 
 @Callable(i)
 func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 
-  if (i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
 
 @Callable(i)
 func transferAssets(recipientBytes: ByteVector, assetsList: List[ByteVector], amountsList: List[Int]) = {
-  if (i.mustCalculator()) then {
+  if (!shutdown && i.mustCalculator()) then {
     func addNewTransfer(acc: (List[ScriptTransfer], Int), nextAssetId: ByteVector) = {
       let (transfers, j) = acc
 
@@ -129,13 +134,44 @@ func transferAssets(recipientBytes: ByteVector, assetsList: List[ByteVector], am
 
 @Callable(i)
 func transferWaves(recipientBytes: ByteVector, amount: Int) = 
-  if (i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
 
 @Callable(i)
 func call(function: String, args: List[String]) = {
+  strict checks = [
+    !shutdown || throwErr("not allowed")
+  ]
+
   let result = calculatorAddress.reentrantInvoke(function, [i.callerPublicKey, args], i.payments)
 
   (nil, result)
+}
+
+@Callable(i)
+func doShutdown() = {
+  let multisig = getStringValue(kMultisig).addressFromStringValue()
+  let publicKeysList = multisig.getStringValue(kPublicKeys).split(separator)
+
+  strict checks = [
+    containsElement(
+      publicKeysList, i.callerPublicKey.toBase58String()
+    ) || throwErr("shutdown: not allowed")
+  ]
+
+  ([
+    BooleanEntry(kShutdown, true)
+  ], unit)
+}
+
+@Callable(i)
+func cancelShutdown() = {
+  strict checks = [
+    i.mustThis()
+  ]
+
+  ([
+    DeleteEntry(kShutdown)
+  ], unit)
 }
 
 @Callable(i)
