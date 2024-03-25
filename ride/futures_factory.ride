@@ -11,7 +11,6 @@ let kMultisig = "%s__multisig"
 func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
 
 let kShutdown = "%s__shutdown"
-let kPublicKeys = "%s__publicKeys"
 
 let shutdown = getBoolean(kShutdown).valueOrElse(false)
 
@@ -138,40 +137,9 @@ func transferWaves(recipientBytes: ByteVector, amount: Int) =
 
 @Callable(i)
 func call(function: String, args: List[String]) = {
-  strict checks = [
-    !shutdown || throwErr("not allowed")
-  ]
-
   let result = calculatorAddress.reentrantInvoke(function, [i.callerPublicKey, args], i.payments)
 
   (nil, result)
-}
-
-@Callable(i)
-func doShutdown() = {
-  let multisig = getStringValue(kMultisig).addressFromStringValue()
-  let publicKeysList = multisig.getStringValue(kPublicKeys).split(separator)
-
-  strict checks = [
-    containsElement(
-      publicKeysList, i.callerPublicKey.toBase58String()
-    ) || throwErr("shutdown: not allowed")
-  ]
-
-  ([
-    BooleanEntry(kShutdown, true)
-  ], unit)
-}
-
-@Callable(i)
-func cancelShutdown() = {
-  strict checks = [
-    i.mustThis()
-  ]
-
-  ([
-    DeleteEntry(kShutdown)
-  ], unit)
 }
 
 @Callable(i)

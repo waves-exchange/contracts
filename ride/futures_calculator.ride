@@ -11,6 +11,7 @@ let kMultisig = "%s__multisig"
 func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
 
 let kShutdown = "%s__shutdown"
+let kPublicKeys = "%s__publicKeys"
 
 func validateAddress(address: String) = {
   addressFromString(address).isDefined()
@@ -31,18 +32,20 @@ let factoryAddressOption = match this.getString(kFactoryAddress) {
 }
 let factoryAddress = factoryAddressOption.valueOrErrorMessage(wrapErr("invalid factory address"))
 
+let kPricesAddress = "%s__calculatorAddress"
+
 let shutdown = factoryAddress.getBoolean(kShutdown).valueOrElse(false)
 
-func mustAddress(i: Invocation, address: Address) = {
-  i.caller == address || throwErr("permission denied")
+func mustAddress(caller: Address, address: Address) = {
+  caller == address || throwErr("permission denied")
 }
 
-func mustThis(i: Invocation) = {
-  mustAddress(i, this)
+func mustThis(caller: Address) = {
+  mustAddress(caller, this)
 }
 
-func mustFactory(i: Invocation) = {
-  mustAddress(i, factoryAddress)
+func mustFactory(caller: Address) = {
+  mustAddress(caller, factoryAddress)
 }
 
 let wavesString = "WAVES"
@@ -127,7 +130,7 @@ func pairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) 
 func init(
   factoryAddressStr: String
 ) = {
-  strict checkCaller = i.mustThis()
+  strict checkCaller = i.caller.mustThis()
 
   ([
     StringEntry(kFactoryAddress, factoryAddressStr)
@@ -141,7 +144,7 @@ func init(
 func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
   strict ckecks = [
     !shutdown || throwErr("not allowed"),
-    i.mustFactory()
+    i.caller.mustFactory()
   ]
   let amountAssetIdStr = args[0]
   let priceAssetIdStr = args[1]
@@ -206,7 +209,7 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
 func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
   strict ckecks = [
     !shutdown || throwErr("not allowed"),
-    i.mustFactory()
+    i.caller.mustFactory()
   ]
   let creatorPublicKey = args[0].fromBase58String()
   let accountPublicKey = callerPublicKey
@@ -255,7 +258,7 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
 func deposit(callerPublicKey: ByteVector, args: List[String]) = {
   strict ckecks = [
     !shutdown || throwErr("not allowed"),
-    i.mustFactory()
+    i.caller.mustFactory()
   ]
   let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
     wrapErr("invalid account address")
@@ -279,7 +282,7 @@ func deposit(callerPublicKey: ByteVector, args: List[String]) = {
 func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
   strict ckecks = [
     !shutdown || throwErr("not allowed"),
-    i.mustFactory()
+    i.caller.mustFactory()
   ]
   let userAddress = addressFromPublicKey(callerPublicKey)
   let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
@@ -303,7 +306,7 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
 func pairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
   strict ckecks = [
     !shutdown || throwErr("not allowed"),
-    i.mustFactory()
+    i.caller.mustFactory()
   ]
   let amountAssetIdStr = args[0]
   let priceAssetIdStr = args[1]
@@ -320,26 +323,50 @@ func pairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
 }
 
 @Callable(i)
-func setMultisig(multisig: String) = {
+func doShutdown(callerPublicKey: ByteVector, args: List[String]) = {
+  let multisig = factoryAddress.getStringValue(kMultisig).addressFromStringValue()
+  let publicKeysList = multisig.getStringValue(kPublicKeys).split(separator)
+
   strict checks = [
-    i.mustThis(),
-    validateAddress(multisig) || throwErr("setMultisig: invalid multisig address")
+    i.caller.mustFactory(),
+    containsElement(
+      publicKeysList, callerPublicKey.toBase58String()
+    ) || throwErr("shutdown: not allowed")
   ]
 
-  ([
-    StringEntry(kMultisig, multisig)
-  ], unit)
+  let invocations = [
+    factoryAddress.invoke("booleanEntry", [kShutdown, true], [])
+  ]
+
+  (nil, invocations)
+}
+
+@Callable(i)
+func cancelShutdown(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checks = [
+    i.originCaller.mustFactory()
+  ]
+
+  let invocations = [
+    factoryAddress.invoke("deleteEntry", [kShutdown], [])
+  ]
+
+  (nil, invocations)
 }
 
 @Verifier(tx)
 func verify() = {
-  match getString(kMultisig) {
-    case multisig: String => {
-      let statusKey = kStatus(this.toString(), tx.id.toBase58String())
-      let status = multisig.addressFromStringValue().getBoolean(statusKey).valueOrElse(false)
+  if (factoryAddressOption.isDefined()) then {
+    match factoryAddress.getString(kMultisig) {
+      case multisig: String => {
+        let statusKey = kStatus(this.toString(), tx.id.toBase58String())
+        let status = multisig.addressFromStringValue().getBoolean(statusKey).valueOrElse(false)
 
-      status
+        status
+      }
+      case _ => false
     }
-    case _ => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+  } else {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
   }
 }
