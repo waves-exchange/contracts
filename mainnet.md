@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **15:18 22.03.2024** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **18:09 25.03.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -206,6 +206,7 @@ VVXTNLP/WAVES pool | [`3PHwURPbPUsFmmyfSutRCsUmWfgaSP2voPJ`](https://wavesexplor
 WXDAO/USDT pool | [`3PMEm3XTfD2Gpi3Z5wsfEHp67teXCvBKsdp`](https://wavesexplorer.com/addresses/3PMEm3XTfD2Gpi3Z5wsfEHp67teXCvBKsdp) | `H4FC7S8oYwijM7zz19s3BnDpqpK8zDFJpdvRZx9CE2u8` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 PWR/USDT pool | [`3PLDm9JoAYFwvcuVouwzgRmZLnHpx5gCE2F`](https://wavesexplorer.com/addresses/3PLDm9JoAYFwvcuVouwzgRmZLnHpx5gCE2F) | `D4gQ26p3wyPWWT58XXYuisShBXFZ8CdMv8CNKH2RL5of` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 L2MP/USDT pool | [`3PFDjA8aixkmEVCaUhg1FmnNz4NKAY2AJ1C`](https://wavesexplorer.com/addresses/3PFDjA8aixkmEVCaUhg1FmnNz4NKAY2AJ1C) | `9M8FXLzBp9NVwFzNzmSuL1sr36SaDJoganUXDnxJT9Zk` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+STEMX/USDT pool | [`3P2mYkXSKXENnG5maiLnfvjYBn1ETFgYsGB`](https://wavesexplorer.com/addresses/3P2mYkXSKXENnG5maiLnfvjYBn1ETFgYsGB) | `FqfmVcThj9zZPDGeqVZ52pXzKFYbkFgvj5gDUDS2Quh6` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -492,6 +493,7 @@ SIGNXTNLP | [`8uWMhUDMQVLAwCHjLuFDDm9785dqwweVVSxNuY1sX5ZM`](https://wavesexplor
 SpitzCara~PETELP | [`2nqE8wDjAztKS8d3RauHZhcSrPK8dfstQwgNB7G6Q1Up`](https://wavesexplorer.com/assets/2nqE8wDjAztKS8d3RauHZhcSrPK8dfstQwgNB7G6Q1Up) | SpitzCara~/PETE pool liquidity provider token 
 STALKER~WAVESLP | [`2JWAdZRCMBMoGsALoyLrqJhpDBfUusEFshZN6NSjDmGc`](https://wavesexplorer.com/assets/2JWAdZRCMBMoGsALoyLrqJhpDBfUusEFshZN6NSjDmGc) | STALKER~/WAVES pool liquidity provider token 
 STEMXXTNLP | [`HVaJwFZVpCQtbDvJkq3CPKiGQvFZ8fF9bmifKnQMopVU`](https://wavesexplorer.com/assets/HVaJwFZVpCQtbDvJkq3CPKiGQvFZ8fF9bmifKnQMopVU) | STEMX/XTN pool liquidity provider token 
+STEMX~USDTLP | [`BT5P85dHEKTDoFdR5JDVcHs8ZHzM3ExjxaxDoQ791yiP`](https://wavesexplorer.com/assets/BT5P85dHEKTDoFdR5JDVcHs8ZHzM3ExjxaxDoQ791yiP) | STEMX~/USDT pool liquidity provider token 
 STEMX~WAVESLP | [`EWPyshQ96LsgZZQMpS9mzLZ6v4f4goyp9vfAP2MNZfWd`](https://wavesexplorer.com/assets/EWPyshQ96LsgZZQMpS9mzLZ6v4f4goyp9vfAP2MNZfWd) | STEMX~/WAVES pool liquidity provider token 
 STE~USDT-ERC20LP | [`BZa3A8FohLmB91kiGKWqY3oZy9C7KRBj3db3akDmH9gT`](https://wavesexplorer.com/assets/BZa3A8FohLmB91kiGKWqY3oZy9C7KRBj3db3akDmH9gT) | STE~/USDT-ERC20 pool liquidity provider token 
 SURFUSDCLP | [`Fk1dGyYLt2rDP9ftcADwYTwK8NGhrv9dr9CkC3hoK91j`](https://wavesexplorer.com/assets/Fk1dGyYLt2rDP9ftcADwYTwK8NGhrv9dr9CkC3hoK91j) | SURF/USDC pool liquidity provider token 
