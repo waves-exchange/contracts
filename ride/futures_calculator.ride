@@ -48,6 +48,15 @@ func mustFactory(caller: Address) = {
   mustAddress(caller, factoryAddress)
 }
 
+func mustAdmin(callerPublicKey: ByteVector) = {
+  let multisig = factoryAddress.getStringValue(kMultisig).addressFromStringValue()
+  let publicKeysList = multisig.getStringValue(kPublicKeys).split(separator)
+
+  containsElement(
+    publicKeysList, callerPublicKey.toBase58String()
+  ) || throwErr("not allowed")
+}
+
 let wavesString = "WAVES"
 let queueItemSize = 32
 
@@ -300,13 +309,13 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
   (nil, invocations)
 }
 
-# TODO: validate callerPublicKey
 # args: [amountAssetId, priceAssetId, allow]
 @Callable(i)
 func pairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
   strict ckecks = [
     !shutdown || throwErr("not allowed"),
-    i.caller.mustFactory()
+    i.caller.mustFactory(),
+    callerPublicKey.mustAdmin()
   ]
   let amountAssetIdStr = args[0]
   let priceAssetIdStr = args[1]
@@ -324,14 +333,9 @@ func pairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
 
 @Callable(i)
 func doShutdown(callerPublicKey: ByteVector, args: List[String]) = {
-  let multisig = factoryAddress.getStringValue(kMultisig).addressFromStringValue()
-  let publicKeysList = multisig.getStringValue(kPublicKeys).split(separator)
-
   strict checks = [
     i.caller.mustFactory(),
-    containsElement(
-      publicKeysList, callerPublicKey.toBase58String()
-    ) || throwErr("shutdown: not allowed")
+    callerPublicKey.mustAdmin()
   ]
 
   let invocations = [
@@ -344,7 +348,8 @@ func doShutdown(callerPublicKey: ByteVector, args: List[String]) = {
 @Callable(i)
 func cancelShutdown(callerPublicKey: ByteVector, args: List[String]) = {
   strict checks = [
-    i.originCaller.mustFactory()
+    i.caller.mustFactory(),
+    callerPublicKey.addressFromPublicKey().mustFactory()
   ]
 
   let invocations = [
