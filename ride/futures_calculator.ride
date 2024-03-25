@@ -311,7 +311,7 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
 
 # args: [amountAssetId, priceAssetId, allow]
 @Callable(i)
-func pairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
+func setPairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
   strict ckecks = [
     !shutdown || throwErr("not allowed"),
     i.caller.mustFactory(),
