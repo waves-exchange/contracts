@@ -29,7 +29,7 @@ describe(`[${process.pid}] multisig: init`, () => {
     })).to.be.rejectedWith('not allowed');
   });
 
-  it('invalid owners', async () => {
+  it('should throw if owners size <= 0', async () => {
     const owners = [];
     const quorum = 0;
 
@@ -40,6 +40,38 @@ describe(`[${process.pid}] multisig: init`, () => {
       quorum,
       additionalFee: 4e5,
     })).to.be.rejectedWith('invalid owners');
+  });
+
+  it('should throw if owners size > maxOwners', async () => {
+    const maxOwners = 10;
+    const owners = Array(maxOwners + 1).fill(accounts.admin0.publicKey);
+    const quorum = 0;
+
+    return expect(init({
+      dApp: accounts.multisig.address,
+      caller: accounts.multisig.seed,
+      owners,
+      quorum,
+      additionalFee: 4e5,
+    })).to.be.rejectedWith('invalid owners');
+  });
+
+  it('should throw id there are duplicates in owners', async () => {
+    const owners = [
+      accounts.admin0.publicKey,
+      accounts.admin1.publicKey,
+      accounts.admin1.publicKey,
+      accounts.admin2.publicKey,
+    ];
+    const quorum = 3;
+
+    return expect(init({
+      dApp: accounts.multisig.address,
+      caller: accounts.multisig.seed,
+      owners,
+      quorum,
+      additionalFee: 4e5,
+    })).to.be.rejectedWith('must not contain duplicates');
   });
 
   it('invalid quorum', async () => {

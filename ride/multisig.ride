@@ -32,16 +32,24 @@ func validatePublicKey(publicKey: String) = {
   fromBase58String(publicKey).size() == publicKeySize
 }
 
+func validateOwner(owners: List[String], pk: String) = {
+  strict checks = [
+    validatePublicKey(pk) || throwErr("invalid owner public key"),
+    owners.indexOf(pk) == owners.lastIndexOf(pk) || throwErr("must not contain duplicates")
+  ]
+
+  owners
+}
+
 @Callable(i)
 func init(owners: List[String], quorum: Int) = {
-  func validateOwner(acc: Unit, pk: String) = validatePublicKey(pk) || throwErr("invalid owner public key")
   strict checks = [
     i.caller == this || throwErr("init: not allowed"),
     !getString(kMultisig).isDefined() || throwErr("init: already initialized"),
     (owners.size() > 0 && owners.size() <= maxOwners) || throwErr("init: invalid owners"),
     (quorum > 0 && quorum <= owners.size()) || throwErr("init: invalid quorum"),
     # maxOwners
-    FOLD<10>(owners, unit, validateOwner)
+    FOLD<10>(owners, owners, validateOwner)
   ]
 
   ([
