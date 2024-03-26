@@ -24,6 +24,7 @@ export const setup = async () => {
     'admin0',
     'admin1',
     'admin2',
+    'admin3',
   ];
   const accounts = Object.fromEntries(names.map((item) => {
     const seed = `${item}#${nonce}`;

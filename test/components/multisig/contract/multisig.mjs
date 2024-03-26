@@ -1,6 +1,8 @@
 import { invokeScript } from '@waves/waves-transactions';
 import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 
+export const kPublicKeys = '%s__publicKeys';
+
 export const init = async ({
   dApp,
   caller,
@@ -42,8 +44,9 @@ export const confirmTransaction = async ({
   txId,
   payments = [],
   additionalFee = 0,
-}) => broadcastAndWait(
-  invokeScript(
+  dry = false,
+}) => {
+  const tx = invokeScript(
     {
       dApp,
       call: {
@@ -58,5 +61,38 @@ export const confirmTransaction = async ({
       chainId,
     },
     caller,
-  ),
-);
+  );
+  if (dry) {
+    return tx;
+  }
+  return broadcastAndWait(tx);
+};
+
+export const addOwner = async ({
+  dApp,
+  caller,
+  publicKey,
+  payments = [],
+  additionalFee = 0,
+  dry = false,
+}) => {
+  const tx = invokeScript(
+    {
+      dApp,
+      call: {
+        function: 'addOwner',
+        args: [
+          { type: 'string', value: publicKey },
+        ],
+      },
+      payment: payments,
+      additionalFee,
+      chainId,
+    },
+    caller,
+  );
+  if (dry) {
+    return tx;
+  }
+  return broadcastAndWait(tx);
+};
