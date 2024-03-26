@@ -30,6 +30,7 @@
     "test-l2mp-swap": "mocha -r dotenv/config --parallel --require components/l2mp_swap/_hooks.mjs components/l2mp_swap",
     "test-wxdao": "mocha -r dotenv/config --parallel components/wxdao",
     "test-futures": "mocha -r dotenv/config --parallel components/futures",
+    "test-multisig": "mocha -r dotenv/config --parallel components/multisig",
     "ci-test": "node_modules/.bin/concurrently --max-processes 8 --timings npm:test-*",
     "exchange-test": "mocha -r dotenv/config --parallel --require components/exchange/_hooks.mjs components/exchange",
     "test": "API_NODE_URL=http://localhost:6869 npm run ci-test",
