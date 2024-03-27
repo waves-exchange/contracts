@@ -72,6 +72,37 @@ export const confirmTransaction = async ({
   return broadcastAndWait(tx);
 };
 
+export const revokeConfirmation = async ({
+  dApp,
+  caller,
+  address,
+  txId,
+  payments = [],
+  additionalFee = 0,
+  dry = false,
+}) => {
+  const tx = invokeScript(
+    {
+      dApp,
+      call: {
+        function: 'revokeConfirmation',
+        args: [
+          { type: 'string', value: address },
+          { type: 'string', value: txId },
+        ],
+      },
+      payment: payments,
+      additionalFee,
+      chainId,
+    },
+    caller,
+  );
+  if (dry) {
+    return tx;
+  }
+  return broadcastAndWait(tx);
+};
+
 export const addOwner = async ({
   dApp,
   caller,

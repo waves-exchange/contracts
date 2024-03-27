@@ -165,7 +165,7 @@ func revokeConfirmation(address: String, txId: String) = {
 
   strict checks = [
     containsElement(publicKeysList, callerPublicKey) || throwErr("revokeConfirmation: only admin"),
-    fromBase58String(txId).size() == txIdSize ||throwErr("revokeConfirmation: invalid txId"),
+    fromBase58String(txId).size() == txIdSize || throwErr("revokeConfirmation: invalid txId"),
     validateAddress(address) || throwErr("revokeConfirmation: invalid address"),
     contains(confirmations, callerPublicKey) || throwErr("revokeConfirmation: not confirmed"),
     !status || throwErr("revokeConfirmation: quorum already reached")
