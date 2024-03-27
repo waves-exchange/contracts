@@ -1,7 +1,7 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import chaiSubset from 'chai-subset';
-import { api, separator } from '../../utils/api.mjs';
+import { api, broadcastAndWait, separator } from '../../utils/api.mjs';
 import { setup } from './_setup.mjs';
 import {
   confirmTransaction, init, kConfirm, kStatus, setQuorum,
@@ -142,6 +142,8 @@ describe(`[${process.pid}] multisig: confirm transaction`, () => {
       accounts.admin0.publicKey,
       accounts.admin2.publicKey,
     ].join(separator));
+
+    return expect(broadcastAndWait(tx)).to.be.fulfilled;
   });
 
   it('should throw if owner already confirmed tx', async () => {
