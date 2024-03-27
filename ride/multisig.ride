@@ -141,7 +141,7 @@ func confirmTransaction(address: String, txId: String) = {
     1,
     callerPublicKey
   ) else (
-    confirmations.split(separator).size(),
+    1 + confirmations.split(separator).size(),
     confirmations + separator + callerPublicKey
   )
 

@@ -2,6 +2,7 @@ import { invokeScript } from '@waves/waves-transactions';
 import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
 
 export const kPublicKeys = '%s__publicKeys';
+export const kQuorum = '%s__quorum';
 
 export const init = async ({
   dApp,
@@ -83,6 +84,64 @@ export const addOwner = async ({
         function: 'addOwner',
         args: [
           { type: 'string', value: publicKey },
+        ],
+      },
+      payment: payments,
+      additionalFee,
+      chainId,
+    },
+    caller,
+  );
+  if (dry) {
+    return tx;
+  }
+  return broadcastAndWait(tx);
+};
+
+export const removeOwner = async ({
+  dApp,
+  caller,
+  publicKey,
+  payments = [],
+  additionalFee = 0,
+  dry = false,
+}) => {
+  const tx = invokeScript(
+    {
+      dApp,
+      call: {
+        function: 'removeOwner',
+        args: [
+          { type: 'string', value: publicKey },
+        ],
+      },
+      payment: payments,
+      additionalFee,
+      chainId,
+    },
+    caller,
+  );
+  if (dry) {
+    return tx;
+  }
+  return broadcastAndWait(tx);
+};
+
+export const setQuorum = async ({
+  dApp,
+  caller,
+  quorum,
+  payments = [],
+  additionalFee = 0,
+  dry = false,
+}) => {
+  const tx = invokeScript(
+    {
+      dApp,
+      call: {
+        function: 'setQuorum',
+        args: [
+          { type: 'integer', value: quorum },
         ],
       },
       payment: payments,
