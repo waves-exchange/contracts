@@ -1,0 +1,169 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let SEP = "__"
+let CONTRACT_NAME = "wxdao_funding.ride"
+let SCALE8 = 100_000_000
+let WAVES = "WAVES"
+
+func wrapErr(s: String) = {
+  CONTRACT_NAME + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
+
+func assetIdToString(assetId: ByteVector|Unit) = {
+  match assetId {
+    case b: ByteVector => b.toBase58String()
+    case _: Unit => WAVES
+  }
+}
+
+func stringToAssetId(assetIdString: String) = {
+  if (assetIdString == WAVES) then unit else assetIdString.fromBase58String()
+}
+
+func keyMainTreasuryAddress()  = ["%s", "mainTreasuryAddress"].makeString(SEP)
+func keyWavesUSDTPoolAddress() = ["%s", "WavesUSDTPoolAddress"].makeString(SEP)
+func keyWXDAOAddress()         = ["%s", "WXDAOcontractAddress"].makeString(SEP)
+func keyWXDAOassetId()         = ["%s", "WXDAOassetId"].makeString(SEP)
+func keyUSDTassetId()          = ["%s", "USDTassetId"].makeString(SEP)
+func keyProcessFeeAmount()     = ["%s", "processFeeAmount"].makeString(SEP)
+
+func keyHistory(action: String, txId: String) = ["%s%s", action, txId].makeString(SEP)
+
+func formatProcessHistory(claimedWavesAmount: Int, sendWXDAOamount: Int, processFeeAmount: Int) = {
+  [
+    "%d%d%d",
+    claimedWavesAmount.toString(),
+    sendWXDAOamount.toString(),
+    processFeeAmount.toString()
+  ].makeString(SEP)
+}
+
+let mainTreasuryAddressString  = this.getStringValue(keyMainTreasuryAddress())
+let mainTreasuryAddressOrFail  = mainTreasuryAddressString.addressFromStringValue()
+let wavesUSDTpoolAddressString = this.getStringValue(keyWavesUSDTPoolAddress())
+let wavesUSDTpoolAddressOrFail = wavesUSDTpoolAddressString.addressFromStringValue()
+let wxdaoAddressString         = this.getStringValue(keyWXDAOAddress())
+let wxdaoAddressOrFail         = wxdaoAddressString.addressFromStringValue()
+
+func stringToAsset(assetIdString: String) = {
+  if (assetIdString == WAVES) then unit else assetIdString.fromBase58String()
+}
+
+func assetToString(assetId: ByteVector|Unit) = {
+  match (assetId) {
+    case b:ByteVector => b.toBase58String()
+    case _ => WAVES
+  }
+}
+
+func getBalance(address: Address, assetIdString: String) = {
+  let assetId = stringToAsset(assetIdString)
+
+  match (assetId) {
+    case b:ByteVector => address.assetBalance(b)
+    case _ => address.wavesBalance().available
+  }
+}
+
+let processFeeAmount         = this.getInteger(keyProcessFeeAmount()).valueOrElse(500000)
+let usdtAssetIdString        = this.getStringValue(keyUSDTassetId())
+let wxdaoAssetIdString       = this.getStringValue(keyWXDAOassetId())
+let wxdaoAssetId             = stringToAsset(wxdaoAssetIdString)
+
+
+func claimWavesFromTreasury() = {
+  strict oldWavesBalance = this.getBalance(WAVES)
+  strict getWavesInvoke = mainTreasuryAddressOrFail.invoke("Claim", [], [])
+  strict newWavesBalance = this.getBalance(WAVES)
+
+  newWavesBalance - oldWavesBalance
+}
+
+func getPoolBalance(poolAddress: Address, assetIdString: String) = {
+  let invokeResult = poolAddress.invoke("getAccBalanceWrapperREADONLY", [assetIdString], [])
+  match (invokeResult) {
+      case balance:Int => balance
+      case _ => "getAccBalanceWrapperREADONLY unexpected value".throwErr()
+    }
+}
+
+func getWavesUSDTPrice() = {
+  let poolWavesBalance = wavesUSDTpoolAddressOrFail.getPoolBalance(WAVES)
+  let poolUsdtBalance = wavesUSDTpoolAddressOrFail.getPoolBalance(usdtAssetIdString)
+  
+  strict ch = [
+    poolWavesBalance > 0 || "WAVES/USDT pool Waves balance should be greater that 0".throwErr(),
+    poolUsdtBalance > 0 || "WAVES/USDT pool USDT balance should be greater that 0".throwErr()
+  ]
+
+  fraction(poolUsdtBalance, SCALE8, poolWavesBalance)
+}
+
+func getWXDAOUsdtPrice() = {
+  let priceInvoke = wxdaoAddressOrFail.invoke("call", ["price", []], [])
+  let invokeResult = match (priceInvoke) {
+      case r:List[Any] => {
+        match(r[0]) {
+          case i:Int => i
+          case _ => unit
+        }
+      }
+      case _ => unit
+    }
+  let wxDAOprice = invokeResult.valueOrErrorMessage("Unexpected WXDAO Price invoke result".wrapErr())
+  
+  strict ch = [
+    wxDAOprice > 0 || "WXDAO price should be greater than 0".throwErr()
+  ]
+
+  wxDAOprice
+}
+
+func getWavesWXDAOPrice() = {
+  let wavesUsdtPrice = getWavesUSDTPrice()
+  let wxdaoUsdtPrice = getWXDAOUsdtPrice()
+
+  fraction(wavesUsdtPrice, SCALE8, wxdaoUsdtPrice)
+}
+
+func calcWXDAOamount(wavesAmount: Int) = {
+  let price = getWavesWXDAOPrice()
+  let wxDAOamount = fraction(wavesAmount, price, SCALE8)
+
+  strict ch =[
+    wavesAmount > 0 || "wavesAmount should be greater than 0".throwErr(),
+    price > 0 || "price should be greater than 0".throwErr(),
+    wxDAOamount > 0 || "wxDAO swap amount is 0".throwErr()
+  ]
+
+  wxDAOamount
+}
+
+@Callable(i)
+func process() = {
+  strict wavesAmount = claimWavesFromTreasury()
+  strict swapWavesAmount = wavesAmount - processFeeAmount
+  strict wxDAOsendAmount = calcWXDAOamount(swapWavesAmount)
+
+  strict ch = [
+    swapWavesAmount > 0 || "claimed waves amount should be greater than processing fee".throwErr(),
+    wxDAOsendAmount > 0 || "WXDAO send amount should be greater than 0".throwErr()
+  ]
+
+  let processingCaller = i.originCaller
+  
+  [
+    ScriptTransfer(processingCaller, processFeeAmount, stringToAsset(WAVES)),
+    ScriptTransfer(mainTreasuryAddressOrFail, wxDAOsendAmount, wxdaoAssetId),
+    StringEntry(
+      keyHistory("process", i.transactionId.toBase58String()),
+      formatProcessHistory(wavesAmount, wxDAOsendAmount, processFeeAmount)
+    )
+  ]
+}
