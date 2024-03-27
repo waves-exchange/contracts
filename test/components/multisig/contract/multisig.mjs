@@ -1,8 +1,11 @@
 import { invokeScript } from '@waves/waves-transactions';
-import { broadcastAndWait, chainId } from '../../../utils/api.mjs';
+import { broadcastAndWait, chainId, separator } from '../../../utils/api.mjs';
 
 export const kPublicKeys = '%s__publicKeys';
 export const kQuorum = '%s__quorum';
+
+export const kStatus = (address, txId) => ['%s__status', address, txId].join(separator);
+export const kConfirm = (address, txId) => ['%s__confirm', address, txId].join(separator);
 
 export const init = async ({
   dApp,
