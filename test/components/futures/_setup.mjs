@@ -90,7 +90,10 @@ export const setup = async ({
     ),
   ]);
 
-  const { base64: accountScript } = await compileScriptFromFile(accountPath, null, libraries);
+  const compact = true;
+  const {
+    base64: accountScript,
+  } = await compileScriptFromFile(accountPath, null, libraries, compact);
   await broadcastAndWait(invokeScript({
     dApp: accounts.factory.address,
     call: {

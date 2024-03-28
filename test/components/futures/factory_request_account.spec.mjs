@@ -43,12 +43,14 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
   });
 
   it('1 payment is required', async () => {
-    expect(broadcastAndWait(invokeScript({
+    const functionName = 'requestAccount';
+
+    return expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
         function: 'call',
         args: [
-          { type: 'string', value: 'requestAccount' },
+          { type: 'string', value: functionName },
           {
             type: 'list',
             value: [
@@ -69,12 +71,15 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
       assetId: assetId1,
       amount: 1e8,
     }, baseSeed));
-    expect(broadcastAndWait(invokeScript({
+
+    const functionName = 'requestAccount';
+
+    return expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
         function: 'call',
         args: [
-          { type: 'string', value: 'requestAccount' },
+          { type: 'string', value: functionName },
           {
             type: 'list',
             value: [
@@ -92,12 +97,14 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
   });
 
   it('invalid amount', async () => {
-    expect(broadcastAndWait(invokeScript({
+    const functionName = 'requestAccount';
+
+    return expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
         function: 'call',
         args: [
-          { type: 'string', value: 'requestAccount' },
+          { type: 'string', value: functionName },
           {
             type: 'list',
             value: [
@@ -111,16 +118,18 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
         { assetId: null, amount: rewardAmount - 1 },
       ],
       chainId,
-    }, accounts.user1.seed))).to.be.rejectedWith('pair is not allowed');
+    }, accounts.user1.seed))).to.be.rejectedWith('invalid amount');
   });
 
   it('pair is not allowed', async () => {
-    expect(broadcastAndWait(invokeScript({
+    const functionName = 'requestAccount';
+
+    return expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
         function: 'call',
         args: [
-          { type: 'string', value: 'requestAccount' },
+          { type: 'string', value: functionName },
           {
             type: 'list',
             value: [
@@ -208,12 +217,14 @@ describe(`[${process.pid}] grid_trading: factory request account`, () => {
   });
 
   it('account already exists', async () => {
-    expect(broadcastAndWait(invokeScript({
+    const functionName = 'requestAccount';
+
+    return expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
         function: 'call',
         args: [
-          { type: 'string', value: 'requestAccount' },
+          { type: 'string', value: functionName },
           {
             type: 'list',
             value: [

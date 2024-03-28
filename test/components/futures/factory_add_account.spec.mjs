@@ -49,7 +49,9 @@ describe(`[${process.pid}] grid_trading: add account`, () => {
   });
 
   it('no script', async () => {
-    expect(broadcastAndWait(invokeScript({
+    const { publicKey } = accounts.creator;
+
+    return expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
         function: 'call',
@@ -58,7 +60,7 @@ describe(`[${process.pid}] grid_trading: add account`, () => {
           {
             type: 'list',
             value: [
-              { type: 'string', value: accounts.creator.publicKey },
+              { type: 'string', value: publicKey },
             ],
           },
         ],
@@ -80,7 +82,9 @@ describe(`[${process.pid}] grid_trading: add account`, () => {
       chainId,
     }, accounts.account1.seed));
 
-    expect(broadcastAndWait(invokeScript({
+    const { publicKey } = accounts.creator;
+
+    return expect(broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
       call: {
         function: 'call',
@@ -89,7 +93,7 @@ describe(`[${process.pid}] grid_trading: add account`, () => {
           {
             type: 'list',
             value: [
-              { type: 'string', value: accounts.creator.publicKey },
+              { type: 'string', value: publicKey },
             ],
           },
         ],
