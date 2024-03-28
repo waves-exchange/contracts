@@ -32,6 +32,7 @@ func keyWXDAOAddress()         = ["%s", "WXDAOcontractAddress"].makeString(SEP)
 func keyWXDAOassetId()         = ["%s", "WXDAOassetId"].makeString(SEP)
 func keyUSDTassetId()          = ["%s", "USDTassetId"].makeString(SEP)
 func keyProcessFeeAmount()     = ["%s", "processFeeAmount"].makeString(SEP)
+func keyMinClaimAmount()          = ["%s", "minClaimAmount"].makeString(SEP)
 
 func keyHistory(action: String, txId: String) = ["%s%s", action, txId].makeString(SEP)
 
@@ -71,10 +72,11 @@ func getBalance(address: Address, assetIdString: String) = {
   }
 }
 
-let processFeeAmount         = this.getInteger(keyProcessFeeAmount()).valueOrElse(500000)
-let usdtAssetIdString        = this.getStringValue(keyUSDTassetId())
-let wxdaoAssetIdString       = this.getStringValue(keyWXDAOassetId())
-let wxdaoAssetId             = stringToAsset(wxdaoAssetIdString)
+let processFeeAmount   = this.getInteger(keyProcessFeeAmount()).valueOrElse(500000)
+let minClaimAmount     = this.getInteger(keyMinClaimAmount()).valueOrElse(0)
+let usdtAssetIdString  = this.getStringValue(keyUSDTassetId())
+let wxdaoAssetIdString = this.getStringValue(keyWXDAOassetId())
+let wxdaoAssetId       = stringToAsset(wxdaoAssetIdString)
 
 
 func claimWavesFromTreasury() = {
@@ -147,11 +149,13 @@ func calcWXDAOamount(wavesAmount: Int) = {
 
 @Callable(i)
 func process() = {
-  strict wavesAmount = claimWavesFromTreasury()
-  strict swapWavesAmount = wavesAmount - processFeeAmount
+  strict claimedWavesAmount = claimWavesFromTreasury()
+  strict swapWavesAmount = claimedWavesAmount - processFeeAmount
   strict wxDAOsendAmount = calcWXDAOamount(swapWavesAmount)
 
   strict ch = [
+    claimedWavesAmount >= minClaimAmount || 
+        ["not enough claim amount (", claimedWavesAmount.toString(), " < ", minClaimAmount.toString(), ")"].makeString("").throwErr(),
     swapWavesAmount > 0 || "claimed waves amount should be greater than processing fee".throwErr(),
     wxDAOsendAmount > 0 || "WXDAO send amount should be greater than 0".throwErr()
   ]
@@ -163,7 +167,7 @@ func process() = {
     ScriptTransfer(mainTreasuryAddressOrFail, wxDAOsendAmount, wxdaoAssetId),
     StringEntry(
       keyHistory("process", i.transactionId.toBase58String()),
-      formatProcessHistory(wavesAmount, wxDAOsendAmount, processFeeAmount)
+      formatProcessHistory(claimedWavesAmount, wxDAOsendAmount, processFeeAmount)
     )
   ]
 }
