@@ -16,7 +16,7 @@ chai.use(chaiAsPromised);
 chai.use(chaiSubset);
 const { expect } = chai;
 
-describe(`[${process.pid}] grid_trading: factory request account`, () => {
+describe(`[${process.pid}] futures: factory request account`, () => {
   let accounts;
   let rewardAmount;
   let assetId1;

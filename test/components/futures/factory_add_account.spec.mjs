@@ -15,7 +15,7 @@ chai.use(chaiAsPromised);
 chai.use(chaiSubset);
 const { expect } = chai;
 
-describe(`[${process.pid}] grid_trading: add account`, () => {
+describe(`[${process.pid}] futures: add account`, () => {
   let accounts;
   let assetId1;
   let assetId2;
