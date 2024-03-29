@@ -1,0 +1,48 @@
+{
+    "type": 12,
+    "fee": 900000,
+    "version": 2,
+    "senderPublicKey": "5WG53hB4ZK2TWX7UnLeTU4ieDp8Fy4VtaYx6gKFYxGHu",
+    "data": [
+        {
+            "key": "%s__adminAddressList",
+            "type": "string",
+            "value": "3PBUguU83ccjXz7NBbR3vn67fVHawbxwaTH__3PLU2bd4CDhHC35bf5qsQxYLpkEkpgkrcvc__3PF3AgB3cEE8F9ZUxuA9aLyM2PBjKrrszZQ__3PHdaP2BLUXFacnqZm6WoFjidvzqZZMbb8j__3P33RBZUXcdx5JW918DqFfrscEuEZpAPUPz"
+        },
+        {
+            "key": "%s__mainTreasuryAddress",
+            "type": "string",
+            "value": "3PEwRcYNAUtoFvKpBhKoiwajnZfdoDR6h4h"
+        },
+        {
+            "key": "%s__WavesUSDTPoolAddress",
+            "type": "string",
+            "value": "3PKfrupEydU2nZAghVjZAfvCwMBkzuR1F52"
+        },
+        {
+            "key": "%s__WXDAOcontractAddress",
+            "type": "string",
+            "value": "3PEhMFF2mfSWVxWqbW8guXVYcNeoW77ga7T"
+        },
+        {
+            "key": "%s__WXDAOassetId",
+            "type": "string",
+            "value": "BE4VVq1VsrwGyUWpUkNjVFR5j9vzioiRhrUT52p8RW2m"
+        },
+        {
+            "key": "%s__USDTassetId",
+            "type": "string",
+            "value": "G5WWWzzVsWRyzGf32xojbnfp7gXbWrgqJT8RcVWEfLmC"
+        },
+        {
+            "key": "%s__minClaimAmount",
+            "type": "integer",
+            "value": 30000000000
+        },
+        {
+            "key": "%s__processFeeAmount",
+            "type": "integer",
+            "value": 500000
+        }
+    ]
+}

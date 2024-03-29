@@ -45,7 +45,7 @@ describe('wxdao_funding: process', /** @this {MochaSuiteModified} */() => {
 
       expect(stateChanges.data).to.deep.equal([
         {
-          key: `%s%s__process__${txId}`,
+          key: `%s%s%s__history__process__${txId}`,
           type: 'string',
           value: `%d%d%d__${claimAmount}__${expectedWxdaoSendAmount}__${processFee}`,
         },
