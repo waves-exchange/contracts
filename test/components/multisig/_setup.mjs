@@ -21,6 +21,7 @@ export const setup = async () => {
   const nonce = wc.random(nonceLength, 'Buffer').toString('hex');
   const names = [
     'multisig',
+    'dapp',
     'admin0',
     'admin1',
     'admin2',
