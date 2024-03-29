@@ -1,9 +1,11 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import chaiSubset from 'chai-subset';
-import { broadcastAndWait } from '../../utils/api.mjs';
+import { api, broadcastAndWait, separator } from '../../utils/api.mjs';
 import { setup } from './_setup.mjs';
-import { confirmTransaction, init } from './contract/multisig.mjs';
+import {
+  confirmTransaction, init, kMultisig, kPublicKeys, kQuorum,
+} from './contract/multisig.mjs';
 
 chai.use(chaiAsPromised);
 chai.use(chaiSubset);
@@ -106,15 +108,34 @@ describe(`[${process.pid}] multisig: init`, () => {
       accounts.admin1.publicKey,
       accounts.admin2.publicKey,
     ];
-    const quorum = 1;
 
-    return expect(init({
+    const targetQuorum = 1;
+    await expect(init({
       dApp: accounts.multisig.address,
       caller: accounts.multisig.seed,
       owners,
-      quorum,
+      quorum: targetQuorum,
       additionalFee: 4e5,
     })).to.be.fulfilled;
+
+    const [
+      { value: multisig },
+      { value: publicKeys },
+      { value: quorum },
+    ] = await api.addresses.data(
+      accounts.multisig.address,
+      {
+        key: [
+          encodeURIComponent(kMultisig),
+          encodeURIComponent(kPublicKeys),
+          encodeURIComponent(kQuorum),
+        ],
+      },
+    );
+
+    expect(multisig).to.equal(accounts.multisig.address);
+    expect(publicKeys).to.equal(owners.join(separator));
+    expect(quorum).to.equal(targetQuorum);
   });
 
   it('already initialized', async () => {
