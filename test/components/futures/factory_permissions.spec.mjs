@@ -1,8 +1,9 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { invokeScript } from '@waves/waves-transactions';
+import { invokeScript, issue } from '@waves/waves-transactions';
+import { base58Decode, base64Encode } from '@waves/ts-lib-crypto';
 import {
-  chainId, broadcast,
+  chainId, broadcast, broadcastAndWait,
 } from '../../utils/api.mjs';
 import { setup } from './_setup.mjs';
 
@@ -11,11 +12,21 @@ const { expect } = chai;
 
 describe(`[${process.pid}] futures: factory permissions`, () => {
   let accounts;
+  let assetId;
 
   before(async () => {
     ({
       accounts,
     } = await setup());
+
+    ({ id: assetId } = await broadcastAndWait(issue({
+      name: 'ASSET',
+      description: '',
+      quantity: 1e6 * 1e8,
+      decimals: 8,
+      reissuable: true,
+      chainId,
+    }, accounts.factory.seed)));
   });
 
   it('stringEntry', async () => {
@@ -29,11 +40,12 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, caller));
 
-    expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-    expect(fn(accounts.calculator.seed)).to.be.fulfilled;
+    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
+    await fn(accounts.calculator.seed);
   });
 
   it('integerEntry', async () => {
@@ -47,11 +59,12 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, caller));
 
-    expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-    expect(fn(accounts.calculator.seed)).to.be.fulfilled;
+    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
+    await expect(fn(accounts.calculator.seed)).to.be.fulfilled;
   });
 
   it('booleanEntry', async () => {
@@ -65,11 +78,12 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, caller));
 
-    expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-    expect(fn(accounts.calculator.seed)).to.be.fulfilled;
+    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
+    await expect(fn(accounts.calculator.seed)).to.be.fulfilled;
   });
 
   it('binaryEntry', async () => {
@@ -79,15 +93,16 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
         function: 'binaryEntry',
         args: [
           { type: 'string', value: 'test' },
-          { type: 'binary', value: [] },
+          { type: 'binary', value: 'base64:' },
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, caller));
 
-    expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-    expect(fn(accounts.calculator.seed)).to.be.fulfilled;
+    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
+    await expect(fn(accounts.calculator.seed)).to.be.fulfilled;
   });
 
   it('deleteEntry', async () => {
@@ -100,11 +115,12 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, caller));
 
-    expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-    expect(fn(accounts.calculator.seed)).to.be.fulfilled;
+    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
+    await expect(fn(accounts.calculator.seed)).to.be.fulfilled;
   });
 
   it('reissue', async () => {
@@ -113,17 +129,18 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
       call: {
         function: 'reissue',
         args: [
-          { type: 'binary', value: [] },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId))}` },
           { type: 'integer', value: 0 },
           { type: 'boolean', value: true },
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, caller));
 
-    expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-    expect(fn(accounts.calculator.seed)).to.be.fulfilled;
+    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
+    await expect(fn(accounts.calculator.seed)).to.be.fulfilled;
   });
 
   it('burn', async () => {
@@ -132,16 +149,17 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
       call: {
         function: 'burn',
         args: [
-          { type: 'binary', value: [] },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId))}` },
           { type: 'integer', value: 0 },
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, caller));
 
-    expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-    expect(fn(accounts.calculator.seed)).to.be.fulfilled;
+    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
+    await expect(fn(accounts.calculator.seed)).to.be.fulfilled;
   });
 
   it('transferAsset', async () => {
@@ -150,17 +168,18 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
       call: {
         function: 'transferAsset',
         args: [
-          { type: 'binary', value: [] },
-          { type: 'integer', value: 0 },
-          { type: 'binary', value: [] },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.calculator.address))}` },
+          { type: 'integer', value: 1 },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(assetId))}` },
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, caller));
 
-    expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-    expect(fn(accounts.calculator.seed)).to.be.fulfilled;
+    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
+    await expect(fn(accounts.calculator.seed)).to.be.fulfilled;
   });
 
   it('transferAssets', async () => {
@@ -169,17 +188,18 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
       call: {
         function: 'transferAssets',
         args: [
-          { type: 'binary', value: [] },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.calculator.address))}` },
           { type: 'list', value: [] },
           { type: 'list', value: [] },
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, caller));
 
-    expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-    expect(fn(accounts.calculator.seed)).to.be.fulfilled;
+    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
+    await expect(fn(accounts.calculator.seed)).to.be.fulfilled;
   });
 
   it('transferWaves', async () => {
@@ -188,16 +208,17 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
       call: {
         function: 'transferWaves',
         args: [
-          { type: 'binary', value: [] },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.calculator.address))}` },
           { type: 'integer', value: 0 },
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, caller));
 
-    expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-    expect(fn(accounts.calculator.seed)).to.be.fulfilled;
+    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
+    await expect(fn(accounts.calculator.seed)).to.be.fulfilled;
   });
 
   it('init', async () => {
@@ -208,15 +229,16 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
         args: [
           { type: 'string', value: '' },
           { type: 'string', value: '' },
-          { type: 'binary', value: [] },
+          { type: 'binary', value: 'base64:' },
           { type: 'integer', value: 0 },
         ],
       },
       payment: [],
+      additionalFee: 4e5,
       chainId,
     }, caller));
 
-    expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-    expect(fn(accounts.factory.seed)).to.be.fulfilled;
+    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
+    await expect(fn(accounts.factory.seed)).to.be.fulfilled;
   });
 });

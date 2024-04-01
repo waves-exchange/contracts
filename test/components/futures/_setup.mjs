@@ -105,6 +105,7 @@ export const setup = async ({
         { type: 'integer', value: rewardAmount },
       ],
     },
+    additionalFee: 4e5,
     chainId,
   }, accounts.factory.seed));
 
@@ -116,6 +117,7 @@ export const setup = async ({
         { type: 'string', value: accounts.factory.address },
       ],
     },
+    additionalFee: 4e5,
     chainId,
   }, accounts.calculator.seed));
 

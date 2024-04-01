@@ -361,7 +361,7 @@ func cancelShutdown(callerPublicKey: ByteVector, args: List[String]) = {
 
 @Verifier(tx)
 func verify() = {
-  if (factoryAddressOption.isDefined()) then {
+  if (factoryAddressOption.isDefined() && factoryAddress.getString(kMultisig).isDefined()) then {
     match factoryAddress.getString(kMultisig) {
       case multisig: String => {
         let statusKey = kStatus(this.toString(), tx.id.toBase58String())
