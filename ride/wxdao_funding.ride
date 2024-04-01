@@ -15,17 +15,6 @@ func throwErr(s: String) = {
   throw(wrapErr(s))
 }
 
-func assetIdToString(assetId: ByteVector|Unit) = {
-  match assetId {
-    case b: ByteVector => b.toBase58String()
-    case _: Unit => WAVES
-  }
-}
-
-func stringToAssetId(assetIdString: String) = {
-  if (assetIdString == WAVES) then unit else assetIdString.fromBase58String()
-}
-
 func keyMainTreasuryAddress()  = ["%s", "mainTreasuryAddress"].makeString(SEP)
 func keyWavesUSDTPoolAddress() = ["%s", "WavesUSDTPoolAddress"].makeString(SEP)
 func keyWXDAOAddress()         = ["%s", "WXDAOcontractAddress"].makeString(SEP)
@@ -190,7 +179,7 @@ func getWavesUSDTPrice() = {
   
   strict ch = [
     poolWavesBalance > 0 || "WAVES/USDT pool Waves balance should be greater that 0".throwErr(),
-    poolUsdtBalance > 0 || "WAVES/USDT pool USDT balance should be greater that 0".throwErr()
+    poolUsdtBalance > 0  || "WAVES/USDT pool USDT balance should be greater that 0".throwErr()
   ]
 
   fraction(poolUsdtBalance, SCALE8, poolWavesBalance)
@@ -229,7 +218,7 @@ func calcWXDAOamount(wavesAmount: Int) = {
 
   strict ch =[
     wavesAmount > 0 || "wavesAmount should be greater than 0".throwErr(),
-    price > 0 || "price should be greater than 0".throwErr(),
+    price > 0       || "price should be greater than 0".throwErr(),
     wxDAOamount > 0 || "wxDAO swap amount is 0".throwErr()
   ]
 
