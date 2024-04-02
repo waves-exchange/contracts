@@ -43,6 +43,11 @@
             "key": "%s__processFeeAmount",
             "type": "integer",
             "value": 500000
+        },
+        {
+            "key": "%s__WXDAOpriceCoeff",
+            "type": "integer",
+            "value": 110000000
         }
     ]
 }

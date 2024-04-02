@@ -84,6 +84,11 @@ export const mochaHooks = {
           type: 'string',
           value: 'MOCKED_USDT_ASSET_ID',
         },
+        {
+          key: '%s__WXDAOpriceCoeff',
+          type: 'integer',
+          value: 1_1000_0000, // 110%
+        },
       ],
       chainId,
     }, this.accounts.wxdaoFunding.seed));

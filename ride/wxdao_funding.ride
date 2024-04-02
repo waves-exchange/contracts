@@ -22,6 +22,7 @@ func keyWXDAOassetId()         = ["%s", "WXDAOassetId"].makeString(SEP)
 func keyUSDTassetId()          = ["%s", "USDTassetId"].makeString(SEP)
 func keyProcessFeeAmount()     = ["%s", "processFeeAmount"].makeString(SEP)
 func keyMinClaimAmount()       = ["%s", "minClaimAmount"].makeString(SEP)
+func keyWXDAOpriceCoeff()      = ["%s", "WXDAOpriceCoeff"].makeString(SEP)
 
 func keyHistory(action: String, txId: String) = ["%s%s%s", "history", action, txId].makeString(SEP)
 
@@ -63,6 +64,7 @@ func getBalance(address: Address, assetIdString: String) = {
 
 let processFeeAmount   = this.getInteger(keyProcessFeeAmount()).valueOrElse(500000)
 let minClaimAmount     = this.getInteger(keyMinClaimAmount()).valueOrElse(0)
+let wxdaoPriceCoeff    = this.getInteger(keyWXDAOpriceCoeff()).valueOrElse(SCALE8)
 let usdtAssetIdString  = this.getStringValue(keyUSDTassetId())
 let wxdaoAssetIdString = this.getStringValue(keyWXDAOassetId())
 let wxdaoAssetId       = stringToAsset(wxdaoAssetIdString)
@@ -190,7 +192,7 @@ func getWXDAOUsdtPrice() = {
   let invokeResult = match (priceInvoke) {
       case r:List[Any] => {
         match(r[0]) {
-          case i:Int => i
+          case i:Int => fraction(i, wxdaoPriceCoeff, SCALE8)
           case _ => unit
         }
       }

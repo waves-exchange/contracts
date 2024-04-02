@@ -15,7 +15,7 @@ describe('wxdao_funding: process', /** @this {MochaSuiteModified} */() => {
       // Prices set in mocks
       const claimAmount = 1.5 * 1e8;
       const wavesUsdtPrice = 5.5 * 1e6;
-      const wxdaoUsdtPrice = 11.0 * 1e6;
+      const wxdaoUsdtPrice = 11.0 * 1e6 * 1.1;
       const processFee = 0.005 * 1e8;
 
       const swapAmount = claimAmount - processFee;

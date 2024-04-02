@@ -10,6 +10,7 @@
 | `%s__USDTassetId`                   |  `String` | `'G5WWWzzVsWRyzGf32xojbnfp7gXbWrgqJT8RcVWEfLmC'`             |
 | `%s__minClaimAmount`                | `Integer` | `30000000000`                                                |
 | `%s__processFeeAmount`              | `Integer` | `500000`                                                     |
+| `%s__WXDAOpriceCoeff`               | `Integer` | `110000000` (SCALE8)                                         |
 | `%s%s%s__history__<action>__<txId>` |  `String` | `'%d%d%d__<wavesAmount>__<WXDAOamount>__<processFeeAmount>'` |
 
 
