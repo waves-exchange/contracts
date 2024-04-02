@@ -21,6 +21,7 @@ const ridePath = '../ride';
 const factoryPath = format({ dir: ridePath, base: 'futures_factory.ride' });
 const calculatorPath = format({ dir: ridePath, base: 'futures_calculator.ride' });
 const accountPath = format({ dir: ridePath, base: 'futures_account.ride' });
+const multisigPath = format({ dir: ridePath, base: 'multisig.ride' });
 
 export const setup = async ({
   rewardAmount = 1000,
@@ -31,10 +32,12 @@ export const setup = async ({
     'calculator',
     'matcher',
     'creator',
+    'multisig',
     'user1',
     'user2',
     'account1',
     'account2',
+    'admin1',
   ];
   const accounts = Object.fromEntries(names.map((item) => {
     const seed = `${item}#${nonce}`;
@@ -85,6 +88,12 @@ export const setup = async ({
     setScriptFromFile(
       calculatorPath,
       accounts.calculator.seed,
+      null,
+      libraries,
+    ),
+    setScriptFromFile(
+      multisigPath,
+      accounts.multisig.seed,
       null,
       libraries,
     ),
