@@ -1,0 +1,10 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+# WXDAO Price == 11.0 USDT
+@Callable(i)
+func call(function: String, args: List[String]) = {
+
+    ([], [11_000_000])
+}
