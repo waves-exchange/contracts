@@ -56,7 +56,7 @@ func kRequestPriceAssetId(requestId: String) = {
 
 let factoryAddress = addressFromPublicKey(
   this.getBinary(kFactoryPublicKey).valueOrErrorMessage(
-    throwErr("factory public key is not defined")
+    wrapErr("factory public key is not defined")
   )
 )
 
