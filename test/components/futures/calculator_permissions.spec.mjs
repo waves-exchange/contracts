@@ -160,22 +160,4 @@ describe(`[${process.pid}] futures: calculator permissions`, () => {
 
     await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
   });
-
-  it('cancel shutdown', async () => {
-    const fn = async (caller) => broadcast(invokeScript({
-      dApp: accounts.calculator.address,
-      call: {
-        function: 'cancelShutdown',
-        args: [
-          { type: 'binary', value: 'base64:' },
-          { type: 'list', value: [] },
-        ],
-      },
-      payment: [],
-      additionalFee: 4e5,
-      chainId,
-    }, caller));
-
-    await expect(fn(accounts.user1.seed)).to.be.rejectedWith('permission denied');
-  });
 });

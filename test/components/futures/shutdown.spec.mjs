@@ -2,7 +2,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import chaiSubset from 'chai-subset';
 import {
-  data, invokeScript, issue, setScript,
+  data, invokeScript, setScript,
 } from '@waves/waves-transactions';
 import {
   base58Decode, base64Encode,
@@ -40,15 +40,6 @@ describe(`[${process.pid}] futures: shutdown`, () => {
       quorum,
       additionalFee: 4e5,
     });
-
-    ({ id: assetIdOwned } = await broadcastAndWait(issue({
-      name: 'ASSET',
-      description: '',
-      quantity: 1e6 * 1e8,
-      decimals: 8,
-      reissuable: true,
-      chainId,
-    }, accounts.account1.seed)));
 
     const kAccountScript = '%s__accountScript';
     validScript = await api.addresses.fetchDataKey(
