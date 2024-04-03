@@ -309,6 +309,26 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
   (nil, invocations)
 }
 
+@Callable(i)
+func borrow(callerPublicKey: ByteVector, args: List[String]) = {
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory()
+  ]
+
+  (nil, unit)
+}
+
+@Callable(i)
+func repay(callerPublicKey: ByteVector, args: List[String]) = {
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory()
+  ]
+
+  (nil, unit)
+}
+
 # args: [amountAssetId, priceAssetId, allow]
 @Callable(i)
 func setPairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
