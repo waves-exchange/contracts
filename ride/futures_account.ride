@@ -96,39 +96,39 @@ func mustOwner(i: Invocation) = {
 
 @Callable(i)
 func stringEntry(key: String, val: String) =
-  if (!shutdown && i.mustCalculator()) then ([StringEntry(key, val)], key) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([StringEntry(key, val)], key) else throwErr("not allowed")
 
 @Callable(i)
 func integerEntry(key: String, val: Int) =
-  if (!shutdown && i.mustCalculator()) then ([IntegerEntry(key, val)], key) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([IntegerEntry(key, val)], key) else throwErr("not allowed")
 
 @Callable(i)
 func booleanEntry(key: String, val: Boolean) =
-  if (!shutdown && i.mustCalculator()) then ([BooleanEntry(key, val)], key) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([BooleanEntry(key, val)], key) else throwErr("not allowed")
 
 @Callable(i)
 func binaryEntry(key: String, val: ByteVector) =
-  if (!shutdown && i.mustCalculator()) then ([BinaryEntry(key, val)], key) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([BinaryEntry(key, val)], key) else throwErr("not allowed")
 
 @Callable(i)
 func deleteEntry(key: String) =
-  if (!shutdown && i.mustCalculator()) then ([DeleteEntry(key)], key) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([DeleteEntry(key)], key) else throwErr("not allowed")
 
 @Callable(i)
 func reissue(assetId: ByteVector, amount: Int, reissuable: Boolean) = 
-  if (!shutdown && i.mustCalculator()) then ([Reissue(assetId, amount, reissuable)], amount) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([Reissue(assetId, amount, reissuable)], amount) else throwErr("not allowed")
 
 @Callable(i)
 func burn(assetId: ByteVector, amount: Int) = 
-  if (!shutdown && i.mustCalculator()) then ([Burn(assetId, amount)], amount) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([Burn(assetId, amount)], amount) else throwErr("not allowed")
 
 @Callable(i)
 func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 
-  if (!shutdown && i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else throwErr("not allowed")
 
 @Callable(i)
 func transferWaves(recipientBytes: ByteVector, amount: Int) = 
-  if (!shutdown && i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else ([], unit)
+  if (!shutdown && i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else throwErr("not allowed")
 
 @Callable(i)
 func init(factoryPublicKey: ByteVector, creatorPublicKey: ByteVector) = {

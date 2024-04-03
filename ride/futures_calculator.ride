@@ -365,20 +365,6 @@ func doShutdown(callerPublicKey: ByteVector, args: List[String]) = {
   (nil, invocations)
 }
 
-@Callable(i)
-func cancelShutdown(callerPublicKey: ByteVector, args: List[String]) = {
-  strict checks = [
-    i.caller.mustFactory(),
-    callerPublicKey.addressFromPublicKey().mustFactory()
-  ]
-
-  let invocations = [
-    factoryAddress.invoke("deleteEntry", [kShutdown], [])
-  ]
-
-  (nil, invocations)
-}
-
 @Verifier(tx)
 func verify() = {
   if (factoryAddressOption.isDefined() && factoryAddress.getString(kMultisig).isDefined()) then {
