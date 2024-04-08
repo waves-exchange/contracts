@@ -7,6 +7,7 @@ let poolWeightMult = 100_000_000
 let maxDepthDefault = 10
 let finalizationStageTotal = 0
 let finalizationStageShares = 1
+let resumptionFeeDefault = 5000_00000000
 
 let keyEpochLength = ["%s", "epochLength"].makeString(separator)
 let keyEpochLengthNew = ["%s%s", "epochLength__new"].makeString(separator)
@@ -14,6 +15,7 @@ func keyEpochLengthByEpoch(epoch: Int) = ["%s%d", "epochLength", epoch.toString(
 
 let keyCurrentEpoch = ["%s", "currentEpoch"].makeString(separator)
 let keyMaxDepth = ["%s", "maxDepth"].makeString(separator)
+let keyResumptionFee = ["%s", "resumptionFee"].makeString(separator)
 let keyVotingEmissionCandidateContract = ["%s", "votingEmissionCandidateContract"].makeString(separator)
 let keyVotingEmissionRateContract = ["%s", "votingEmissionRateContract"].makeString(separator)
 let keyFactoryContract = ["%s", "factoryContract"].makeString(separator)
@@ -96,6 +98,17 @@ let IdxFactoryCfgGwxRewardDapp = 10
 func keyFactoryCfg() = "%s__factoryConfig"
 func readFactoryCfgOrFail(factory: Address) = factory.getStrOrFail(keyFactoryCfg()).split(separator)
 func getGwxRewardAddressOrFail(factoryCfg: List[String]) = factoryCfg[IdxFactoryCfgGwxRewardDapp].addressFromStringValue()
+
+# returns (poolAddress: Address, lpAssetId: ByteVector)
+func getPoolInfo(amountAssetId: String, priceAssetId: String) = {
+  let poolInfoOption = factoryContract.invoke(
+    "poolInfoREADONLY",
+    [amountAssetId, priceAssetId],
+    []
+  ).as[(Address, ByteVector)]
+
+  poolInfoOption
+}
 
 func getLpAssetByPoolAssets(amountAssetId: String, priceAssetId: String) = {
   func keyMappingsBaseAsset2internalId(baseAssetStr: String) = {
@@ -787,6 +800,55 @@ func deletePool(amountAssetId: String, priceAssetId: String) = {
   [
     DeleteEntry(keyInList(pool))
   ] ++ actions
+}
+
+# statuses are returned within 3 days
+@Callable(i)
+func resume(amountAssetId: String, priceAssetId: String) = {
+  let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
+  let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
+
+  let payment = i.payments[0]
+
+  let assetsStoreContract = this.getStringValue(
+    keyAssetsStoreContract
+  ).addressFromStringValue()
+
+  let kBoostingConfig = "%s__config"
+  let idxCfgAssetId = 1
+  let boostingContract = this.getStrOrFail(keyBoostingContract).addressFromStringValue()
+  let wxAssetId = boostingContract.getStringValue(kBoostingConfig).split(separator)[idxCfgAssetId].fromBase58String()
+
+  let amountAssetVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [amountAssetId], []).exactAs[Boolean]
+  let priceAssetVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [priceAssetId], []).exactAs[Boolean]
+
+  let resumptionFee = this.getInteger(
+    keyResumptionFee
+  ).valueOrElse(resumptionFeeDefault)
+
+  strict checks = [
+    balanceIsOk || throwErr("insufficient balances"),
+    i.payments.size() == 1 || throwErr("1 payment is required"),
+    payment.assetId == wxAssetId || throwErr("invalid payment asset id"),
+    payment.amount == resumptionFee || throwErr("invalid payment amount"),
+    amountAssetVerified && priceAssetVerified || throwErr("both assets should be verified")
+  ]
+
+  # strict setWxEmissionInv = factoryContract.invoke("setWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
+
+  # let poolAddress = getPoolInfo(
+  #   amountAssetId,
+  #   priceAssetId
+  # ).valueOrErrorMessage(wrapErr("invalid assets"))._1
+  # let newStatus = 1
+  # strict setPoolStatusInv = factoryContract.invoke("managePool", [poolAddress.toString(), newStatus], [])
+
+  let pool = (amountAssetId, priceAssetId)
+  let inListActions = [
+    BooleanEntry(pool.keyInList(), true)
+  ] ++ poolsListName.insertNodeActions(pool.poolToString())
+
+  (inListActions, unit)
 }
 
 @Verifier(tx)
