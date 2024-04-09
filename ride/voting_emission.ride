@@ -5,8 +5,9 @@
 let separator = "__"
 let poolWeightMult = 100_000_000
 let maxDepthDefault = 10
-let finalizationStageTotal = 0
-let finalizationStageShares = 1
+let finalizationStageBalances = 0
+let finalizationStageTotal = 1
+let finalizationStageShares = 2
 let resumptionFeeDefault = 5000_00000000
 
 let keyEpochLength = ["%s", "epochLength"].makeString(separator)
@@ -35,6 +36,7 @@ let keyFinalizationShouldBeForced = ["%s", "force"].makeString(separator)
 # start height will be set after first pool adding
 func keyStartHeightByEpoch(epoch: Int) = ["%s%d", "startHeight", epoch.toString()].makeString(separator)
 func keyFinalized(epoch: Int) = ["%s%d", "finalized", epoch.toString()].makeString(separator)
+func keyBalancesWithinLimits(epoch: Int) = ["%s%d", "balancesWithinLimits", epoch.toString()].makeString(separator)
 func keyInList(pool: (String, String)) = {
   let (amountAssetId, priceAssetId) = pool
 
@@ -431,6 +433,19 @@ func setMaxDepth(newMaxDepth: Int) = {
   )
 }
 
+@Callable(i)
+func processPoolBalanceINTERNAL(poolStr: String) = {
+  strict checkCaller = i.mustThis()
+  # check balance, write if balances is ok
+  # if previous balance and current balance is not ok,
+  #   then set status 3, remove from list, remove wx emission label
+
+  (
+    [],
+    unit
+  )
+}
+
 # stages:
 # 0 - расчет общего числа голосов, перенос голосов с предыдущего периода, перенос на следующий период
 # 1 - расчет долей пулов, начало нового периода и изменение весов пулов - после этого этапа доступно голосование
@@ -576,7 +591,7 @@ func finalizeHelper() = {
         IntegerEntry(newEpoch.keyStartHeightByEpoch(), height),
         IntegerEntry(keyStartHeight, height),
         IntegerEntry(keyCurrentEpoch, newEpoch),
-        IntegerEntry(keyFinalizationStage, finalizationStageTotal),
+        IntegerEntry(keyFinalizationStage, finalizationStageBalances),
         IntegerEntry(epoch.keyEpochLengthByEpoch(), epochLength)
       ] ++ newEpochLengthActions,
       true
@@ -594,6 +609,38 @@ func finalizeHelper() = {
       [],
       false
     )
+  } else if (finalizationStageOrUnit == finalizationStageBalances) then {
+    let poolOrUnit = keyNextPool.getString()
+    match poolOrUnit {
+      case _: Unit => {
+        match poolsListName.keyListHead().getString() {
+          case _: Unit => {
+            ([
+              IntegerEntry(keyFinalizationStage, finalizationStageTotal),
+              DeleteEntry(keyNextPool)
+            ], true)
+          }
+          case nextPoolStr: String => {
+            ([StringEntry(keyNextPool, nextPoolStr)], true)
+          }
+        }
+      }
+      case poolStr: String => {
+        strict nextPoolOrUnit = poolsListName.keyListNext(poolStr).getString()
+        strict r = this.invoke("processPoolBalanceINTERNAL", [poolStr], [])
+        match nextPoolOrUnit {
+          case _: Unit => {
+            ([
+              IntegerEntry(keyFinalizationStage, finalizationStageTotal),
+              DeleteEntry(keyNextPool)
+            ], true)
+          }
+          case nextPoolStr: String => {
+            ([StringEntry(keyNextPool, nextPoolStr)], true)
+          }
+        }
+      }
+    }
   # этап подсчета общего числа голосов
   } else if (finalizationStageOrUnit == finalizationStageTotal) then {
     let poolOrUnit = keyNextPool.getString()
