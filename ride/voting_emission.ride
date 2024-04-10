@@ -36,11 +36,15 @@ let keyFinalizationShouldBeForced = ["%s", "force"].makeString(separator)
 # start height will be set after first pool adding
 func keyStartHeightByEpoch(epoch: Int) = ["%s%d", "startHeight", epoch.toString()].makeString(separator)
 func keyFinalized(epoch: Int) = ["%s%d", "finalized", epoch.toString()].makeString(separator)
-func keyBalancesWithinLimits(epoch: Int) = ["%s%d", "balancesWithinLimits", epoch.toString()].makeString(separator)
 func keyInList(pool: (String, String)) = {
   let (amountAssetId, priceAssetId) = pool
 
   ["%s%s%s", "inList", amountAssetId, priceAssetId].makeString(separator)
+}
+func keyInsufficientBalances(pool: (String, String), epoch: Int) = {
+  let (amountAssetId, priceAssetId) = pool
+
+  ["%s%s%s%d", "insufficientBalances", amountAssetId, priceAssetId, epoch.toString()].makeString(separator)
 }
 func keyUsed(address: Address, epoch: Int) =["%s%s%d", "used", address.toString(), epoch.toString()].makeString(separator)
 func keyVote(pool: (String, String), address: Address, epoch: Int) = {
@@ -436,12 +440,44 @@ func setMaxDepth(newMaxDepth: Int) = {
 @Callable(i)
 func processPoolBalanceINTERNAL(poolStr: String) = {
   strict checkCaller = i.mustThis()
+
+  let epoch = this.getIntOrFail(keyCurrentEpoch)
+  let epochPrevious = epoch - 1
+
+  let pool = poolStr.stringToPool()
+  let (amountAssetId, priceAssetId) = pool
+  let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
+
+  let balanceIsOkCurrent = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
+  let balanceIsOkPrevious = !this.getBoolean(pool.keyInsufficientBalances(epochPrevious)).valueOrElse(false)
   # check balance, write if balances is ok
   # if previous balance and current balance is not ok,
   #   then set status 3, remove from list, remove wx emission label
+  let actions = if (!balanceIsOkCurrent) then {
+    if (!balanceIsOkPrevious) then {
+      strict deleteWxEmissionInv = factoryContract.invoke("deleteWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
+
+      let poolAddress = getPoolInfo(
+        amountAssetId,
+        priceAssetId
+      ).valueOrErrorMessage(wrapErr("invalid assets"))._1
+      let newStatus = 3
+      strict setPoolStatusInv = factoryContract.invoke("managePool", [poolAddress.toString(), newStatus], [])
+    
+      let listActions = [
+        DeleteEntry(pool.keyInList())
+      ] ++ poolsListName.deleteNodeActions(pool.poolToString())
+
+      listActions
+    } else {
+      [
+        BooleanEntry(pool.keyInsufficientBalances(epochPrevious), true)
+      ]
+    }
+  } else nil
 
   (
-    [],
+    actions,
     unit
   )
 }
