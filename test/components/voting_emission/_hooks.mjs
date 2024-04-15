@@ -18,6 +18,7 @@ const boostingMockPath = format({ dir: testPath, base: 'boosting.mock.ride' });
 const factoryMockPath = format({ dir: testPath, base: 'factory_v2.mock.ride' });
 const stakingMockPath = format({ dir: testPath, base: 'staking.mock.ride' });
 const gwxRewardMockPath = format({ dir: testPath, base: 'gwx_reward.mock.ride' });
+const assetsStoreMockPath = format({ dir: testPath, base: 'assets_store.mock.ride' });
 const votingEmissionRateMockPath = format({ dir: mocksDir, base: 'voting_emission_rate.ride' });
 
 export const mochaHooks = {
@@ -44,6 +45,7 @@ export const mochaHooks = {
     await broadcastAndWait(data({
       data: [
         { key: '%s__factoryConfig', type: 'string', value: ['%s', '1', '2', '3', '4', '5', '6', '7', '8', '9', this.accounts.gwxReward.addr, '11'].join('__') },
+        { key: '%s__assetsStoreContract', type: 'string', value: this.accounts.assetsStore.addr },
       ],
       chainId,
     }, this.accounts.factory.seed));
@@ -54,5 +56,6 @@ export const mochaHooks = {
     await setScriptFromFile(stakingMockPath, this.accounts.staking.seed);
     await setScriptFromFile(gwxRewardMockPath, this.accounts.gwxReward.seed);
     await setScriptFromFile(votingEmissionRateMockPath, this.accounts.votingEmissionRate.seed);
+    await setScriptFromFile(assetsStoreMockPath, this.accounts.assetsStore.seed);
   },
 };

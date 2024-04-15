@@ -577,7 +577,9 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
   if (r) then {
     ([], true)
   } else {
-    let assetsStoreContract = this.getString(keyAssetsStoreContract).valueOrElse("invalid assets store contract").addressFromStringValue()
+    let assetsStoreContract = factoryContract.getString(
+      keyAssetsStoreContract
+    ).valueOrErrorMessage("invalid assets store contract").addressFromStringValue()
     let wxEmission = pool.checkWxEmissionPoolLabel()
     let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
     let amountAssetVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [amountAssetId], []).exactAs[Boolean]
