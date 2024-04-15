@@ -1,6 +1,7 @@
 import { data } from '@waves/waves-transactions';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import chaiSubset from 'chai-subset';
 import {
   api, broadcastAndWait, waitForHeight, chainId,
 } from '../../utils/api.mjs';
@@ -12,6 +13,7 @@ import {
 } from './callables.mjs';
 
 chai.use(chaiAsPromised);
+chai.use(chaiSubset);
 const { expect } = chai;
 
 describe(`${process.pid}: voting_emission: finalize`, () => {
@@ -133,6 +135,9 @@ describe(`${process.pid}: voting_emission: finalize`, () => {
     await votingEmission.finalize({
       dApp, caller: this.accounts.pacemaker.seed,
     });
+    await votingEmission.finalize({
+      dApp, caller: this.accounts.pacemaker.seed,
+    });
     const poolWeightMult = 1e8;
     const totalVotes = user1GwxAmount + user2GwxAmount;
     const pool1Share = (user1GwxAmount / totalVotes) * poolWeightMult;
@@ -140,11 +145,11 @@ describe(`${process.pid}: voting_emission: finalize`, () => {
 
     const dAppState = await api.addresses.data(dApp);
     const votingEmissionRateState = await api.addresses.data(this.accounts.votingEmissionRate.addr);
-    expect(dAppState).to.include.deep.members([
+    expect(dAppState).to.containSubset([
       {
-        key: '%s__currentEpoch',
+        key: '%s%s%s%d__poolShare__amountAssetId2__priceAssetId2__0',
         type: 'integer',
-        value: 1,
+        value: pool2Share,
       },
       {
         key: '%s%s%s%d__poolShare__amountAssetId1__priceAssetId1__0',
@@ -152,12 +157,12 @@ describe(`${process.pid}: voting_emission: finalize`, () => {
         value: pool1Share,
       },
       {
-        key: '%s%s%s%d__poolShare__amountAssetId2__priceAssetId2__0',
+        key: '%s__currentEpoch',
         type: 'integer',
-        value: pool2Share,
+        value: 1,
       },
     ]);
-    expect(votingEmissionRateState).to.include.deep.members([
+    expect(votingEmissionRateState).to.containSubset([
       { key: 'counter', type: 'integer', value: 1 },
       { key: 'finalized', type: 'boolean', value: true },
     ]);
