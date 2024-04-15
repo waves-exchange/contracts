@@ -1088,25 +1088,6 @@ func checkBalance(lpAssetIdStr: String) = {
   (nil, balanceIsOk)
 }
 
-@Callable(i)
-func forceStopContract(address: String, stop: Boolean) = {
-  let permissionListKey = ["%s", "forceStopPermission"].makeString(SEP)
-  let forceStopKey = ["%s%s", "stop", address].makeString(SEP)
-
-  # Format:
-  #   "{addr1}_{addr2}_{addr3}" -> ["addr1", "addr2", "addr3"]
-  let permissionList = this.getString(permissionListKey).valueOrElse("").split(SEP)
-  let callerAddressString = i.caller.toString()
-
-  strict check = [
-    permissionList.containsElement(callerAddressString) || i.mustManager()
-  ]
-  
-  [
-    BooleanEntry(forceStopKey, stop)
-  ]
-}
-
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {

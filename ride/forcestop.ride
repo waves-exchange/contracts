@@ -1,0 +1,70 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let contractFilename = "forcestop.ride"
+let SEP = "__"
+
+func wrapErr(msg: String) = [contractFilename, ": ", msg].makeString("")
+func throwErr(msg: String) = msg.wrapErr().throw()
+
+func keyManagerVaultAddress() = ["%s", "managerVaultAddress"].makeString(SEP)
+func keyManagerPublicKey() = ["%s", "managerPublicKey"].makeString(SEP)
+
+func keyPermissionList() = ["%s", "forceStopPermission"].makeString(SEP)
+func keyForceStop(address: String) = ["%s%s", "stop", address].makeString(SEP)
+
+# Format:
+#   "{addr1}_{addr2}_{addr3}" -> ["addr1", "addr2", "addr3"]
+let permissionList = this.getString(keyPermissionList()).valueOrElse("").split(SEP)
+
+let permissionDeniedError = "Permission denied".throwErr()
+
+
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress().getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
+
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey()) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
+}
+
+func mustThis(i: Invocation) = {
+  i.caller == this || permissionDeniedError
+}
+
+func mustManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk || permissionDeniedError
+    case _: Unit => i.mustThis()
+  }
+}
+
+@Callable(i)
+func forceStopContract(address: String, stop: Boolean) = {
+  let callerAddressString = i.caller.toString()
+
+  strict check = [
+    permissionList.containsElement(callerAddressString) || i.mustManager()
+  ]
+  
+  [
+    BooleanEntry(keyForceStop(address), stop)
+  ]
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}

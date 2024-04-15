@@ -1,7 +1,6 @@
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import chaiSubset from 'chai-subset';
-import { address } from '@waves/ts-lib-crypto';
 import {
   invokeScript, nodeInteraction,
 } from '@waves/waves-transactions';
@@ -23,12 +22,12 @@ const api = create(apiBase);
  * } MochaSuiteModified
  * */
 
-describe('Factory V2 - force stop contract', /** @this {MochaSuiteModified} */() => {
+describe('ForceStop - force stop contract', /** @this {MochaSuiteModified} */() => {
   it('Force stop contract by Admin', async function () {
-    const poolAddress = address(this.accounts.lp, chainId);
+    const poolAddress = this.accounts.dapp1.addr;
 
     const forceStopInvokeTx = invokeScript({
-      dApp: address(this.accounts.factory, chainId),
+      dApp: this.accounts.forceStop.addr,
       call: {
         function: 'forceStopContract',
         args: [
@@ -38,7 +37,7 @@ describe('Factory V2 - force stop contract', /** @this {MochaSuiteModified} */()
       },
       fee: 1e8 + 9e5,
       chainId,
-    }, this.accounts.forceStopAdmin);
+    }, this.accounts.admin1.seed);
 
     await api.transactions.broadcast(forceStopInvokeTx, {});
     const { stateChanges } = await waitForTx(forceStopInvokeTx.id, { apiBase });

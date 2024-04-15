@@ -1,17 +1,14 @@
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import chaiSubset from 'chai-subset';
-import { address } from '@waves/ts-lib-crypto';
 import {
-  invokeScript, nodeInteraction,
+  invokeScript,
 } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
 
 chai.use(chaiAsPromised);
 chai.use(chaiSubset);
 // const { expect } = chai;
-
-const { waitForTx } = nodeInteraction;
 
 const apiBase = process.env.API_NODE_URL;
 const chainId = 'R';
@@ -23,12 +20,12 @@ const api = create(apiBase);
  * } MochaSuiteModified
  * */
 
-describe('Factory V2 - force stop contract', /** @this {MochaSuiteModified} */() => {
-  it('Force stop contract bu Manager', async function () {
-    const poolAddress = address(this.accounts.lp, chainId);
+describe('ForceStop - force stop contract', /** @this {MochaSuiteModified} */() => {
+  it('Force stop contract is rejected if caller is not an Admin', async function () {
+    const poolAddress = this.accounts.dapp1.addr;
 
     const forceStopInvokeTx = invokeScript({
-      dApp: address(this.accounts.factory, chainId),
+      dApp: this.accounts.forceStop.addr,
       call: {
         function: 'forceStopContract',
         args: [
@@ -38,17 +35,10 @@ describe('Factory V2 - force stop contract', /** @this {MochaSuiteModified} */()
       },
       fee: 1e8 + 9e5,
       chainId,
-    }, this.accounts.factory);
+    }, this.accounts.user1.seed);
 
-    await api.transactions.broadcast(forceStopInvokeTx, {});
-    const { stateChanges } = await waitForTx(forceStopInvokeTx.id, { apiBase });
-
-    expect(stateChanges.data).to.deep.eql([
-      {
-        key: `%s%s__stop__${poolAddress}`,
-        type: 'boolean',
-        value: true,
-      },
-    ]);
+    await expect(api.transactions.broadcast(forceStopInvokeTx, {}))
+      .to.be
+      .rejectedWith('Permission denied');
   });
 });
