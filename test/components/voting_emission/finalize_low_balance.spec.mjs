@@ -137,6 +137,9 @@ describe(`${process.pid}: voting_emission: finalize (low balance)`, () => {
     const { addr: dApp } = this.accounts.votingEmission;
     const { value: startHeight } = await api.addresses.fetchDataKey(dApp, '%s%d__startHeight__0');
     await waitForHeight(startHeight + epochLength + 1);
+    await votingEmission.setMaxDepth({
+      dApp, caller: this.accounts.votingEmission.seed, value: 20,
+    });
     await votingEmission.finalize({
       dApp, caller: this.accounts.pacemaker.seed,
     });

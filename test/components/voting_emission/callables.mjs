@@ -166,6 +166,27 @@ export const votingEmission = {
     );
     return broadcastAndWait(invokeTx);
   },
+
+  setMaxDepth: async ({
+    dApp, caller, value,
+  }) => {
+    const invokeTx = invokeScript(
+      {
+        dApp,
+        call: {
+          function: 'setMaxDepth',
+          args: [
+            { type: 'integer', value },
+          ],
+        },
+        payment: [],
+        additionalFee: 4e5,
+        chainId,
+      },
+      caller,
+    );
+    return broadcastAndWait(invokeTx);
+  },
 };
 
 export const boostingMock = {
