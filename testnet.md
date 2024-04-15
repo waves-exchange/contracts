@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-495-low-balance**](https://github.com/waves-exchange/contracts/tree/wxdefi-495-low-balance) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **19:15 09.04.2024** (GMT+4)
+[**wxdefi-495-low-balance**](https://github.com/waves-exchange/contracts/tree/wxdefi-495-low-balance) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:48 15.04.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -42,6 +42,8 @@ WX/4324234 pool | [`3N3yFkFYsgMURLMPuq3KHDL6gbR5iDZnAeM`](https://wavesexplorer.
 SUSDT/SBTC pool | [`3N4fjtbSScYeo4FjiqnrbWN3SKWSdKKZzJe`](https://wavesexplorer.com/addresses/3N4fjtbSScYeo4FjiqnrbWN3SKWSdKKZzJe?network=testnet) | `5CfxywSuGhYoM5Z3qDR1nywNdn6vX6Uw2VjcPiTrjdB6` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp.ride) 
 SUSDT/SETH pool | [`3N2gQWudwG37hrU8aoR8CnJW9FmNQy2Mxhb`](https://wavesexplorer.com/addresses/3N2gQWudwG37hrU8aoR8CnJW9FmNQy2Mxhb?network=testnet) | `EewG6VXZ1khSFSnG6nJrTLYzVMPm6cg9rimefsF9c8g4` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp.ride) 
 SUSDT/SBTC pool | [`3N6o3KJ5gTYEKMJyaJCQ8bBCkoDwfX575LL`](https://wavesexplorer.com/addresses/3N6o3KJ5gTYEKMJyaJCQ8bBCkoDwfX575LL?network=testnet) | `Dh3L5qJ9eGwae5Fc2SxU19orgsp9FZSaDrqnPCKzeRsR` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp.ride) 
+vasya/WAVES pool | [`3NAud2dbHnNJfRgqHXF69NsrRv3fekUn5bm`](https://wavesexplorer.com/addresses/3NAud2dbHnNJfRgqHXF69NsrRv3fekUn5bm?network=testnet) | `CsCqxE5Uy8cjruN5hq8ALsrkq2o89yNbfFVDaV1nb9Rc` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp.ride) 
+🤑🦾💸/WAVES pool | [`3Mpir1mNWWHWhzbLRKfbCeDzctPvgsLPn3u`](https://wavesexplorer.com/addresses/3Mpir1mNWWHWhzbLRKfbCeDzctPvgsLPn3u?network=testnet) | `BVULJ65bCcpd98euBCtxLcfCRUE6GHjFKfEeVrNsGhyn` | [lp.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp.ride) 
 USDC/USDT pool | [`3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA`](https://wavesexplorer.com/addresses/3MzKSdTH2jFbypLsoNfrH7QgkzSbx3EYwCA?network=testnet) | `35yd3qw1gxKDxKwGAykHN9fANbXNWwseaUwbWDj24o3x` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp_stable.ride) 
 USDT/USDN pool | [`3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT`](https://wavesexplorer.com/addresses/3NAefciWv6f9fWvEXdGgpHfanJFG8HqfjuT?network=testnet) | `D1BL65meykxFZTCuq7jq9HSGLLnWvQamQPUNrguW5w39` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp_stable.ride) 
 lp_staking | [`3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL`](https://wavesexplorer.com/addresses/3N84Z7HWZfkuYnfGYpXjRU4MQE9ge1CoVVL?network=testnet) | `ER6eHxtBYJ4JakpeheRtGgvT5AeP1S4g44VxoNJo14kd` | [lp_staking.ride](https://github.com/waves-exchange/contracts/blob/wxdefi-495-low-balance/ride/lp_staking.ride) 
@@ -96,6 +98,7 @@ USDNLP | [`5qszSSs21VZoyFt8jQZQjBK1AEm4HaiE4Gwt9iju3aCq`](https://wavesexplorer.
 USDTLP | [`2dDC3B3V9FhNeEqrdEU85boguWxwyPYRSv5jpJn6VhQG`](https://wavesexplorer.com/assets/2dDC3B3V9FhNeEqrdEU85boguWxwyPYRSv5jpJn6VhQG?network=testnet) | USDT Liquidity Provider token 
 vasya | [`81MyHkr4UTpnnEW3PmXzzFrZMZnLtPEk8YortgSnfDyt`](https://wavesexplorer.com/assets/81MyHkr4UTpnnEW3PmXzzFrZMZnLtPEk8YortgSnfDyt?network=testnet) | — 
 VIRES | [`9RE43pPoy64Hy9BmC9xM9DG1hKqnAMAqNRnbAniqZ1Pf`](https://wavesexplorer.com/assets/9RE43pPoy64Hy9BmC9xM9DG1hKqnAMAqNRnbAniqZ1Pf?network=testnet) | VIRES token for tests purposes 
+🤑🦾💸 | [`AzqZg8TPse9yqLsYmKDSj4SHnN1wMuyVzRPzt65uXUFs`](https://wavesexplorer.com/assets/AzqZg8TPse9yqLsYmKDSj4SHnN1wMuyVzRPzt65uXUFs?network=testnet) | 🤑🦾💸 
 
 ## Pool LP assets
 | Name | AssetID | Description |
@@ -117,6 +120,7 @@ USDCUSDTWXLP | [`47g1VsrcouxNYMZDdzCvtoJcnAvom8Fo9QQrCoMYx4Ed`](https://wavesexp
 USDCWAVESLP | [`3zWE5K8kcu8ApsTUCRr89cS7B2wzXcczKEorSMdz8bRG`](https://wavesexplorer.com/assets/3zWE5K8kcu8ApsTUCRr89cS7B2wzXcczKEorSMdz8bRG?network=testnet) | USDC/WAVES pool liquidity provider token 
 USDTLPUSDCLPLP | [`D55Lg1n9YVUQ4jmutFiuwkcbWMDKCBehw96LjNPe4UQy`](https://wavesexplorer.com/assets/D55Lg1n9YVUQ4jmutFiuwkcbWMDKCBehw96LjNPe4UQy?network=testnet) | USDTLP/USDCLP pool liquidity provider token 
 USDTUSDNWXLP | [`Fm4qczu6Pepz8KUhh3Heb6LeTVfpSMX5vvNgw3x764CS`](https://wavesexplorer.com/assets/Fm4qczu6Pepz8KUhh3Heb6LeTVfpSMX5vvNgw3x764CS?network=testnet) | WX Usdt/Usdn pool liquidity provider token 
+vasya~WAVESLP | [`BhQukofW9f57xGUpPZtxug7cBQUPq5uChoJuzthV6x1b`](https://wavesexplorer.com/assets/BhQukofW9f57xGUpPZtxug7cBQUPq5uChoJuzthV6x1b?network=testnet) | vasya~/WAVES pool liquidity provider token 
 VIRES~WAVESLP | [`CjHRajyAEUsMrpyrFfAgF3KWBt8JyckiZK2Htgxdi9Vh`](https://wavesexplorer.com/assets/CjHRajyAEUsMrpyrFfAgF3KWBt8JyckiZK2Htgxdi9Vh?network=testnet) | VIRES~/WAVES pool liquidity provider token 
 WAVESUSDNWXLP | [`FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V`](https://wavesexplorer.com/assets/FLdC14nUVRyiSYjVrMo3X4g8rXQjLbNRaGAyQAm8V68V?network=testnet) | WX Waves/Usdn pool liquidity provider token 
 WBTCWETHWXLP | [`BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT`](https://wavesexplorer.com/assets/BjV9C4wfZmtBMfAPMHyZGqPGTrNpx6ZHAryfHij7grT?network=testnet) | WX WBTC/WETH pool liquidity provider token 
@@ -128,3 +132,4 @@ WX~MinersRewarLP | [`7jwVsESN3gkoSMctgvFJK9cVZzJ6wVYuQkFzXZ472bou`](https://wave
 WX~monetaLP | [`H5JHGdvV6Us98xBVaF3uVWYxzWfsMSbRHcVcNmQDH6x`](https://wavesexplorer.com/assets/H5JHGdvV6Us98xBVaF3uVWYxzWfsMSbRHcVcNmQDH6x?network=testnet) | WX/~moneta pool liquidity provider token 
 WX~Nigga HopeLP | [`3uZF4wey4sicH6SLhEEcHuJnwsfdnvShMacSsyS7bzG1`](https://wavesexplorer.com/assets/3uZF4wey4sicH6SLhEEcHuJnwsfdnvShMacSsyS7bzG1?network=testnet) | WX/~Nigga Hope pool liquidity provider token 
 WX~vasyaLP | [`BowBYrs72YjXWtTGeSjReVEuKcbh5hwHADopX1Ku19bD`](https://wavesexplorer.com/assets/BowBYrs72YjXWtTGeSjReVEuKcbh5hwHADopX1Ku19bD?network=testnet) | WX/~vasya pool liquidity provider token 
+🤑🦾~WAVESLP | [`CgSgEicYYkkRhs2X4GZvjCZ7ej8mBQCKoWEVAQc7LqKX`](https://wavesexplorer.com/assets/CgSgEicYYkkRhs2X4GZvjCZ7ej8mBQCKoWEVAQc7LqKX?network=testnet) | 🤑🦾~/WAVES pool liquidity provider token 
