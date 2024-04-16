@@ -448,6 +448,8 @@ func processPoolBalanceINTERNAL(poolStr: String) = {
   let (amountAssetId, priceAssetId) = pool
   let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
 
+  # let wxEmission = pool.checkWxEmissionPoolLabel()
+
   let balanceIsOkCurrent = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
   let balanceIsOkPrevious = !this.getBoolean(pool.keyInsufficientBalances(epochPrevious)).valueOrElse(false)
   # check balance, write if balances is ok
@@ -497,7 +499,6 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   strict checkTargetEpoch = epochPrevious >= 0 || "processVoteINTERNAL: invalid previous epoch".throwErr()
   let pool = poolStr.stringToPool()
   let (amountAssetId, priceAssetId) = pool
-  let wxEmission = pool.checkWxEmissionPoolLabel()
   let gwxAmountAtEndTotal = this.invoke("getUserGwxAmountAtHeight", [userAddressStr, endHeight], []).exactAs[Int]
   let gwxAmountAtEndTotalPrevious = this.invoke("getUserGwxAmountAtHeight", [userAddressStr, endHeightPrevious], []).exactAs[Int]
   let totalVotes = epoch.keyTotalVotes().getInteger().valueOrElse(0)
@@ -516,10 +517,9 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   ]
 
   let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
-  let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
 
   let newVote = if (gwxAmountAtEndTotalPrevious > 0) then fraction(votePrevious, gwxAmountAtEndTotal, gwxAmountAtEndTotalPrevious) else 0
-  let actions = if (newVote > 0 && wxEmission && balanceIsOk) then {
+  let actions = if (newVote > 0) then {
     [
       IntegerEntry(pool.keyVote(userAddress, epoch), newVote),
       IntegerEntry(epoch.keyTotalVotes(), totalVotes + newVote),
@@ -557,16 +557,9 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
     let assetsStoreContract = factoryContract.getString(
       keyAssetsStoreContract
     ).valueOrErrorMessage("invalid assets store contract").addressFromStringValue()
-    let wxEmission = pool.checkWxEmissionPoolLabel()
-    let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
-    let amountAssetVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [amountAssetId], []).exactAs[Boolean]
-    let priceAssetVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [priceAssetId], []).exactAs[Boolean]
-    strict setWxEmissionInv = if (!wxEmission && balanceIsOk && amountAssetVerified && priceAssetVerified) then {
-      factoryContract.invoke("setWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
-    } else unit
     let totalVotes = this.getInteger(targetEpoch.keyTotalVotes()).valueOrElse(0)
     let votingResult = this.getInteger(pool.keyVotingResult(targetEpoch)).valueOrElse(0)
-    let share = if (totalVotes == 0 || !wxEmission || !balanceIsOk) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
+    let share = if (totalVotes == 0) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
     strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, share], [])
 
     (
