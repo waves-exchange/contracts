@@ -26,7 +26,7 @@ export const mochaHooks = {
     const nonce = random(nonceLength, 'Buffer').toString('hex');
     this.votingDuration = 3;
     // setup accounts
-    const contractNames = ['votingEmission', 'votingEmissionCandidate', 'boosting', 'staking', 'factory', 'assetsStore', 'gwxReward', 'votingEmissionRate'];
+    const contractNames = ['votingEmission', 'votingEmissionCandidate', 'boosting', 'staking', 'factory', 'assetsStore', 'gwxReward', 'votingEmissionRate', 'pool1', 'pool2'];
     const userNames = Array.from({ length: 3 }, (_, k) => `user${k}`);
     const names = [...contractNames, ...userNames, 'pacemaker'];
     this.accounts = Object.fromEntries(names.map((item) => {

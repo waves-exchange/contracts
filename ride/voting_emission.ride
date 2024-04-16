@@ -451,13 +451,14 @@ func processPoolBalanceINTERNAL(poolStr: String) = {
   # let wxEmission = pool.checkWxEmissionPoolLabel()
 
   let balanceIsOkCurrent = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
-  let balanceIsOkPrevious = !this.getBoolean(pool.keyInsufficientBalances(epochPrevious)).valueOrElse(false)
+  let balanceIsOkPrevious = !this.getBoolean(pool.keyInsufficientBalances(epochPrevious - 1)).valueOrElse(false)
   # check balance, write if balances is ok
   # if previous balance and current balance is not ok,
   #   then set status 3, remove from list, remove wx emission label
   let actions = if (!balanceIsOkCurrent) then {
     if (!balanceIsOkPrevious) then {
       strict deleteWxEmissionInv = factoryContract.invoke("deleteWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
+      strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, 0], [])
 
       let poolAddress = getPoolInfo(
         amountAssetId,
@@ -470,7 +471,9 @@ func processPoolBalanceINTERNAL(poolStr: String) = {
         DeleteEntry(pool.keyInList())
       ] ++ poolsListName.deleteNodeActions(pool.poolToString())
 
-      listActions
+      [
+        IntegerEntry(pool.keyPoolShare(epochPrevious), 0)
+      ] ++ listActions
     } else {
       [
         BooleanEntry(pool.keyInsufficientBalances(epochPrevious), true)
