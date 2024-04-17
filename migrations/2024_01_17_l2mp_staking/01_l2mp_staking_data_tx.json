@@ -1,0 +1,13 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "version": 2,
+    "senderPublicKey": "5erVrXGwDf4uTNPpGnGNKjHcwFUTztTpFTvj8ZBrLq57",
+    "data": [
+        {
+            "key": "%s__withdrawLockHeight",
+            "type": "integer",
+            "value": 4009867
+        }
+    ]
+}

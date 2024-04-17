@@ -3,7 +3,6 @@ import {
   data,
   massTransfer,
   issue,
-  transfer,
 } from '@waves/waves-transactions';
 import { format } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
@@ -14,21 +13,18 @@ import {
 
 const seedWordsCount = 5;
 const ridePath = '../ride';
-const mockPath = 'components/l2mp_swap/mock';
-const l2mpSwapPath = format({ dir: ridePath, base: 'l2mp_swap.ride' });
-const l2mpLeasingMockPath = format({ dir: mockPath, base: 'l2mp_leasing.mock.ride' });
+const l2mpLeasingPath = format({ dir: ridePath, base: 'l2mp_leasing.ride' });
 
 export const mochaHooks = {
   async beforeAll() {
     const names = [
-      'l2mpSwap',
       'l2mpLeasing',
       'admin1',
       'admin2',
-      'admin3',
       'user1',
       'user2',
       'node1',
+      'node2',
     ];
     this.accounts = Object.fromEntries(names.map((item) => {
       const itemSeed = randomSeed(seedWordsCount);
@@ -44,63 +40,49 @@ export const mochaHooks = {
     }, baseSeed);
     await broadcastAndWait(massTransferTx);
 
-    this.l2mpAssetId = await broadcastAndWait(issue({
-      quantity: 1e6 * 1e8,
+    const issueAsset = issue({
+      quantity: 1000000_0000_0000,
       decimals: 8,
       name: 'L2MP',
       description: 'Mining Power Token for WAVES EVM L2 bootstrapping.',
       chainId,
-    }, baseSeed)).then((tx) => tx.id);
+    }, this.accounts.l2mpLeasing.seed);
 
-    this.xtnAssetId = await broadcastAndWait(issue({
-      quantity: 1e6 * 1e6,
-      decimals: 6,
-      name: 'XTN.',
-      description: '',
-      chainId,
-    }, baseSeed)).then((tx) => tx.id);
+    this.l2mpAssetId = issueAsset.id;
 
-    await broadcastAndWait(transfer({
-      recipient: this.accounts.l2mpSwap.addr,
-      amount: 1e6 * 1e8,
-      assetId: this.l2mpAssetId,
-      chainId,
-    }, baseSeed));
+    await broadcastAndWait(issueAsset);
 
-    await broadcastAndWait(massTransfer({
+    const massTransferAssetTx = massTransfer({
       transfers: Object.values(this.accounts).map((item) => ({ recipient: item.addr, amount })),
       chainId,
-      assetId: this.xtnAssetId,
-    }, baseSeed));
+      assetId: issueAsset.id,
+    }, this.accounts.l2mpLeasing.seed);
+    await broadcastAndWait(massTransferAssetTx);
 
-    await broadcastAndWait(data({
+    await setScriptFromFile(l2mpLeasingPath, this.accounts.l2mpLeasing.seed);
+
+    const adminsListString = [
+      this.accounts.admin1.addr,
+      this.accounts.admin2.addr,
+    ].join('__');
+
+    const dataTx = data({
       additionalFee: 4e5,
       data: [
         {
-          key: '%s__assetInId',
+          key: '%s__adminAddressList',
           type: 'string',
-          value: this.xtnAssetId,
+          value: adminsListString,
         },
         {
-          key: '%s__assetOutId',
+          key: '%s__assetId',
           type: 'string',
           value: this.l2mpAssetId,
         },
-        {
-          key: '%s__assetOutPrice',
-          type: 'integer',
-          value: 1e6,
-        },
-        {
-          key: '%s__stakingAddress',
-          type: 'string',
-          value: this.accounts.l2mpLeasing.addr,
-        },
       ],
       chainId,
-    }, this.accounts.l2mpSwap.seed));
+    }, this.accounts.l2mpLeasing.seed);
 
-    await setScriptFromFile(l2mpSwapPath, this.accounts.l2mpSwap.seed);
-    await setScriptFromFile(l2mpLeasingMockPath, this.accounts.l2mpLeasing.seed);
+    await broadcastAndWait(dataTx);
   },
 };

@@ -5,9 +5,6 @@
 let contractFile = "l2mp_swap.ride"
 let SEP = "__"
 let scale8 = 100_000_000
-let scale18 = 1_000_000_000_000_000_000
-let ADDRESS_BYTES_SIZE = 26
-let BLOCKS_IN_DAY = 1440
 
 func wrapErr(msg: String) = {
   contractFile + ": " + msg
@@ -34,8 +31,8 @@ func keyStatsTotalOutByAddress(address: Address) = {
 func keyHistory(address: Address, txId: ByteVector) = {
   ["%s%s%s", "history", address.toString(), txId.toBase58String()].makeString(SEP)
 }
-func formatHistory(amountIn: Int, amountOut: Int, stake: Boolean) = {
-  ["%d%d%d", amountIn.toString(), amountOut.toString(), stake.toString()].makeString(SEP)
+func formatHistory(amountIn: Int, amountOut: Int, stake: Boolean, stakingNode: String) = {
+  ["%d%d%b%s", amountIn.toString(), amountOut.toString(), stake.toString(), stakingNode].makeString(SEP)
 }
 
 let assetInId = this.getString(keyAssetInId)
@@ -63,6 +60,16 @@ let allowedAddressOption = match this.getString(keyAllowedAddress) {
 let allowedAddress = allowedAddressOption
   .valueOrErrorMessage(wrapErr("invalid allowedAddress"))
 
+func isValidAddress(addressString: String) = {
+  match (addressFromString(addressString)) {
+      case t:Address => true
+      case _ => false
+    }
+}
+
+######################
+# MULTISIG FUNCTIONS #
+######################
 let ADMIN_LIST_SIZE = 5
 let QUORUM = 3
 let TXID_BYTES_LENGTH = 32
@@ -143,23 +150,35 @@ func voteINTERNAL(
     [ IntegerEntry(voteKey, 1) ]
   }
 }
+##########################
+# MULTISIG FUNCTIONS END #
+##########################
 
-func getSwapActions(i: Invocation, stake: Boolean, stakingNode: String) = {
-    let userAddress = i.caller
-  let paymentSizeExpected = 1
-  if (i.payments.size() != paymentSizeExpected) then throwErr("invalid payments") else
+
+func getSwapActions(i: Invocation, stakingNode: String) = {
+  let userAddress = i.originCaller
   let payment = i.payments[0]
-  if (payment.assetId != assetInId) then throwErr("invalid payment assetId") else
-  if (assetOutPrice == 0) then throwErr("invalid assetOutPrice") else
   let assetInAmount = payment.amount
   let assetOutAmount = fraction(assetInAmount, scale8, assetOutPrice)
-  if (assetOutAmount == 0) then throwErr("invalid assetOutAmount") else
+  let stake = if (stakingNode.isValidAddress()) then true else false
 
-  strict stakeInv = if (stake) then stakingAddress.invoke(
-    "stakeForSwapHELPER",
-    [userAddress.toString(), stakingNode],
-    [AttachedPayment(assetOutId, assetOutAmount)]
-  ) else unit
+  strict checks = [
+    i.payments.size() == 1       || throwErr("invalid payments size"),
+    payment.assetId == assetInId || throwErr("invalid payment assetId"),
+    assetOutPrice > 0            || throwErr("invalid assetOutPrice"),
+    assetOutAmount > 0           || throwErr("invalid assetOutAmount")
+  ]
+
+  let stakeAction = if (!stake) 
+    then [ ScriptTransfer(userAddress, assetOutAmount, assetOutId) ]
+    else {
+      strict stakeInvoke = stakingAddress.invoke(
+      "leaseByAddress",
+      [stakingNode, userAddress.toString()],
+      [AttachedPayment(assetOutId, assetOutAmount)])
+
+      []
+    }
 
   (
     [
@@ -181,23 +200,27 @@ func getSwapActions(i: Invocation, stake: Boolean, stakingNode: String) = {
       ),
       StringEntry(
         keyHistory(userAddress, i.transactionId),
-        formatHistory(assetInAmount, assetOutAmount, stake)
+        formatHistory(assetInAmount, assetOutAmount, stake, stakingNode)
       )
-    ] ++ if (stake) then [] else [
-      ScriptTransfer(userAddress, assetOutAmount, assetOutId)
-    ],
+    ] ++ stakeAction,
     assetOutAmount
   )
 }
 
 @Callable(i)
-func swap(stake: Boolean) = {
-  getSwapActions(i, stake, "")
+func swap() = {
+  getSwapActions(i, "NULL")
 }
 
 @Callable(i)
-func swapAndSetStakingNode(stake: Boolean, stakingNode: String) = {
-  getSwapActions(i, stake, stakingNode)
+func swapAndStake(stakingNode: String) = {
+  strict check = [
+    stakingNode.isValidAddress() || stakingNode == "" || "staking node address is no valid".throwErr()
+  ]
+
+  let node = if (stakingNode == "") then "NULL" else stakingNode
+
+  getSwapActions(i, node)
 }
 
 @Callable(i)
@@ -209,6 +232,10 @@ func claim() = {
   ], unit)
 }
 
+
+######################
+# MULTISIG FUNCTIONS #
+######################
 # Vote for txId that is allowed in Verifier
 @Callable(i)
 func voteForTxId(txId: String) = {
@@ -224,6 +251,10 @@ func voteForTxId(txId: String) = {
 
   voteINTERNAL(callerAddressString, keyPrefix, QUORUM, result)
 }
+##########################
+# MULTISIG FUNCTIONS END #
+##########################
+
 
 @Verifier(tx)
 func verify() = {
