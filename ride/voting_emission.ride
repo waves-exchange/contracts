@@ -8,6 +8,7 @@ let maxDepthDefault = 10
 let finalizationStageBalances = 0
 let finalizationStageTotal = 1
 let finalizationStageShares = 2
+let wavesString = "WAVES"
 
 let keyEpochLength = ["%s", "epochLength"].makeString(separator)
 let keyEpochLengthNew = ["%s%s", "epochLength__new"].makeString(separator)
@@ -31,6 +32,9 @@ let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(separator)
 let keyStartHeightUi = ["%s", "startHeightUi"].makeString(separator)
 
 let keyFinalizationShouldBeForced = ["%s", "force"].makeString(separator)
+
+func keyAllowedLpScriptHash() = "%s__allowedLpScriptHash"
+func keyAllowedLpStableScriptHash() = "%s__allowedLpStableScriptHash"
 
 # start height will be set after first pool adding
 func keyStartHeightByEpoch(epoch: Int) = ["%s%d", "startHeight", epoch.toString()].makeString(separator)
@@ -103,6 +107,14 @@ let IdxFactoryCfgGwxRewardDapp = 10
 func keyFactoryCfg() = "%s__factoryConfig"
 func readFactoryCfgOrFail(factory: Address) = factory.getStrOrFail(keyFactoryCfg()).split(separator)
 func getGwxRewardAddressOrFail(factoryCfg: List[String]) = factoryCfg[IdxFactoryCfgGwxRewardDapp].addressFromStringValue()
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
 
 # returns (poolAddress: Address, lpAssetId: ByteVector)
 func getPoolInfo(amountAssetId: String, priceAssetId: String) = {
@@ -861,11 +873,13 @@ func deletePool(amountAssetId: String, priceAssetId: String) = {
 
 # statuses are returned within 3 days
 @Callable(i)
-func resume(amountAssetId: String, priceAssetId: String) = {
-  let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
-  let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
+func resume(amountAssetId: String, priceAssetId: String, slippageToleranceOrMinOutAmount: Int) = {
+  let (poolAddress, lpAssetId) = getPoolInfo(
+    amountAssetId,
+    priceAssetId
+  ).valueOrErrorMessage(wrapErr("invalid assets"))
 
-  let payment = i.payments[0]
+  let feePayment = i.payments[0]
 
   let assetsStoreContract = this.getStringValue(
     keyAssetsStoreContract
@@ -884,19 +898,42 @@ func resume(amountAssetId: String, priceAssetId: String) = {
   ).valueOrErrorMessage("invalid resumption fee")
 
   strict checks = [
-    balanceIsOk || throwErr("insufficient balances"),
-    i.payments.size() == 1 || throwErr("1 payment is required"),
-    payment.assetId == wxAssetId || throwErr("invalid payment asset id"),
-    payment.amount == resumptionFee || throwErr("invalid payment amount"),
+    feePayment.assetId == wxAssetId || throwErr("invalid fee payment asset id"),
+    feePayment.amount == resumptionFee || throwErr("invalid fee payment amount"),
     amountAssetVerified && priceAssetVerified || throwErr("both assets should be verified")
   ]
 
+  strict lpAssetBalanceBefore = this.assetBalance(lpAssetId)
+  let autoStake = false
+  strict put = if (i.payments.size() == 1) then {
+    let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId.assetIdToString()], []).exactAs[Boolean]
+    balanceIsOk || throwErr("assets should be attached")
+  } else if (i.payments.size() == 2) then {
+    # put one token
+    let poolScriptHash = poolAddress.scriptHash().valueOrErrorMessage(
+      wrapErr("pool address is not scripted")
+    )
+    let allowedScriptHash = factoryContract.getString(keyAllowedLpStableScriptHash()).valueOrErrorMessage(
+      wrapErr("allowed lp stable script hash is not set")
+    ).fromBase64String()
+    let isStable = poolScriptHash == allowedScriptHash
+    let functionName = if (isStable) then "putOneTknV2" else "putOneTkn"
+
+    poolAddress.invoke(functionName, [slippageToleranceOrMinOutAmount, autoStake], [i.payments[1]])
+  } else if (i.payments.size() == 3) then {
+    # put two tokens
+    poolAddress.invoke("put", [slippageToleranceOrMinOutAmount, autoStake], [i.payments[1], i.payments[2]])
+  } else {
+    throwErr("invalid payments size")
+  }
+  strict lpAssetBalanceAfter = this.assetBalance(lpAssetId)
+  let lpAssetBalanceDiff = lpAssetBalanceAfter - lpAssetBalanceBefore
+  let lpAssetTransferActions = if (lpAssetBalanceDiff > 0) then [
+    ScriptTransfer(i.caller, lpAssetBalanceDiff, lpAssetId)
+  ] else nil
+
   strict setWxEmissionInv = factoryContract.invoke("setWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
 
-  # let poolAddress = getPoolInfo(
-  #   amountAssetId,
-  #   priceAssetId
-  # ).valueOrErrorMessage(wrapErr("invalid assets"))._1
   # let newStatus = 1
   # strict setPoolStatusInv = factoryContract.invoke("managePool", [poolAddress.toString(), newStatus], [])
 
@@ -905,7 +942,7 @@ func resume(amountAssetId: String, priceAssetId: String) = {
     BooleanEntry(pool.keyInList(), true)
   ] ++ poolsListName.insertNodeActions(pool.poolToString())
 
-  (inListActions, unit)
+  (inListActions ++ lpAssetTransferActions, unit)
 }
 
 @Verifier(tx)
