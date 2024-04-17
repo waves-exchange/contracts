@@ -892,7 +892,7 @@ func resume(amountAssetId: String, priceAssetId: String) = {
     amountAssetVerified && priceAssetVerified || throwErr("both assets should be verified")
   ]
 
-  # strict setWxEmissionInv = factoryContract.invoke("setWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
+  strict setWxEmissionInv = factoryContract.invoke("setWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
 
   # let poolAddress = getPoolInfo(
   #   amountAssetId,
