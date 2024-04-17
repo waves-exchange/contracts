@@ -8,7 +8,6 @@ let maxDepthDefault = 10
 let finalizationStageBalances = 0
 let finalizationStageTotal = 1
 let finalizationStageShares = 2
-let resumptionFeeDefault = 5000_00000000
 
 let keyEpochLength = ["%s", "epochLength"].makeString(separator)
 let keyEpochLengthNew = ["%s%s", "epochLength__new"].makeString(separator)
@@ -882,7 +881,7 @@ func resume(amountAssetId: String, priceAssetId: String) = {
 
   let resumptionFee = this.getInteger(
     keyResumptionFee
-  ).valueOrElse(resumptionFeeDefault)
+  ).valueOrErrorMessage("invalid resumption fee")
 
   strict checks = [
     balanceIsOk || throwErr("insufficient balances"),
