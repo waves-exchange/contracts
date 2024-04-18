@@ -517,8 +517,10 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   let gwxAmountAtEndTotalPrevious = this.invoke("getUserGwxAmountAtHeight", [userAddressStr, endHeightPrevious], []).exactAs[Int]
   let totalVotes = epoch.keyTotalVotes().getInteger().valueOrElse(0)
   let votingResult = pool.keyVotingResult(epoch).getInteger().valueOrElse(0)
-  let votePrevious = pool.keyVote(userAddress, epochPrevious).getInteger()
-    .valueOrErrorMessage(("processVoteINTERNAL " + poolStr + " " + userAddressStr + ": no previous vote").wrapErr())
+  let votePreviousOption = pool.keyVote(userAddress, epochPrevious).getInteger()
+  let votePrevious = votePreviousOption.valueOrErrorMessage(
+    wrapErr("processVoteINTERNAL " + poolStr + " " + userAddressStr + ": no previous vote")
+  )
   let used = this.getInteger(userAddress.keyUsed(epoch)).valueOrElse(0)
 
   # staked votes
@@ -526,22 +528,22 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   let votingResultStakedPrevious = lpAssetIdStr.keyVotingResultStaked(epochPrevious).getInteger().valueOrElse(0)
   let stakingContract = this.getStrOrFail(keyStakingContract).addressFromStringValue()
   let stakedByUser = stakingContract.getInteger(lpAssetIdStr.keyStakedByUser(userAddressStr)).valueOrElse(0)
-  let votingResultStakedActions = if (stakedByUser == 0) then [] else [
+  let votingResultStakedActions = if (stakedByUser == 0 || votePreviousOption == unit) then [] else [
     IntegerEntry(lpAssetIdStr.keyVotingResultStaked(epochPrevious), votingResultStakedPrevious + votePrevious)
   ]
 
   let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
 
   let newVote = if (gwxAmountAtEndTotalPrevious > 0) then fraction(votePrevious, gwxAmountAtEndTotal, gwxAmountAtEndTotalPrevious) else 0
-  let actions = if (newVote > 0) then {
+  let actions = if (votePreviousOption == unit || newVote <= 0) then {
+    pool.getVotesListName().deleteNodeActions(userAddressStr)
+  } else {
     [
       IntegerEntry(pool.keyVote(userAddress, epoch), newVote),
       IntegerEntry(epoch.keyTotalVotes(), totalVotes + newVote),
       IntegerEntry(pool.keyVotingResult(epoch), votingResult + newVote),
       IntegerEntry(userAddress.keyUsed(epoch), used + newVote)
     ]
-  } else {
-    pool.getVotesListName().deleteNodeActions(userAddressStr)
   }
 
   (
