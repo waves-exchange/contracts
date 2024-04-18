@@ -874,6 +874,8 @@ func deletePool(amountAssetId: String, priceAssetId: String) = {
 # statuses are returned within 3 days
 @Callable(i)
 func resume(amountAssetId: String, priceAssetId: String, slippageToleranceOrMinOutAmount: Int) = {
+  let finalizationStageOrUnit = this.getInteger(keyFinalizationStage)
+
   let (poolAddress, lpAssetId) = getPoolInfo(
     amountAssetId,
     priceAssetId
@@ -898,6 +900,7 @@ func resume(amountAssetId: String, priceAssetId: String, slippageToleranceOrMinO
   ).valueOrErrorMessage("invalid resumption fee")
 
   strict checks = [
+    finalizationStageOrUnit == unit || "finalization is in progress".throwErr(),
     feePayment.assetId == wxAssetId || throwErr("invalid fee payment asset id"),
     feePayment.amount == resumptionFee || throwErr("invalid fee payment amount"),
     amountAssetVerified && priceAssetVerified || throwErr("both assets should be verified")
