@@ -44,11 +44,6 @@ func keyInList(pool: (String, String)) = {
 
   ["%s%s%s", "inList", amountAssetId, priceAssetId].makeString(separator)
 }
-func keyInsufficientBalances(pool: (String, String), epoch: Int) = {
-  let (amountAssetId, priceAssetId) = pool
-
-  ["%s%s%s%d", "insufficientBalances", amountAssetId, priceAssetId, epoch.toString()].makeString(separator)
-}
 func keyUsed(address: Address, epoch: Int) =["%s%s%d", "used", address.toString(), epoch.toString()].makeString(separator)
 func keyVote(pool: (String, String), address: Address, epoch: Int) = {
   let (amountAssetId, priceAssetId) = pool
@@ -461,35 +456,28 @@ func processPoolBalanceINTERNAL(poolStr: String) = {
 
   # let wxEmission = pool.checkWxEmissionPoolLabel()
 
-  let balanceIsOkCurrent = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
-  let balanceIsOkPrevious = !this.getBoolean(pool.keyInsufficientBalances(epochPrevious - 1)).valueOrElse(false)
+  let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
   # check balance, write if balances is ok
   # if previous balance and current balance is not ok,
   #   then set status 3, remove from list, remove wx emission label
-  let actions = if (!balanceIsOkCurrent) then {
-    if (!balanceIsOkPrevious) then {
-      strict deleteWxEmissionInv = factoryContract.invoke("deleteWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
-      strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, 0], [])
+  let actions = if (!balanceIsOk) then {
+    strict deleteWxEmissionInv = factoryContract.invoke("deleteWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
+    strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, 0], [])
 
-      let poolAddress = getPoolInfo(
-        amountAssetId,
-        priceAssetId
-      ).valueOrErrorMessage(wrapErr("invalid assets"))._1
-      let newStatus = 3
-      strict setPoolStatusInv = factoryContract.invoke("managePool", [poolAddress.toString(), newStatus], [])
-    
-      let listActions = [
-        DeleteEntry(pool.keyInList())
-      ] ++ poolsListName.deleteNodeActions(pool.poolToString())
+    let poolAddress = getPoolInfo(
+      amountAssetId,
+      priceAssetId
+    ).valueOrErrorMessage(wrapErr("invalid assets"))._1
+    let newStatus = 3
+    strict setPoolStatusInv = factoryContract.invoke("managePool", [poolAddress.toString(), newStatus], [])
+  
+    let listActions = [
+      DeleteEntry(pool.keyInList())
+    ] ++ poolsListName.deleteNodeActions(pool.poolToString())
 
-      [
-        IntegerEntry(pool.keyPoolShare(epochPrevious), 0)
-      ] ++ listActions
-    } else {
-      [
-        BooleanEntry(pool.keyInsufficientBalances(epochPrevious), true)
-      ]
-    }
+    [
+      IntegerEntry(pool.keyPoolShare(epochPrevious), 0)
+    ] ++ listActions
   } else nil
 
   (
