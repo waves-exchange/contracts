@@ -315,8 +315,24 @@ func getSetStakingNodeActions(userAddress: String, nodeAddress: String, nodeShar
   ]
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func setEmissionPerBlock(emissionPerBlock: Int) = {
+  strict checkForceStop = isForceStopped()
     strict check = [
         i.caller == this || "permission denied".throwErr()
     ]
@@ -330,6 +346,7 @@ func setEmissionPerBlock(emissionPerBlock: Int) = {
 
 @Callable(i)
 func setEmissionPeriodInBlocks(p: Int) = {
+  strict checkForceStop = isForceStopped()
   strict check = [
     p > 0 || "emission period should be greater than 0".throwErr(),
     i.caller == this || "permission denied".throwErr()
@@ -344,6 +361,7 @@ func setEmissionPeriodInBlocks(p: Int) = {
 
 @Callable(i)
 func stake() = {
+  strict checkForceStop = isForceStopped()
     let userAddress = i.caller.toString()
 
     getStakeActions(i, userAddress)
@@ -351,11 +369,13 @@ func stake() = {
 
 @Callable(i)
 func stakeFor(userAddress: String) = {
+  strict checkForceStop = isForceStopped()
     getStakeActions(i, userAddress)
 }
 
 @Callable(i)
 func withdraw(withdrawAssetAmount: Int) = {
+  strict checkForceStop = isForceStopped()
   let userAddress = i.caller.toString()
   let userLpAmount = getUserLpAmount(userAddress)
   let lpAmountToWithdraw = calcLpFromAsset(withdrawAssetAmount)
@@ -373,6 +393,7 @@ func withdraw(withdrawAssetAmount: Int) = {
 
 @Callable(i)
 func setStakingNode(nodeAddress: String) = {
+  strict checkForceStop = isForceStopped()
     let userAddress = i.caller.toString()
 
     getSetStakingNodeActions(userAddress, nodeAddress, 100)
@@ -380,6 +401,7 @@ func setStakingNode(nodeAddress: String) = {
 
 @Callable(i)
 func stakeAndSetStakingNode(nodeAddress: String) = {
+  strict checkForceStop = isForceStopped()
     let userAddress = i.caller.toString()
 
     getStakeActions(i, userAddress) ++ getSetStakingNodeActions(userAddress, nodeAddress, 100)
@@ -388,6 +410,7 @@ func stakeAndSetStakingNode(nodeAddress: String) = {
 # Used in l2mp_swap.ride
 @Callable(i)
 func stakeForSwapHELPER(userAddress: String, nodeAddress: String) = {
+  strict checkForceStop = isForceStopped()
     strict check = [
       i.originCaller.toString() == userAddress || "i.originCaller should be equal to userAddress".throwErr()
     ]
@@ -399,6 +422,7 @@ func stakeForSwapHELPER(userAddress: String, nodeAddress: String) = {
 
 @Callable(i)
 func airdrop(addressList: List[String], amountList: List[Int]) = {
+  strict checkForceStop = isForceStopped()
     func sum(accum: Int, next: Int) = {
       if (next < 0) then "negative amount value in amountList".throwErr() else accum + next
     }
@@ -460,6 +484,7 @@ func airdrop(addressList: List[String], amountList: List[Int]) = {
 # _10 = interest remaining blocks
 @Callable(i)
 func getUserAssetsREADONLY(userAddress: String) = {
+  strict checkForceStop = isForceStopped()
     let userLpAmount = getUserLpAmount(userAddress)
     let userLockedLpAmount = getUserLockedLpAmount(userAddress)
     let userLockedAssetAmount = calcAssetFromLp(userLockedLpAmount)
@@ -494,6 +519,7 @@ func getUserAssetsREADONLY(userAddress: String) = {
 # _6 = interest remaining blocks
 @Callable(i)
 func getTotalAssetsREADONLY() = {
+  strict checkForceStop = isForceStopped()
     (
       nil, 
       (
@@ -513,6 +539,7 @@ func getTotalAssetsREADONLY() = {
 # Vote for txId that is allowed in Verifier
 @Callable(i)
 func voteForTxId(txId: String) = {
+  strict checkForceStop = isForceStopped()
   let callerAddressString = toBase58String(i.caller.bytes)
   let keyPrefix = keyAllowedTxIdVotePrefix(txId)
   let result = [ StringEntry(keyAllowedTxId(), txId) ]
