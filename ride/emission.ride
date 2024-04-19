@@ -98,8 +98,24 @@ func mustManager(i: Invocation) = {
   }
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func constructor(factoryAddress: String, ratePerBlockMax: Int, ratePerBlock: Int, emissionStartBlock: Int, emissionDuration: Int, emissionStartTimestamp: Int, wxAssetIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
   [IntegerEntry(keyRatePerBlockMaxStartFrom(emissionStartTimestamp, emissionStartBlock), ratePerBlockMax),
@@ -117,6 +133,7 @@ func constructor(factoryAddress: String, ratePerBlockMax: Int, ratePerBlock: Int
 
 @Callable(i)
 func constructorV2(votingVerifiedContractPrm: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
   (
@@ -129,6 +146,7 @@ func constructorV2(votingVerifiedContractPrm: String) = {
 
 @Callable(i)
 func emit(amount: Int) = {
+  strict checkForceStop = isForceStopped()
   if (amount <= 0) then ([], []) else
   let factoryContract = readFactoryAddressOrFail()
   let factoryCfg = factoryContract.readFactoryCfgOrFail()
@@ -145,6 +163,7 @@ func emit(amount: Int) = {
 
 @Callable(i)
 func burn() = {
+  strict checkForceStop = isForceStopped()
   let factoryContract = readFactoryAddressOrFail()
   let factoryCfg = factoryContract.readFactoryCfgOrFail()
   let boostingContract = factoryCfg.getBoostingAddressOrFail()
@@ -168,6 +187,7 @@ func burn() = {
 
 @Callable(i)
 func gwxHoldersRewardUpdate() = {
+  strict checkForceStop = isForceStopped()
   let factoryContract = readFactoryAddressOrFail()
   let factoryCfg = factoryContract.readFactoryCfgOrFail()
   let gwxRewardsContract = factoryCfg.getGwxRewardAddressOrFail()
@@ -187,11 +207,13 @@ func gwxHoldersRewardUpdate() = {
 
 @Callable(i)
 func getBoostCoeffREADONLY() = {
+  strict checkForceStop = isForceStopped()
   ([], boostCoeff)
 }
 
 @Callable(i)
 func changeRatePerBlock(newRatePerBlock: Int) = {
+  strict checkForceStop = isForceStopped()
   strict check = i.caller == votingEmissionRateContract || i.mustManager() || throwErr("should be invoked by votingEmissionRateContract")
 
   let factoryContract = readFactoryAddressOrFail()
