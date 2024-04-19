@@ -316,6 +316,21 @@ func getTradingReward(userAddress: String) = {
   this.getInteger(userAddress.keyTradingReward()).valueOrElse(0)
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func tradeRewardInternal(
   paymentAmountLeftOver: Int,
@@ -323,6 +338,7 @@ func tradeRewardInternal(
   rewards: List[Int],
   currentIter: Int
 ) = {
+  strict checkForceStop = isForceStopped()
   if (currentIter == userAddresses.size()) then ([]) else
 
   strict checks = [
@@ -354,8 +370,10 @@ func tradeRewardInternal(
   ], tradeRewardInternal)
 }
 
+
 @Callable(i)
 func updateReferralActivity(userAddress: String, gWxAmountStart: Int) = {
+  strict checkForceStop = isForceStopped()
   let referrer = referralsContractAddressOrFail.getString(userAddress.keyReferrer())
   strict activeReferralInv = if (referrer == unit) then unit else {
     referralsContractAddressOrFail.invoke("updateReferralActivity", [referralProgramName, userAddress, gWxAmountStart >= referralMinGWxAmount], [])
@@ -366,6 +384,7 @@ func updateReferralActivity(userAddress: String, gWxAmountStart: Int) = {
 
 @Callable(i)
 func finalizeHelper() = {
+  strict checkForceStop = isForceStopped()
   let processingStage = keyProcessingStage().getInteger().valueOrElse(processingStageTotal)
   let currentPeriod = keyNextProcessedPeriod().getNumberByKey() # period with reward being currently distributed
   let currentUser = keyNextProcessedUser().getNumberByKey() # user to start with
@@ -433,6 +452,7 @@ func finalizeHelper() = {
 
 @Callable(i)
 func finalizeWrapper(counter: Int) = {
+  strict checkForceStop = isForceStopped()
   strict result = this.invoke("finalizeHelper", [], []).exactAs[Boolean]
   if (!result) then {
     if (counter == maxDepth) then "Nothing to process".throw() else ([], unit)
@@ -447,6 +467,7 @@ func finalizeWrapper(counter: Int) = {
 
 @Callable(i)
 func processPendingPeriodsAndUsers() = {
+  strict checkForceStop = isForceStopped()
   ([], this.invoke("finalizeWrapper", [maxDepth], []))
 }
 
@@ -456,6 +477,7 @@ func processPendingPeriodsAndUsers() = {
 # Called by matcher pacemaker
 @Callable(i)
 func deposit() = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.caller == votingEmissionContract || i.mustManager()
   let period = nextPeriod()
   let deltaH = height - keyGwxRewardEmissionStartHeight().getNumberOrFail()
@@ -490,6 +512,7 @@ func deposit() = {
 # called by user
 @Callable(i)
 func claimReward() = {
+  strict checkForceStop = isForceStopped()
   let cfgArray = readConfigArrayOrFail()
   let address = i.caller.toString()
   let (amount, actions) = commonClaimReward(address)
@@ -507,6 +530,7 @@ func claimReward() = {
 # returns total claimable reward by user address
 @Callable(i)
 func claimRewardREADONLY(address: String) = {
+  strict checkForceStop = isForceStopped()
   let (amount, actions) = commonClaimReward(address)
   let referralUnclaimed = referralsContractAddressOrFail.getInteger(keyUnclaimedReferral(referralProgramName, address)).valueOrElse(0)
   let totalAmount = amount + referralUnclaimed
@@ -517,12 +541,14 @@ func claimRewardREADONLY(address: String) = {
 # returns -1 if there were no payments via deposit() call
 @Callable(i)
 func latestFinalizedPeriodREADONLY(address: String) = {
+  strict checkForceStop = isForceStopped()
   ([], getInteger(this, keyLatestPeriod()).valueOrElse(-1))
 }
 
 # returns %d%d%d__${latestFinalizedPeriod}__${matcherPart}__${emissionPart}
 @Callable(i)
 func latestFinalizedPeriodInfoREADONLY(address: String) = {
+  strict checkForceStop = isForceStopped()
   ([], getStringByKey(keyLastPayoutInfo()))
 }
 
@@ -531,6 +557,7 @@ func latestFinalizedPeriodInfoREADONLY(address: String) = {
 # ***********************
 @Callable(i)
 func calcGwxParamsREADONLY(gwxAmountStart: Int, lockStartHeight: Int, lockDurationBlocks: Int) = {
+  strict checkForceStop = isForceStopped()
   let lockEndHeight = lockStartHeight + lockDurationBlocks
   let scale8ParamK = -fraction(gwxAmountStart, SCALE, lockDurationBlocks)
   let scale8ParamB = fraction(gwxAmountStart, SCALE, lockDurationBlocks) * lockEndHeight
@@ -539,6 +566,7 @@ func calcGwxParamsREADONLY(gwxAmountStart: Int, lockStartHeight: Int, lockDurati
 
 @Callable(i)
 func calcGwxAmountStartREADONLY(wxLockAmount: Int, lockDuration: Int, maxLockDuration: Int) = {
+  strict checkForceStop = isForceStopped()
   let coeffX8 = fraction(lockDuration, MULT8, maxLockDuration)
   let gWxAmountStart = fraction(wxLockAmount, coeffX8, MULT8)
   ([], [gWxAmountStart])
@@ -547,12 +575,14 @@ func calcGwxAmountStartREADONLY(wxLockAmount: Int, lockDuration: Int, maxLockDur
 # save starting height of reward from emission 5%
 @Callable(i)
 func onEmissionForGwxStart() = {
+  strict checkForceStop = isForceStopped()
   if (i.caller != factoryContract) then throw("permissions denied") else
   [IntegerEntry(keyGwxRewardEmissionStartHeight(), height)]
 }
 
 @Callable(i)
 func latestPeriodEmissionRewardsREADONLY(address: String) = {
+  strict checkForceStop = isForceStopped()
   let period = nextPeriod()
   ([], [getNumberByKey(keyAuxEmissionRewardForPeriod(period))])
 }
@@ -613,6 +643,7 @@ func calcD(
 
 @Callable(i)
 func tradeReward(userAddresses: List[String], rewards: List[Int]) = {
+  strict checkForceStop = isForceStopped()
   let argsComparison = userAddresses.size() == rewards.size()
   let maxRecipients = keyMaxRecipients().getInteger().valueOrElse(0)
   let payment = i.payments[0]
@@ -641,6 +672,7 @@ func tradeReward(userAddresses: List[String], rewards: List[Int]) = {
 
 @Callable(i)
 func claimTradingReward() = {
+  strict checkForceStop = isForceStopped()
   let userAddress = i.caller
   let userAddressString = userAddress.toString()
   let reward = userAddressString.getTradingReward()
@@ -654,6 +686,7 @@ func claimTradingReward() = {
 
 @Callable(i)
 func claimTradingRewardREADONLY(userAddress: String) = {
+  strict checkForceStop = isForceStopped()
   (nil, userAddress.getTradingReward())
 }
 
