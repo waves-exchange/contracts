@@ -10,6 +10,11 @@ let finalizationStageTotal = 1
 let finalizationStageShares = 2
 let wavesString = "WAVES"
 
+let poolStatusActive = 1
+let poolStatusPutDisabled = 2
+let poolStatusMatcherDisabled = 3
+let poolStatusShutdown = 4
+
 let keyEpochLength = ["%s", "epochLength"].makeString(separator)
 let keyEpochLengthNew = ["%s%s", "epochLength__new"].makeString(separator)
 func keyEpochLengthByEpoch(epoch: Int) = ["%s%d", "epochLength", epoch.toString()].makeString(separator)
@@ -468,8 +473,7 @@ func processPoolBalanceINTERNAL(poolStr: String) = {
       amountAssetId,
       priceAssetId
     ).valueOrErrorMessage(wrapErr("invalid assets"))._1
-    let newStatus = 3
-    strict setPoolStatusInv = factoryContract.invoke("managePool", [poolAddress.toString(), newStatus], [])
+    strict setPoolStatusInv = factoryContract.invoke("managePool", [poolAddress.toString(), poolStatusMatcherDisabled], [])
   
     let listActions = [
       DeleteEntry(pool.keyInList())
@@ -927,8 +931,10 @@ func resume(amountAssetId: String, priceAssetId: String, slippageToleranceOrMinO
 
   strict setWxEmissionInv = factoryContract.invoke("setWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
 
-  # let newStatus = 1
-  # strict setPoolStatusInv = factoryContract.invoke("managePool", [poolAddress.toString(), newStatus], [])
+  let poolStatus = factoryContract.invoke("getPoolStatusREADONLY", [poolAddress.toString()], []).exactAs[Int]
+  strict setPoolStatusInv = if (poolStatus == poolStatusMatcherDisabled) then {
+    factoryContract.invoke("managePool", [poolAddress.toString(), poolStatusActive], [])
+  } else unit
 
   let pool = (amountAssetId, priceAssetId)
   let inListActions = [
