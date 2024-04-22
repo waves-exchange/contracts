@@ -459,12 +459,7 @@ func processPoolBalanceINTERNAL(poolStr: String) = {
   let (amountAssetId, priceAssetId) = pool
   let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
 
-  # let wxEmission = pool.checkWxEmissionPoolLabel()
-
   let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
-  # check balance, write if balances is ok
-  # if previous balance and current balance is not ok,
-  #   then set status 3, remove from list, remove wx emission label
   let actions = if (!balanceIsOk) then {
     strict deleteWxEmissionInv = factoryContract.invoke("deleteWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
     strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, 0], [])
