@@ -280,7 +280,7 @@ func mustThis(i: Invocation) = {
 }
 # <-
 
-# TODO: Сделать обычной функцией
+# used by UI
 @Callable(i)
 func getUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
   let boostingContractAddress = this.getStrOrFail(keyBoostingContract).addressFromString().valueOrErrorMessage(("invalid boosting contract address").wrapErr())
@@ -574,9 +574,8 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
   }
 }
 
-# Может вызвать любой
-# Должно работать так же, как и финализация voting verified
-# Обновляем высоту сразу, так как для переноса голоса нужно знать, куда переносить
+# Can be called by anyone
+# Update the height immediately, as it is necessary to know where to transfer the votes
 @Callable(i)
 func finalizeHelper() = {
   let force = keyFinalizationShouldBeForced.getBoolean().valueOrElse(false)
@@ -586,7 +585,7 @@ func finalizeHelper() = {
   let epochLength = this.getIntOrFail(keyEpochLength)
   let endHeight = startHeight + epochLength
   let finalizationStageOrUnit = this.getInteger(keyFinalizationStage)
-  # если пора начинать финализацию, обновляем высоту, эпоху и этап финализации
+  # if it's time to start finalization, update the height, epoch, and finalization stage
   if (height >= endHeight && finalizationStageOrUnit == unit && !force) then {
     let newEpoch = epoch + 1
     let newEpochLengthOption = this.getInteger(keyEpochLengthNew)
@@ -614,7 +613,7 @@ func finalizeHelper() = {
       ],
       true
     )
-  # голосование еще не завершилось
+  # voiting is not completed yet
   } else if (finalizationStageOrUnit == unit) then {
     (
       [],
@@ -652,24 +651,10 @@ func finalizeHelper() = {
         }
       }
     }
-  # этап подсчета общего числа голосов
+  # stage of calculating the total number of votes
   } else if (finalizationStageOrUnit == finalizationStageTotal) then {
     let poolOrUnit = keyNextPool.getString()
     let userOrUnit = keyNextUser.getString()
-    # Если нет пула, то получить пул из head.
-      # Если нет, то завершить.
-      # Если есть, то записать.
-    # Если есть пул
-      # Если нет пользователя, то получить пользователя из head для данного пула.
-        # Если нет, то получить следующий пул
-          # Если нет, то завершить
-          # Если есть, то записать
-        # Если есть, то записать
-      # Если есть пользователь, то обработать и получить следующего пользователя
-        # Если нет, то получить следующий пул
-          # Если нет, то завершить
-          # Если есть, то записать
-        # Если есть, то записать
     match poolOrUnit {
       case _: Unit => {
         match poolsListName.keyListHead().getString() {
@@ -720,7 +705,7 @@ func finalizeHelper() = {
         }
       }
     }
-  # этап вычисления долей пулов
+  # stage of calculating pool shares
   } else if (finalizationStageOrUnit == finalizationStageShares) then {
     let poolOrUnit = keyNextPool.getString()
     match poolOrUnit {
@@ -806,17 +791,12 @@ func finalizeWrapper(counter: Int) = {
   }
 }
 
-# TODO: возможны проблемы, если пользователь блокирует средства во время финализации
-# Запоминать количество gwx на момент начала финализации?
 @Callable(i)
 func finalize() = {
   strict inv = this.invoke("finalizeWrapper", [0], [])
 
   ([], unit)
 }
-
-# пул теряет свою эмиссию при потере токеном COMMUNITY VERIFIED лейбла.
-# но для того чтобы у пула была эмиссия, у него должен быть и WX EMISSION лейбл. а если токен теряет COMMUNITY VERIFIED, то пул лишается и WX EMISSION лейбла
 
 @Callable(i)
 func containsNodeREADONLY(listName: String, id: String) = {
