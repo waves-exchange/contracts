@@ -970,7 +970,7 @@ func mustManager(i: Invocation) = {
   }
 }
 
-### Force Stop check function
+### Pool Force Stop check function
 func isForceStopped() = {
   func keyDisabledStatus(address: String) = ["%s%s", "disabled", address].makeString(SEP)
 
@@ -988,7 +988,7 @@ func isForceStopped() = {
     then "Force stopped".throw()
     else false
 }
-### End Force Stop function
+### End Pool Force Stop function
 
 # Rebalance AmountAsset and PriceAsset
 @Callable(i)
