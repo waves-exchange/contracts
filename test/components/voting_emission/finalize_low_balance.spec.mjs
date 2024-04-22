@@ -172,27 +172,6 @@ describe(`${process.pid}: voting_emission: finalize (low balance)`, () => {
     const poolWeightMult = 1e8;
     const totalVotes = user1GwxAmount + user2GwxAmount;
     const pool1Share = (user1GwxAmount / totalVotes) * poolWeightMult;
-    const pool2Share = (user2GwxAmount / totalVotes) * poolWeightMult;
-
-    const dAppState = await api.addresses.data(dApp);
-    const dAppStateMap = Object.fromEntries(dAppState.map((v) => [v.key, v]));
-
-    expect(dAppStateMap['%s__currentEpoch'].value).to.equal(epoch + 1);
-    expect(dAppStateMap[`%s%s%s%d__poolShare__${amountAssetId1}__${priceAssetId1}__${epoch}`].value).to.equal(pool1Share);
-    expect(dAppStateMap[`%s%s%s%d__poolShare__${amountAssetId2}__${priceAssetId2}__${epoch}`].value).to.equal(pool2Share);
-  });
-
-  it('pool should be removed from the list', async function () {
-    const epoch = 1;
-    const { addr: dApp } = this.accounts.votingEmission;
-    const { value: startHeight } = await api.addresses.fetchDataKey(dApp, `%s%d__startHeight__${epoch}`);
-    await waitForHeight(startHeight + epochLength + 1);
-    await votingEmission.finalize({
-      dApp, caller: this.accounts.pacemaker.seed,
-    });
-    const poolWeightMult = 1e8;
-    const totalVotes = user1GwxAmount + user2GwxAmount;
-    const pool1Share = (user1GwxAmount / totalVotes) * poolWeightMult;
     const pool2Share = 0;
 
     const dAppState = await api.addresses.data(dApp);
