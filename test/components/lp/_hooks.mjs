@@ -29,6 +29,7 @@ export const mochaHooks = {
     const names = [
       'lp',
       'factoryV2',
+      'forceStop',
       'feeCollector',
       'staking',
       'slippage',
