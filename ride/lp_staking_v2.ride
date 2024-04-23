@@ -248,8 +248,24 @@ func mustProxyAddress(i: Invocation, assetId: String) = {
   }
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func constructor(assetsStoreContract: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
   [StringEntry(keyAssetsStoreContract(), assetsStoreContract)]
@@ -304,6 +320,7 @@ func adminRegisterAsset(baseAssetStr: String, shareAssetName: String, shareAsset
 
 @Callable(i)
 func shutdownPut(internalBaseAssetId: Int) = {
+  strict checkForceStop = isForceStopped()
   let internalBaseAssetIdStr = internalBaseAssetId.toString()
   let baseAssetIdStr = getStringOrFail(keyMappingsInternal2baseAssetId(internalBaseAssetId))
   let shutdownManagerAddress = getStringOrFail(keyShutdownManager(internalBaseAssetIdStr))
@@ -315,6 +332,7 @@ func shutdownPut(internalBaseAssetId: Int) = {
 
 @Callable(i)
 func put() = {
+  strict checkForceStop = isForceStopped()
   let pmt = i.payments[0].value()
   let baseAssetId = pmt.assetId.value()
   let baseAssetStr = baseAssetId.toBase58String()
@@ -347,6 +365,7 @@ func put() = {
 
 @Callable(i)
 func submitGetRequest() = {
+  strict checkForceStop = isForceStopped()
   let pmt = i.payments[0].value()
   let shareAssetId = pmt.assetId.value()
   let shareAssetStr = shareAssetId.toBase58String()
@@ -387,6 +406,7 @@ func submitGetRequest() = {
 
 @Callable(i)
 func executeGetRequest(baseAssetStr: String, userAddressStr: String, getTxIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   let userAddress = addressFromStringValue(userAddressStr)
 
   let assetCfgArray = readAssetCfgOrFail(baseAssetStr)
@@ -418,6 +438,7 @@ func executeGetRequest(baseAssetStr: String, userAddressStr: String, getTxIdStr:
 
 @Callable(i)
 func topUpBalance(baseAssetStr: String, delta: Int) = {
+  strict checkForceStop = isForceStopped()
   let assetCfgArray = readAssetCfgOrFail(baseAssetStr)
   let pmt = i.payments[0].value()
   let pmtAssetId = pmt.assetId.value()
@@ -449,6 +470,7 @@ func topUpBalance(baseAssetStr: String, delta: Int) = {
 
 @Callable(i)
 func currentSysParamsREST(baseAssetStr: String)= {
+  strict checkForceStop = isForceStopped()
   let sysStateTuple = privateCurrentSysParamsREST(baseAssetStr)
   # (price, decimalsMultPrice, baseAssetBalance, totalLockedBaseAmount, baseAssetBalanceConsideringLock, shareEmission)
   let price                           = sysStateTuple._1.value
