@@ -469,8 +469,24 @@ func unstakeActions(
   ++ listActions
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func constructor(factoryAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
   [StringEntry(keyFactoryAddress(), factoryAddressStr)]
@@ -478,6 +494,7 @@ func constructor(factoryAddressStr: String) = {
 
 @Callable(i)
 func constructorV2(votingEmissionContract: String) = {
+  strict checkForceStop = isForceStopped()
   strict cheks = [
     i.mustManager(),
     votingEmissionContract.addressFromString() != unit || "invalid voting emission contract address"
@@ -490,6 +507,7 @@ func constructorV2(votingEmissionContract: String) = {
 
 @Callable(i)
 func stake() = {
+  strict checkForceStop = isForceStopped()
   if (i.payments.size() != 1) then throwErr("invalid payment - exact one payment must be attached") else
   let pmt = i.payments[0]
   let lpAssetId = pmt.assetId.value()
@@ -510,6 +528,7 @@ func stake() = {
 
 @Callable(i)
 func stakeFor(userAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   if (i.payments.size() != 1) then throwErr("invalid payment - exact one payment must be attached") else
   let pmt = i.payments[0]
   let lpAssetId = pmt.assetId.value()
@@ -532,6 +551,7 @@ func stakeFor(userAddressStr: String) = {
 
 @Callable(i)
 func unstake(lpAssetIdStr: String, amount: Int) = {
+  strict checkForceStop = isForceStopped()
   let lpAssetId = lpAssetIdStr.fromBase58String()
   let poolAddressStr = factoryContract.getString(keyFactoryLp2AssetsMapping(lpAssetIdStr)).valueOrErrorMessage(("unsupported lp asset " + lpAssetIdStr).wrapErr())
   let poolAddress = poolAddressStr.addressFromStringValue()
@@ -573,6 +593,7 @@ func unstakeINTERNAL(
 
 @Callable(i)
 func claimWx(lpAssetIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   let userAddressStr = i.caller.toString()
   let throwIfNothingToClaim = true
   let result = this.invoke("claimWxINTERNAL", [lpAssetIdStr, userAddressStr, throwIfNothingToClaim], [])
@@ -582,6 +603,7 @@ func claimWx(lpAssetIdStr: String) = {
 
 @Callable(i)
 func claimWxDoNotThrow(lpAssetIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   let userAddressStr = i.caller.toString()
   let throwIfNothingToClaim = false
   let result = this.invoke("claimWxINTERNAL", [lpAssetIdStr, userAddressStr, throwIfNothingToClaim], [])
@@ -591,6 +613,7 @@ func claimWxDoNotThrow(lpAssetIdStr: String) = {
 
 @Callable(i)
 func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String, throwIfNothingToClaim: Boolean) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustThis()
   let userAddress = userAddressStr.addressFromString().valueOrErrorMessage(("claimWxINTERNAL: invalid user address").wrapErr())
 
@@ -640,6 +663,7 @@ func claimWxINTERNAL(lpAssetIdStr: String, userAddressStr: String, throwIfNothin
 
 @Callable(i)
 func claimWxBulkInternalREADONLY(currentIter: Int, lpAssetIds: List[String], userAddressStr: String, resAcc: List[String]) = {
+  strict checkForceStop = isForceStopped()
   if (currentIter == lpAssetIds.size()) then ([], resAcc) else
 
   let lpAssetId = lpAssetIds[currentIter]
@@ -655,12 +679,14 @@ func claimWxBulkInternalREADONLY(currentIter: Int, lpAssetIds: List[String], use
 # Returns [%d%d%d__<unclaimed>__<claimed>__<userVoteFinalized>]
 @Callable(i)
 func claimWxBulkREADONLY(lpAssetIds: List[String], userAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   let res = this.invoke("claimWxBulkInternalREADONLY", [0, lpAssetIds, userAddressStr, []], [])
   ([], res)
 }
 
 @Callable(i)
 func claimWxREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   let stakedByUserKEY = keyStakedByUser(userAddressStr, lpAssetIdStr)
   let stakedTotalKEY = keyStakedTotal(lpAssetIdStr)
   let claimedByUserKEY = keyClaimedByUser(lpAssetIdStr, userAddressStr)
@@ -699,6 +725,7 @@ func claimWxREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
 
 @Callable(i)
 func stakedByUserREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   let stakedByUser = userAddressStr.keyStakedByUser(lpAssetIdStr).getInteger().valueOrElse(0)
 
   ([], stakedByUser)
@@ -706,6 +733,7 @@ func stakedByUserREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
 
 @Callable(i)
 func stakedTotalREADONLY(lpAssetIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   let stakedTotal = lpAssetIdStr.keyStakedTotal().getInteger().valueOrElse(0)
 
   ([], stakedTotal)
@@ -713,6 +741,7 @@ func stakedTotalREADONLY(lpAssetIdStr: String) = {
 
 @Callable(i)
 func usersListTraversal(lpAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.caller.bytes.toBase58String() == this.getString(keyVotingEmissionContract()).valueOrElse("") || i.mustManager()
   let listName = lpAssetId.getUsersListName()
   let userOrUnit = lpAssetId.keyNextUser().getString()
@@ -748,6 +777,7 @@ func usersListTraversal(lpAssetId: String) = {
 
 @Callable(i)
 func onModifyWeight(lpAssetIdStr: String, poolAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   if (i.caller != factoryContract) then throwErr("permissions denied") else
   let (wxPerLpIntegralNew, poolIntegralSTATE, poolDEBUG) = refreshPoolINTEGRALS(lpAssetIdStr, poolAddressStr, 0)
   poolIntegralSTATE
