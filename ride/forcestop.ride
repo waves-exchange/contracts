@@ -12,7 +12,7 @@ func keyManagerVaultAddress() = ["%s", "managerVaultAddress"].makeString(SEP)
 func keyManagerPublicKey() = ["%s", "managerPublicKey"].makeString(SEP)
 
 func keyPermissionList() = ["%s", "forceStopPermission"].makeString(SEP)
-func keyForceStop(address: String) = ["%s%s", "stop", address].makeString(SEP)
+func keyForceStop(address: String) = ["%s%s", "disabled", address].makeString(SEP)
 
 # Format:
 #   "{addr1}_{addr2}_{addr3}" -> ["addr1", "addr2", "addr3"]
@@ -47,12 +47,20 @@ func mustManager(i: Invocation) = {
   }
 }
 
+func isValidAddress(address: String) = {
+    match (address.addressFromString()) {
+        case a:Address => true
+        case _ => false
+      }
+}
+
 @Callable(i)
 func forceStopContract(address: String, stop: Boolean) = {
   let callerAddressString = i.caller.toString()
 
   strict check = [
-    permissionList.containsElement(callerAddressString) || i.mustManager()
+    permissionList.containsElement(callerAddressString) || i.mustManager(),
+    address.isValidAddress() || ["[", address, "] not an address"].makeString("").throwErr()
   ]
   
   [
@@ -64,6 +72,7 @@ func forceStopContract(address: String, stop: Boolean) = {
 func addPermission(address: String) = {
   strict check = [
     i.mustManager(),
+    address.isValidAddress() || ["[", address, "] not an address"].makeString("").throwErr(),
     !permissionList.containsElement(address) || "already in permission list".throwErr()
   ]
 
@@ -79,6 +88,7 @@ func addPermission(address: String) = {
 func removePermission(address: String) = {
   strict check = [
     i.mustManager(),
+    address.isValidAddress() || ["[", address, "] not an address"].makeString("").throwErr(),
     permissionList.containsElement(address) || "not in permission list".throwErr()
   ]
 

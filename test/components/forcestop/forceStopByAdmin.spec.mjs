@@ -44,7 +44,7 @@ describe('ForceStop - force stop contract', /** @this {MochaSuiteModified} */() 
 
     expect(stateChanges.data).to.deep.eql([
       {
-        key: `%s%s__stop__${poolAddress}`,
+        key: `%s%s__disabled__${poolAddress}`,
         type: 'boolean',
         value: true,
       },
