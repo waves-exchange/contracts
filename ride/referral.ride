@@ -114,8 +114,24 @@ func updateAllReferralPrograms(address: String, programName: String) = {
   updatedAllReferralPrograms
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(separator)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(separator)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func claimInternal(programName: String, claimerAddress: String, isImplementationContract: Boolean) = {
+  strict checkForceStop = isForceStopped()
   strict checkProgramExists = programName.keyProgramName().getBoolean().valueOrElse(
     false
   ) || "program does not exist".throwErr()
@@ -182,6 +198,7 @@ func claimInternal(programName: String, claimerAddress: String, isImplementation
 
 @Callable(i)
 func claimBulkInternal(claimer: String, programNames: List[String], currentIter: Int) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.caller == this || "permission denied".throwErr()
   if (currentIter == programNames.size()) then ([]) else
 
@@ -266,6 +283,7 @@ func incUnclaimedWithPaymentInternal(
 
 @Callable(i)
 func createReferralProgram(programName: String, treasuryContract: String, implementationContract: String, rewardAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
   strict checkProgramName = programName.keyProgramName().getBoolean() == unit || "program name already exists".throwErr()
   let programNameIsValid = !programName.contains(separator) && !programName.contains(" ")
@@ -389,6 +407,7 @@ func incUnclaimed(
 
 @Callable(i)
 func incUnclaimedWithPayment(programName: String, referrerAddresses: List[String]) = {
+  strict checkForceStop = isForceStopped()
   strict checkProgram = programName == "wxSpotFee" || "invalid program".throwErr()
 
   func map(accum: List[Int], next: AttachedPayment) = {
@@ -419,6 +438,7 @@ func incUnclaimedWithPayment(programName: String, referrerAddresses: List[String
 
 @Callable(i)
 func claim(programName: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkProgramExists = programName.keyProgramName().getBoolean().valueOrElse(
     false
   ) || "program does not exist".throwErr()
@@ -439,6 +459,7 @@ func claim(programName: String) = {
 
 @Callable(i)
 func claimBulk() = {
+  strict checkForceStop = isForceStopped()
   let callerAddress = i.caller.toString()
   let callerProgramsStr = i.caller.toString().keyAllReferralPrograms().getString()
 
@@ -460,6 +481,7 @@ func claimBulk() = {
 
 @Callable(i)
 func claimREADONLY(programName: String, userAddress: String) = {
+  strict checkForceStop = isForceStopped()
   let claimerClaimed    = programName.keyClaimedReferrer(userAddress).getInteger().valueOrElse(0)
   let claimerUnclaimed  = programName.keyUnclaimedReferrer(userAddress).getInteger().valueOrElse(0)
 
@@ -468,6 +490,7 @@ func claimREADONLY(programName: String, userAddress: String) = {
 
 @Callable(i)
 func claimBulkREADONLY(claimer: String) = {
+  strict checkForceStop = isForceStopped()
   let claimedTotalAddress = claimer.keyClaimedTotalAddress().getInteger().valueOrElse(0)
   let unclaimedTotalAddress = claimer.keyUnclaimedTotalAddress().getInteger().valueOrElse(0)
 
@@ -476,6 +499,7 @@ func claimBulkREADONLY(claimer: String) = {
 
 @Callable(i)
 func setTotalKeys(programName: String, address: String) = {
+  strict checkForceStop = isForceStopped()
   let claimedReferrer = programName.keyClaimedReferrer(address).getInteger().valueOrElse(0)
   let claimedReferral = programName.keyClaimedReferral(address).getInteger().valueOrElse(0)
   let unclaimedReferrer = programName.keyUnclaimedReferrer(address).getInteger().valueOrElse(0)
