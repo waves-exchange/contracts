@@ -1,6 +1,10 @@
 import { invokeScript, data } from '@waves/waves-transactions';
 import { broadcastAndWait, chainId } from '../../utils/api.mjs';
 
+export const kResumptionFee = '%s__resumptionFee';
+export const kStatus = (assetId) => `status_<${assetId}>`;
+export const statusVerified = 2;
+
 export const votingEmission = {
   constructor: async ({
     dApp, caller,
@@ -180,6 +184,29 @@ export const votingEmission = {
           ],
         },
         payment: [],
+        additionalFee: 4e5,
+        chainId,
+      },
+      caller,
+    );
+    return broadcastAndWait(invokeTx);
+  },
+
+  resume: async ({
+    dApp, caller, amountAssetId, priceAssetId, slippageToleranceOrMinOutAmount, payments = [],
+  }) => {
+    const invokeTx = invokeScript(
+      {
+        dApp,
+        call: {
+          function: 'resume',
+          args: [
+            { type: 'string', value: amountAssetId },
+            { type: 'string', value: priceAssetId },
+            { type: 'integer', value: slippageToleranceOrMinOutAmount },
+          ],
+        },
+        payment: payments,
         additionalFee: 4e5,
         chainId,
       },

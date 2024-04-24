@@ -1,14 +1,11 @@
 import { address, random } from '@waves/ts-lib-crypto';
-import { massTransfer, nodeInteraction, data } from '@waves/waves-transactions';
-import { create } from '@waves/node-api-js';
+import { massTransfer, data, issue } from '@waves/waves-transactions';
 import { format, join } from 'path';
 import { setScriptFromFile } from '../../utils/utils.mjs';
 import {
-  apiBase, baseSeed, broadcastAndWait, chainId,
+  baseSeed, broadcastAndWait, chainId,
 } from '../../utils/api.mjs';
 
-const { waitForTx } = nodeInteraction;
-const api = create(apiBase);
 const nonceLength = 3;
 const ridePath = '../ride';
 const testPath = 'common_mock';
@@ -34,28 +31,55 @@ export const mochaHooks = {
       return [item, { seed, addr: address(seed, chainId) }];
     }));
     const amount = 1e10;
-    const massTransferTx = massTransfer({
+    await broadcastAndWait(massTransfer({
       transfers: Object.values(this.accounts)
         .map(({ addr: recipient }) => ({ recipient, amount })),
       chainId,
-    }, baseSeed);
-    await api.transactions.broadcast(massTransferTx, {});
-    await waitForTx(massTransferTx.id, { apiBase });
+    }, baseSeed));
+
+    const [
+      { id: wxAssetId },
+    ] = await Promise.all([
+      broadcastAndWait(issue({
+        name: 'WX Token', description: '', quantity: 1e8 * 1e8, decimals: 8, reissuable: true, chainId,
+      }, baseSeed)),
+    ]);
+
+    this.wxAssetId = wxAssetId;
+
     // set state
-    await broadcastAndWait(data({
-      data: [
-        { key: '%s__factoryConfig', type: 'string', value: ['%s', '1', '2', '3', '4', '5', '6', '7', '8', '9', this.accounts.gwxReward.addr, '11'].join('__') },
-        { key: '%s__assetsStoreContract', type: 'string', value: this.accounts.assetsStore.addr },
-      ],
-      chainId,
-    }, this.accounts.factory.seed));
+    await Promise.all([
+      broadcastAndWait(data({
+        data: [
+          { key: '%s__factoryConfig', type: 'string', value: ['%s', '1', '2', '3', '4', '5', '6', '7', '8', '9', this.accounts.gwxReward.addr, '11'].join('__') },
+          { key: '%s__assetsStoreContract', type: 'string', value: this.accounts.assetsStore.addr },
+        ],
+        chainId,
+      }, this.accounts.factory.seed)),
+      broadcastAndWait(data({
+        data: [
+          { key: '%s__factoryContract', type: 'string', value: this.accounts.factory.addr },
+          { key: '%s__boostingContract', type: 'string', value: this.accounts.boosting.addr },
+        ],
+        chainId,
+      }, this.accounts.votingEmission.seed)),
+      broadcastAndWait(data({
+        data: [
+          { key: '%s__config', type: 'string', value: `%s%d%d%d__${wxAssetId}` },
+        ],
+        chainId,
+      }, this.accounts.boosting.seed)),
+    ]);
+
     // set scripts
-    await setScriptFromFile(votingEmissionPath, this.accounts.votingEmission.seed);
-    await setScriptFromFile(boostingMockPath, this.accounts.boosting.seed);
-    await setScriptFromFile(factoryMockPath, this.accounts.factory.seed);
-    await setScriptFromFile(stakingMockPath, this.accounts.staking.seed);
-    await setScriptFromFile(gwxRewardMockPath, this.accounts.gwxReward.seed);
-    await setScriptFromFile(votingEmissionRateMockPath, this.accounts.votingEmissionRate.seed);
-    await setScriptFromFile(assetsStoreMockPath, this.accounts.assetsStore.seed);
+    await Promise.all([
+      setScriptFromFile(votingEmissionPath, this.accounts.votingEmission.seed),
+      setScriptFromFile(boostingMockPath, this.accounts.boosting.seed),
+      setScriptFromFile(factoryMockPath, this.accounts.factory.seed),
+      setScriptFromFile(stakingMockPath, this.accounts.staking.seed),
+      setScriptFromFile(gwxRewardMockPath, this.accounts.gwxReward.seed),
+      setScriptFromFile(votingEmissionRateMockPath, this.accounts.votingEmissionRate.seed),
+      setScriptFromFile(assetsStoreMockPath, this.accounts.assetsStore.seed),
+    ]);
   },
 };
