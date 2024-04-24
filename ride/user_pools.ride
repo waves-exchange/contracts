@@ -198,8 +198,24 @@ func _create(i: Invocation, poolType: String) = {
   ]
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionAddress: String, feeAssetId: String, feeAmount: Int) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
   [
@@ -213,11 +229,13 @@ func constructor(factoryV2Address: String, assetsStoreAddress: String, emissionA
 
 @Callable(i)
 func create() = {
+  strict checkForceStop = isForceStopped()
   _create(i, VLTPOOL)
 }
 
 @Callable(i)
 func createStable() = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
   _create(i, STBLPOOL)
@@ -225,6 +243,7 @@ func createStable() = {
 
 @Callable(i)
 func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: String, priceAssetId: String, priceAssetTicker: String, logo: String) = {
+  strict checkForceStop = isForceStopped()
   strict checks = [
     i.mustAdmin(),
     isCreateCalled(amountAssetId, priceAssetId) || throwCreateNotCalled(),
@@ -275,17 +294,20 @@ func activate(poolAddress: String, amountAssetId: String, amountAssetTicker: Str
 
 @Callable(i)
 func setAdmins(adminPubKeys: List[String]) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
   [StringEntry(keyAdminPubKeys(), adminPubKeys.makeString(SEP))]
 }
 
 @Callable(i)
 func priceAssetsREADONLY() = {
+  strict checkForceStop = isForceStopped()
   (nil, keyPriceAssets().getString().stringOptionToList())
 }
 
 @Callable(i)
 func statusREADONLY(amountAssetId: String, priceAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   let status = match keyStatus(amountAssetId, priceAssetId).getString() {
     case s: String => s
     case _ => unit
@@ -296,12 +318,14 @@ func statusREADONLY(amountAssetId: String, priceAssetId: String) = {
 
 @Callable(i)
 func getPoolCreatorREADONLY(amountAssetId: String, priceAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   let creator = keyCreateCaller(amountAssetId, priceAssetId).getString().valueOrElse("")
   (nil, creator)
 }
 
 @Callable(i)
 func deletePool(amountAssetId: String, priceAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.caller == factoryContract || i.mustManager() || "Permission denied".throwErr()
 
   [
