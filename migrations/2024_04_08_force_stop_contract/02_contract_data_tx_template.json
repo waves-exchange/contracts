@@ -1,0 +1,14 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "feeAssetId": null,
+    "version": 2,
+    "senderPublicKey": "",
+    "data": [
+        {
+            "key": "%s__forceStopContract",
+            "type": "string",
+            "value": ""
+        }
+    ]
+}

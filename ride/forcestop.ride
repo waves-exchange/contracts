@@ -60,6 +60,37 @@ func forceStopContract(address: String, stop: Boolean) = {
   ]
 }
 
+@Callable(i)
+func addPermission(address: String) = {
+  strict check = [
+    i.mustManager(),
+    !permissionList.containsElement(address) || "already in permission list".throwErr()
+  ]
+
+  let newList = permissionList :+ address
+  let newListString = newList.makeString(SEP)
+
+  [
+    StringEntry(keyPermissionList(), newListString)
+  ]
+}
+
+@Callable(i)
+func removePermission(address: String) = {
+  strict check = [
+    i.mustManager(),
+    permissionList.containsElement(address) || "not in permission list".throwErr()
+  ]
+
+  let r_index = permissionList.indexOf(address).valueOrErrorMessage(address + "not in list".wrapErr())
+  let newList = permissionList.removeByIndex(r_index)
+  let newListString = newList.makeString(SEP)
+
+  [
+    StringEntry(keyPermissionList(), newListString)
+  ]
+}
+
 @Verifier(tx)
 func verify() = {
   let targetPublicKey = match managerPublicKeyOrUnit() {
