@@ -852,7 +852,7 @@ func resume(amountAssetId: String, priceAssetId: String, slippageToleranceOrMinO
 
   let feePayment = i.payments[0]
 
-  let assetsStoreContract = this.getStringValue(
+  let assetsStoreContract = factoryContract.getStringValue(
     keyAssetsStoreContract
   ).addressFromStringValue()
 
@@ -869,6 +869,7 @@ func resume(amountAssetId: String, priceAssetId: String, slippageToleranceOrMinO
   ).valueOrErrorMessage("invalid resumption fee")
 
   strict checks = [
+    i.payments.size() > 0 || throwErr("at least one payment should be attached"),
     finalizationStageOrUnit == unit || "finalization is in progress".throwErr(),
     feePayment.assetId == wxAssetId || throwErr("invalid fee payment asset id"),
     feePayment.amount == resumptionFee || throwErr("invalid fee payment amount"),
