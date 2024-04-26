@@ -989,8 +989,29 @@ func skipOrderValidation() = {
   fca.getBoolean(keySkipOrderValidation(this.toString())).valueOrElse(false)
 }
 
+### Pool Force Stop check function
+func isForceStopped() = {
+  func keyDisabledStatus(address: String) = ["%s%s", "disabled", address].makeString(SEP)
+
+  let factoryAddressString = this.getString(fc()).valueOrElse("")
+  let factoryAddress = factoryAddressString.addressFromString().valueOrElse(this)
+
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = factoryAddress.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let poolDisabledStatus = forceStopAddress.getBoolean(keyDisabledStatus(this.toString())).valueOrElse(false)
+  let factoryDisabledStatus = forceStopAddress.getBoolean(keyDisabledStatus(factoryAddress.toString())).valueOrElse(false)
+
+  if (poolDisabledStatus || factoryDisabledStatus)
+    then "Force stopped".throw()
+    else false
+}
+### End Pool Force Stop function
+
 @Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
+  strict checkForceStop = isForceStopped()
    let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
     let assetOut = this.strf(pa())
     let poolAmountInBalance = getAccBalance(this.strf(aa())).toBigInt() + cleanAmountIn.toBigInt()
@@ -1026,6 +1047,7 @@ func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, f
 
 @Callable(i)
 func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String, feePoolAmount: Int) = {
+  strict checkForceStop = isForceStopped()
   let swapContact = invoke(
     fca,
     "getSwapContractREADONLY", 
@@ -1129,6 +1151,7 @@ func constructor(fc: String) = {
 #    transfer LP tokens based on deposit share
 @Callable(i)
 func put(slip: Int, autoStake: Boolean) = {
+  strict checkForceStop = isForceStopped()
     let factCfg = gfc()
     let stakingCntr = addressFromString(factCfg[idxFactStakCntr]).valueOrErrorMessage("Wr st addr")
     let slipCntr = addressFromString(factCfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
@@ -1199,6 +1222,7 @@ func put(slip: Int, autoStake: Boolean) = {
 
 @Callable(i)
 func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
+  strict checkForceStop = isForceStopped()
   let isPoolOneTokenOperationsDisabled = fca.invoke(
     "isPoolOneTokenOperationsDisabledREADONLY",
     [this.toString()],
@@ -1285,6 +1309,7 @@ func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
 # Put without LP emission
 @Callable(i)
 func putForFree(maxSlpg: Int) = {
+  strict checkForceStop = isForceStopped()
   if(maxSlpg < 0) then throw("Wrong slpg") else
   if (i.payments.size() != 2) then throw("2 pmnts expd") else
     let estPut = cp(i.caller.toString(),
@@ -1325,6 +1350,7 @@ func putForFree(maxSlpg: Int) = {
 #    transfer to user his share of pool tokens base on passed lp token amount
 @Callable(i)
 func get() = {
+  strict checkForceStop = isForceStopped()
   # amountAssetBalance
   # strict aab = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
   # # priceAssetBalance
@@ -1355,6 +1381,7 @@ func get() = {
 
 @Callable(i)
 func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
+  strict checkForceStop = isForceStopped()
   let isPoolOneTokenOperationsDisabled = fca.invoke(
     "isPoolOneTokenOperationsDisabledREADONLY",
     [this.toString()],
@@ -1382,6 +1409,7 @@ func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
 
 @Callable(i)
 func refreshDLp() = {
+  strict checkForceStop = isForceStopped()
   let lastRefreshedBlockHeight = keyDLpRefreshedHeight.getInteger().valueOrElse(0)
   strict checkLastRefreshedBlockHeight = if (height - lastRefreshedBlockHeight >= dLpRefreshDelay) then unit else {
     [
@@ -1465,6 +1493,7 @@ func getOneTknV2WithBonusREADONLY(
 
 @Callable(i)
 func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
+  strict checkForceStop = isForceStopped()
   let r = cg(i)
   let outAmAmt    = r._1
   let outPrAmt    = r._2
@@ -1491,6 +1520,7 @@ func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
 # Unstake LP tokens and exit from pool
 @Callable(i)
 func unstakeAndGet(amount: Int) = {
+  strict checkForceStop = isForceStopped()
   strict checkPayments = if (i.payments.size() != 0) then throw("No pmnts expd") else true
 
   let factoryCfg = gfc()
@@ -1523,6 +1553,7 @@ func unstakeAndGet(amount: Int) = {
 
 @Callable(i)
 func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessThenPriceAsset: Int) = {
+  strict checkForceStop = isForceStopped()
   let isGetDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown)
 
   strict checks = [
@@ -1555,6 +1586,7 @@ func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessT
 
 @Callable(i)
 func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
+  strict checkForceStop = isForceStopped()
   let isPoolOneTokenOperationsDisabled = fca.invoke(
     "isPoolOneTokenOperationsDisabledREADONLY",
     [this.toString()],
@@ -1594,6 +1626,7 @@ func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount:
 
 @Callable(i)
 func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", true)
 
   (nil, (lpAmount, feeAmount, bonus))
@@ -1601,6 +1634,7 @@ func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String)
 
 @Callable(i)
 func putOneTknV2WithoutTakeFeeREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", false)
 
   (nil, (lpAmount, feeAmount, bonus))
@@ -1617,6 +1651,7 @@ func putOneTknV2WithoutTakeFeeREADONLY(paymentAmountRaw: Int, paymentAssetId: St
 # return:
 @Callable(i)
 func activate(amtAsStr: String, prAsStr: String) = {
+  strict checkForceStop = isForceStopped()
     if (i.caller.toString() != fca.toString()) then throw("denied") else {
         ([
             StringEntry(aa(),amtAsStr),
@@ -1631,6 +1666,7 @@ func activate(amtAsStr: String, prAsStr: String) = {
 # API wrappers
 @Callable(i)
 func getPoolConfigWrapperREADONLY() = {
+  strict checkForceStop = isForceStopped()
   (
     [],
     gpc()
@@ -1639,6 +1675,7 @@ func getPoolConfigWrapperREADONLY() = {
 
 @Callable(i)
 func getAccBalanceWrapperREADONLY(assetId: String) = {
+  strict checkForceStop = isForceStopped()
   (
     [],
     assetId.getAccBalance()
@@ -1647,6 +1684,7 @@ func getAccBalanceWrapperREADONLY(assetId: String) = {
 
 @Callable(i)
 func calcPricesWrapperREADONLY(amAmt: Int, prAmt: Int, lpAmt: Int) = {
+  strict checkForceStop = isForceStopped()
   let pr = calcPrices(amAmt, prAmt, lpAmt)
   (
     [],
@@ -1660,6 +1698,7 @@ func calcPricesWrapperREADONLY(amAmt: Int, prAmt: Int, lpAmt: Int) = {
 
 @Callable(i)
 func fromX18WrapperREADONLY(val: String, resScaleMult: Int) = {
+  strict checkForceStop = isForceStopped()
   (
     [],
     f1(val.parseBigIntValue(), resScaleMult)
@@ -1668,6 +1707,7 @@ func fromX18WrapperREADONLY(val: String, resScaleMult: Int) = {
 
 @Callable(i)
 func toX18WrapperREADONLY(origVal: Int, origScaleMult: Int) = {
+  strict checkForceStop = isForceStopped()
   (
     [],
     t1(origVal, origScaleMult).toString()
@@ -1676,6 +1716,7 @@ func toX18WrapperREADONLY(origVal: Int, origScaleMult: Int) = {
 
 @Callable(i)
 func calcPriceBigIntWrapperREADONLY(prAmtX18: String, amAmtX18: String) = {
+  strict checkForceStop = isForceStopped()
   (
     [],
     cpbi(prAmtX18.parseBigIntValue(), amAmtX18.parseBigIntValue()).toString()
@@ -1716,6 +1757,7 @@ func estimatePutOperationWrapperREADONLY(
 
 @Callable(i)
 func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpAmt: Int, usrAddr: String) = {
+  strict checkForceStop = isForceStopped()
   let r = ego(
     txId58,
     pmtAsId,
@@ -1730,6 +1772,7 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 
 @Callable(i)
 func changeAmp() = {
+  strict checkForceStop = isForceStopped()
   let cfg = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
   let (delay, delta, target) = match cfg {
     case list: List[Any] => {

@@ -135,12 +135,28 @@ func getPoolAddressAndCheckPoolStatus(
   (poolAdr, isReverse)
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func swapCalculateREADONLY(
   amountIn: Int,
   assetIn: String,
   assetOut: String
 ) = {
+  strict checkForceStop = isForceStopped()
   let (poolAdr, isReverse) = getPoolAddressAndCheckPoolStatus(assetIn, assetOut)
 
   let (plFee, prFee) = getSwapFees(poolAdr.toString())
@@ -176,6 +192,7 @@ func swap(
   assetOutRaw: String,
   addressTo: String 
 ) = {
+  strict checkForceStop = isForceStopped()
   let assetOut = if (assetOutRaw == "") then "WAVES" else assetOutRaw
   let pmt = i.payments[0].value()
   let assetIn = if(pmt.assetId == unit) then "WAVES" else pmt.assetId.value().toBase58String()

@@ -142,8 +142,24 @@ func setVerifiedActions(assetId: String, verified: Boolean) = {
   [IntegerEntry(assetId.keyStatus(), verified.verifiedToStatus())] ++ labelCommunityVerifiedActions
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func setAssetName(assetID: String, assetName: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustAdmin()
   [
     StringEntry(keyAssetName(assetID), assetName)
@@ -152,6 +168,7 @@ func setAssetName(assetID: String, assetName: String) = {
 
 @Callable(i)
 func setAssetDescription(assetID: String, assetDescription: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustAdmin()
   [
     StringEntry(keyAssetDescription(assetID), assetDescription)
@@ -160,6 +177,7 @@ func setAssetDescription(assetID: String, assetDescription: String) = {
 
 @Callable(i)
 func constructor(userPoolsContract: String, labels: List[String]) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
   strict checksAddress = userPoolsContract.addressFromString().valueOrErrorMessage("Invalid address")
 
@@ -171,6 +189,7 @@ func constructor(userPoolsContract: String, labels: List[String]) = {
 
 @Callable(i)
 func constructorV2(factoryContract: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
   strict checkAddress = factoryContract.addressFromString().valueOrErrorMessage("invalid factory contract address")
 
@@ -182,6 +201,7 @@ func constructorV2(factoryContract: String) = {
 # add amount, price and lp assets link
 @Callable(i)
 func addAssetsLink(amountAsset: String, priceAsset: String, lpAsset: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustAdmin()
   # TODO: amountAsset должен быть создан?
   [
@@ -192,6 +212,7 @@ func addAssetsLink(amountAsset: String, priceAsset: String, lpAsset: String) = {
 
 @Callable(i)
 func increaseAssetPoolsNumber(assetId: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustAdmin()
   let assetPoolsNumberKey = assetId.keyAssetPoolsNumber()
   let assetPoolsNumber = assetPoolsNumberKey.getInteger().valueOrElse(0)
@@ -201,6 +222,7 @@ func increaseAssetPoolsNumber(assetId: String) = {
 
 @Callable(i)
 func createLabel(label: String) = {
+  strict checkForceStop = isForceStopped()
   let labels = getLabels()
   strict checkCaller = i.mustAdmin()
   strict checkLabel = [
@@ -213,6 +235,7 @@ func createLabel(label: String) = {
 
 @Callable(i)
 func dropLabel(label: String) = {
+  strict checkForceStop = isForceStopped()
   let labels = getLabels()
   strict checkCaller = i.mustManager()
   strict checkLabel = labels.containsElement(label) || "Label doesn't exist".throw()
@@ -222,6 +245,7 @@ func dropLabel(label: String) = {
 
 @Callable(i)
 func addLabel(assetId: String, label: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustAdmin()
 
   assetId.addLabelActions(label, true)
@@ -229,6 +253,7 @@ func addLabel(assetId: String, label: String) = {
 
 @Callable(i)
 func deleteLabel(assetId: String, label: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustAdmin()
 
   assetId.deleteLabelActions(label, true)
@@ -236,6 +261,7 @@ func deleteLabel(assetId: String, label: String) = {
 
 @Callable(i)
 func updateTicker(assetId: String, ticker: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustAdmin()
   strict checkAsset = assetId.isCreated() || throwNoAsset()
   strict checkTicker = ticker != "" || throwInvalidTicker()
@@ -270,6 +296,7 @@ func updateTicker(assetId: String, ticker: String) = {
 
 @Callable(i)
 func deleteTicker(assetId: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustAdmin()
   let ticker = assetId.keyAssetIdToTicker().getString().valueOrErrorMessage("Invalid asset")
 
@@ -281,6 +308,7 @@ func deleteTicker(assetId: String) = {
 
 @Callable(i)
 func createOrUpdate(assetId: String, logo: String, verified: Boolean) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustAdmin()
 
   # causes an error in factory_v2.activateNewPool
@@ -299,6 +327,7 @@ func createOrUpdate(assetId: String, logo: String, verified: Boolean) = {
 
 @Callable(i)
 func setLogo(assetId: String, logo: String) = {
+  strict checkForceStop = isForceStopped()
   strict checks = [
     i.mustAdmin(),
     assetId.isCreated() || throwNoAsset()
@@ -311,6 +340,7 @@ func setLogo(assetId: String, logo: String) = {
 
 @Callable(i)
 func getAssetLogoREADONLY(assetId: String) = {
+  strict checkForceStop = isForceStopped()
   let logo = keyLogo(assetId).getString().valueOrElse("")
 
   (nil, logo)
@@ -318,6 +348,7 @@ func getAssetLogoREADONLY(assetId: String) = {
 
 @Callable(i)
 func setVerified(assetId: String, verified: Boolean) = {
+  strict checkForceStop = isForceStopped()
   strict checks = [
     i.mustAdmin(),
     assetId.isCreated() || throwNoAsset()
@@ -332,6 +363,7 @@ func setVerified(assetId: String, verified: Boolean) = {
 
 @Callable(i)
 func onEliminate(assetId: String) = {
+  strict checkForceStop = isForceStopped()
   let poolsNumber = assetId.keyAssetPoolsNumber().getInteger().valueOrElse(0)
   let actions = if (poolsNumber > 0) then [] else [DeleteEntry(assetId.keyLogo())]
 
@@ -340,17 +372,20 @@ func onEliminate(assetId: String) = {
 
 @Callable(i)
 func setAdmins(adminPubKeys: List[String]) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
   [StringEntry(keyAdminPubKeys(), adminPubKeys.makeString(SEP))]
 }
 
 @Callable(i)
 func isVerifiedREADONLY(assetId: String) = {
+  strict checkForceStop = isForceStopped()
   (nil, assetId.isVerified())
 }
 
 @Callable(i)
 func deletePool(amountAssetId: String, priceAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   let factoryContract = keyFactoryContract().getStringValue().addressFromStringValue()
   strict checkCaller = i.caller == factoryContract || i.mustManager()
 

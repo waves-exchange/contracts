@@ -164,8 +164,24 @@ func claimFixedInternal(assetId: String, address: String, releaseBlock: Int) = {
   ]
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func withdrawRevoked(assetId: String) = {
+  strict checkForceStop = isForceStopped()
   let amount = keyRevokedTotal(assetId).getInteger().valueOrElse(0)
   let asset = assetId.fromBase58String()
 
@@ -183,6 +199,7 @@ func withdrawRevoked(assetId: String) = {
 # Create vesting to address for attached amount of asset
 @Callable(i)
 func createDepositFor(address: String, blocksDuration: Int) = {
+  strict checkForceStop = isForceStopped()
   let amount = i.payments[0].amount
   let assetId = i.payments[0].assetId.value().toBase58String()
 
@@ -207,6 +224,7 @@ func createDepositFor(address: String, blocksDuration: Int) = {
 
 @Callable(i)
 func increaseDepositFor(address: String) = {
+  strict checkForceStop = isForceStopped()
   let amount = i.payments[0].amount
   let assetId = i.payments[0].assetId.value().toBase58String()
 
@@ -242,6 +260,7 @@ func increaseDepositFor(address: String) = {
 
 @Callable(i)
 func revokeDepositFor(assetId: String, address: String) = {
+  strict checkForceStop = isForceStopped()
   let totalAmount = getUserTotalAmount(assetId, address)
   let remainingAmount = getUserRemainingAmount(assetId, address)
   let claimedWXAmount = getUserClaimedAmount(assetId, address)
@@ -268,22 +287,26 @@ func revokeDepositFor(assetId: String, address: String) = {
 
 @Callable(i)
 func claim(assetId: String) = {
+  strict checkForceStop = isForceStopped()
   claimInternal(assetId, i.caller.bytes.toBase58String())
 }
 
 @Callable(i)
 func claimFor(assetId: String, address: String) = {
+  strict checkForceStop = isForceStopped()
   claimInternal(assetId, address)
 }
 
 @Callable(i)
 func claimREADONLY(assetId: String, address: String) = {
+  strict checkForceStop = isForceStopped()
  let amount = availableToClaimNow(assetId, address)
  ([], amount)
 }
 
 @Callable(i)
 func createFixedDepositFor(address: String, releaseBlock: Int) = {
+  strict checkForceStop = isForceStopped()
   let amount = i.payments[0].amount
   let assetId = i.payments[0].assetId.value().toBase58String()
   let userFixedDeposit = keyUserFixedDeposit(assetId, address, releaseBlock)
@@ -300,22 +323,26 @@ func createFixedDepositFor(address: String, releaseBlock: Int) = {
 
 @Callable(i)
 func claimFixed(assetId: String, releaseBlock: Int) = {
+  strict checkForceStop = isForceStopped()
   claimFixedInternal(assetId, i.caller.bytes.toBase58String(), releaseBlock)
 }
 
 @Callable(i)
 func claimFixedFor(assetId: String, address: String, releaseBlock: Int) = {
+  strict checkForceStop = isForceStopped()
   claimFixedInternal(assetId, address, releaseBlock)
 }
 
 @Callable(i)
 func claimFixedREADONLY(assetId: String, address: String, releaseBlock: Int) = {
+  strict checkForceStop = isForceStopped()
  let amount = availableToClaimFixed(assetId, address, releaseBlock)
  ([], amount)
 }
 
 @Callable(i)
 func revokeFixedDepositFor(assetId: String, address: String, releaseBlock: Int) = {
+  strict checkForceStop = isForceStopped()
   strict checks = [
     i.mustAdmin(),
     releaseBlock > height || "can't revoke deposit in past".throwErr(),
@@ -332,6 +359,7 @@ func revokeFixedDepositFor(assetId: String, address: String, releaseBlock: Int) 
 
 @Callable(i)
 func denyAssetClaim(assetId: String) = {
+  strict checkForceStop = isForceStopped()
   strict checks = [
 	i.mustAdmin(),
 	keyClaimDenied(assetId).getBoolean().valueOrElse(false) == false || "asset already denied".throwErr()
@@ -342,6 +370,7 @@ func denyAssetClaim(assetId: String) = {
 
 @Callable(i)
 func allowAssetClaim(assetId: String) = {
+  strict checkForceStop = isForceStopped()
   strict checks = [
 	i.mustAdmin(),
 	keyClaimDenied(assetId).getBoolean().valueOrElse(false) == true || "asset already allowed".throwErr()
@@ -352,6 +381,7 @@ func allowAssetClaim(assetId: String) = {
 
 @Callable(i)
 func stats(assetId: String, address: String) = {
+  strict checkForceStop = isForceStopped()
   ([], [
     keyUserVestingStart(assetId, address).getInteger().value(),
     keyUserVestingEnd(assetId, address).getInteger().value(),

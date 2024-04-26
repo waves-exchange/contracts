@@ -26,7 +26,7 @@ export const mochaHooks = {
   async beforeAll() {
     const spinner = ora('Initializing').start();
     // setup accounts
-    const names = ['factory', 'store', 'lp', 'matcher', 'user', 'userpools', 'voting_emission'];
+    const names = ['factory', 'store', 'lp', 'matcher', 'user', 'userpools', 'voting_emission', 'forceStop'];
     this.accounts = Object.fromEntries(names.map((item) => [item, randomSeed(seedWordsCount)]));
     const seeds = Object.values(this.accounts);
     const amount = 1e10;
@@ -47,6 +47,11 @@ export const mochaHooks = {
           key: '%s__votingEmissionContract',
           type: 'string',
           value: address(this.accounts.voting_emission, chainId),
+        },
+        {
+          key: '%s__forceStopContract',
+          type: 'string',
+          value: address(this.accounts.forceStop, chainId),
         },
       ],
       chainId,

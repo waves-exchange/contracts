@@ -430,8 +430,25 @@ func isPoolEmpty(poolContractAddress: String) = {
   getAddressBalance(poolContractAddress, amountAssetId) == 0 && getAddressBalance(poolContractAddress, priceAssetId) == 0
 }
 
+
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throwErr()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func getSwapContractREADONLY() = {
+  strict checkForceStop = isForceStopped()
   ([],
     getStringOrFail(swapContract())
   )
@@ -439,6 +456,7 @@ func getSwapContractREADONLY() = {
 
 @Callable(i)
 func getPoolLeaseConfigREADONLY(poolAddress: String, assetId: String) = {
+  strict checkForceStop = isForceStopped()
   let (isLeasable, leasedRatio) = match this.getInteger(keyLeasedRatio(poolAddress, assetId)) {
     case r:Int => (true, min([100, max([0, r])]))
     case _ => match this.getInteger(keyLeasedRatioDefault(assetId)) {
@@ -468,6 +486,7 @@ func getPoolLeaseConfigREADONLY(poolAddress: String, assetId: String) = {
 
 @Callable(i)
 func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
+  strict checkForceStop = isForceStopped()
   # we have 2 pools: WAVES/BTC (status 1) and BTC/WAVES (status 4). This hack to resolve swap path unless we make Pool Deletion
   if (asset1 == "8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS" && asset2 == "WAVES") then {
     ([],
@@ -491,6 +510,7 @@ func getLpAssetFromPoolAssetsREADONLY(asset1: String, asset2: String) = {
 
 @Callable(i)
 func getPoolAddressFromLpAssetREADONLY(lp: String) = {
+  strict checkForceStop = isForceStopped()
   ([],
     this.getString(keyMappingPoolLPAssetToPoolContractAddress(lp)).valueOrElse("")
   )
@@ -507,6 +527,7 @@ func constructor(stakingContract: String, boostingContract: String, idoContract:
 
 @Callable(i)
 func constructorV2(mathcherPub58Str: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
     strict mathcerPub = mathcherPub58Str.fromBase58String().addressFromPublicKey()
@@ -515,6 +536,7 @@ func constructorV2(mathcherPub58Str: String) = {
 
 @Callable(i)
 func constructorV3(daoContract: String, marketingContract: String, gwxRewardsContract: String, birdsContract: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
    let factoryCfg = getStringOrFail(keyFactoryConfig()).split(SEP)
@@ -538,6 +560,7 @@ func constructorV3(daoContract: String, marketingContract: String, gwxRewardsCon
 
 @Callable(i)
 func constructorV4(legacyFactoryContract: String, legacyPools: List[String]) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
   [
@@ -548,6 +571,7 @@ func constructorV4(legacyFactoryContract: String, legacyPools: List[String]) = {
 
 @Callable(i)
 func constructorV5(assetsStoreContract: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
   [
@@ -557,6 +581,7 @@ func constructorV5(assetsStoreContract: String) = {
 
 @Callable(i)
 func constructorV6(votingEmissionContract: String, priceAssets: List[String]) = {
+  strict checkForceStop = isForceStopped()
   strict cheks = [
     i.mustManager(),
     votingEmissionContract.addressFromString() != unit || "invalid voting emission contract address"
@@ -570,6 +595,7 @@ func constructorV6(votingEmissionContract: String, priceAssets: List[String]) = 
 
 @Callable(i)
 func setAdmins(adminPubKeys: List[String]) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
   [StringEntry(keyAdminPubKeys(), adminPubKeys.makeString(SEP))]
 }
@@ -591,6 +617,7 @@ func setAdmins(adminPubKeys: List[String]) = {
 # return:
 @Callable(i)
 func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr: String, lpAssetName: String, lpAssetDescr: String, poolWeight: Int, poolType: String, logo: String) = {
+  strict checkForceStop = isForceStopped()
     strict checkCaller = i.mustAdmin()
     if(getString(keyMappingPoolContractAddressToPoolAssets(poolAddress)).isDefined()) then throwErr("Pool address " + poolAddress + " already registered.") else
       let internalAmountAssetData = getInternalAssetIdOrCreate(amountAssetStr, 1)
@@ -684,6 +711,7 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
 # return:
 @Callable(i)
 func managePool(poolAddress: String, newStatus: Int) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
   let poolConfig = getPoolConfig(poolAddress)
@@ -716,6 +744,7 @@ func managePool(poolAddress: String, newStatus: Int) = {
 
 @Callable(i)
 func emit(amountToEmit: Int) = {
+  strict checkForceStop = isForceStopped()
    let caller = i.caller
    let originCaller = i.originCaller
 
@@ -742,6 +771,7 @@ func emit(amountToEmit: Int) = {
 
 @Callable(i)
 func burn(amountToBurn: Int) = {
+  strict checkForceStop = isForceStopped()
    let caller = i.caller
    let originCaller = i.originCaller
    let payment = i.payments[0].value()
@@ -758,6 +788,7 @@ func burn(amountToBurn: Int) = {
 
 @Callable(i)
 func modifyWeight(lpAssetId: String, share: Int) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.caller.bytes.toBase58String() == this.getString(keyVotingEmissionContract()).valueOrElse("") || i.mustManager()
   let poolContractAddress = keyMappingPoolLPAssetToPoolContractAddress(lpAssetId).getStringOrFail()
   let poolWeightKey = poolContractAddress.keyPoolToWeight()
@@ -783,6 +814,7 @@ func modifyWeight(lpAssetId: String, share: Int) = {
 
 @Callable(i)
 func modifyWeights(btcPoolAddress: String, ethPoolAddress: String, ethBtcPoolAddress: String, usdcUsdtPoolAddress: String) = {
+  strict checkForceStop = isForceStopped()
    strict checkCaller = i.mustManager()
 
    let ethBtcWeightNew   = 5 * POOLWEIGHTMULT / 100   # 0.05
@@ -830,6 +862,7 @@ func modifyWeights(btcPoolAddress: String, ethPoolAddress: String, ethBtcPoolAdd
 
 @Callable(i)
 func checkWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   let haveLabel = match keyWxEmission(amountAssetId, priceAssetId).getBoolean() {
       case b: Boolean => b
       case _ => false
@@ -840,6 +873,7 @@ func checkWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
 
 @Callable(i)
 func setWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustAdmin()
 
   ([BooleanEntry(keyWxEmission(amountAssetId, priceAssetId), true)], unit)
@@ -848,6 +882,7 @@ func setWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
 
 @Callable(i)
 func deleteWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.caller == this || i.mustAdmin()
 
   ([DeleteEntry(keyWxEmission(amountAssetId, priceAssetId))], unit)
@@ -855,6 +890,7 @@ func deleteWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
 
 @Callable(i)
 func onVerificationLoss(assetId: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.caller.bytes.toBase58String() == this.getString(keyAssetsStoreContract()).valueOrElse("") || i.mustManager()
   let priceAssets = getPriceAssets()
   strict checkPriceAssetsSize = priceAssets.size() > 0 || "invalid price assets".throwErr()
@@ -871,6 +907,7 @@ func onVerificationLoss(assetId: String) = {
 
 @Callable(i)
 func isPoolOneTokenOperationsDisabledREADONLY(poolAddress: String) = {
+  strict checkForceStop = isForceStopped()
   let poolConfig = poolAddress.getPoolConfig()
   let assetsInternal = (poolConfig[idxIAmtAssetId].parseIntValue(), poolConfig[idxIPriceAssetId].parseIntValue())
   let poolOneTokenOperationsDisabled = assetsInternal.keyPoolOneTokenOperationsDisabled().getBoolean().valueOrElse(false)
@@ -881,6 +918,7 @@ func isPoolOneTokenOperationsDisabledREADONLY(poolAddress: String) = {
 
 @Callable(i)
 func isPoolSwapDisabledREADONLY(poolAddress: String) = {
+  strict checkForceStop = isForceStopped()
   let poolConfig = poolAddress.getPoolConfig()
   let assetsInternal = (poolConfig[idxIAmtAssetId].parseIntValue(), poolConfig[idxIPriceAssetId].parseIntValue())
   let poolSwapDisabled = assetsInternal.keyPoolSwapDisabled().getBoolean().valueOrElse(false)
@@ -891,12 +929,14 @@ func isPoolSwapDisabledREADONLY(poolAddress: String) = {
 
 @Callable(i)
 func getInFeeREADONLY(poolAddress: String) = {
+  strict checkForceStop = isForceStopped()
   let fee = intOrDefaultOrFallback(keyInFee(poolAddress), keyInFeeDefault(), 0)
   ([], fee)
 }
 
 @Callable(i)
 func getOutFeeREADONLY(poolAddress: String) = {
+  strict checkForceStop = isForceStopped()
   let fee = intOrDefaultOrFallback(keyOutFee(poolAddress), keyOutFeeDefault(), fraction(10, MULT8, 10_000))
   ([], fee)
 }
@@ -904,6 +944,7 @@ func getOutFeeREADONLY(poolAddress: String) = {
 # %d%d__poolFee__protocolFee
 @Callable(i)
 func getSwapFeeREADONLY(poolAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   let feeOption = match this.getString(keySwapFee(poolAddressStr)) {
     case s: String => {
       let parts = s.split(SEP)
@@ -919,6 +960,7 @@ func getSwapFeeREADONLY(poolAddressStr: String) = {
 
 @Callable(i)
 func poolInfoREADONLY(amountAssetIdStr: String, priceAssetIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   let amountAssetInternalIdOption = this.getInteger(amountAssetIdStr.keyMappingsBaseAsset2internalId())
   let priceAssetInternalIdOption = this.getInteger(priceAssetIdStr.keyMappingsBaseAsset2internalId())
   let poolContractAddressOption = this.getString(keyMappingPoolAssetsToPoolContractAddress(amountAssetInternalIdOption.value(), priceAssetInternalIdOption.value()))
@@ -937,6 +979,7 @@ func poolInfoREADONLY(amountAssetIdStr: String, priceAssetIdStr: String) = {
 
 @Callable(i)
 func getPoolStatusREADONLY(poolAddress: String) = {
+  strict checkForceStop = isForceStopped()
   let poolAssets = keyMappingPoolContractAddressToPoolAssets(poolAddress).getStringOrFail().split(SEP)
   let amountAssetInternal = poolAssets[1]
   let priceAssetInternal = poolAssets[2]
@@ -946,6 +989,7 @@ func getPoolStatusREADONLY(poolAddress: String) = {
 
 @Callable(i)
 func getPoolConfigREADONLY(poolAddress: String) = {
+  strict checkForceStop = isForceStopped()
   let poolAssets = keyMappingPoolContractAddressToPoolAssets(poolAddress).getStringOrFail().split(SEP)
   let amountAssetInternal = poolAssets[1]
   let priceAssetInternal = poolAssets[2]
@@ -955,6 +999,7 @@ func getPoolConfigREADONLY(poolAddress: String) = {
 
 @Callable(i)
 func getPoolConfigByLpAssetIdREADONLY(lpAssetIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   let poolAssets = keyMappingLpAssetToPoolAssets(lpAssetIdStr).getStringOrFail().split(SEP)
   let amountAssetInternal = poolAssets[1]
   let priceAssetInternal = poolAssets[2]
@@ -964,16 +1009,19 @@ func getPoolConfigByLpAssetIdREADONLY(lpAssetIdStr: String) = {
 
 @Callable(i)
 func poolExistsREADONLY(amountAssetId: String, priceAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   ([], poolExistsInternal(amountAssetId, priceAssetId))
 }
 
 @Callable(i)
 func skipOrderValidationREADONLY(poolAddress: String) = {
+  strict checkForceStop = isForceStopped()
   ([], keySkipOrderValidation(poolAddress).getBoolean().valueOrElse(false))
 }
 
 @Callable(i)
 func getChangeAmpConfigREADONLY(poolAddress: String) = {
+  strict checkForceStop = isForceStopped()
   let delay = keyChangeAmpDelay(poolAddress).getIntegerValue()
   let delta = keyChangeAmpDelta(poolAddress).getIntegerValue()
   let target = keyChangeAmpTarget(poolAddress).getIntegerValue()
@@ -982,6 +1030,7 @@ func getChangeAmpConfigREADONLY(poolAddress: String) = {
 
 @Callable(i)
 func getPoolWeightREADONLY(lpAssetId: String) = {
+  strict checkForceStop = isForceStopped()
   let poolAddress = keyMappingPoolLPAssetToPoolContractAddress(lpAssetId).getStringOrFail()
   let weight = keyPoolToWeight(poolAddress).getInteger().valueOrElse(0)
 
@@ -990,6 +1039,7 @@ func getPoolWeightREADONLY(lpAssetId: String) = {
 
 @Callable(i)
 func deletePool(poolContractAddress: String) = {
+  strict checkForceStop = isForceStopped()
   let poolConfig = getPoolConfig(poolContractAddress)
 
   strict checkCaller = if (i.caller.toString() == getPoolCreator(poolContractAddress)) then {
@@ -1039,6 +1089,7 @@ func deletePool(poolContractAddress: String) = {
 
 @Callable(i)
 func getPrice(poolAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   let poolAddress = poolAddressStr.addressFromStringValue()
   let cfg = getPoolConfig(poolAddressStr)
   let lpAssetId = cfg[idxPoolLPAssetId].fromBase58String()
@@ -1068,6 +1119,7 @@ func getPrice(poolAddressStr: String) = {
 # for voting_emission.ride
 @Callable(i)
 func checkBalance(lpAssetIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   let poolAddressStr = keyMappingPoolLPAssetToPoolContractAddress(lpAssetIdStr).getStringOrFail()
   let poolAddress = addressFromStringValue(poolAddressStr)
   let cfg = getPoolConfig(poolAddressStr)

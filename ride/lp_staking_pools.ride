@@ -188,8 +188,24 @@ func calcPrice(lpAssetId: ByteVector, shareAssetId: ByteVector) = {
   price
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(separator)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(separator)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func emit(assetId: ByteVector, amount: Int) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustThis()
 
   let isReissuable = true
@@ -201,6 +217,7 @@ func emit(assetId: ByteVector, amount: Int) = {
 
 @Callable(i)
 func burn(assetId: ByteVector, amount: Int) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustThis()
 
   ([
@@ -256,6 +273,7 @@ func create(
 
 @Callable(i)
 func put() = {
+  strict checkForceStop = isForceStopped()
   let pmt = if (i.payments.size() == 1) then i.payments[0] else "exactly 1 payment is expected".throwErr()
   let baseAssetId = pmt.assetId
   let userAddress = i.caller
@@ -294,6 +312,7 @@ func put() = {
 # finish put
 @Callable(i)
 func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   # if userAddressStr != "" then i.mustThis()
   # if userAddressStr == "" then use i.caller
   strict checks = [
@@ -337,6 +356,7 @@ func claimShareAsset(baseAssetIdStr: String, userAddressStr: String) = {
 
 @Callable(i)
 func get() = {
+  strict checkForceStop = isForceStopped()
   strict checks = [
     i.shutdownCheck()
   ]
@@ -381,6 +401,7 @@ func get() = {
 # finish get
 @Callable(i)
 func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   strict checks = [
     i.shutdownCheck()
   ]
@@ -425,6 +446,7 @@ func claimBaseAsset(baseAssetIdStr: String, userAddressStr: String) = {
 
 @Callable(i)
 func finalize(baseAssetIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   strict checks = [
     i.shutdownCheck()
   ]

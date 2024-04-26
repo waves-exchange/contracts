@@ -207,13 +207,30 @@ func getSwapActions(i: Invocation, stakingNode: String) = {
   )
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func swap() = {
+  strict checkForceStop = isForceStopped()
   getSwapActions(i, "NULL")
 }
 
 @Callable(i)
 func swapAndStake(stakingNode: String) = {
+  strict checkForceStop = isForceStopped()
   strict check = [
     stakingNode.isValidAddress() || stakingNode == "" || "staking node address is no valid".throwErr()
   ]
@@ -225,6 +242,7 @@ func swapAndStake(stakingNode: String) = {
 
 @Callable(i)
 func claim() = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.caller == allowedAddress || throwErr("permission denied")
 
   ([
@@ -239,6 +257,7 @@ func claim() = {
 # Vote for txId that is allowed in Verifier
 @Callable(i)
 func voteForTxId(txId: String) = {
+  strict checkForceStop = isForceStopped()
   let callerAddressString = toBase58String(i.caller.bytes)
   let keyPrefix = keyAllowedTxIdVotePrefix(txId)
   let result = [ StringEntry(keyAllowedTxId(), txId) ]

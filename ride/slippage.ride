@@ -94,8 +94,24 @@ func mustManager(i: Invocation) = {
   }
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func constructor(factoryContract: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
     [StringEntry(keyFactoryContract(), factoryContract)]
 }
@@ -127,6 +143,7 @@ func put() = {
 
 @Callable(i)
 func invest(poolAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   let poolAddress = poolAddressStr.addressFromString().valueOrErrorMessage("invalid pool address")
   let poolAssets = factoryContract.getString(keyMappingPoolContractAddressToPoolAssets(poolAddressStr)).valueOrErrorMessage("Invalid pool passed.").split(SEP)
   let amId = factoryContract.getString(keyMappingsInternal2baseAssetId(poolAssets[1].parseIntValue())).valueOrErrorMessage("No asset mapping found")

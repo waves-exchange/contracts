@@ -681,8 +681,24 @@ func lockActions(i: Invocation, duration: Int) = {
   ], gWxAmountStart)
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 @Callable(i)
 func constructor(factoryAddressStr: String, lockAssetIdStr: String, minLockAmount: Int, minDuration: Int, maxDuration: Int, mathContract: String) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
 
   [IntegerEntry(keyNextUserNum(), 0),
@@ -696,6 +712,7 @@ func constructor(factoryAddressStr: String, lockAssetIdStr: String, minLockAmoun
 
 @Callable(i)
 func lockRef(duration: Int, referrerAddress: String, signature: ByteVector) = {
+  strict checkForceStop = isForceStopped()
   let (lockActionsResult, gWxAmountStart) = i.lockActions(duration)
   let referralAddress = i.caller.toString()
   strict refInv = if (referrerAddress == "" || signature == base58'') then unit else {
@@ -708,6 +725,7 @@ func lockRef(duration: Int, referrerAddress: String, signature: ByteVector) = {
 
 @Callable(i)
 func lock(duration: Int) = {
+  strict checkForceStop = isForceStopped()
   let (lockActionsResult, gWxAmountStart) = i.lockActions(duration)
   strict updateRefActivity = mathContract.invoke("updateReferralActivity", [i.caller.toString(), gWxAmountStart], [])
 
@@ -716,6 +734,7 @@ func lock(duration: Int) = {
 
 @Callable(i)
 func increaseLock(deltaDuration: Int) = {
+  strict checkForceStop = isForceStopped()
   let cfgArray          = readConfigArrayOrFail()
   let assetIdStr        = cfgArray[IdxCfgAssetId]
   let assetId           = assetIdStr.fromBase58String()
@@ -770,6 +789,7 @@ func increaseLock(deltaDuration: Int) = {
 
 @Callable(i)
 func claimWxBoost(lpAssetIdStr: String, userAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   if (stakingContract != i.caller) then throwErr("permissions denied") else
   let (userBoostAvailable, dataState, debug) = internalClaimWxBoost(lpAssetIdStr, userAddressStr, false)
 
@@ -778,12 +798,14 @@ func claimWxBoost(lpAssetIdStr: String, userAddressStr: String) = {
 
 @Callable(i)
 func claimWxBoostREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   let (userBoostAvailable, dataState, debug) = internalClaimWxBoost(lpAssetIdStr, userAddressStr, true)
   ([], [userBoostAvailable, debug])
 }
 
 @Callable(i)
 func unlock(userAddress: String) = {
+  strict checkForceStop = isForceStopped()
   let userRecordArray   = readLockParamsRecordOrFail(userAddress)
 
   let userNumStr          = userRecordArray[IdxLockUserNum]
@@ -808,6 +830,7 @@ func unlock(userAddress: String) = {
 
 @Callable(i)
 func gwxUserInfoREADONLY(userAddress: String) = {
+  strict checkForceStop = isForceStopped()
     let gwxAmount = calcCurrentGwxAmount(userAddress)
 
     ([], [gwxAmount])
@@ -816,6 +839,7 @@ func gwxUserInfoREADONLY(userAddress: String) = {
 # for lp_staking_pools
 @Callable(i)
 func userMaxDurationREADONLY(userAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   let cfgArray = readConfigArrayOrFail()
   let maxLockDuration = cfgArray[IdxCfgMaxLockDuration].parseIntValue()
 
@@ -835,6 +859,7 @@ func userMaxDurationREADONLY(userAddressStr: String) = {
 
 @Callable(i)
 func getUserGwxAmountAtHeightREADONLY(userAddress: String, targetHeight: Int) = {
+  strict checkForceStop = isForceStopped()
   let gwxAmount = userAddress.calcUserGwxAmountAtHeight(targetHeight)
 
   ([], gwxAmount)
@@ -842,12 +867,14 @@ func getUserGwxAmountAtHeightREADONLY(userAddress: String, targetHeight: Int) = 
 
 @Callable(i)
 func getTotalCachedGwxREADONLY() = {
+  strict checkForceStop = isForceStopped()
   ([], getTotalCachedGwx(true))
 }
 
 # call this function when wxEmissionRate or boostCoeff changes
 @Callable(i)
 func onBoostEmissionUpdate() = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.caller == emissionContract || i.mustManager()
   refreshBoostEmissionIntegral()
 }
@@ -864,6 +891,7 @@ func onBoostEmissionUpdate() = {
 #                           ╰ edge = false (falling)
 @Callable(i)
 func onStakedVoteUpdate(lpAssetIdStr: String, userAddressStr: String, edge: Boolean) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.caller == stakingContract || i.mustManager()
   let actions = lpAssetIdStr.refreshVoteStakedIntegral(userAddressStr, edge)
 
@@ -872,21 +900,25 @@ func onStakedVoteUpdate(lpAssetIdStr: String, userAddressStr: String, edge: Bool
 
 @Callable(i)
 func getVotingResultStakedREADONLY(lpAssetIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   ([], lpAssetIdStr.getVotingResultStaked())
 }
 
 @Callable(i)
 func getVotingResultStakedIntegralREADONLY(lpAssetIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   ([], lpAssetIdStr.getVotingResultStakedIntegral())
 }
 
 @Callable(i)
 func getUserVoteFinalizedREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   ([], lpAssetIdStr.getUserVoteFinalized(userAddressStr))
 }
 
 @Callable(i)
 func getUserVoteStakedIntegralREADONLY(lpAssetIdStr: String, userAddressStr: String) = {
+  strict checkForceStop = isForceStopped()
   ([], lpAssetIdStr.getUserVoteStakedIntegral(userAddressStr))
 }
 

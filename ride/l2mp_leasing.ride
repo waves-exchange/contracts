@@ -394,8 +394,25 @@ func getSetNewPeriodLengthActions(newPeriodLength: Int) = {
     }
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
+
 @Callable(i)
 func setNewPeriodLength(newPeriodLength: Int) = {
+  strict checkForceStop = isForceStopped()
     strict checks = [
         isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr()
     ]
@@ -405,6 +422,7 @@ func setNewPeriodLength(newPeriodLength: Int) = {
 
 @Callable(i)
 func setForceStopFlag(stop: Boolean) = {
+  strict checkForceStop = isForceStopped()
     strict check = [
         isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr()
     ]
@@ -422,6 +440,7 @@ func setForceStopFlag(stop: Boolean) = {
 # _5 = current height
 @Callable(i)
 func getNodeDataREADONLY(nodeAddress: String) = {
+  strict checkForceStop = isForceStopped()
     let (currentLease, nextLeased) = getLeasingNodeData(nodeAddress)
 
     ([], (currentPeriodHeight, currentLease, nextPeriodHeight, nextLeased, height))
@@ -435,6 +454,7 @@ func getNodeDataREADONLY(nodeAddress: String) = {
 # _5 = current height
 @Callable(i)
 func getUserLeasingDataREADONLY(nodeAddress: String, userAddress: String) = {
+  strict checkForceStop = isForceStopped()
     let (currentLease, nextLeased) = getUserLeasingData(nodeAddress, userAddress)
 
     ([], (currentPeriodHeight, currentLease, nextPeriodHeight, nextLeased, height))
@@ -449,6 +469,7 @@ func getUserLeasingDataREADONLY(nodeAddress: String, userAddress: String) = {
 # _6 = current height
 @Callable(i)
 func getUserDataREADONLY(userAddress: String) = {
+  strict checkForceStop = isForceStopped()
     let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
     let userTotalLocked = getUserTotalLocked(userAddress)
 
@@ -457,11 +478,13 @@ func getUserDataREADONLY(userAddress: String) = {
 
 @Callable(i)
 func leaseByAddress(nodeAddress: String, userAddress: String) = {
+  strict checkForceStop = isForceStopped()
     getStakeFromPaymentActions(nodeAddress, userAddress, i)
 }
 
 @Callable(i)
 func lease(nodeAddress: String) = {
+  strict checkForceStop = isForceStopped()
     let userAddress = i.caller.toString()
 
     getStakeFromPaymentActions(nodeAddress, userAddress, i)
@@ -469,6 +492,7 @@ func lease(nodeAddress: String) = {
 
 @Callable(i)
 func leaseFromLocked(nodeAddress: String, amount: Int) = {
+  strict checkForceStop = isForceStopped()
     let userAddress = i.caller.toString()
 
     getStakeActions(nodeAddress, userAddress, amount, i)
@@ -476,6 +500,7 @@ func leaseFromLocked(nodeAddress: String, amount: Int) = {
 
 @Callable(i)
 func cancelLease(nodeAddress: String, amount: Int) = {
+  strict checkForceStop = isForceStopped()
     let userAddress = i.caller.toString()
 
     getUnstakeActions(nodeAddress, userAddress, amount)
@@ -483,6 +508,7 @@ func cancelLease(nodeAddress: String, amount: Int) = {
 
 @Callable(i)
 func claim(amount: Int) = {
+  strict checkForceStop = isForceStopped()
     let userAddress = i.caller.toString()
 
     getClaimUnlockedActions(userAddress, amount)
@@ -490,6 +516,7 @@ func claim(amount: Int) = {
 
 @Callable(i)
 func claimAll() = {
+  strict checkForceStop = isForceStopped()
     let userAddress = i.caller.toString()
     let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
 
@@ -506,6 +533,7 @@ func claimAll() = {
 # Vote for txId that is allowed in Verifier
 @Callable(i)
 func voteForTxId(txId: String) = {
+  strict checkForceStop = isForceStopped()
   let callerAddressString = toBase58String(i.caller.bytes)
   let keyPrefix = keyAllowedTxIdVotePrefix(txId)
   let result = [ StringEntry(keyAllowedTxId(), txId) ]

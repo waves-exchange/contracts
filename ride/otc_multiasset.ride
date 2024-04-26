@@ -79,9 +79,25 @@ func fmtErr(msg: String) = ["otc_multiasset.ride:", msg].makeString(" ")
 
 func throwErr(msg: String) = msg.fmtErr().throw()
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 #registering a new pair of assets
 @Callable(i)
 func registerAsset(assetA: String, assetB: String, withdrawDelay: Int, depositFee: Int, withdrawFee: Int, minAmountDeposit: Int, minAmountWithdraw: Int, pairStatus: Int) = {
+  strict checkForceStop = isForceStopped()
     strict checkCaller = i.mustManager()
 
     let withdrawDelayKey = keyWithdrawDelay(assetA, assetB)
@@ -104,6 +120,7 @@ func registerAsset(assetA: String, assetB: String, withdrawDelay: Int, depositFe
 #exchange asset A for B
 @Callable(i)
 func swapAssetsAToB(assetB: String) = {
+  strict checkForceStop = isForceStopped()
     let payment = i.payments[0].value()
     let assetA = payment.assetId.value().toBase58String()
     let asset = assetB.value().fromBase58String()
@@ -136,6 +153,7 @@ func swapAssetsAToB(assetB: String) = {
 #initialize the exchange of asset B for A
 @Callable(i)
 func initializationSwapAssetsBToA(assetA: String) = {
+  strict checkForceStop = isForceStopped()
     let payment = i.payments[0].value()
     let toWithdraw = payment.amount
     let assetB = payment.assetId.value().toBase58String()
@@ -168,6 +186,7 @@ func initializationSwapAssetsBToA(assetA: String) = {
 #withdraw assets initialized at the specified height
 @Callable(i)
 func withdrawAsset(assetA: String, assetB: String, heightInKey: Int) = {
+  strict checkForceStop = isForceStopped()
     let userAddress = i.caller.toString()
 
     let toWithdraw = keyProcessInProgress(userAddress, assetA, assetB, heightInKey).getInteger().valueOrErrorMessage("At this height, withdraw was not initialized with this pair of assets.".fmtErr())
@@ -186,6 +205,7 @@ func withdrawAsset(assetA: String, assetB: String, heightInKey: Int) = {
 #withdraws the collected commission to the manager's address
 @Callable(i)
 func withdrawFee(assetA: String, assetB: String) = {
+  strict checkForceStop = isForceStopped()
     strict checkCaller = i.mustManager()
 
     let toWithdrawA = keyTotalFeeCollectedDeposit(assetA, assetB).getInteger().valueOrElse(0)

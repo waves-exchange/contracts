@@ -442,9 +442,25 @@ func commonExecute(operationType: String, baseAssetStr: String, userAddressStr: 
     :+ TotalLockedStringEntry("DECREMENT", keyTotalLockedByUser(internalBaseAssetStr, userAddressStr), diffTuple._2)
 }
 
+### Force Stop check function
+func isForceStopped() = {
+  let keyForceStopContract = ["%s", "forceStopContract"].makeString(SEP)
+  let forceStopAddressString = this.getString(keyForceStopContract).valueOrElse("")
+  let forceStopAddress = forceStopAddressString.addressFromString().valueOrElse(this)
+
+  let keyDisabledStatus = ["%s%s", "disabled", this.toString()].makeString(SEP)
+  let disabledStatus = forceStopAddress.getBoolean(keyDisabledStatus).valueOrElse(false)
+
+  if (disabledStatus == true) 
+    then "Force stopped".throw()
+    else false
+}
+### End Force Stop function
+
 # read only to provide data
 #@Callable - workaround to disable minification
 func privateCurrentSysParamsREST(baseAssetStr: String) = {
+  strict checkForceStop = isForceStopped()
   let baseAssetId = baseAssetStr.fromBase58String()
 
   let cfgArray = readAssetCfgOrFail(baseAssetStr)
@@ -490,6 +506,7 @@ func adminRegisterAsset(baseAssetStr:        String, shareAssetName:          St
                         topupIntervalInBlocks:  Int, topupMaxNegativePart:    Int,    topupManagerAddress: String,
                         submitLimitsBaseMax:    Int, submitLimitsBaseReset:   Int,
                         submitLimitsShareMax:   Int, submitLimitsShareReset:  Int,    adminAddress: String) = {
+  strict checkForceStop = isForceStopped()
   # TODO submitLimitsBaseMax and submitLimitsShareMax can be < 0
   let baseAssetId = baseAssetStr.fromBase58String()
   let bothAssetsDecimals = assetInfo(baseAssetId).value().decimals
@@ -574,6 +591,7 @@ func adminRegisterAsset(baseAssetStr:        String, shareAssetName:          St
 
 @Callable(i)
 func shutdownSubmits(internalBaseAssetId: Int) = {
+  strict checkForceStop = isForceStopped()
   strict checkCaller = i.mustManager()
   let internalBaseAssetIdStr = internalBaseAssetId.toString()
   let baseAssetIdStr = getStringOrFail(keyMappingsInternal2baseAssetId(internalBaseAssetId))
@@ -585,6 +603,7 @@ func shutdownSubmits(internalBaseAssetId: Int) = {
 
 @Callable(i)
 func submitPut() = {
+  strict checkForceStop = isForceStopped()
   let pmt = i.payments[0].value()
   let inAmount = pmt.amount
   let inAssetId = pmt.assetId.value()
@@ -594,6 +613,7 @@ func submitPut() = {
 
 @Callable(i)
 func submitGet() = {
+  strict checkForceStop = isForceStopped()
   let pmt = i.payments[0].value()
   let inAmount = pmt.amount
   let inAssetId = pmt.assetId.value()
@@ -604,16 +624,19 @@ func submitGet() = {
 
 @Callable(i)
 func executePut(baseAssetStr: String, userAddressStr: String, submitTxIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   commonExecute("P", baseAssetStr, userAddressStr, submitTxIdStr)
 }
 
 @Callable(i)
 func executeGet(baseAssetStr: String, userAddressStr: String, submitTxIdStr: String) = {
+  strict checkForceStop = isForceStopped()
   commonExecute("G", baseAssetStr, userAddressStr, submitTxIdStr)
 }
 
 @Callable(i)
 func operationsMutex(baseAssetStr: String) = {
+  strict checkForceStop = isForceStopped()
   let assetCfgArray           = readAssetCfgOrFail(baseAssetStr)
   let topUpManagerAddressStr  = assetCfgArray[IdxCfgTopupManagerAddress]
   let internalBaseAssetStr    = assetCfgArray[IdxCfgInternalBaseAsset]
@@ -624,6 +647,7 @@ func operationsMutex(baseAssetStr: String) = {
 
 @Callable(i)
 func topUpBalance(baseAssetStr: String, income: Int) = {
+  strict checkForceStop = isForceStopped()
   let baseAssetId = baseAssetStr.fromBase58String()
 
   let cfg           = readAssetCfgOrFail(baseAssetStr)
@@ -691,6 +715,7 @@ func topUpBalance(baseAssetStr: String, income: Int) = {
 
 @Callable(i)
 func currentSysParamsREST(baseAssetStr: String)= {
+  strict checkForceStop = isForceStopped()
   let sysStateTuple = privateCurrentSysParamsREST(baseAssetStr)
   # (price, decimalsMultPrice, baseAssetBalance, -1, baseAssetBalanceWCO, shareEmission, currIterTotalInBaseAmount, currIterTotalInShareAmount, totalLockedOutBaseAmount, totalLockedOutShareAmount, decimalsMultBothAssets, priceATH)
   let price                           = sysStateTuple._1.value
