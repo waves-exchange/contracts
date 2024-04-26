@@ -148,7 +148,7 @@ describe(`${process.pid}: voting_emission: resume`, () => {
     })).to.be.rejectedWith('invalid assets');
   });
 
-  it('assets should be attached if balances is not okay', async function () {
+  it('assets should be attached if balances are too low', async function () {
     const amountAssetIdInternal = 0;
     const priceAssetIdInternal = 1;
     await broadcastAndWait(data({
@@ -172,6 +172,27 @@ describe(`${process.pid}: voting_emission: resume`, () => {
       payments: [
         { assetId: this.wxAssetId, amount: resumptionFee },
       ],
-    })).to.be.rejectedWith('assets should be attached');
+    })).to.be.rejectedWith('balances are too low');
+  });
+
+  it('successfully resume with only fee attached', async function () {
+    await broadcastAndWait(data({
+      data: [
+        { key: `checkBalanceResult__${lpAssetId}`, type: 'boolean', value: true },
+      ],
+      additionalFee: 4e5,
+      chainId,
+    }, this.accounts.factory.seed));
+
+    await expect(votingEmission.resume({
+      dApp: this.accounts.votingEmission.addr,
+      caller: this.accounts.user0.seed,
+      amountAssetId,
+      priceAssetId,
+      slippageToleranceOrMinOutAmount: 0,
+      payments: [
+        { assetId: this.wxAssetId, amount: resumptionFee },
+      ],
+    })).to.be.fulfilled;
   });
 });

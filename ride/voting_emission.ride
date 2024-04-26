@@ -879,8 +879,7 @@ func resume(amountAssetId: String, priceAssetId: String, slippageToleranceOrMinO
   strict lpAssetBalanceBefore = this.assetBalance(lpAssetId)
   let autoStake = false
   strict put = if (i.payments.size() == 1) then {
-    let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId.assetIdToString()], []).exactAs[Boolean]
-    balanceIsOk || throwErr("assets should be attached")
+    unit
   } else if (i.payments.size() == 2) then {
     # put one token
     let poolScriptHash = poolAddress.scriptHash().valueOrErrorMessage(
@@ -899,6 +898,10 @@ func resume(amountAssetId: String, priceAssetId: String, slippageToleranceOrMinO
   } else {
     throwErr("invalid payments size")
   }
+
+  let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId.assetIdToString()], []).exactAs[Boolean]
+  strict checkBalance = balanceIsOk || throwErr("balances are too low")
+
   strict lpAssetBalanceAfter = this.assetBalance(lpAssetId)
   let lpAssetBalanceDiff = lpAssetBalanceAfter - lpAssetBalanceBefore
   let lpAssetTransferActions = if (lpAssetBalanceDiff > 0) then [

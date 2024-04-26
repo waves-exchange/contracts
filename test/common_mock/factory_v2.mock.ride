@@ -8,6 +8,11 @@ let wavesString = "WAVES"
 let poolLabelWxEmission = "WX_EMISSION"
 let validPoolLabels = [poolLabelWxEmission]
 
+let poolStatusActive = 1
+let poolStatusPutDisabled = 2
+let poolStatusMatcherDisabled = 3
+let poolStatusShutdown = 4
+
 func keyWxEmission(amountAssetId: String, priceAssetId: String)
       = "%s%s%s__wxEmission__" + amountAssetId + "__" + priceAssetId
 
@@ -90,4 +95,9 @@ func onVerificationLoss(assetId: String) = {
 @Callable(i)
 func checkBalance(lpAssetIdStr: String) = {
   (nil, this.getBoolean("checkBalanceResult__" + lpAssetIdStr).valueOrElse(true))
+}
+
+@Callable(i)
+func getPoolStatusREADONLY(poolAddress: String) = {
+  (nil, this.getInteger("getPoolStatusREADONLY__" + poolAddress).valueOrElse(poolStatusActive))
 }
