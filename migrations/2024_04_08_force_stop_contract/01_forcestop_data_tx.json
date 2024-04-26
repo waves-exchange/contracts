@@ -3,7 +3,7 @@
     "fee": 500000,
     "feeAssetId": null,
     "version": 2,
-    "senderPublicKey": "",
+    "senderPublicKey": "3hP4hEyMLcQrPrEhRkFjYvqKWMFTEsoT7ws1sN94KgwW",
     "data": [
         {
             "key": "%s__managerVaultAddress",
