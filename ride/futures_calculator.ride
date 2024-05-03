@@ -12,6 +12,7 @@ func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString
 
 let kShutdown = "%s__shutdown"
 let kPublicKeys = "%s__publicKeys"
+let kMatcherPublicKey = "%s__matcherPublicKey"
 
 func validateAddress(address: String) = {
   addressFromString(address).isDefined()
@@ -133,6 +134,22 @@ func pairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) 
   factoryAddress.getBoolean(
     kPairAllowed(amountAssetId, priceAssetId)
   ).valueOrElse(false)
+}
+
+func kPrice(assetId: ByteVector|Unit) = {
+  ["%s", assetIdToString(assetId)].makeString(separator)
+}
+
+func getCurrentPrice(assetId: ByteVector|Unit) = {
+  let matcherPublicKey = factoryAddress.getString(kMatcherPublicKey).valueOrErrorMessage(
+    wrapErr("invalid matcher public key")
+  ).fromBase58String()
+  let matcherAddress = addressFromPublicKey(matcherPublicKey)
+  let price = matcherAddress.getInteger(kPrice(assetId)).valueOrErrorMessage(
+    wrapErr("invalid price, assetId = " + assetIdToString(assetId))
+  )
+
+  price
 }
 
 @Callable(i)
