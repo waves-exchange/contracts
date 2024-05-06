@@ -85,6 +85,11 @@ func accountsLimit() = factoryAddress.getInteger(
   kAccountsLimit
 ).valueOrElse(accountsLimitDefault)
 
+func kDeposited(accountAddress: Address) = ["%s", "deposited", accountAddress.toString()].makeString(separator)
+func depositedOption(accountAddress: Address) = factoryAddress.getInteger(
+  kDeposited(accountAddress)
+)
+
 let REQUEST_STATUS_EMPTY = 0
 let REQUEST_STATUS_READY = 1
 func kRequestStatus(requestId: ByteVector) = {
@@ -150,6 +155,63 @@ func getCurrentPrice(assetId: ByteVector|Unit) = {
   )
 
   price
+}
+
+func calcTotalCredit(creditA: Int, creditB: Int, currentPrice: Int) = {
+  creditA * currentPrice + creditB
+}
+
+func calcTotalBalance(balanceA: Int, balanceB: Int, currentPrice: Int) = {
+  balanceA * currentPrice + balanceB
+}
+
+func calcPnl(totalBalance: Int, totalCredit: Int) = {
+  totalBalance - totalCredit
+}
+
+func calcCreditAvailable(deposit: Int, leverage: Int, totalCredit: Int) = {
+  deposit * leverage - totalCredit
+}
+
+func calcRealInCredit(credit: Int, balance: Int) = {
+  if (credit > 0) then credit - balance else 0
+}
+
+func calcFree(credit: Int, balance: Int) = {
+  if (credit > 0) then balance - credit else 0
+}
+
+func calcShortPrice(free: Int, realInCredit: Int) = {
+  if (realInCredit > 0) then max([0, free / realInCredit]) else 0
+}
+
+func calcLongPrice(free: Int, realInCredit: Int) = {
+  if (realInCredit > 0) then max([0, realInCredit / free]) else 0
+}
+
+func calcStartMargin(realInCreditA: Int, realInCreditB: Int, currentPrice: Int, settingsMargin: Int) = {
+  (realInCreditA * currentPrice + realInCreditB) * settingsMargin
+}
+
+func calcMarginSupply(settingsMarginSupply: Int, settingsMargin: Int, startMargin: Int) = {
+  settingsMarginSupply / settingsMargin * startMargin
+}
+
+func calcLiquidationPrice(
+  deposit: Int,
+  marginSupply: Int,
+  realInCreditA: Int,
+  realInCreditB: Int,
+  shortPrice: Int,
+  longPrice: Int
+) = {
+  let liquidationPriceA = if (realInCreditA > 0) then {
+    (deposit - marginSupply) / realInCreditA + shortPrice
+  } else 0
+  let liquidationPriceB = if (realInCreditB > 0) then {
+    longPrice - (deposit - marginSupply) / (realInCreditA / longPrice)
+  } else 0
+  liquidationPriceA + liquidationPriceB
 }
 
 @Callable(i)
@@ -296,7 +358,13 @@ func deposit(callerPublicKey: ByteVector, args: List[String]) = {
   ]
 
   let factoryActions = [
-    # factoryAddress.invoke("integerEntry", [kDeposited(requestId), deposited(requestId) + payment.amount], [])
+    factoryAddress.invoke(
+      "integerEntry",
+      [
+        kDeposited(accountAddress),
+        depositedOption(accountAddress).valueOrElse(0) + payment.amount
+      ], []
+    )
   ]
 
   (actions, factoryActions)
