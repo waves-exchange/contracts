@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-495-low-balance**](https://github.com/waves-exchange/contracts/tree/wxdefi-495-low-balance) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **17:28 26.04.2024** (GMT+4)
+[**wxdefi-495-low-balance**](https://github.com/waves-exchange/contracts/tree/wxdefi-495-low-balance) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **20:24 06.05.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
