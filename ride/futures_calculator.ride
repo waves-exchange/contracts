@@ -91,8 +91,8 @@ func depositedOption(accountAddress: Address) = factoryAddress.getInteger(
 )
 func kCredit(accountAddress: Address, assetId: ByteVector|Unit) = ["%s%s%s", "credit", accountAddress.toString(), assetId.assetIdToString()].makeString(separator)
 func kLeverage(accountAddress: Address) = ["%s%s", "leverage", accountAddress.toString()].makeString(separator)
-# TODO: create a function for adding this?
-func kSyntheticAssetId(assetId: ByteVector|Unit) = ["%s%s", "syntheticAssetId", assetId.assetIdToString()].makeString(separator)
+func kSyntheticAssetId(baseAssetId: ByteVector|Unit) = ["%s%s", "syntheticAssetId", baseAssetId.assetIdToString()].makeString(separator)
+func kBaseAssetId(syntheticAssetId: ByteVector|Unit) = ["%s%s", "baseAssetId", syntheticAssetId.assetIdToString()].makeString(separator)
 
 let REQUEST_STATUS_EMPTY = 0
 let REQUEST_STATUS_READY = 1
@@ -471,6 +471,36 @@ func setPairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
 
   let invocations = [
     factoryAddress.invoke("booleanEntry", [kPairAllowed(amountAssetId, priceAssetId), allow], [])
+  ]
+
+  (nil, invocations)
+}
+
+# args: [assetId]
+@Callable(i)
+func addSyntheticAsset(callerPublicKey: ByteVector, args: List[String]) = {
+  let baseAssetIdStr = args[0]
+  let baseAssetId = parseAssetId(baseAssetIdStr)
+  let syntheticAssetId = i.payments[0].assetId
+
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory(),
+    callerPublicKey.mustAdmin(),
+    factoryAddress.getString(kSyntheticAssetId(baseAssetId)) == unit || throwErr(
+      "invalid base asset"
+    ),
+    i.payments.size() == 1 || throwErr(
+      "invalid payments"
+    ),
+    factoryAddress.getString(kBaseAssetId(syntheticAssetId)) == unit || throwErr(
+      "invalid synthetic asset"
+    )
+  ]
+
+  let invocations = [
+    factoryAddress.invoke("stringEntry", [kSyntheticAssetId(baseAssetId), assetIdToString(syntheticAssetId)], []),
+    factoryAddress.invoke("stringEntry", [kBaseAssetId(syntheticAssetId), assetIdToString(baseAssetId)], [])
   ]
 
   (nil, invocations)
