@@ -408,7 +408,7 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
 }
 
 # TODO: validate owner
-# args: [accountAddress, amount]
+# args: [accountAddress, assetId, amount]
 @Callable(i)
 func borrow(callerPublicKey: ByteVector, args: List[String]) = {
   strict ckecks = [
@@ -419,7 +419,8 @@ func borrow(callerPublicKey: ByteVector, args: List[String]) = {
   let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
     wrapErr("invalid account address")
   )
-  let amountRaw = parseInt(args[1])
+  let assetId = parseAssetId(args[1])
+  let amountRaw = parseInt(args[2])
 
   let deposited = depositedOption(accountAddress).valueOrElse(0)
   let (amountAssetId, priceAssetId) = getAssetsByAccountAddress(accountAddress)
