@@ -85,10 +85,14 @@ func accountsLimit() = factoryAddress.getInteger(
   kAccountsLimit
 ).valueOrElse(accountsLimitDefault)
 
-func kDeposited(accountAddress: Address) = ["%s", "deposited", accountAddress.toString()].makeString(separator)
+func kDeposited(accountAddress: Address) = ["%s%s", "deposited", accountAddress.toString()].makeString(separator)
 func depositedOption(accountAddress: Address) = factoryAddress.getInteger(
   kDeposited(accountAddress)
 )
+func kCredit(accountAddress: Address, assetId: ByteVector|Unit) = ["%s%s%s", "credit", accountAddress.toString(), assetId.assetIdToString()].makeString(separator)
+func kLeverage(accountAddress: Address) = ["%s%s", "leverage", accountAddress.toString()].makeString(separator)
+# TODO: create a function for adding this?
+func kSyntheticAssetId(assetId: ByteVector|Unit) = ["%s%s", "syntheticAssetId", assetId.assetIdToString()].makeString(separator)
 
 let REQUEST_STATUS_EMPTY = 0
 let REQUEST_STATUS_READY = 1
@@ -214,6 +218,14 @@ func calcLiquidationPrice(
   liquidationPriceA + liquidationPriceB
 }
 
+func getAssetsByAccountAddress(accountAddress: Address) = {
+  let requestId = factoryAddress.getString(kAccountAddressToRequestId(accountAddress)).valueOrErrorMessage(wrapErr("invalid account address")).fromBase58String()
+  let amountAssetId = factoryAddress.getString(kRequestAmountAssetId(requestId)).valueOrErrorMessage(wrapErr("invalid amount asset id")).parseAssetId()
+  let priceAssetId = factoryAddress.getString(kRequestPriceAssetId(requestId)).valueOrErrorMessage(wrapErr("invalid amount price id")).parseAssetId()
+
+  (amountAssetId, priceAssetId)
+}
+
 @Callable(i)
 func init(
   factoryAddressStr: String
@@ -225,6 +237,7 @@ func init(
   ], unit)
 }
 
+# TODO: price asset id should be usdt?
 # called by user
 # additional fee in payment
 # args: [amountAssetId, priceAssetId]
@@ -394,6 +407,8 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
   (nil, invocations)
 }
 
+# TODO: validate owner
+# args: [accountAddress, amount]
 @Callable(i)
 func borrow(callerPublicKey: ByteVector, args: List[String]) = {
   strict ckecks = [
@@ -401,7 +416,32 @@ func borrow(callerPublicKey: ByteVector, args: List[String]) = {
     i.caller.mustFactory()
   ]
 
-  (nil, unit)
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+  let amountRaw = parseInt(args[1])
+
+  let deposited = depositedOption(accountAddress).valueOrElse(0)
+  let (amountAssetId, priceAssetId) = getAssetsByAccountAddress(accountAddress)
+  let currentPrice = getCurrentPrice(amountAssetId)
+  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0)
+  let creditB = factoryAddress.getInteger(kCredit(accountAddress, priceAssetId)).valueOrElse(0)
+  let totalCredit = calcTotalCredit(creditA, creditB, currentPrice)
+  let leverageDefault = 3
+  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrElse(leverageDefault)
+  let creditAvailable = calcCreditAvailable(deposited, leverage, totalCredit)
+
+  # let factoryActions = [
+  #   factoryAddress.invoke(
+  #     "integerEntry",
+  #     [
+  #       kDeposited(accountAddress),
+  #       depositedOption(accountAddress).valueOrElse(0) + payment.amount
+  #     ], []
+  #   )
+  # ]
+
+  (nil, [creditAvailable])
 }
 
 @Callable(i)
