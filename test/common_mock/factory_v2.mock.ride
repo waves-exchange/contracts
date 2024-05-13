@@ -2,12 +2,30 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+let wavesString = "WAVES"
+
 # pool labels
 let poolLabelWxEmission = "WX_EMISSION"
 let validPoolLabels = [poolLabelWxEmission]
 
+let poolStatusActive = 1
+let poolStatusPutDisabled = 2
+let poolStatusMatcherDisabled = 3
+let poolStatusShutdown = 4
+
 func keyWxEmission(amountAssetId: String, priceAssetId: String)
       = "%s%s%s__wxEmission__" + amountAssetId + "__" + priceAssetId
+
+func keyMappingsBaseAsset2internalId(baseAssetStr: String)
+      = "%s%s%s__mappings__baseAsset2internalId__" + baseAssetStr
+func keyMappingPoolAssetsToPoolContractAddress(internalAmountAssetIdStr: Int, internalPriceAssetIdStr: Int)
+      = "%d%d%s%s__" + internalAmountAssetIdStr.toString() + "__" + internalPriceAssetIdStr.toString() + "__mappings__poolAssets2PoolContract"
+func keyMappingPoolContractToLPAsset(poolContractAddress: String)
+      = "%s%s%s__" + poolContractAddress + "__mappings__poolContract2LpAsset"
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
 
 @Callable(i)
 func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr: String, lpAssetName: String, lpAssetDescr: String, poolWeight: Int, poolType: String, logo: String) = {
@@ -16,6 +34,27 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
   let lpAssetIdStr = lpAssetId.toBase58String()
   ([lpAssetIssueAction], lpAssetIdStr)
 }
+
+@Callable(i)
+func poolInfoREADONLY(amountAssetIdStr: String, priceAssetIdStr: String) = {
+  let amountAssetInternalIdOption = this.getInteger(amountAssetIdStr.keyMappingsBaseAsset2internalId())
+  let priceAssetInternalIdOption = this.getInteger(priceAssetIdStr.keyMappingsBaseAsset2internalId())
+  let poolContractAddressOption = this.getString(keyMappingPoolAssetsToPoolContractAddress(amountAssetInternalIdOption.value(), priceAssetInternalIdOption.value()))
+  let lpAssetIdOption = this.getString(poolContractAddressOption.value().keyMappingPoolContractToLPAsset())
+  let poolExists = amountAssetInternalIdOption.isDefined() && priceAssetInternalIdOption.isDefined() && poolContractAddressOption.isDefined()
+
+  let poolInfo = if (poolExists) then {
+    (
+      poolContractAddressOption.value().addressFromStringValue(),
+      lpAssetIdOption.value().parseAssetId()
+    )
+  } else unit
+
+  ([], poolInfo)
+}
+
+@Callable(i)
+func managePool(poolAddress: String, newStatus: Int) = (nil, unit)
 
 @Callable(i)
 func checkWxEmissionPoolLabel(amountAssetId: String, priceAssetId: String) = {
@@ -56,4 +95,9 @@ func onVerificationLoss(assetId: String) = {
 @Callable(i)
 func checkBalance(lpAssetIdStr: String) = {
   (nil, this.getBoolean("checkBalanceResult__" + lpAssetIdStr).valueOrElse(true))
+}
+
+@Callable(i)
+func getPoolStatusREADONLY(poolAddress: String) = {
+  (nil, this.getInteger("getPoolStatusREADONLY__" + poolAddress).valueOrElse(poolStatusActive))
 }
