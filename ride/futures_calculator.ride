@@ -6,6 +6,10 @@ let separator = "__"
 let chainId = this.bytes.drop(1).take(1)
 let chainIdW = base16'57'
 let contractFilename = "futures_calculator.ride"
+let mult8 = 100_000_000
+let mult18BigInt = 1_000_000_000_000_000_000.toBigInt()
+let wavesDecimals = 8
+let usdtDecimals = 6
 
 let kMultisig = "%s__multisig"
 func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
@@ -13,6 +17,9 @@ func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString
 let kShutdown = "%s__shutdown"
 let kPublicKeys = "%s__publicKeys"
 let kMatcherPublicKey = "%s__matcherPublicKey"
+
+func toX18(origVal: Int, origScaleMult: Int) = fraction(origVal.toBigInt(), mult18BigInt, origScaleMult.toBigInt())
+func fromX18(val: BigInt, resultScaleMult: Int) = fraction(val, resultScaleMult.toBigInt(), mult18BigInt).toInt()
 
 func validateAddress(address: String) = {
   addressFromString(address).isDefined()
