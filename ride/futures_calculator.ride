@@ -143,7 +143,7 @@ func kAccountsQueue() = {
 func accountsQueue() = factoryAddress.getBinary(kAccountsQueue()).valueOrElse(base58'')
 
 func kRequestsByOwner(ownerAddress: Address) = {
-  ["%s%s", "accounts", ownerAddress.toString()].makeString(separator)
+  ["%s%s", "requests", ownerAddress.toString()].makeString(separator)
 }
 func requestsByOwner(ownerAddress: Address) = factoryAddress.getBinary(
   kRequestsByOwner(ownerAddress)
