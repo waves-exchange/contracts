@@ -10,6 +10,8 @@ let mult8 = 100_000_000
 let mult18BigInt = 1_000_000_000_000_000_000.toBigInt()
 let wavesDecimals = 8
 let usdtDecimals = 6
+let wavesString = "WAVES"
+let queueItemSize = 32
 
 let kMultisig = "%s__multisig"
 func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
@@ -33,12 +35,27 @@ func throwErr(s: String) = {
   throw(wrapErr(s))
 }
 
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
 let kFactoryAddress = "%s__factoryAddress"
 let factoryAddressOption = match this.getString(kFactoryAddress) {
   case s: String => s.addressFromString()
   case _: Unit => unit
 }
 let factoryAddress = factoryAddressOption.valueOrErrorMessage(wrapErr("invalid factory address"))
+
+let kUsdtAssetId = "%s__usdtAssetId"
+let usdtAssetIdOption = match this.getString(kUsdtAssetId) {
+  case s: String => parseAssetId(s)
+  case _: Unit => unit
+}
+let usdtAssetId = usdtAssetIdOption.valueOrErrorMessage(wrapErr("invalid usdt asset id"))
 
 let kPricesAddress = "%s__calculatorAddress"
 
@@ -63,17 +80,6 @@ func mustAdmin(callerPublicKey: ByteVector) = {
   containsElement(
     publicKeysList, callerPublicKey.toBase58String()
   ) || throwErr("not allowed")
-}
-
-let wavesString = "WAVES"
-let queueItemSize = 32
-
-func parseAssetId(input: String) = {
-  if (input == wavesString) then unit else input.fromBase58String()
-}
-
-func assetIdToString(input: ByteVector|Unit) = {
-  if (input == unit) then wavesString else input.value().toBase58String()
 }
 
 let kAccountScript = "%s__accountScript"
@@ -360,18 +366,20 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
   ])
 }
 
-# TODO: validate payment (payment asset id - usdt)
+# Deposit USDT
 # args: [accountAddress]
 @Callable(i)
 func deposit(callerPublicKey: ByteVector, args: List[String]) = {
+  let payment = i.payments[0]
   strict ckecks = [
     !shutdown || throwErr("not allowed"),
-    i.caller.mustFactory()
+    i.caller.mustFactory(),
+    i.payments.size() == 1 || throwErr("1 payment is required"),
+    payment.assetId == usdtAssetId || throwErr("invalid asset")
   ]
   let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
     wrapErr("invalid account address")
   )
-  let payment = i.payments[0]
 
   let actions = [
     ScriptTransfer(accountAddress, payment.amount, payment.assetId)
