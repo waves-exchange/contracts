@@ -39,7 +39,6 @@ func assetIdToString(input: ByteVector|Unit) = {
 }
 
 let kFactoryPublicKey = "%s__factoryPublicKey"
-let kOwnerPublicKey = "%s__ownerPublicKey"
 
 func kAccountAddressToRequestId(accountAddress: Address) = {
   ["%s%s", accountAddress.toString(), "accountAddressToRequestId"].makeString(separator)
