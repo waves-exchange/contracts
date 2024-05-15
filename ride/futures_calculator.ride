@@ -230,7 +230,6 @@ func calcMarginSupply(settingsMarginSupply: BigInt, settingsMargin: BigInt, star
   fraction(settingsMarginSupply, startMargin, settingsMargin)
 }
 
-# TODO: BigInt
 func calcLiquidationPrice(
   deposit: BigInt,
   marginSupply: BigInt,
