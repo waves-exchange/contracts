@@ -12,6 +12,7 @@ let wavesDecimals = 8
 let usdtDecimals = 6
 let wavesString = "WAVES"
 let queueItemSize = 32
+let big0 = 0.toBigInt()
 
 let kMultisig = "%s__multisig"
 func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
@@ -174,44 +175,44 @@ func getCurrentPrice(assetId: ByteVector|Unit) = {
   price
 }
 
-func calcTotalCredit(creditA: Int, creditB: Int, currentPrice: Int) = {
+func calcTotalCredit(creditA: BigInt, creditB: BigInt, currentPrice: BigInt) = {
   creditA * currentPrice + creditB
 }
 
-func calcTotalBalance(balanceA: Int, balanceB: Int, currentPrice: Int) = {
+func calcTotalBalance(balanceA: BigInt, balanceB: BigInt, currentPrice: BigInt) = {
   balanceA * currentPrice + balanceB
 }
 
-func calcPnl(totalBalance: Int, totalCredit: Int) = {
+func calcPnl(totalBalance: BigInt, totalCredit: BigInt) = {
   totalBalance - totalCredit
 }
 
-func calcCreditAvailable(deposit: Int, leverage: Int, totalCredit: Int) = {
+func calcCreditAvailable(deposit: BigInt, leverage: BigInt, totalCredit: BigInt) = {
   deposit * leverage - totalCredit
 }
 
-func calcRealInCredit(credit: Int, balance: Int) = {
-  if (credit > 0) then credit - balance else 0
+func calcRealInCredit(credit: BigInt, balance: BigInt) = {
+  if (credit > big0) then credit - balance else big0
 }
 
-func calcFree(credit: Int, balance: Int) = {
-  if (credit > 0) then balance - credit else 0
+func calcFree(credit: BigInt, balance: BigInt) = {
+  if (credit > big0) then balance - credit else big0
 }
 
-func calcShortPrice(free: Int, realInCredit: Int) = {
-  if (realInCredit > 0) then max([0, free / realInCredit]) else 0
+func calcShortPrice(free: BigInt, realInCredit: BigInt) = {
+  if (realInCredit > big0) then max([big0, free / realInCredit]) else big0
 }
 
-func calcLongPrice(free: Int, realInCredit: Int) = {
-  if (realInCredit > 0) then max([0, realInCredit / free]) else 0
+func calcLongPrice(free: BigInt, realInCredit: BigInt) = {
+  if (realInCredit > big0) then max([big0, realInCredit / free]) else big0
 }
 
-func calcStartMargin(realInCreditA: Int, realInCreditB: Int, currentPrice: Int, settingsMargin: Int) = {
+func calcStartMargin(realInCreditA: BigInt, realInCreditB: BigInt, currentPrice: BigInt, settingsMargin: BigInt) = {
   (realInCreditA * currentPrice + realInCreditB) * settingsMargin
 }
 
-func calcMarginSupply(settingsMarginSupply: Int, settingsMargin: Int, startMargin: Int) = {
-  settingsMarginSupply / settingsMargin * startMargin
+func calcMarginSupply(settingsMarginSupply: BigInt, settingsMargin: BigInt, startMargin: BigInt) = {
+  settingsMarginSupply * startMargin / settingsMargin
 }
 
 func calcLiquidationPrice(
