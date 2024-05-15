@@ -451,18 +451,24 @@ func borrow(callerPublicKey: ByteVector, args: List[String]) = {
   let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
     wrapErr("invalid account address")
   )
-  let assetId = parseAssetId(args[1])
+  let assetIdRequested = parseAssetId(args[1])
   let amountRaw = parseInt(args[2])
 
-  let (amountAssetId, priceAssetId) = getAssetsByAccountAddress(accountAddress)
-  let deposited = depositedOption(accountAddress).valueOrElse(0).toX18(pow10Decimals(priceAssetId))
+  let amountAssetId = getAssetsByAccountAddress(accountAddress)._1
+  let deposited = depositedOption(accountAddress).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
   let currentPrice = getCurrentPrice(amountAssetId).toX18(pow10Decimals(usdtAssetId))
   let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0).toX18(pow10Decimals(amountAssetId))
-  let creditB = factoryAddress.getInteger(kCredit(accountAddress, priceAssetId)).valueOrElse(0).toX18(pow10Decimals(priceAssetId))
+  let creditB = factoryAddress.getInteger(kCredit(accountAddress, usdtAssetId)).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
   let totalCredit = calcTotalCredit(creditA, creditB, currentPrice)
   let leverageDefault = 3
   let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrElse(leverageDefault).toX18(1)
-  let creditAvailable = calcCreditAvailable(deposited, leverage, totalCredit)
+  let creditAvailableUsdt = calcCreditAvailable(deposited, leverage, totalCredit)
+
+  let creditAvailable = if (assetIdRequested == amountAssetId) then {
+    fraction(creditAvailableUsdt, mult18BigInt, currentPrice).fromX18(pow10Decimals(amountAssetId))
+  } else if (assetIdRequested == usdtAssetId) then {
+    creditAvailableUsdt.fromX18(pow10Decimals(usdtAssetId))
+  } else throwErr("invalid requested asset id")
 
   # let factoryActions = [
   #   factoryAddress.invoke(
@@ -474,7 +480,7 @@ func borrow(callerPublicKey: ByteVector, args: List[String]) = {
   #   )
   # ]
 
-  (nil, [creditAvailable.fromX18(pow10Decimals(priceAssetId))])
+  (nil, [creditAvailable])
 }
 
 @Callable(i)
