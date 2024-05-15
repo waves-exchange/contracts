@@ -44,6 +44,21 @@ func assetIdToString(input: ByteVector|Unit) = {
   if (input == unit) then wavesString else input.value().toBase58String()
 }
 
+func getAssetInfoOrFail(assetId: ByteVector) = {
+  assetInfo(assetId).valueOrErrorMessage(wrapErr("invalid asset info"))
+}
+
+func getAssetDecimalsOrFail(assetId: ByteVector|Unit) = {
+  match assetId {
+    case _: Unit => wavesDecimals
+    case assetId: ByteVector => getAssetInfoOrFail(assetId).decimals
+  }
+}
+
+func pow10(n: Int) = pow(10, 0, n, 0, 0, DOWN)
+
+func pow10Decimals(assetId: ByteVector|Unit) = pow10(getAssetDecimalsOrFail(assetId))
+
 let kFactoryAddress = "%s__factoryAddress"
 let factoryAddressOption = match this.getString(kFactoryAddress) {
   case s: String => s.addressFromString()
@@ -176,11 +191,11 @@ func getCurrentPrice(assetId: ByteVector|Unit) = {
 }
 
 func calcTotalCredit(creditA: BigInt, creditB: BigInt, currentPrice: BigInt) = {
-  creditA * currentPrice + creditB
+  fraction(creditA, currentPrice, mult18BigInt) + creditB
 }
 
 func calcTotalBalance(balanceA: BigInt, balanceB: BigInt, currentPrice: BigInt) = {
-  balanceA * currentPrice + balanceB
+  fraction(balanceA, currentPrice, mult18BigInt) + balanceB
 }
 
 func calcPnl(totalBalance: BigInt, totalCredit: BigInt) = {
@@ -188,7 +203,7 @@ func calcPnl(totalBalance: BigInt, totalCredit: BigInt) = {
 }
 
 func calcCreditAvailable(deposit: BigInt, leverage: BigInt, totalCredit: BigInt) = {
-  deposit * leverage - totalCredit
+  fraction(deposit, leverage, mult18BigInt) - totalCredit
 }
 
 func calcRealInCredit(credit: BigInt, balance: BigInt) = {
@@ -200,19 +215,19 @@ func calcFree(credit: BigInt, balance: BigInt) = {
 }
 
 func calcShortPrice(free: BigInt, realInCredit: BigInt) = {
-  if (realInCredit > big0) then max([big0, free / realInCredit]) else big0
+  if (realInCredit > big0) then max([big0, fraction(free, mult18BigInt, realInCredit)]) else big0
 }
 
 func calcLongPrice(free: BigInt, realInCredit: BigInt) = {
-  if (realInCredit > big0) then max([big0, realInCredit / free]) else big0
+  if (realInCredit > big0) then max([big0, fraction(realInCredit, mult18BigInt, free)]) else big0
 }
 
 func calcStartMargin(realInCreditA: BigInt, realInCreditB: BigInt, currentPrice: BigInt, settingsMargin: BigInt) = {
-  (realInCreditA * currentPrice + realInCreditB) * settingsMargin
+  fraction(fraction(realInCreditA, currentPrice, mult18BigInt) + realInCreditB, settingsMargin, mult18BigInt)
 }
 
 func calcMarginSupply(settingsMarginSupply: BigInt, settingsMargin: BigInt, startMargin: BigInt) = {
-  settingsMarginSupply * startMargin / settingsMargin
+  fraction(settingsMarginSupply, startMargin, settingsMargin)
 }
 
 func calcLiquidationPrice(
@@ -438,14 +453,14 @@ func borrow(callerPublicKey: ByteVector, args: List[String]) = {
   let assetId = parseAssetId(args[1])
   let amountRaw = parseInt(args[2])
 
-  let deposited = depositedOption(accountAddress).valueOrElse(0)
   let (amountAssetId, priceAssetId) = getAssetsByAccountAddress(accountAddress)
-  let currentPrice = getCurrentPrice(amountAssetId)
-  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0)
-  let creditB = factoryAddress.getInteger(kCredit(accountAddress, priceAssetId)).valueOrElse(0)
+  let deposited = depositedOption(accountAddress).valueOrElse(0).toX18(pow10Decimals(priceAssetId))
+  let currentPrice = getCurrentPrice(amountAssetId).toX18(pow10Decimals(usdtAssetId))
+  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0).toX18(pow10Decimals(amountAssetId))
+  let creditB = factoryAddress.getInteger(kCredit(accountAddress, priceAssetId)).valueOrElse(0).toX18(pow10Decimals(priceAssetId))
   let totalCredit = calcTotalCredit(creditA, creditB, currentPrice)
   let leverageDefault = 3
-  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrElse(leverageDefault)
+  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrElse(leverageDefault).toX18(1)
   let creditAvailable = calcCreditAvailable(deposited, leverage, totalCredit)
 
   # let factoryActions = [
@@ -458,7 +473,7 @@ func borrow(callerPublicKey: ByteVector, args: List[String]) = {
   #   )
   # ]
 
-  (nil, [creditAvailable])
+  (nil, [creditAvailable.fromX18(pow10Decimals(priceAssetId))])
 }
 
 @Callable(i)
