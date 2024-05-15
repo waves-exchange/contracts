@@ -67,7 +67,7 @@ let factoryAddressOption = match this.getString(kFactoryAddress) {
 let factoryAddress = factoryAddressOption.valueOrErrorMessage(wrapErr("invalid factory address"))
 
 let kUsdtAssetId = "%s__usdtAssetId"
-let usdtAssetIdOption = match this.getString(kUsdtAssetId) {
+let usdtAssetIdOption = match factoryAddress.getString(kUsdtAssetId) {
   case s: String => parseAssetId(s)
   case _: Unit => unit
 }
@@ -230,6 +230,7 @@ func calcMarginSupply(settingsMarginSupply: BigInt, settingsMargin: BigInt, star
   fraction(settingsMarginSupply, startMargin, settingsMargin)
 }
 
+# TODO: BigInt
 func calcLiquidationPrice(
   deposit: Int,
   marginSupply: Int,
@@ -248,7 +249,7 @@ func calcLiquidationPrice(
 }
 
 func getAssetsByAccountAddress(accountAddress: Address) = {
-  let requestId = factoryAddress.getString(kAccountAddressToRequestId(accountAddress)).valueOrErrorMessage(wrapErr("invalid account address")).fromBase58String()
+  let requestId = factoryAddress.getString(kAccountAddressToRequestId(accountAddress)).valueOrErrorMessage(wrapErr("invalid account address: request id is undefined")).fromBase58String()
   let amountAssetId = factoryAddress.getString(kRequestAmountAssetId(requestId)).valueOrErrorMessage(wrapErr("invalid amount asset id")).parseAssetId()
   let priceAssetId = factoryAddress.getString(kRequestPriceAssetId(requestId)).valueOrErrorMessage(wrapErr("invalid amount price id")).parseAssetId()
 
@@ -382,6 +383,7 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
   ])
 }
 
+# TODO: check if account exists
 # Deposit USDT
 # args: [accountAddress]
 @Callable(i)
