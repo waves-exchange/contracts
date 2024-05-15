@@ -232,19 +232,19 @@ func calcMarginSupply(settingsMarginSupply: BigInt, settingsMargin: BigInt, star
 
 # TODO: BigInt
 func calcLiquidationPrice(
-  deposit: Int,
-  marginSupply: Int,
-  realInCreditA: Int,
-  realInCreditB: Int,
-  shortPrice: Int,
-  longPrice: Int
+  deposit: BigInt,
+  marginSupply: BigInt,
+  realInCreditA: BigInt,
+  realInCreditB: BigInt,
+  shortPrice: BigInt,
+  longPrice: BigInt
 ) = {
-  let liquidationPriceA = if (realInCreditA > 0) then {
+  let liquidationPriceA = if (realInCreditA > big0) then {
     (deposit - marginSupply) / realInCreditA + shortPrice
-  } else 0
-  let liquidationPriceB = if (realInCreditB > 0) then {
+  } else big0
+  let liquidationPriceB = if (realInCreditB > big0) then {
     longPrice - (deposit - marginSupply) / (realInCreditA / longPrice)
-  } else 0
+  } else big0
   liquidationPriceA + liquidationPriceB
 }
 
