@@ -247,12 +247,31 @@ func calcLiquidationPrice(
   liquidationPriceA + liquidationPriceB
 }
 
-func getAssetsByAccountAddress(accountAddress: Address) = {
-  let requestId = factoryAddress.getString(kAccountAddressToRequestId(accountAddress)).valueOrErrorMessage(wrapErr("invalid account address: request id is undefined")).fromBase58String()
-  let amountAssetId = factoryAddress.getString(kRequestAmountAssetId(requestId)).valueOrErrorMessage(wrapErr("invalid amount asset id")).parseAssetId()
-  let priceAssetId = factoryAddress.getString(kRequestPriceAssetId(requestId)).valueOrErrorMessage(wrapErr("invalid amount price id")).parseAssetId()
+func getAccountAssets(accountAddress: Address) = {
+  let requestId = factoryAddress.getString(
+    kAccountAddressToRequestId(accountAddress)
+  ).valueOrErrorMessage(wrapErr("invalid account address: request id is undefined")).fromBase58String()
+
+  let amountAssetId = factoryAddress.getString(
+    kRequestAmountAssetId(requestId)
+  ).valueOrErrorMessage(wrapErr("invalid amount asset id")).parseAssetId()
+  let priceAssetId = factoryAddress.getString(
+    kRequestPriceAssetId(requestId)
+  ).valueOrErrorMessage(wrapErr("invalid amount price id")).parseAssetId()
 
   (amountAssetId, priceAssetId)
+}
+
+func getAccountOwnerPublicKey(accountAddress: Address) = {
+  let requestId = factoryAddress.getString(
+    kAccountAddressToRequestId(accountAddress)
+  ).valueOrErrorMessage(wrapErr("invalid account address: request id is undefined")).fromBase58String()
+
+  let requestOwnerPublicKey = factoryAddress.getBinary(
+    kRequestOwnerPublicKey(requestId)
+  ).valueOrErrorMessage(wrapErr("invalid amount asset id"))
+
+  requestOwnerPublicKey
 }
 
 @Callable(i)
@@ -439,22 +458,25 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
   (nil, invocations)
 }
 
-# TODO: validate owner
 # args: [accountAddress, assetId, amount]
 @Callable(i)
 func borrow(callerPublicKey: ByteVector, args: List[String]) = {
-  strict ckecks = [
-    !shutdown || throwErr("not allowed"),
-    i.caller.mustFactory()
-  ]
-
   let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
     wrapErr("invalid account address")
   )
   let assetIdRequested = parseAssetId(args[1])
   let amountRaw = parseInt(args[2])
+  let accountOwnerPublicKey = getAccountOwnerPublicKey(accountAddress)
 
-  let amountAssetId = getAssetsByAccountAddress(accountAddress)._1
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory(),
+    callerPublicKey == accountOwnerPublicKey || throwErr(
+      "can be called by account owner only"
+    )
+  ]
+
+  let amountAssetId = getAccountAssets(accountAddress)._1
   let deposited = depositedOption(accountAddress).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
   let currentPrice = getCurrentPrice(amountAssetId).toX18(pow10Decimals(usdtAssetId))
   let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0).toX18(pow10Decimals(amountAssetId))
