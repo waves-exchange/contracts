@@ -531,7 +531,7 @@ func borrow(callerPublicKey: ByteVector, args: List[String]) = {
     )
   ]
 
-  (nil, [creditAvailable])
+  (nil, [factoryActions, creditAvailable])
 }
 
 @Callable(i)
