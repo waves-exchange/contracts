@@ -254,11 +254,16 @@ func calcLiquidationPrice(
   liquidationPriceA + liquidationPriceB
 }
 
-func getAccountAssets(accountAddress: Address) = {
+func getRequestId(accountAddress: Address) = {
   let requestId = factoryAddress.getString(
     kAccountAddressToRequestId(accountAddress)
   ).valueOrErrorMessage(wrapErr("invalid account address: request id is undefined")).fromBase58String()
 
+  requestId
+}
+
+func getAccountAssets(accountAddress: Address) = {
+  let requestId = getRequestId(accountAddress)
   let amountAssetId = factoryAddress.getString(
     kRequestAmountAssetId(requestId)
   ).valueOrErrorMessage(wrapErr("invalid amount asset id")).parseAssetId()
@@ -270,9 +275,7 @@ func getAccountAssets(accountAddress: Address) = {
 }
 
 func getAccountOwnerPublicKey(accountAddress: Address) = {
-  let requestId = factoryAddress.getString(
-    kAccountAddressToRequestId(accountAddress)
-  ).valueOrErrorMessage(wrapErr("invalid account address: request id is undefined")).fromBase58String()
+  let requestId = getRequestId(accountAddress)
 
   let requestOwnerPublicKey = factoryAddress.getBinary(
     kRequestOwnerPublicKey(requestId)
@@ -408,21 +411,24 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
   ])
 }
 
-# TODO: check if account exists
 # Deposit USDT
 # args: [accountAddress]
 @Callable(i)
 func deposit(callerPublicKey: ByteVector, args: List[String]) = {
   let payment = i.payments[0]
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
   strict ckecks = [
     !shutdown || throwErr("not allowed"),
     i.caller.mustFactory(),
     i.payments.size() == 1 || throwErr("1 payment is required"),
-    payment.assetId == usdtAssetId || throwErr("invalid asset")
+    payment.assetId == usdtAssetId || throwErr("invalid asset"),
+    # check if account is ready
+    factoryAddress.getInteger(
+      kRequestStatus(getRequestId(accountAddress))
+    ) == REQUEST_STATUS_READY || throwErr("account is not ready")
   ]
-  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
-    wrapErr("invalid account address")
-  )
 
   let actions = [
     ScriptTransfer(accountAddress, payment.amount, payment.assetId)
