@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **14:49 14.05.2024** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **10:04 17.05.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -214,6 +214,7 @@ RAPS/WAVES pool | [`3PAsx8qheR56P6PP8BC2FWzNS8k7FcqNiau`](https://wavesexplorer.
 RAPS/USDT pool | [`3P744mhpz47ZLPAHzCsv5mx1vFoVAS78yTx`](https://wavesexplorer.com/addresses/3P744mhpz47ZLPAHzCsv5mx1vFoVAS78yTx) | `Fq7uqaMy2BwzWYDyhyoHDeerCr7QyEusZJCriYXSLdRp` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 MEME0/USDT pool | [`3PL8vBH3up6REWuFuCxxgSRGJAqttZHhDwf`](https://wavesexplorer.com/addresses/3PL8vBH3up6REWuFuCxxgSRGJAqttZHhDwf) | `74w84ieeqHTj6CgCj4NpBetapNkafyPPhhXthprFmw41` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 RAPS/WX pool | [`3PEeZhT3y9YMNmT8Vvsn46uTvtDx4yMgvwQ`](https://wavesexplorer.com/addresses/3PEeZhT3y9YMNmT8Vvsn46uTvtDx4yMgvwQ) | `4b9nPP1m5uUURg2L2j1nQCBqeGrKgVvkWa9Kt2xPbDRr` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+FOBIA/USDT pool | [`3P6GDDFjDGg9bWF6Uv7EM1PXmu9LY4ENRX4`](https://wavesexplorer.com/addresses/3P6GDDFjDGg9bWF6Uv7EM1PXmu9LY4ENRX4) | `o4Q6SB5Eyy6TdDdWvpNfpYoGcbDsdFMdxUJJXN355ji` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -282,10 +283,24 @@ Explorer: https://DecentralScan.com
 DEPS | [`C5Z9rc59bQgNF5GHsHxtRXJboGTMyXCFopsd7moevx4F`](https://wavesexplorer.com/assets/C5Z9rc59bQgNF5GHsHxtRXJboGTMyXCFopsd7moevx4F) | Deposit Coin 
 DOBERCOIN | [`AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc`](https://wavesexplorer.com/assets/AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc) | A digital meme coin. Created in honor of a beloved pet. 
 Duck Egg | [`C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS`](https://wavesexplorer.com/assets/C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS) | Utility and Reward token @ WavesDucks.com game. The duckiest token in the world. 
-EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
 EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.com/assets/3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK) | Enterprise Algorithmic Stable Token 
+EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
 ENNO | [`7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg`](https://wavesexplorer.com/assets/7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg) | Native utility and governance token of Enno Wallet 
 ETH-Ethereum-PPT | [`3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13`](https://wavesexplorer.com/assets/3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
+FOBIA | [`FD2VhmVs6rVimxqmBCZCZhh1bkvYmjPAFLhtcbnabKK1`](https://wavesexplorer.com/assets/FD2VhmVs6rVimxqmBCZCZhh1bkvYmjPAFLhtcbnabKK1) | The FOBIA token is a new promising cryptocurrency that actively interacts with the community and has huge potential both for those who are going to invest in it at the start, and for those who want to buy it after it is promoted.
+
+Why is FOBIA the best choice:
+
+1. FOBIA has a huge potential for pumping, as there will be a huge promotion in social networks and the media sphere, the creation of a large number of giveaways, pools and other promotions to promote the token. 
+
+2. Social promotion:
+FOBIA will have a huge social base and prospects in the development of media, advertising will be bought from major YouTubers, the creation of viral content with the participation of the token and the creation of trash streams to promote the token. 
+
+3. The coin will be listed on major exchanges. 
+
+4. Airdrops and Token giveaways: FOBIA conducts regular airdrops and token giveaways among community members. 
+
+PHOBIA is one of the few experienced actresses that can be found in your portfolio. 
 FUDT | [`5Lhv8uKnvGxA2cjbFXXKZFASk1cAFp9dRWkmLYhULtSX`](https://wavesexplorer.com/assets/5Lhv8uKnvGxA2cjbFXXKZFASk1cAFp9dRWkmLYhULtSX) | FUDT is a community token. The token is using for activities in WAVES ecosystem like votings, advertising, activities etc. The token is an integral part of the FUD DAO. 
 gxWX | [`3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii`](https://wavesexplorer.com/assets/3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii) | xWX - purpose of the token, increase the value and liquidity of the WX token.  The program will launch after the implementation of 15% of the emission of 1 xWX -1 WX with the support of the private capital community 
 InfinityCoin | [`7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF`](https://wavesexplorer.com/assets/7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF) | 
@@ -436,6 +451,7 @@ ETHUSDTLP | [`3VWCZws3knDimTQtqfaAmBhXKBYDUzgm8s4y86Mbe9CE`](https://wavesexplor
 ETHWAVESLP | [`HQ4bDTkiGxkAhm8KDwPrNekiYEpk5YyVg8aDB4xhAmJn`](https://wavesexplorer.com/assets/HQ4bDTkiGxkAhm8KDwPrNekiYEpk5YyVg8aDB4xhAmJn) | ETH/WAVES pool liquidity provider token 
 ETHWAVESLP | [`E6MUGSUieSsq6QiJcbp6REdQXyjp6uPWLitnp9Gdtsuh`](https://wavesexplorer.com/assets/E6MUGSUieSsq6QiJcbp6REdQXyjp6uPWLitnp9Gdtsuh) | ETH/WAVES pool liquidity provider token 
 EURNXTNLP | [`EvcYEnUDWEfUrLTkGaDcEFLDPa8Yt2biD33gVoziezjE`](https://wavesexplorer.com/assets/EvcYEnUDWEfUrLTkGaDcEFLDPa8Yt2biD33gVoziezjE) | WX EURN/XTN pool liquidity provider token 
+FOBIA~USDTLP | [`BWxCoDGoiLsXUj6u6avTgGK6taqyLCpRbegJw6Fp667C`](https://wavesexplorer.com/assets/BWxCoDGoiLsXUj6u6avTgGK6taqyLCpRbegJw6Fp667C) | FOBIA~/USDT pool liquidity provider token 
 FTMXTNLP | [`9s3j75byznhtBHfwerKirr6VbRgYkk8Y7AWd2wVL3vvL`](https://wavesexplorer.com/assets/9s3j75byznhtBHfwerKirr6VbRgYkk8Y7AWd2wVL3vvL) | WX FTM/XTN pool liquidity provider token 
 FTTXTNLP | [`BvydnzP19hvrrALiT3FeUBut4gU1efTPb29gVFbKgxJg`](https://wavesexplorer.com/assets/BvydnzP19hvrrALiT3FeUBut4gU1efTPb29gVFbKgxJg) | WX FTT/XTN pool liquidity provider token 
 FUDT~USDTLP | [`3b6sGQhCk8rYsU9cCpsX85uT2UX9g7B3ecn6pnUkfRYR`](https://wavesexplorer.com/assets/3b6sGQhCk8rYsU9cCpsX85uT2UX9g7B3ecn6pnUkfRYR) | FUDT~/USDT pool liquidity provider token 
