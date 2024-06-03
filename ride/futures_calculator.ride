@@ -127,6 +127,7 @@ func creditOption(accountAddress: Address, assetId: ByteVector|Unit) = factoryAd
   kCredit(accountAddress, assetId)
 )
 func kLeverage(accountAddress: Address) = ["%s%s", "leverage", accountAddress.toString()].makeString(separator)
+func kRequestLeverage(requestId: ByteVector) = ["%s%s", "requestLeverage", requestId.toBase58String()].makeString(separator)
 func kSyntheticAssetId(baseAssetId: ByteVector|Unit) = ["%s%s", "syntheticAssetId", baseAssetId.assetIdToString()].makeString(separator)
 func kBaseAssetId(syntheticAssetId: ByteVector|Unit) = ["%s%s", "baseAssetId", syntheticAssetId.assetIdToString()].makeString(separator)
 
@@ -296,9 +297,10 @@ func init(
 }
 
 # TODO: price asset id should be usdt?
+# TODO: validate leverage
 # called by user
 # additional fee in payment
-# args: [amountAssetId, priceAssetId]
+# args: [amountAssetId, priceAssetId, leverage]
 @Callable(i)
 func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
   strict ckecks = [
@@ -307,6 +309,9 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
   ]
   let amountAssetIdStr = args[0]
   let priceAssetIdStr = args[1]
+  let leverage = parseInt(args[2]).valueOrErrorMessage(
+    wrapErr("invalid leverage")
+  )
   let userAddress = addressFromPublicKey(callerPublicKey)
   let requestId = sha256(userAddress.bytes + amountAssetIdStr.fromBase58String() + priceAssetIdStr.fromBase58String())
   let amountAssetId = parseAssetId(amountAssetIdStr)
@@ -331,7 +336,8 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
     ],
     [
       factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_EMPTY], []),
-      factoryAddress.invoke("binaryEntry", [kRequestsQueue(), requestsQueue() + requestId], [])
+      factoryAddress.invoke("binaryEntry", [kRequestsQueue(), requestsQueue() + requestId], []),
+      factoryAddress.invoke("integerEntry", [kRequestLeverage(requestId), leverage], [])
     ])
   } else { # if the accounts queue is not empty
     # then fullfill request
@@ -349,7 +355,8 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
       factoryAddress.invoke("binaryEntry", [kAccountsQueue(), accountsQueue().drop(queueItemSize)], []),
       factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_READY], []),
       factoryAddress.invoke("binaryEntry", [kRequestIdToAccountPublicKey(requestId), accountPublicKey], []),
-      factoryAddress.invoke("stringEntry", [kAccountAddressToRequestId(accountAddress), requestId.toBase58String()], [])
+      factoryAddress.invoke("stringEntry", [kAccountAddressToRequestId(accountAddress), requestId.toBase58String()], []),
+      factoryAddress.invoke("integerEntry", [kLeverage(accountAddress), leverage], [])
     ])
   }
 
@@ -394,6 +401,9 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
   } else { # if the requests queue is not empty
     # then fullfill next request
     let requestId = requestsQueue().take(queueItemSize)
+    let leverage = factoryAddress.getInteger(kRequestLeverage(requestId)).valueOrErrorMessage(
+      wrapErr("request's leverage is undefined")
+    )
     (
       [],
       [
@@ -401,7 +411,8 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
         factoryAddress.invoke("binaryEntry", [kRequestIdToAccountPublicKey(requestId), accountPublicKey], []),
         factoryAddress.invoke("binaryEntry", [kRequestsQueue(), requestsQueue().drop(queueItemSize)], []),
         factoryAddress.invoke("stringEntry", [kAccountAddressToRequestId(accountAddress), requestId.toBase58String()], []),
-        factoryAddress.invoke("transferWaves", [creatorAddress.bytes, rewardAmount()], [])
+        factoryAddress.invoke("transferWaves", [creatorAddress.bytes, rewardAmount()], []),
+        factoryAddress.invoke("integerEntry", [kLeverage(accountAddress), leverage], [])
       ]
     )
   }
@@ -499,8 +510,9 @@ func borrow(callerPublicKey: ByteVector, args: List[String]) = {
   let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0).toX18(pow10Decimals(amountAssetId))
   let creditB = factoryAddress.getInteger(kCredit(accountAddress, usdtAssetId)).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
   let totalCredit = calcTotalCredit(creditA, creditB, currentPrice)
-  let leverageDefault = 3
-  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrElse(leverageDefault).toX18(1)
+  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrErrorMessage(
+    wrapErr("leverage should be defined")
+  ).toX18(1)
   let creditAvailableUsdt = calcCreditAvailable(deposited, leverage, totalCredit)
 
   let creditAvailable = if (assetIdRequested == amountAssetId) then {
