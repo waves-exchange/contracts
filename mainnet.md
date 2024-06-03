@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **10:04 17.05.2024** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **17:59 03.06.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -215,6 +215,10 @@ RAPS/USDT pool | [`3P744mhpz47ZLPAHzCsv5mx1vFoVAS78yTx`](https://wavesexplorer.c
 MEME0/USDT pool | [`3PL8vBH3up6REWuFuCxxgSRGJAqttZHhDwf`](https://wavesexplorer.com/addresses/3PL8vBH3up6REWuFuCxxgSRGJAqttZHhDwf) | `74w84ieeqHTj6CgCj4NpBetapNkafyPPhhXthprFmw41` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 RAPS/WX pool | [`3PEeZhT3y9YMNmT8Vvsn46uTvtDx4yMgvwQ`](https://wavesexplorer.com/addresses/3PEeZhT3y9YMNmT8Vvsn46uTvtDx4yMgvwQ) | `4b9nPP1m5uUURg2L2j1nQCBqeGrKgVvkWa9Kt2xPbDRr` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 FOBIA/USDT pool | [`3P6GDDFjDGg9bWF6Uv7EM1PXmu9LY4ENRX4`](https://wavesexplorer.com/addresses/3P6GDDFjDGg9bWF6Uv7EM1PXmu9LY4ENRX4) | `o4Q6SB5Eyy6TdDdWvpNfpYoGcbDsdFMdxUJJXN355ji` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+Marquise Museum/XTN pool | [`3PGzm6AVstX7kzHTJ9kPNKKS7mBDo2Y3Aj6`](https://wavesexplorer.com/addresses/3PGzm6AVstX7kzHTJ9kPNKKS7mBDo2Y3Aj6) | `7H2VyUzV8u3ZMjaRbXocQEYETxr6YDf1JvUwH3m7G7ue` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+FOBIA/WAVES pool | [`3PPNkwyrSNoUTFfGGtYgXp1TFJAQXyvi8Bd`](https://wavesexplorer.com/addresses/3PPNkwyrSNoUTFfGGtYgXp1TFJAQXyvi8Bd) | `97L4Yr38e6QugpxKsqMvczGgs2uqHPrTFi8XjjupR92n` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+KOPEYKA/WX pool | [`3PM7QwcTRbmpNBWPa5Swik6TKkKtFWuP4GK`](https://wavesexplorer.com/addresses/3PM7QwcTRbmpNBWPa5Swik6TKkKtFWuP4GK) | `3Paz4WxZSufRgbycdehXiDhDSEWBkWMJmXXLeUGAfRWh` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+KOPEYKA/WAVES pool | [`3P4jNe2UX6MhGzTcZPNgjT6DB9ZBx2ewk14`](https://wavesexplorer.com/addresses/3P4jNe2UX6MhGzTcZPNgjT6DB9ZBx2ewk14) | `FhjvNfpNsWEa6KLMce4gW9cuVMqGA4U6yxouS89MESA4` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -283,8 +287,8 @@ Explorer: https://DecentralScan.com
 DEPS | [`C5Z9rc59bQgNF5GHsHxtRXJboGTMyXCFopsd7moevx4F`](https://wavesexplorer.com/assets/C5Z9rc59bQgNF5GHsHxtRXJboGTMyXCFopsd7moevx4F) | Deposit Coin 
 DOBERCOIN | [`AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc`](https://wavesexplorer.com/assets/AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc) | A digital meme coin. Created in honor of a beloved pet. 
 Duck Egg | [`C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS`](https://wavesexplorer.com/assets/C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS) | Utility and Reward token @ WavesDucks.com game. The duckiest token in the world. 
-EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.com/assets/3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK) | Enterprise Algorithmic Stable Token 
 EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
+EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.com/assets/3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK) | Enterprise Algorithmic Stable Token 
 ENNO | [`7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg`](https://wavesexplorer.com/assets/7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg) | Native utility and governance token of Enno Wallet 
 ETH-Ethereum-PPT | [`3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13`](https://wavesexplorer.com/assets/3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
 FOBIA | [`FD2VhmVs6rVimxqmBCZCZhh1bkvYmjPAFLhtcbnabKK1`](https://wavesexplorer.com/assets/FD2VhmVs6rVimxqmBCZCZhh1bkvYmjPAFLhtcbnabKK1) | The FOBIA token is a new promising cryptocurrency that actively interacts with the community and has huge potential both for those who are going to invest in it at the start, and for those who want to buy it after it is promoted.
@@ -305,6 +309,7 @@ FUDT | [`5Lhv8uKnvGxA2cjbFXXKZFASk1cAFp9dRWkmLYhULtSX`](https://wavesexplorer.co
 gxWX | [`3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii`](https://wavesexplorer.com/assets/3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii) | xWX - purpose of the token, increase the value and liquidity of the WX token.  The program will launch after the implementation of 15% of the emission of 1 xWX -1 WX with the support of the private capital community 
 InfinityCoin | [`7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF`](https://wavesexplorer.com/assets/7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF) | 
 InfinityCoin: la criptovaluta del futuro. Sicura, veloce e senza intermediari, ti consente di trasferire valore in tutto il mondo con un semplice clic. Con la sua piattaforma di contratti intelligenti, puoi creare token personalizzati e avviare la tua attività basata su blockchain. Partecipa attivamente alle decisioni del progetto e godi di un ecosistema inclusivo. Lasciati trasportare verso l'infinito con InfinityCoin, dove le possibilità sono illimitate e il potenziale è senza confini. Unisciti a noi nella rivoluzione criptovalutaria e scopri l'eccitante futuro della finanza decentralizzata. 
+KOPEYKA | [`5kD5UVcsFeA7hZ7heZqXb1ZYDRtCmqqNzmAWTV5PEwUv`](https://wavesexplorer.com/assets/5kD5UVcsFeA7hZ7heZqXb1ZYDRtCmqqNzmAWTV5PEwUv) | micro stable coin - a kopeyka saves the ruble 
 L2MP | [`7scqyYoVsNrpWbTAc78eRqNVcYLxMPzZs8EQfX7ruJAg`](https://wavesexplorer.com/assets/7scqyYoVsNrpWbTAc78eRqNVcYLxMPzZs8EQfX7ruJAg) | Mining Power Token for WAVES EVM L2 bootstrapping. 
 Litecoin | [`HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk`](https://wavesexplorer.com/assets/HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk) | Litecoin token 
 LortrexNetwork | [`HdTuvhXu79Aar6K9q4KBcSM4DVoKejHsZ4pcMVtV5sJ6`](https://wavesexplorer.com/assets/HdTuvhXu79Aar6K9q4KBcSM4DVoKejHsZ4pcMVtV5sJ6) | Lortrex on WX Network 
@@ -452,6 +457,7 @@ ETHWAVESLP | [`HQ4bDTkiGxkAhm8KDwPrNekiYEpk5YyVg8aDB4xhAmJn`](https://wavesexplo
 ETHWAVESLP | [`E6MUGSUieSsq6QiJcbp6REdQXyjp6uPWLitnp9Gdtsuh`](https://wavesexplorer.com/assets/E6MUGSUieSsq6QiJcbp6REdQXyjp6uPWLitnp9Gdtsuh) | ETH/WAVES pool liquidity provider token 
 EURNXTNLP | [`EvcYEnUDWEfUrLTkGaDcEFLDPa8Yt2biD33gVoziezjE`](https://wavesexplorer.com/assets/EvcYEnUDWEfUrLTkGaDcEFLDPa8Yt2biD33gVoziezjE) | WX EURN/XTN pool liquidity provider token 
 FOBIA~USDTLP | [`BWxCoDGoiLsXUj6u6avTgGK6taqyLCpRbegJw6Fp667C`](https://wavesexplorer.com/assets/BWxCoDGoiLsXUj6u6avTgGK6taqyLCpRbegJw6Fp667C) | FOBIA~/USDT pool liquidity provider token 
+FOBIA~WAVESLP | [`AG2GB1ZGRgTnVv7DU24zzcYfQ22c5RGQhi62ufLBN4Y1`](https://wavesexplorer.com/assets/AG2GB1ZGRgTnVv7DU24zzcYfQ22c5RGQhi62ufLBN4Y1) | FOBIA~/WAVES pool liquidity provider token 
 FTMXTNLP | [`9s3j75byznhtBHfwerKirr6VbRgYkk8Y7AWd2wVL3vvL`](https://wavesexplorer.com/assets/9s3j75byznhtBHfwerKirr6VbRgYkk8Y7AWd2wVL3vvL) | WX FTM/XTN pool liquidity provider token 
 FTTXTNLP | [`BvydnzP19hvrrALiT3FeUBut4gU1efTPb29gVFbKgxJg`](https://wavesexplorer.com/assets/BvydnzP19hvrrALiT3FeUBut4gU1efTPb29gVFbKgxJg) | WX FTT/XTN pool liquidity provider token 
 FUDT~USDTLP | [`3b6sGQhCk8rYsU9cCpsX85uT2UX9g7B3ecn6pnUkfRYR`](https://wavesexplorer.com/assets/3b6sGQhCk8rYsU9cCpsX85uT2UX9g7B3ecn6pnUkfRYR) | FUDT~/USDT pool liquidity provider token 
@@ -459,6 +465,8 @@ FUDT~WAVESLP | [`4c2g8p5VK3v4hottZGzKTywuvY6Wj7W6SvRZvUoSwCgK`](https://wavesexp
 GRTXTNLP | [`J3G5P19GvBHREKMxC4CWKfAULx5dHHePSPoEymJWBxue`](https://wavesexplorer.com/assets/J3G5P19GvBHREKMxC4CWKfAULx5dHHePSPoEymJWBxue) | WX GRT/XTN pool liquidity provider token 
 gxWX~WAVESLP | [`HVCywoFAXk9g2n8pyGwF1ZjHqrL29WfsbqQCf1xQDBhB`](https://wavesexplorer.com/assets/HVCywoFAXk9g2n8pyGwF1ZjHqrL29WfsbqQCf1xQDBhB) | gxWX~/WAVES pool liquidity provider token 
 gxWX~WXLP | [`HP9eDx6sovyRCRLrsNrcwJs4BVi4Yu686AXvZ5N8awKm`](https://wavesexplorer.com/assets/HP9eDx6sovyRCRLrsNrcwJs4BVi4Yu686AXvZ5N8awKm) | gxWX~/WX pool liquidity provider token 
+KOPEYKA~WAVESLP | [`4ULPcB2mgr7dRKopcpeuYa7e1ZNiufGyvEiknMJGRVsa`](https://wavesexplorer.com/assets/4ULPcB2mgr7dRKopcpeuYa7e1ZNiufGyvEiknMJGRVsa) | KOPEYKA~/WAVES pool liquidity provider token 
+KOPEYKA~WXLP | [`7EVpNuBBN1xeeUEWq4SGJdWpNQHMz1Uw3qmoHjt1r6A5`](https://wavesexplorer.com/assets/7EVpNuBBN1xeeUEWq4SGJdWpNQHMz1Uw3qmoHjt1r6A5) | KOPEYKA~/WX pool liquidity provider token 
 L2MP~USDTLP | [`7ReKKSHy8sBwnKwN1ZgAobRdmYiogtWE8RsNGd2MfydT`](https://wavesexplorer.com/assets/7ReKKSHy8sBwnKwN1ZgAobRdmYiogtWE8RsNGd2MfydT) | L2MP~/USDT pool liquidity provider token 
 L2MP~WAVESLP | [`3drrwGht8aK5WQ6zgKofdVM5YkegY6pAVD5oJYcouJam`](https://wavesexplorer.com/assets/3drrwGht8aK5WQ6zgKofdVM5YkegY6pAVD5oJYcouJam) | L2MP~/WAVES pool liquidity provider token 
 L2MP~WXLP | [`3CvJkvzRkUp5PvLjuL8zN9y7zUigYyzyGKZTA3otfB94`](https://wavesexplorer.com/assets/3CvJkvzRkUp5PvLjuL8zN9y7zUigYyzyGKZTA3otfB94) | L2MP~/WX pool liquidity provider token 
@@ -468,6 +476,7 @@ LortrexNe~PETELP | [`FW4r5cYAyB1cm3ju7vB78muMJqPPMhgMyYgCJ9cnBtqB`](https://wave
 LTCXTNLP | [`CNkqC6GPi888WdJ1EuVtu9JGZ9VHpAn8eTHwR8YZxXbv`](https://wavesexplorer.com/assets/CNkqC6GPi888WdJ1EuVtu9JGZ9VHpAn8eTHwR8YZxXbv) | WX LTC/XTN pool liquidity provider token 
 MANAXTNLP | [`HsYqCzcJyRKPaBfFksSqAw9rHb2HrWXi4hAkUCdS3dUK`](https://wavesexplorer.com/assets/HsYqCzcJyRKPaBfFksSqAw9rHb2HrWXi4hAkUCdS3dUK) | WX MANA/XTN pool liquidity provider token 
 Marquise Mu~WXLP | [`FovtGTNBFPdj53FU9tiyBzYnY4UuW8P4pumGKjsmzz5B`](https://wavesexplorer.com/assets/FovtGTNBFPdj53FU9tiyBzYnY4UuW8P4pumGKjsmzz5B) | Marquise Mu~/WX pool liquidity provider token 
+Marquise M~XTNLP | [`CJPF3oAnUBcGkW4C3ZTngNrtJXs3KfmVXBjUv1XukiHX`](https://wavesexplorer.com/assets/CJPF3oAnUBcGkW4C3ZTngNrtJXs3KfmVXBjUv1XukiHX) | Marquise M~/XTN pool liquidity provider token 
 Marquise~WAVESLP | [`CYVkTU4nYQ95sb5Xf7KTYvvPWAthefjuRb9UcAAB6A1e`](https://wavesexplorer.com/assets/CYVkTU4nYQ95sb5Xf7KTYvvPWAthefjuRb9UcAAB6A1e) | Marquise~/WAVES pool liquidity provider token 
 MATIC-POL~USDTLP | [`91W4JjLLFHaUxJ2qJEuKiUifxzuUAGAdKeaAmg7QzqHh`](https://wavesexplorer.com/assets/91W4JjLLFHaUxJ2qJEuKiUifxzuUAGAdKeaAmg7QzqHh) | MATIC-POL~/USDT pool liquidity provider token 
 MEME0~USDTLP | [`3CvBbgPQPpjx352ZFJ1dc73yZoZSzrZtHXiid2KAuMD5`](https://wavesexplorer.com/assets/3CvBbgPQPpjx352ZFJ1dc73yZoZSzrZtHXiid2KAuMD5) | MEME0~/USDT pool liquidity provider token 
