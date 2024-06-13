@@ -1,0 +1,12 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "version": 2,
+    "senderPublicKey": "AvevH1ZTfQ9XHC3SFAG7YECUGSiXjxok2QLnBZ1HoACt",
+    "data": [
+        {
+            "key": "%s__tempManagerPubKey",
+            "value": null
+        }
+    ]
+}
