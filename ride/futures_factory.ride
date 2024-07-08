@@ -137,7 +137,11 @@ func transferWaves(recipientBytes: ByteVector, amount: Int) =
 
 @Callable(i)
 func call(function: String, args: List[String]) = {
-  let result = calculatorAddress.reentrantInvoke(function, [i.callerPublicKey, args], i.payments)
+  # To allow usage with node script evaluation (without payments)
+  # there is a bug(?) when function is called like expression
+  # Invocation structure doesn't contain "payments" key for some reason
+  let cleanPayments = if (i.callerPublicKey == base58'11111111111111111111111111111111') then [] else i.payments
+  let result = calculatorAddress.reentrantInvoke(function, [i.callerPublicKey, args], cleanPayments)
 
   (nil, result)
 }

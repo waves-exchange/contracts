@@ -296,6 +296,7 @@ func init(
   ], unit)
 }
 
+# TODO: Validate assetIdStrings
 # TODO: price asset id should be usdt?
 # TODO: validate leverage
 # called by user
@@ -340,7 +341,7 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
       factoryAddress.invoke("integerEntry", [kRequestLeverage(requestId), leverage], [])
     ])
   } else { # if the accounts queue is not empty
-    # then fullfill request
+    # then fulfill request
     let accountPublicKey = accountsQueue().take(queueItemSize)
     let accountAddress = addressFromPublicKey(accountPublicKey)
     let creatorAddress = addressFromPublicKey(
@@ -399,7 +400,7 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
       ]
     )
   } else { # if the requests queue is not empty
-    # then fullfill next request
+    # then fulfill next request
     let requestId = requestsQueue().take(queueItemSize)
     let leverage = factoryAddress.getInteger(kRequestLeverage(requestId)).valueOrErrorMessage(
       wrapErr("request's leverage is undefined")
@@ -458,6 +459,7 @@ func deposit(callerPublicKey: ByteVector, args: List[String]) = {
   (actions, factoryActions)
 }
 
+# TODO: validate accounts relations. (!)
 # TODO: validate asset id
 # TODO: ensure amount is positive
 # args: [accountAddress, amount, assetId]
@@ -552,6 +554,7 @@ func borrow(callerPublicKey: ByteVector, args: List[String]) = {
   (nil, [factoryActions, creditAvailable])
 }
 
+# TODO: not implemented
 @Callable(i)
 func repay(callerPublicKey: ByteVector, args: List[String]) = {
   strict ckecks = [
@@ -622,6 +625,45 @@ func doShutdown(callerPublicKey: ByteVector, args: List[String]) = {
   ]
 
   (nil, invocations)
+}
+
+# args: [accountAddress]
+@Callable(i)
+func getAccountInfoREADONLY(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checks = [
+    i.caller.mustFactory()
+  ]
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+  let (amountAssetId, priceAssetId) = getAccountAssets(accountAddress)
+  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrErrorMessage(
+    wrapErr("leverage should be defined")
+  )
+  let userAddress = addressFromPublicKey(callerPublicKey)
+
+  let requestId = getRequestId(accountAddress)
+  let accountPublicKey = factoryAddress.getBinary(kRequestIdToAccountPublicKey(requestId)).valueOrErrorMessage("kRequestIdToAccountPublicKey not found")
+  let deposited = depositedOption(accountAddress).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
+  let currentPrice = getCurrentPrice(amountAssetId).toX18(pow10Decimals(usdtAssetId))
+  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0).toX18(pow10Decimals(amountAssetId))
+  let creditB = factoryAddress.getInteger(kCredit(accountAddress, usdtAssetId)).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
+
+  let data = (
+    amountAssetId.assetIdToString(),
+    priceAssetId.assetIdToString(),
+    accountAddress.toString(),
+    accountPublicKey.toBase58String(),
+    leverage,
+    requestId.toBase58String(),
+    deposited,
+    creditA,
+    creditB,
+    0.toX18(pow10Decimals(amountAssetId)),
+    0.toX18(pow10Decimals(usdtAssetId))
+  )
+  
+  (nil, data)
 }
 
 @Verifier(tx)

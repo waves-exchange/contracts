@@ -160,6 +160,7 @@ describe(`[${process.pid}] futures: add account`, () => {
             value: [
               { type: 'string', value: assetId1 },
               { type: 'string', value: assetId2 },
+              { type: 'string', value: '1' },
             ],
           },
         ],
