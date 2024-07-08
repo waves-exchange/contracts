@@ -59,6 +59,13 @@ func getAssetDecimalsOrFail(assetId: ByteVector|Unit) = {
   }
 }
 
+func getAssetBalance(assetId: ByteVector|Unit, address: Address) = {
+  match assetId {
+    case _: Unit => address.wavesBalance().available
+    case assetId: ByteVector => address.assetBalance(assetId)
+  }
+}
+
 func pow10(n: Int) = pow(10, 0, n, 0, 0, DOWN)
 
 func pow10Decimals(assetId: ByteVector|Unit) = pow10(getAssetDecimalsOrFail(assetId))
@@ -283,6 +290,36 @@ func getAccountOwnerPublicKey(accountAddress: Address) = {
   ).valueOrErrorMessage(wrapErr("invalid amount asset id"))
 
   requestOwnerPublicKey
+}
+
+func getAccountInfoInternal(accountAddress: Address) = {
+  let (amountAssetId, priceAssetId) = getAccountAssets(accountAddress)
+  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrErrorMessage(
+    wrapErr("leverage should be defined")
+  )
+
+  let requestId = getRequestId(accountAddress)
+  let accountPublicKey = factoryAddress.getBinary(kRequestIdToAccountPublicKey(requestId)).valueOrErrorMessage("kRequestIdToAccountPublicKey not found")
+  let deposited = depositedOption(accountAddress).valueOrElse(0).toX18(pow10Decimals(priceAssetId))
+  let currentPrice = getCurrentPrice(amountAssetId).toX18(pow10Decimals(priceAssetId))
+  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0).toX18(pow10Decimals(amountAssetId))
+  let creditB = factoryAddress.getInteger(kCredit(accountAddress, priceAssetId)).valueOrElse(0).toX18(pow10Decimals(priceAssetId))
+  let status = factoryAddress.getInteger(kRequestStatus(requestId)).valueOrErrorMessage("status not found. RequestId = " + requestId.toBase58String())
+
+  (
+    amountAssetId.assetIdToString(),
+    priceAssetId.assetIdToString(),
+    accountAddress.toString(),
+    accountPublicKey.toBase58String(),
+    leverage,
+    requestId.toBase58String(),
+    deposited,
+    creditA,
+    creditB,
+    getAssetBalance(amountAssetId, accountAddress),
+    getAssetBalance(priceAssetId, accountAddress),
+    status
+  )
 }
 
 @Callable(i)
@@ -633,37 +670,51 @@ func getAccountInfoREADONLY(callerPublicKey: ByteVector, args: List[String]) = {
   strict checks = [
     i.caller.mustFactory()
   ]
+
   let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
     wrapErr("invalid account address")
   )
-  let (amountAssetId, priceAssetId) = getAccountAssets(accountAddress)
-  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrErrorMessage(
-    wrapErr("leverage should be defined")
-  )
-  let userAddress = addressFromPublicKey(callerPublicKey)
 
-  let requestId = getRequestId(accountAddress)
-  let accountPublicKey = factoryAddress.getBinary(kRequestIdToAccountPublicKey(requestId)).valueOrErrorMessage("kRequestIdToAccountPublicKey not found")
-  let deposited = depositedOption(accountAddress).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
-  let currentPrice = getCurrentPrice(amountAssetId).toX18(pow10Decimals(usdtAssetId))
-  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0).toX18(pow10Decimals(amountAssetId))
-  let creditB = factoryAddress.getInteger(kCredit(accountAddress, usdtAssetId)).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
+  let data = getAccountInfoInternal(accountAddress)
 
-  let data = (
-    amountAssetId.assetIdToString(),
-    priceAssetId.assetIdToString(),
-    accountAddress.toString(),
-    accountPublicKey.toBase58String(),
-    leverage,
-    requestId.toBase58String(),
-    deposited,
-    creditA,
-    creditB,
-    0.toX18(pow10Decimals(amountAssetId)),
-    0.toX18(pow10Decimals(usdtAssetId))
-  )
-  
   (nil, data)
+}
+
+# args: [userAddress]
+@Callable(i)
+func getUserInfoREADONLY(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checks = [
+    i.caller.mustFactory()
+  ]
+
+  let userAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid user address")
+  )
+
+  let userRequests = factoryAddress.getBinary(kRequestsByOwner(userAddress)).valueOrErrorMessage("kRequestsByOwner not found")
+  let userRequestsNumber = userRequests.size() / queueItemSize
+
+  let nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+  func getAccountsData(acc: (List[ByteVector], ByteVector, Int), count: Int) = {
+    let (accDataList, rawBytes, maxSize) = acc
+
+    if (count < maxSize) then {
+      let requestId = rawBytes.take(queueItemSize)
+      let newRawBytes = rawBytes.drop(queueItemSize)
+      let accountPublicKey = factoryAddress.getBinary(kRequestIdToAccountPublicKey(requestId)).valueOrErrorMessage("kRequestIdToAccountPublicKey not found")
+      let accountAddress = addressFromPublicKey(accountPublicKey)
+      let data = getAccountInfoInternal(accountAddress)
+
+      (accDataList :+ data, newRawBytes, maxSize)
+    } else {
+      acc
+    }
+  }
+
+  let (accDataList, _a, _b) = FOLD<20>(nums, ([], userRequests, userRequestsNumber), getAccountsData)
+
+  (nil, accDataList)
 }
 
 @Verifier(tx)

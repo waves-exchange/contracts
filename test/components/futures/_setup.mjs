@@ -62,6 +62,7 @@ export const setup = async ({
   const [
     { id: assetId1 },
     { id: assetId2 },
+    { id: assetId3 },
   ] = await Promise.all([
     broadcastAndWait(issue({
       name: 'assetId1',
@@ -73,6 +74,14 @@ export const setup = async ({
     }, baseSeed)),
     broadcastAndWait(issue({
       name: 'assetId2',
+      description: '',
+      quantity: 1e6 * 1e8,
+      decimals: 8,
+      reissuable: true,
+      chainId,
+    }, baseSeed)),
+    broadcastAndWait(issue({
+      name: 'assetId3',
       description: '',
       quantity: 1e6 * 1e8,
       decimals: 8,
@@ -131,6 +140,6 @@ export const setup = async ({
   }, accounts.calculator.seed));
 
   return {
-    accounts, rewardAmount, assetId1, assetId2,
+    accounts, rewardAmount, assetId1, assetId2, assetId3,
   };
 };
