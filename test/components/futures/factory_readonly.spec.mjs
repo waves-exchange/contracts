@@ -149,15 +149,15 @@ describe(`[${process.pid}] futures: factory readonly`, () => {
           value: requestId,
         },
         _7: {
-          type: 'BigInt',
+          type: 'Int',
           value: 0,
         },
         _8: {
-          type: 'BigInt',
+          type: 'Int',
           value: 0,
         },
         _9: {
-          type: 'BigInt',
+          type: 'Int',
           value: 0,
         },
         _10: {

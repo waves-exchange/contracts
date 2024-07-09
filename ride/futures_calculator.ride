@@ -300,10 +300,10 @@ func getAccountInfoInternal(accountAddress: Address) = {
 
   let requestId = getRequestId(accountAddress)
   let accountPublicKey = factoryAddress.getBinary(kRequestIdToAccountPublicKey(requestId)).valueOrErrorMessage("kRequestIdToAccountPublicKey not found")
-  let deposited = depositedOption(accountAddress).valueOrElse(0).toX18(pow10Decimals(priceAssetId))
+  let deposited = depositedOption(accountAddress).valueOrElse(0)
   let currentPrice = getCurrentPrice(amountAssetId).toX18(pow10Decimals(priceAssetId))
-  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0).toX18(pow10Decimals(amountAssetId))
-  let creditB = factoryAddress.getInteger(kCredit(accountAddress, priceAssetId)).valueOrElse(0).toX18(pow10Decimals(priceAssetId))
+  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0)
+  let creditB = factoryAddress.getInteger(kCredit(accountAddress, priceAssetId)).valueOrElse(0)
   let status = factoryAddress.getInteger(kRequestStatus(requestId)).valueOrErrorMessage("status not found. RequestId = " + requestId.toBase58String())
 
   (
@@ -691,7 +691,7 @@ func getUserInfoREADONLY(callerPublicKey: ByteVector, args: List[String]) = {
     wrapErr("invalid user address")
   )
 
-  let userRequests = factoryAddress.getBinary(kRequestsByOwner(userAddress)).valueOrErrorMessage("kRequestsByOwner not found")
+  let userRequests = factoryAddress.getBinary(kRequestsByOwner(userAddress)).valueOrElse(base58'')
   let userRequestsNumber = userRequests.size() / queueItemSize
 
   let nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
