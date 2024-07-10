@@ -152,10 +152,9 @@ func keySkipOrderValidation(poolAddress: String) = "%s%s__skipOrderValidation__"
 func throwOrderError(
   orderValid: Boolean,
   orderValidInfo: String,
-  senderValid: Boolean,
   matcherValid: Boolean
 ) = {
-  throw("order validation failed: orderValid=" + orderValid.toString() + " (" + orderValidInfo + ")" + " senderValid=" + senderValid.toString() + " matcherValid=" + matcherValid.toString())
+  throw("order validation failed: orderValid=" + orderValid.toString() + " (" + orderValidInfo + ")" + " matcherValid=" + matcherValid.toString())
 }
 
 #------------------------
@@ -1790,10 +1789,12 @@ func verify() = {
     case order: Order =>
       let matcherPub    = getMatcherPubOrFail()
       let (orderValid, orderValidInfo) = if (skipOrderValidation()) then (true, "") else validateMatcherOrderAllowed(order)
-      let senderValid   = sigVerify(order.bodyBytes, order.proofs[0], order.senderPublicKey)
+      # Requested changes from matcher team
+      # Order should contain 2 proofs 
+      # proof[0] is ignored
       let matcherValid  = sigVerify(order.bodyBytes, order.proofs[1], matcherPub)
 
-      (orderValid && senderValid && matcherValid) || throwOrderError(orderValid, orderValidInfo, senderValid, matcherValid)
+      (orderValid && matcherValid) || throwOrderError(orderValid, orderValidInfo, matcherValid)
     case s: SetScriptTransaction =>
       if sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey) then {
         true
