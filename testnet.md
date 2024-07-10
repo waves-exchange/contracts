@@ -1,5 +1,5 @@
 # Testnet environment
-[**fixed_fee**](https://github.com/waves-exchange/contracts/tree/fixed_fee) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **11:58 02.07.2024** (GMT+4)
+[**fixed_fee**](https://github.com/waves-exchange/contracts/tree/fixed_fee) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **11:55 10.07.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
