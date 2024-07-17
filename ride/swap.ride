@@ -76,6 +76,10 @@ func getAccBalance(assetId: String) = {
   if(assetId == "WAVES") then wavesBalance(this).available else assetBalance(this, fromBase58String(assetId))
 }
 
+func stringToAssetId(assetIdString: String) = {
+  if(assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
+}
+
 # %d%d__poolFee__protocolFee
 func getSwapFees(poolAddressStr: String) = {
   let poolFeeDefault = this.getInteger(poolFee()).value()
@@ -157,17 +161,40 @@ func swapCalculateREADONLY(
   } else {
     feePoolAmountCalc
   }
-  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount - feePoolAmount
 
-  let res = invoke(
+  # Protocol fee should always be extracted from Pool Price Asset
+  # isReverse == true -> amountIn is in priceAssetId
+  let cleanAmountIn = if (isReverse == true) then {
+    amountIn.toBigInt() - feeProtocolAmount - feePoolAmount
+  } else {
+    amountIn.toBigInt() - feePoolAmount
+  }
+
+  let totalGetRaw = invoke(
     poolAdr,
     "calculateAmountOutForSwapREADONLY",
     [cleanAmountIn.toInt(), isReverse, feePoolAmount.toInt()],
     []
   ).exactAs[Int]
 
-  (nil,
-  res)
+  # Protocol fee should always be extracted from Pool Price Asset
+  let newTotalGet = if (isReverse == true) then {
+    totalGetRaw
+  } else {
+    let feeProtocolFromGetCalc = fraction(totalGetRaw.toBigInt(), prFee.toBigInt(), feeScale)    
+    let feeProtocolAmountFromGet = if (feeProtocolFromGetCalc.toInt() == 0) then {
+      toBigInt(1).toInt()
+    } else {
+      feeProtocolFromGetCalc.toInt()
+    }
+
+    totalGetRaw - feeProtocolAmountFromGet
+  }
+
+  (
+    nil,
+    newTotalGet
+  )
 }
 
 @Callable(i)
@@ -176,6 +203,10 @@ func swap(
   assetOutRaw: String,
   addressTo: String 
 ) = {
+  strict checks = [
+    i.payments.size() == 1 || "exactly 1 payment are expected".throw()
+  ]
+
   let assetOut = if (assetOutRaw == "") then "WAVES" else assetOutRaw
   let pmt = i.payments[0].value()
   let assetIn = if(pmt.assetId == unit) then "WAVES" else pmt.assetId.value().toBase58String()
@@ -184,6 +215,7 @@ func swap(
   let (plFee, prFee) = getSwapFees(poolAdr.toString())
   let feeProtocolAmountCalc = fraction(amountIn.toBigInt(), prFee.toBigInt(), feeScale)
   let feePoolAmountCalc = fraction(amountIn.toBigInt(), plFee.toBigInt(), feeScale)
+  let addressTo_a = addressTo.addressFromStringValue()
 
   let feeProtocolAmount = if (feeProtocolAmountCalc.toInt() == 0) then {
     toBigInt(1)
@@ -195,24 +227,44 @@ func swap(
   } else {
     feePoolAmountCalc
   }
-  let cleanAmountIn = amountIn.toBigInt() - feeProtocolAmount - feePoolAmount
 
-  strict checks = [
-    i.payments.size() == 1 || "exactly 1 payment are expected".throw()
-  ]
+  # Protocol fee should always be extracted from Pool Price Asset
+  # isReverse == true -> amountIn is in priceAssetId
+  let cleanAmountIn = if (isReverse == true) then {
+    amountIn.toBigInt() - feeProtocolAmount - feePoolAmount
+  } else {
+    amountIn.toBigInt() - feePoolAmount
+  }
 
-  let assetInAttachedPayment = if (assetIn == "WAVES") then unit else assetIn.fromBase58String()
-
+  let assetInAttachedPayment = assetIn.stringToAssetId()
   let totalGetRaw = invoke(
     poolAdr,
     "calculateAmountOutForSwapAndSendTokens",
-    [cleanAmountIn.toInt(), isReverse, amountOutMin, addressTo, feePoolAmount.toInt()],
+    [cleanAmountIn.toInt(), isReverse, amountOutMin, this.toString(), feePoolAmount.toInt()],
     [AttachedPayment(assetInAttachedPayment, cleanAmountIn.toInt())]
   ).exactAs[Int]
 
-  ([ScriptTransfer(feeCollectorAddress, feeProtocolAmount.toInt(), assetInAttachedPayment),
-  ScriptTransfer(poolAdr, feePoolAmount.toInt(), assetInAttachedPayment)],
-  totalGetRaw)
+  # Protocol fee should always be extracted from Pool Price Asset
+  let (protocolFeeActions, newTotalGet) = if (isReverse == true) then {
+    ([ScriptTransfer(feeCollectorAddress, feeProtocolAmount.toInt(), assetInAttachedPayment)], totalGetRaw)
+  } else {
+    let feeProtocolFromGetCalc = fraction(totalGetRaw.toBigInt(), prFee.toBigInt(), feeScale)    
+    let feeProtocolAmountFromGet = if (feeProtocolFromGetCalc.toInt() == 0) then {
+      toBigInt(1).toInt()
+    } else {
+      feeProtocolFromGetCalc.toInt()
+    }
+
+    ([ScriptTransfer(feeCollectorAddress, feeProtocolAmountFromGet, assetOut.stringToAssetId())], totalGetRaw - feeProtocolAmountFromGet)
+  }
+
+  (
+    protocolFeeActions ++
+    [
+      ScriptTransfer(poolAdr, feePoolAmount.toInt(), assetInAttachedPayment),
+      ScriptTransfer(addressTo_a, newTotalGet, assetOut.stringToAssetId())
+    ],
+  newTotalGet)
 }
 
 @Verifier(tx)
