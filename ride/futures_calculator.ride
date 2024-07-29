@@ -13,6 +13,7 @@ let usdtDecimals = 6
 let wavesString = "WAVES"
 let queueItemSize = 32
 let big0 = 0.toBigInt()
+let INDEX_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
 
 let kMultisig = "%s__multisig"
 func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
@@ -193,6 +194,22 @@ func kPrice(assetId: ByteVector|Unit) = {
   ["%s", assetIdToString(assetId)].makeString(separator)
 }
 
+# Pair settings 
+func kPairPricesListKey(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
+  ["%s%s%s", assetIdToString(amountAssetId), assetIdToString(priceAssetId), "pairSettingPrices"].makeString(separator)
+}
+
+func getPairPricesList(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
+  match (factoryAddress.getString(kPairPricesListKey(amountAssetId, priceAssetId))) {
+      case s:String => s.split(separator)
+      case _ => []
+    }
+}
+
+func kPairSettingsKey(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit, priceString: String) = {
+  ["%s%s%d%s", assetIdToString(amountAssetId), assetIdToString(priceAssetId), priceString, "settings"].makeString(separator)
+}
+
 func getCurrentPrice(assetId: ByteVector|Unit) = {
   let matcherPublicKey = factoryAddress.getString(kMatcherPublicKey).valueOrErrorMessage(
     wrapErr("invalid matcher public key")
@@ -316,8 +333,8 @@ func getAccountInfoInternal(accountAddress: Address) = {
     deposited,
     creditA,
     creditB,
-    getAssetBalance(amountAssetId, accountAddress),
-    getAssetBalance(priceAssetId, accountAddress),
+    getAssetBalance(kSyntheticAssetId(amountAssetId).parseAssetId(), accountAddress),
+    getAssetBalance(kSyntheticAssetId(priceAssetId).parseAssetId(), accountAddress),
     status
   )
 }
@@ -694,8 +711,6 @@ func getUserInfoREADONLY(callerPublicKey: ByteVector, args: List[String]) = {
   let userRequests = factoryAddress.getBinary(kRequestsByOwner(userAddress)).valueOrElse(base58'')
   let userRequestsNumber = userRequests.size() / queueItemSize
 
-  let nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
-
   func getAccountsData(acc: (List[ByteVector], ByteVector, Int), count: Int) = {
     let (accDataList, rawBytes, maxSize) = acc
 
@@ -712,10 +727,118 @@ func getUserInfoREADONLY(callerPublicKey: ByteVector, args: List[String]) = {
     }
   }
 
-  let (accDataList, _a, _b) = FOLD<20>(nums, ([], userRequests, userRequestsNumber), getAccountsData)
+  let (accDataList, _a, _b) = FOLD<20>(INDEX_LIST, ([], userRequests, userRequestsNumber), getAccountsData)
 
   (nil, accDataList)
 }
+
+@Callable(i)
+func getPairSettingsInfoREADONLY(callerPublicKey: ByteVector, args: List[String]) = {
+  let amountAsset = parseAssetId(args[0])
+  let priceAsset = parseAssetId(args[1])
+  
+  let pricesList = getPairPricesList(amountAsset, priceAsset)
+
+  func getPairSettings(acc: List[(Int, Int, Int, Int)], pricesString: String) = {
+    let settingsKey = kPairSettingsKey(amountAsset, priceAsset, pricesString)
+    let settingsStringValue = factoryAddress.getStringValue(settingsKey)
+    let sList = settingsStringValue.split(separator)
+
+    let price = pricesString.parseInt()
+    let maxLeverage = sList[1].parseInt()
+    let initialMargin   = sList[2].parseInt()
+    let maintenanceMargin = sList[3].parseInt()
+
+    acc :+ (price, maxLeverage, initialMargin, maintenanceMargin)
+  }
+
+  let data = FOLD<20>(pricesList, [], getPairSettings)
+
+  (nil, data)
+}
+
+# args: [amountAssetId, priceAssetId, price, maxLeverage, initialMargin, maintenanceMargin]
+@Callable(i)
+func editPairSettings(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checks = [
+    i.caller.mustFactory()
+    # callerPublicKey.mustAdmin()
+  ]
+
+  let amountAsset = parseAssetId(args[0])
+  let priceAsset = parseAssetId(args[1])
+  let price = args[2]
+  let maxLeverage = args[3]
+  let initialMargin = args[4]
+  let maintenanceMargin = args[5]
+  
+  let pairPricesListKey = kPairPricesListKey(amountAsset, priceAsset)
+  let settingsKey = kPairSettingsKey(amountAsset, priceAsset, price)
+  let pricesList = getPairPricesList(amountAsset, priceAsset)
+
+  let newList = match(pricesList.indexOf(price)) {
+    case ind:Int => pricesList
+    case _ => pricesList :+ price
+  }
+
+  strict check2 = [
+    price.parseInt().valueOrErrorMessage(wrapErr("price value is not an Int")),
+    maxLeverage.valueOrErrorMessage(wrapErr("maxLeverage value is not an Int")),
+    initialMargin.valueOrErrorMessage(wrapErr("initialMargin value is not an Int")),
+    maintenanceMargin.valueOrErrorMessage(wrapErr("maintenanceMargin value is not an Int")),
+    newList.size() <= 20 || throwErr("exceeded max prices list size (20)")
+  ] 
+
+  let pairSettingValue = [
+    "%s%s%s",
+    maxLeverage,
+    initialMargin,
+    maintenanceMargin
+  ].makeString(separator)
+
+
+  let invocations = [
+    factoryAddress.invoke("stringEntry", [kPairPricesListKey(amountAsset, priceAsset), newList.makeString(separator)], []),
+    factoryAddress.invoke("stringEntry", [kPairSettingsKey(amountAsset, priceAsset, price), pairSettingValue], [])
+  ]
+
+  (nil, invocations)
+}
+
+# args: [amountAssetId, priceAssetId, price]
+@Callable(i)
+func deletePairSettings(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checks = [
+    i.caller.mustFactory()
+    # callerPublicKey.mustAdmin()
+  ]
+
+  let amountAsset = parseAssetId(args[0])
+  let priceAsset = parseAssetId(args[1])
+  let price = args[2]
+  
+  let settingsKey = kPairSettingsKey(amountAsset, priceAsset, price)
+  let pairPricesListKey = kPairPricesListKey(amountAsset, priceAsset)
+  let pricesList = getPairPricesList(amountAsset, priceAsset)
+
+  let newList = match(pricesList.indexOf(price)) {
+    case ind:Int => pricesList.removeByIndex(ind)
+    case _ => pricesList
+  }
+
+  let invocations = [
+    factoryAddress.invoke("deleteEntry", [settingsKey], []),
+
+    if (newList.size() == 0) then {
+      factoryAddress.invoke("deleteEntry", [kPairPricesListKey(amountAsset, priceAsset)], [])
+    } else {
+      factoryAddress.invoke("stringEntry", [kPairPricesListKey(amountAsset, priceAsset), newList.makeString(separator)], [])
+    }
+  ]
+
+  (nil, invocations)
+}
+
 
 @Verifier(tx)
 func verify() = {
