@@ -1,5 +1,5 @@
 # Testnet environment
-[**pool-order-proofs**](https://github.com/waves-exchange/contracts/tree/pool-order-proofs) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:24 19.07.2024** (GMT+4)
+[**pool-order-proofs**](https://github.com/waves-exchange/contracts/tree/pool-order-proofs) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **12:44 29.07.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |

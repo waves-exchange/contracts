@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **13:25 19.07.2024** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **12:44 29.07.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -229,6 +229,9 @@ eFranken/WAVES pool | [`3PLUAm4z71TfGe5R6BcgFFHuAEmczaafCcw`](https://wavesexplo
 AMANAT/USDT pool | [`3PEe9eanZDFaNUqdJJ5vtfTQL81eigcU1Ai`](https://wavesexplorer.com/addresses/3PEe9eanZDFaNUqdJJ5vtfTQL81eigcU1Ai) | `6jp5GzshgyBeus7bDKfDfugADHKWWkFihtzNLX4HuXK1` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 TN/WX pool | [`3PDUC1sZn4pdd5dWnxtfDvwEG8w5wo3DB1A`](https://wavesexplorer.com/addresses/3PDUC1sZn4pdd5dWnxtfDvwEG8w5wo3DB1A) | `4L8tFfHALyi3XhS1yqjJPsTguBaZboJ5VzSj2LGUR3Sk` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 TN/WAVES pool | [`3PH3JGnDyCFq5oiM8VbNazMrTGbmMT4ku6m`](https://wavesexplorer.com/addresses/3PH3JGnDyCFq5oiM8VbNazMrTGbmMT4ku6m) | `ApariPn7ZYzfUXeHML194bFmeRtp2hJfDJDGiojFfKMa` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+Sparkcoin/WX pool | [`3PDSjqYRUku5vSU3vvAFtASiWuvfau9Viu3`](https://wavesexplorer.com/addresses/3PDSjqYRUku5vSU3vvAFtASiWuvfau9Viu3) | `ARrhVkDqm22p8ZrJFTPXzDnhfFnxSRhopiCTruwKwFYx` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+Sparkcoin/WAVES pool | [`3PJdFDcv1geM3DEkZjKRRkz8frrQNubTfQU`](https://wavesexplorer.com/addresses/3PJdFDcv1geM3DEkZjKRRkz8frrQNubTfQU) | `GBZF5ZuqEykQR3pZtk77RdbBjGoJFDD2t83xaT9azLai` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+Sparkcoin/USDT-ERC20 pool | [`3P33MbUhj5zH3shUs5jiKXX48bjgdaeyUdz`](https://wavesexplorer.com/addresses/3P33MbUhj5zH3shUs5jiKXX48bjgdaeyUdz) | `FBHBVPuSVXwaSsuUs4kFZVZLedxd5QLu8Ru97vyoTGvE` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -300,8 +303,8 @@ DEPS | [`C5Z9rc59bQgNF5GHsHxtRXJboGTMyXCFopsd7moevx4F`](https://wavesexplorer.co
 DOBERCOIN | [`AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc`](https://wavesexplorer.com/assets/AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc) | A digital meme coin. Created in honor of a beloved pet. 
 Duck Egg | [`C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS`](https://wavesexplorer.com/assets/C1iWsKGqLwjHUndiQ7iXpdmPum9PeCDFfyXBdJJosDRS) | Utility and Reward token @ WavesDucks.com game. The duckiest token in the world. 
 Durcoin | [`F1HoALyCDnvMbMxZcvWEVdtPXTY9BL9nbHnzSyjRLTt8`](https://wavesexplorer.com/assets/F1HoALyCDnvMbMxZcvWEVdtPXTY9BL9nbHnzSyjRLTt8) | SEC+Gram=Durcoin 
-EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
 EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.com/assets/3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK) | Enterprise Algorithmic Stable Token 
+EAST | [`6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq`](https://wavesexplorer.com/assets/6phK22ztGBW127gUFmdMEHKB3CVd6ZhWox2WtwJkbqTq) | EAST — Enterprise Algorithmic Stable Token built on the Waves Enterprise and Waves mainnet. Ensured both by significant overcollateralization and well-defined liquidation mechanisms. https://east.finance/ 
 eFranken | [`3D72RUJvJM1rMzw9VgrmU4SWjzEtYqHiLP9ZY7rhRw5c`](https://wavesexplorer.com/assets/3D72RUJvJM1rMzw9VgrmU4SWjzEtYqHiLP9ZY7rhRw5c) | Swiss cryptocurrency. See Parvex.org/eFranken 
 ENNO | [`7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg`](https://wavesexplorer.com/assets/7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg) | Native utility and governance token of Enno Wallet 
 ETH-Ethereum-PPT | [`3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13`](https://wavesexplorer.com/assets/3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
@@ -376,6 +379,7 @@ WX holders, on the other hand, can use StakeBooster to lock WX and receive the l
  
 sbWX | [`DeGaQpMuhAfey8A2VLZzbwnfdMVLzGh43Fox5vrHGuJH`](https://wavesexplorer.com/assets/DeGaQpMuhAfey8A2VLZzbwnfdMVLzGh43Fox5vrHGuJH) | sbWX is a tokenized version of locked gWX that is liquid (can be traded), and still receives protocol rewards. Provide liquidity to sbWX/WX pool on StakeBooster to get boosted yield: https://stakebooster.com/ 
 SIGN | [`9sQutD5HnRvjM1uui5cVC4w9xkMPAfYEV8ymug3Mon2Y`](https://wavesexplorer.com/assets/9sQutD5HnRvjM1uui5cVC4w9xkMPAfYEV8ymug3Mon2Y) | SignatureChain (SIGN) aims to decentralize a mainly centralized procedure - document certification. Blockchain technology will be utilized to certify various amounts of files, videos, and many more. 
+Sparkcoin | [`DE4pXnjNXz3Nb8M2tfDN1fXGhEaHchyS2t4yfbepGVCd`](https://wavesexplorer.com/assets/DE4pXnjNXz3Nb8M2tfDN1fXGhEaHchyS2t4yfbepGVCd) | — 
 SpitzCaramelo | [`GmAPBtY2H6CeKCoZVhzRfgjxk2YVrekaTYZTEXFRi9P1`](https://wavesexplorer.com/assets/GmAPBtY2H6CeKCoZVhzRfgjxk2YVrekaTYZTEXFRi9P1) | BR: siga-nos nas redes sociais, EN:follow us on social media, DE: Folgen Sie uns in den sozialen Medien, FR:suivez-nous sur les réseaux sociaux:  tiktok.com/@spitzcaramelo, youtube.com/@spitzcaramelo, instagram.com/spitzcaramelo, t.me/spitzcaramelo 
 BR: SpitzCaramelo foi criado para homenagear todos caes da raça "Spitz Alemão Anão".
 EN: SpitzCaramelo was created to honor all dogs of the Dwarf "German Spitz breed".
@@ -559,6 +563,9 @@ SBT~WAVESLP | [`2eaAmK1xQ253BVQrqx1LRLEEr3CAcxc6jnxfz9MtsJf8`](https://wavesexpl
 SBT~WXLP | [`GtZEMRLHo7d5SwmYvkkWR6ayxWh43X5kdBuUieaSfjhw`](https://wavesexplorer.com/assets/GtZEMRLHo7d5SwmYvkkWR6ayxWh43X5kdBuUieaSfjhw) | SBT~/WX pool liquidity provider token 
 sbWX~WXLP | [`AgT6ni9n5xdK4J4XZhdbm8ZVe7pxq8QcGnAJhUEhPmu4`](https://wavesexplorer.com/assets/AgT6ni9n5xdK4J4XZhdbm8ZVe7pxq8QcGnAJhUEhPmu4) | sbWX~/WX pool liquidity provider token 
 SIGNXTNLP | [`8uWMhUDMQVLAwCHjLuFDDm9785dqwweVVSxNuY1sX5ZM`](https://wavesexplorer.com/assets/8uWMhUDMQVLAwCHjLuFDDm9785dqwweVVSxNuY1sX5ZM) | WX SIGN/XTN pool liquidity provider token 
+Sparkcoin~WXLP | [`2viZnE5Rh1bP17SvejjXJnYQiMeZTppdUN1ZKnShm5cq`](https://wavesexplorer.com/assets/2viZnE5Rh1bP17SvejjXJnYQiMeZTppdUN1ZKnShm5cq) | Sparkcoin~/WX pool liquidity provider token 
+Sparkcoi~WAVESLP | [`o7pB2umUPGHgREVjpN4K8MS8mSFQ2u9jQu2KvisT32W`](https://wavesexplorer.com/assets/o7pB2umUPGHgREVjpN4K8MS8mSFQ2u9jQu2KvisT32W) | Sparkcoi~/WAVES pool liquidity provider token 
+Spa~USDT-ERC20LP | [`DHovfWyLr3cL63DDNM2jdDtB9cFYWPRHcAsZFUAVkReo`](https://wavesexplorer.com/assets/DHovfWyLr3cL63DDNM2jdDtB9cFYWPRHcAsZFUAVkReo) | Spa~/USDT-ERC20 pool liquidity provider token 
 SpitzCara~PETELP | [`2nqE8wDjAztKS8d3RauHZhcSrPK8dfstQwgNB7G6Q1Up`](https://wavesexplorer.com/assets/2nqE8wDjAztKS8d3RauHZhcSrPK8dfstQwgNB7G6Q1Up) | SpitzCara~/PETE pool liquidity provider token 
 STALKER~WAVESLP | [`2JWAdZRCMBMoGsALoyLrqJhpDBfUusEFshZN6NSjDmGc`](https://wavesexplorer.com/assets/2JWAdZRCMBMoGsALoyLrqJhpDBfUusEFshZN6NSjDmGc) | STALKER~/WAVES pool liquidity provider token 
 STEMXXTNLP | [`HVaJwFZVpCQtbDvJkq3CPKiGQvFZ8fF9bmifKnQMopVU`](https://wavesexplorer.com/assets/HVaJwFZVpCQtbDvJkq3CPKiGQvFZ8fF9bmifKnQMopVU) | STEMX/XTN pool liquidity provider token 
