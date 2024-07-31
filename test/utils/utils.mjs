@@ -13,11 +13,11 @@ export const compileScript = (
   script,
   transform = null,
   libraries = {},
+  compact = false,
 ) => {
   let transformFunc = transform;
   if (!transform) transformFunc = (x) => x;
   const estimatorVersion = undefined;
-  const compact = false;
   const removeUnused = false;
   const compilation = ride.compile(
     transformFunc(script),
@@ -37,9 +37,10 @@ export const compileScriptFromFile = async (
   path,
   transform = null,
   libraries = {},
+  compact = false,
 ) => {
   const script = await readFile(path, { encoding: 'utf-8' });
-  const result = compileScript(script, transform, libraries);
+  const result = compileScript(script, transform, libraries, compact);
 
   return result;
 };
