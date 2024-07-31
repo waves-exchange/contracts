@@ -323,6 +323,18 @@ func getAccountInfoInternal(accountAddress: Address) = {
   let creditB = factoryAddress.getInteger(kCredit(accountAddress, priceAssetId)).valueOrElse(0)
   let status = factoryAddress.getInteger(kRequestStatus(requestId)).valueOrErrorMessage("status not found. RequestId = " + requestId.toBase58String())
 
+  let synthAmountAssetId = factoryAddress.getString(kSyntheticAssetId(amountAssetId))
+  let synthAmountAssetBalance = match (synthAmountAssetId) {
+      case s:String => getAssetBalance(s.parseAssetId(), accountAddress)
+      case _ => 0
+    }
+
+  let synthPriceAssetId = factoryAddress.getString(kSyntheticAssetId(priceAssetId))
+  let synthPriceAssetBalance = match (synthPriceAssetId) {
+      case s:String => getAssetBalance(s.parseAssetId(), accountAddress)
+      case _ => 0
+    }
+
   (
     amountAssetId.assetIdToString(),
     priceAssetId.assetIdToString(),
@@ -333,8 +345,8 @@ func getAccountInfoInternal(accountAddress: Address) = {
     deposited,
     creditA,
     creditB,
-    getAssetBalance(kSyntheticAssetId(amountAssetId).parseAssetId(), accountAddress),
-    getAssetBalance(kSyntheticAssetId(priceAssetId).parseAssetId(), accountAddress),
+    synthAmountAssetBalance,
+    synthPriceAssetBalance,
     status
   )
 }
