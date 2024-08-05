@@ -351,6 +351,109 @@ func getAccountInfoInternal(accountAddress: Address) = {
   )
 }
 
+# Deposit USDT
+# args: [accountAddress]
+func depositINTERNAL(callerPublicKey: ByteVector, args: List[String], i: Invocation) = {
+  let payment = i.payments[0]
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory(),
+    i.payments.size() == 1 || throwErr("1 payment is required"),
+    payment.assetId == usdtAssetId || throwErr("invalid asset"),
+    # check if account is ready
+    factoryAddress.getInteger(
+      kRequestStatus(getRequestId(accountAddress))
+    ) == REQUEST_STATUS_READY || throwErr("account is not ready")
+  ]
+
+  let actions = [
+    ScriptTransfer(accountAddress, payment.amount, payment.assetId)
+  ]
+
+  let factoryActions = [
+    factoryAddress.invoke(
+      "integerEntry",
+      [
+        kDeposited(accountAddress),
+        depositedOption(accountAddress).valueOrElse(0) + payment.amount
+      ], []
+    )
+  ]
+
+  (actions, factoryActions)
+}
+
+# args: [accountAddress, assetId, amount]
+func borrowINTERNAL(callerPublicKey: ByteVector, args: List[String], i: Invocation) = {
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+  let assetIdRequested = parseAssetId(args[1])
+  let amountRequested = parseInt(args[2]).valueOrErrorMessage(
+    wrapErr("invalid requested amount")
+  ).ensurePositive("requested amount")
+  let accountOwnerPublicKey = getAccountOwnerPublicKey(accountAddress)
+  let userAddress = addressFromPublicKey(callerPublicKey)
+
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory(),
+    callerPublicKey == accountOwnerPublicKey || throwErr(
+      "can be called by account owner only"
+    )
+  ]
+
+  let amountAssetId = getAccountAssets(accountAddress)._1
+  let deposited = depositedOption(accountAddress).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
+  let currentPrice = getCurrentPrice(amountAssetId).toX18(pow10Decimals(usdtAssetId))
+  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0).toX18(pow10Decimals(amountAssetId))
+  let creditB = factoryAddress.getInteger(kCredit(accountAddress, usdtAssetId)).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
+  let totalCredit = calcTotalCredit(creditA, creditB, currentPrice)
+  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrErrorMessage(
+    wrapErr("leverage should be defined")
+  ).toX18(1)
+  let creditAvailableUsdt = calcCreditAvailable(deposited, leverage, totalCredit)
+
+  let creditAvailable = if (assetIdRequested == amountAssetId) then {
+    fraction(creditAvailableUsdt, mult18BigInt, currentPrice).fromX18(pow10Decimals(amountAssetId))
+  } else if (assetIdRequested == usdtAssetId) then {
+    creditAvailableUsdt.fromX18(pow10Decimals(usdtAssetId))
+  } else throwErr("invalid requested asset id")
+
+  let syntheticAssetId = factoryAddress.getString(
+    kSyntheticAssetId(assetIdRequested)
+  ).valueOrErrorMessage(
+    wrapErr("synthetic asset for requested asset is undefined")
+  ).parseAssetId()
+
+  let amountToSend = if (amountRequested <= creditAvailable) then {
+    amountRequested
+  } else throwErr("credit available = " + creditAvailable.toString())
+
+  let factoryActions = [
+    factoryAddress.invoke(
+      "integerEntry",
+      [
+        kCredit(accountAddress, assetIdRequested),
+        creditOption(accountAddress, assetIdRequested).valueOrElse(0) + amountToSend
+      ], []
+    ),
+    factoryAddress.invoke(
+      "transferAsset", 
+      [
+        userAddress.bytes,
+        amountToSend,
+        syntheticAssetId
+      ], []
+    )
+  ]
+
+  (nil, [factoryActions, creditAvailable])
+}
+
 @Callable(i)
 func init(
   factoryAddressStr: String
@@ -493,34 +596,7 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
 # args: [accountAddress]
 @Callable(i)
 func deposit(callerPublicKey: ByteVector, args: List[String]) = {
-  let payment = i.payments[0]
-  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
-    wrapErr("invalid account address")
-  )
-  strict ckecks = [
-    !shutdown || throwErr("not allowed"),
-    i.caller.mustFactory(),
-    i.payments.size() == 1 || throwErr("1 payment is required"),
-    payment.assetId == usdtAssetId || throwErr("invalid asset"),
-    # check if account is ready
-    factoryAddress.getInteger(
-      kRequestStatus(getRequestId(accountAddress))
-    ) == REQUEST_STATUS_READY || throwErr("account is not ready")
-  ]
-
-  let actions = [
-    ScriptTransfer(accountAddress, payment.amount, payment.assetId)
-  ]
-
-  let factoryActions = [
-    factoryAddress.invoke(
-      "integerEntry",
-      [
-        kDeposited(accountAddress),
-        depositedOption(accountAddress).valueOrElse(0) + payment.amount
-      ], []
-    )
-  ]
+  let (actions, factoryActions) = depositINTERNAL(callerPublicKey, args, i)
 
   (actions, factoryActions)
 }
@@ -554,70 +630,9 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
 # args: [accountAddress, assetId, amount]
 @Callable(i)
 func borrow(callerPublicKey: ByteVector, args: List[String]) = {
-  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
-    wrapErr("invalid account address")
-  )
-  let assetIdRequested = parseAssetId(args[1])
-  let amountRequested = parseInt(args[2]).valueOrErrorMessage(
-    wrapErr("invalid requested amount")
-  ).ensurePositive("requested amount")
-  let accountOwnerPublicKey = getAccountOwnerPublicKey(accountAddress)
-  let userAddress = addressFromPublicKey(callerPublicKey)
+  let (actions, factoryActions) = borrowINTERNAL(callerPublicKey, args, i)
 
-  strict ckecks = [
-    !shutdown || throwErr("not allowed"),
-    i.caller.mustFactory(),
-    callerPublicKey == accountOwnerPublicKey || throwErr(
-      "can be called by account owner only"
-    )
-  ]
-
-  let amountAssetId = getAccountAssets(accountAddress)._1
-  let deposited = depositedOption(accountAddress).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
-  let currentPrice = getCurrentPrice(amountAssetId).toX18(pow10Decimals(usdtAssetId))
-  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0).toX18(pow10Decimals(amountAssetId))
-  let creditB = factoryAddress.getInteger(kCredit(accountAddress, usdtAssetId)).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
-  let totalCredit = calcTotalCredit(creditA, creditB, currentPrice)
-  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrErrorMessage(
-    wrapErr("leverage should be defined")
-  ).toX18(1)
-  let creditAvailableUsdt = calcCreditAvailable(deposited, leverage, totalCredit)
-
-  let creditAvailable = if (assetIdRequested == amountAssetId) then {
-    fraction(creditAvailableUsdt, mult18BigInt, currentPrice).fromX18(pow10Decimals(amountAssetId))
-  } else if (assetIdRequested == usdtAssetId) then {
-    creditAvailableUsdt.fromX18(pow10Decimals(usdtAssetId))
-  } else throwErr("invalid requested asset id")
-
-  let syntheticAssetId = factoryAddress.getString(
-    kSyntheticAssetId(assetIdRequested)
-  ).valueOrErrorMessage(
-    wrapErr("synthetic asset for requested asset is undefined")
-  ).parseAssetId()
-
-  let amountToSend = if (amountRequested <= creditAvailable) then {
-    amountRequested
-  } else throwErr("credit available = " + creditAvailable.toString())
-
-  let factoryActions = [
-    factoryAddress.invoke(
-      "integerEntry",
-      [
-        kCredit(accountAddress, assetIdRequested),
-        creditOption(accountAddress, assetIdRequested).valueOrElse(0) + amountToSend
-      ], []
-    ),
-    factoryAddress.invoke(
-      "transferAsset", 
-      [
-        userAddress.bytes,
-        amountToSend,
-        syntheticAssetId
-      ], []
-    )
-  ]
-
-  (nil, [factoryActions, creditAvailable])
+  (actions, factoryActions)
 }
 
 # TODO: not implemented
