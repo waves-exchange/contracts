@@ -102,12 +102,18 @@ func mustFactory(caller: Address) = {
 }
 
 func mustAdmin(callerPublicKey: ByteVector) = {
-  let multisig = factoryAddress.getStringValue(kMultisig).addressFromStringValue()
-  let publicKeysList = multisig.getStringValue(kPublicKeys).split(separator)
+  let multisigAddressString = factoryAddress.getString(kMultisig)
+  let isAdmin = match (multisigAddressString) {
+      case addressString:String => {
+        let multisig = addressString.addressFromStringValue()
+        let publicKeysList = multisig.getStringValue(kPublicKeys).split(separator)
 
-  containsElement(
-    publicKeysList, callerPublicKey.toBase58String()
-  ) || throwErr("not allowed")
+        containsElement(publicKeysList, callerPublicKey.toBase58String()) 
+      }
+      case _ => callerPublicKey.addressFromPublicKey() == factoryAddress
+    }
+
+  isAdmin || throwErr("not allowed")
 }
 
 let kAccountScript = "%s__accountScript"
@@ -444,7 +450,7 @@ func borrowINTERNAL(callerPublicKey: ByteVector, args: List[String], i: Invocati
     factoryAddress.invoke(
       "transferAsset", 
       [
-        userAddress.bytes,
+        accountAddress.bytes,
         amountToSend,
         syntheticAssetId
       ], []
@@ -592,22 +598,13 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
   ])
 }
 
-# Deposit USDT
-# args: [accountAddress]
-@Callable(i)
-func deposit(callerPublicKey: ByteVector, args: List[String]) = {
-  let (actions, factoryActions) = depositINTERNAL(callerPublicKey, args, i)
-
-  (actions, factoryActions)
-}
-
 # TODO: validate accounts relations. (!)
 # TODO: validate asset id
 # TODO: ensure amount is positive
 # args: [accountAddress, amount, assetId]
 @Callable(i)
 func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
-  strict ckecks = [
+  strict checks = [
     !shutdown || throwErr("not allowed"),
     i.caller.mustFactory()
   ]
@@ -627,12 +624,31 @@ func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
   (nil, invocations)
 }
 
+# Deposit USDT
+# args: [accountAddress]
+@Callable(i)
+func deposit(callerPublicKey: ByteVector, args: List[String]) = {
+  let (actions, factoryActions) = depositINTERNAL(callerPublicKey, args, i)
+
+  (actions, factoryActions)
+}
+
 # args: [accountAddress, assetId, amount]
 @Callable(i)
 func borrow(callerPublicKey: ByteVector, args: List[String]) = {
   let (actions, factoryActions) = borrowINTERNAL(callerPublicKey, args, i)
 
   (actions, factoryActions)
+}
+
+# args: [accountAddress, assetId, amount]
+@Callable(i)
+func depositAndBorrow(callerPublicKey: ByteVector, args: List[String]) = {
+  let accountAddress = args[0]
+  let (depositActions, depositFactoryActions) = depositINTERNAL(callerPublicKey, [accountAddress], i)
+  let (borrowActions, borrowFactoryActions) = borrowINTERNAL(callerPublicKey, args, i)
+
+  (depositActions ++ borrowActions, depositFactoryActions ++ borrowFactoryActions)
 }
 
 # TODO: not implemented
@@ -788,8 +804,8 @@ func getPairSettingsInfoREADONLY(callerPublicKey: ByteVector, args: List[String]
 @Callable(i)
 func editPairSettings(callerPublicKey: ByteVector, args: List[String]) = {
   strict checks = [
-    i.caller.mustFactory()
-    # callerPublicKey.mustAdmin()
+    i.caller.mustFactory(),
+    callerPublicKey.mustAdmin()
   ]
 
   let amountAsset = parseAssetId(args[0])
@@ -836,8 +852,8 @@ func editPairSettings(callerPublicKey: ByteVector, args: List[String]) = {
 @Callable(i)
 func deletePairSettings(callerPublicKey: ByteVector, args: List[String]) = {
   strict checks = [
-    i.caller.mustFactory()
-    # callerPublicKey.mustAdmin()
+    i.caller.mustFactory(),
+    callerPublicKey.mustAdmin()
   ]
 
   let amountAsset = parseAssetId(args[0])
