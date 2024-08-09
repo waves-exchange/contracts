@@ -150,7 +150,8 @@ func call(function: String, args: List[String]) = {
 func setMultisig(multisig: String) = {
   strict checks = [
     i.mustThis(),
-    validateAddress(multisig) || throwErr("setMultisig: invalid multisig address")
+    validateAddress(multisig) || throwErr("setMultisig: invalid multisig address"),
+    multisig != this.toString() || throwErr("setMultisig: factory address cannot be multisig address")
   ]
 
   ([
@@ -160,13 +161,19 @@ func setMultisig(multisig: String) = {
 
 @Verifier(tx)
 func verify() = {
-  match getString(kMultisig) {
-    case multisig: String => {
-      let statusKey = kStatus(this.toString(), tx.id.toBase58String())
-      let status = multisig.addressFromStringValue().getBoolean(statusKey).valueOrElse(false)
+  let signCheck = sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
 
-      status
+  match this.getString(kMultisig) {
+    case multisig: String => {
+      if (multisig != this.toString() && validateAddress(multisig)) then {
+        let statusKey = kStatus(this.toString(), tx.id.toBase58String())
+        let status = multisig.addressFromStringValue().getBoolean(statusKey).valueOrElse(false)
+
+        status
+      } else {
+        signCheck
+      }
     }
-    case _ => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+    case _ => signCheck
   }
 }
