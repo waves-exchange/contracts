@@ -83,6 +83,19 @@ export const mochaHooks = {
     await broadcastAndWait(wxIssueTx);
     this.wxAssetId = wxIssueTx.id;
 
+    const usdtIssueTx = issue(
+      {
+        name: 'USDT',
+        description: '',
+        quantity: 1e10 * 1e8,
+        decimals: 6,
+        chainId,
+      },
+      this.accounts.emission.seed,
+    );
+    await broadcastAndWait(usdtIssueTx);
+    this.usdtAssetId = usdtIssueTx.id;
+
     this.wavesAssetId = 'WAVES';
 
     await setScriptFromFile(

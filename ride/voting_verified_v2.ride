@@ -50,7 +50,7 @@ let assetsStoreContract = keyAssetsStoreContract.getStringValue().addressFromStr
 # Emission keys
 let keyEmissionConfig = ["%s", "config"].makeString(separator)
 let wxAssetIdStr = emissionContract.getStringOrFail(keyEmissionConfig).split(separator)[1]
-let wxAssetId = wxAssetIdStr.fromBase58String()
+let wxAssetId = wxAssetIdStr.parseAssetId()
 # Emission keys
 
 let keyVotingThresholdAdd = ["%s%s", "votingThreshold", "add"].makeString(separator)
@@ -265,6 +265,7 @@ func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
   strict checks = [
     periodLength >= minPeriodLength && periodLength <= maxPeriodLength || "invalid periodLength".throwErr(),
     tokenIsVerified == false || "token already verified".throwErr(),
+    wxPaymentAssetId == wxAssetId || "payment[0] should be in wx".throwErr(),
     wxPaymentAmount >= periodLength * feePerBlock || "not enough wx for given period".throwErr(),
     wxPaymentAmount >= keyMinWxMinForSuggestAddAmountRequired.getIntegerValue() ||
       "payment less then min for suggest".throwErr()
@@ -280,7 +281,7 @@ func suggestAdd(assetId: String, periodLength: Int, assetImage: String) = {
 
   let (isRewardExist, rewardAssetId, rewardAmount, votingRewardActions) = if i.payments.size() > 1 then {
     let votingRewardPayment = i.payments[1]
-    let votingRewardPaymentAssetId = votingRewardPayment.assetId.value().toBase58String()
+    let votingRewardPaymentAssetId = votingRewardPayment.assetId.assetIdToString()
     let votingRewardPaymentAmount = votingRewardPayment.amount.value()
 
     (
@@ -339,6 +340,7 @@ func suggestRemove(assetId: String) = {
   strict checks = [
     tokenIsVerified || "token not verified".throwErr(),
     gwxAmountAtNow >= minSuggestRemoveBalance || "not enough gWXes".throwErr(),
+    wxPaymentAssetId == wxAssetId || "payment should be in wx".throwErr(),
     wxPaymentAmount >= keyWxForSuggestRemoveAmountRequired.getIntegerValue() ||
       "payment less then min for suggest".throwErr()
   ]
@@ -605,7 +607,7 @@ func claim(assetId: String, index: Int) = {
   let votingRewardAssetIdStr = keyVotingRewardAssetId(assetId, index).getString()
 
   let rewardAction = if votingRewardAssetIdStr.isDefined() then {
-    let votingRewardAssetId = votingRewardAssetIdStr.value().fromBase58String()
+    let votingRewardAssetId = votingRewardAssetIdStr.value().parseAssetId()
 
     [
       ScriptTransfer(callerAddress, rewardAmount, votingRewardAssetId),
