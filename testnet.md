@@ -1,5 +1,5 @@
 # Testnet environment
-[**verification-reward-waves**](https://github.com/waves-exchange/contracts/tree/verification-reward-waves) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **14:55 19.08.2024** (GMT+4)
+[**verification-reward-waves**](https://github.com/waves-exchange/contracts/tree/verification-reward-waves) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:44 20.08.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
