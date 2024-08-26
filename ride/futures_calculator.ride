@@ -505,9 +505,9 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
 
   # add request to queue or match with account immediately
 
-  let (actions, factoryActions) = if (accountsQueue().size() == 0) then { # if the accounts queue is empty
+  # let (actions, factoryActions) = if (accountsQueue().size() == 0) then { # if the accounts queue is empty
     # then add request to requests queue
-    ([
+    let (actions, factoryActions) = ([
       ScriptTransfer(factoryAddress, rewardAmount(), unit)
     ],
     [
@@ -515,26 +515,26 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
       factoryAddress.invoke("binaryEntry", [kRequestsQueue(), requestsQueue() + requestId], []),
       factoryAddress.invoke("integerEntry", [kRequestLeverage(requestId), leverage], [])
     ])
-  } else { # if the accounts queue is not empty
-    # then fulfill request
-    let accountPublicKey = accountsQueue().take(queueItemSize)
-    let accountAddress = addressFromPublicKey(accountPublicKey)
-    let creatorAddress = addressFromPublicKey(
-      factoryAddress.getBinary(
-        kAccountCreatorPublicKey(accountAddress)
-      ).valueOrErrorMessage(wrapErr("invalid creator public key"))
-    )
-    ([
-      ScriptTransfer(creatorAddress, rewardAmount(), unit)
-    ],
-    [
-      factoryAddress.invoke("binaryEntry", [kAccountsQueue(), accountsQueue().drop(queueItemSize)], []),
-      factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_READY], []),
-      factoryAddress.invoke("binaryEntry", [kRequestIdToAccountPublicKey(requestId), accountPublicKey], []),
-      factoryAddress.invoke("stringEntry", [kAccountAddressToRequestId(accountAddress), requestId.toBase58String()], []),
-      factoryAddress.invoke("integerEntry", [kLeverage(accountAddress), leverage], [])
-    ])
-  }
+  # } else { # if the accounts queue is not empty
+  #   # then fulfill request
+  #   let accountPublicKey = accountsQueue().take(queueItemSize)
+  #   let accountAddress = addressFromPublicKey(accountPublicKey)
+  #   let creatorAddress = addressFromPublicKey(
+  #     factoryAddress.getBinary(
+  #       kAccountCreatorPublicKey(accountAddress)
+  #     ).valueOrErrorMessage(wrapErr("invalid creator public key"))
+  #   )
+  #   ([
+  #     ScriptTransfer(creatorAddress, rewardAmount(), unit)
+  #   ],
+  #   [
+  #     factoryAddress.invoke("binaryEntry", [kAccountsQueue(), accountsQueue().drop(queueItemSize)], []),
+  #     factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_READY], []),
+  #     factoryAddress.invoke("binaryEntry", [kRequestIdToAccountPublicKey(requestId), accountPublicKey], []),
+  #     factoryAddress.invoke("stringEntry", [kAccountAddressToRequestId(accountAddress), requestId.toBase58String()], []),
+  #     factoryAddress.invoke("integerEntry", [kLeverage(accountAddress), leverage], [])
+  #   ])
+  # }
 
   (actions, factoryActions ++ [
     factoryAddress.invoke("binaryEntry", [kRequestOwnerPublicKey(requestId), callerPublicKey], []),
@@ -568,12 +568,13 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
 
   let (actions, factoryActions) = if (requestsQueue().size() == 0) then { # if the requests queue is empty
     # then add account to accounts queue
-    (
-      [],
-      [
-        factoryAddress.invoke("binaryEntry", [kAccountsQueue(), accountsQueue() + accountPublicKey], [])
-      ]
-    )
+    (throwErr("requests is empty"), nil)
+    # (
+    #   [],
+    #   [
+    #     factoryAddress.invoke("binaryEntry", [kAccountsQueue(), accountsQueue() + accountPublicKey], [])
+    #   ]
+    # )
   } else { # if the requests queue is not empty
     # then fulfill next request
     let requestId = requestsQueue().take(queueItemSize)
