@@ -175,11 +175,6 @@ func kRequestsQueue() = {
 }
 func requestsQueue() = factoryAddress.getBinary(kRequestsQueue()).valueOrElse(base58'')
 
-func kAccountsQueue() = {
-  ["%s", "accountsQueue"].makeString(separator)
-}
-func accountsQueue() = factoryAddress.getBinary(kAccountsQueue()).valueOrElse(base58'')
-
 func kRequestsByOwner(ownerAddress: Address) = {
   ["%s%s", "requests", ownerAddress.toString()].makeString(separator)
 }
@@ -489,7 +484,7 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
     wrapErr("invalid leverage")
   )
   let userAddress = addressFromPublicKey(callerPublicKey)
-  let requestId = sha256(userAddress.bytes + amountAssetIdStr.fromBase58String() + priceAssetIdStr.fromBase58String())
+  let requestId = sha256(userAddress.bytes + amountAssetIdStr.fromBase58String() + priceAssetIdStr.fromBase58String() + leverage.toBytes())
   let amountAssetId = parseAssetId(amountAssetIdStr)
   let priceAssetId = parseAssetId(priceAssetIdStr)
   let userRequestsNumber = kRequestsByOwner(userAddress).size() / queueItemSize
@@ -499,42 +494,21 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
     i.payments[0].assetId == unit || throwErr("invalid asset"),
     i.payments[0].amount == rewardAmount() || throwErr("invalid amount"),
     pairAllowed(amountAssetId, priceAssetId) || throwErr("pair is not allowed"),
+    leverage == 2 || throwErr("leverage is not allowed"),
     factoryAddress.getInteger(kRequestStatus(requestId)) == unit || throwErr("account is already exists"),
     userRequestsNumber < accountsLimit() || throwErr("accounts limit is " + accountsLimit().toString())
   ]
 
-  # add request to queue or match with account immediately
-
-  # let (actions, factoryActions) = if (accountsQueue().size() == 0) then { # if the accounts queue is empty
-    # then add request to requests queue
-    let (actions, factoryActions) = ([
+  # add request to queue
+  let (actions, factoryActions) = ([
       ScriptTransfer(factoryAddress, rewardAmount(), unit)
     ],
     [
       factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_EMPTY], []),
-      factoryAddress.invoke("binaryEntry", [kRequestsQueue(), requestsQueue() + requestId], []),
+      factoryAddress.invoke("binaryEntry",  [kRequestsQueue(), requestsQueue() + requestId], []),
       factoryAddress.invoke("integerEntry", [kRequestLeverage(requestId), leverage], [])
-    ])
-  # } else { # if the accounts queue is not empty
-  #   # then fulfill request
-  #   let accountPublicKey = accountsQueue().take(queueItemSize)
-  #   let accountAddress = addressFromPublicKey(accountPublicKey)
-  #   let creatorAddress = addressFromPublicKey(
-  #     factoryAddress.getBinary(
-  #       kAccountCreatorPublicKey(accountAddress)
-  #     ).valueOrErrorMessage(wrapErr("invalid creator public key"))
-  #   )
-  #   ([
-  #     ScriptTransfer(creatorAddress, rewardAmount(), unit)
-  #   ],
-  #   [
-  #     factoryAddress.invoke("binaryEntry", [kAccountsQueue(), accountsQueue().drop(queueItemSize)], []),
-  #     factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_READY], []),
-  #     factoryAddress.invoke("binaryEntry", [kRequestIdToAccountPublicKey(requestId), accountPublicKey], []),
-  #     factoryAddress.invoke("stringEntry", [kAccountAddressToRequestId(accountAddress), requestId.toBase58String()], []),
-  #     factoryAddress.invoke("integerEntry", [kLeverage(accountAddress), leverage], [])
-  #   ])
-  # }
+    ]
+  )
 
   (actions, factoryActions ++ [
     factoryAddress.invoke("binaryEntry", [kRequestOwnerPublicKey(requestId), callerPublicKey], []),
@@ -568,13 +542,7 @@ func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
 
   let (actions, factoryActions) = if (requestsQueue().size() == 0) then { # if the requests queue is empty
     # then add account to accounts queue
-    (throwErr("requests is empty"), nil)
-    # (
-    #   [],
-    #   [
-    #     factoryAddress.invoke("binaryEntry", [kAccountsQueue(), accountsQueue() + accountPublicKey], [])
-    #   ]
-    # )
+    (throwErr("requests queue is empty"), nil)
   } else { # if the requests queue is not empty
     # then fulfill next request
     let requestId = requestsQueue().take(queueItemSize)
