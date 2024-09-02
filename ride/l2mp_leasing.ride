@@ -11,6 +11,7 @@ func throwErr(msg: String) = {
 
 let keyAssetId   = ["%s", "assetId"].makeString(SEP)
 let keyForceStop = ["%s", "forceStop"].makeString(SEP)
+let keyForceOutStop = ["%s", "forceOutStop"].makeString(SEP)
 
 let keyPeriodOffsetId     = ["%s", "offsetId"].makeString(SEP)
 let keyPeriodOffsetHeight = ["%s", "offsetHeight"].makeString(SEP)
@@ -58,6 +59,7 @@ func keyUserLeasingByHeight(nodeAddress: String, userAddress: String) = {
 let assetIdString = this.getString(keyAssetId).valueOrElse("WAVES")
 let assetIdBytes  = if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
 let isForceStop = this.getBoolean(keyForceStop).valueOrElse(false)
+let isForceOutStop = this.getBoolean(keyForceOutStop).valueOrElse(false)
 
 func isValidAddress(address: String) = {
     match (address.addressFromString()) {
@@ -266,6 +268,7 @@ func getUnstakeActions(nodeAddress: String, userAddress: String, unstakeAmount: 
     
     strict checks = [
         !isForceStop || "contract is temporary stopped".throwErr(),
+        !isForceOutStop || "unstake is temporary disabled".throwErr(),
         unstakeAmount > 0 || "unstake amount should be greater than 0".throwErr(),
         unstakeAmount <= userNextLeased || 
             "unstake amount should be less or equal user staked amount".throwErr(),
@@ -301,6 +304,7 @@ func getClaimUnlockedActions(userAddress: String, claimAmount: Int) = {
 
     strict checks = [
         !isForceStop || "contract is temporary stopped".throwErr(),
+        !isForceOutStop || "claim is temporary disabled".throwErr(),
         claimAmount > 0 || "claim amount should be greater than 0".throwErr(),
         claimAmount <= toClaim || 
             "claim amount should be less or equal unlocked amount".throwErr(),
@@ -411,6 +415,17 @@ func setForceStopFlag(stop: Boolean) = {
 
     [
         BooleanEntry(keyForceStop, stop)
+    ]
+}
+
+@Callable(i)
+func setForceOutStopFlag(stop: Boolean) = {
+    strict check = [
+        isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr()
+    ]
+
+    [
+        BooleanEntry(keyForceOutStop, stop)
     ]
 }
 
