@@ -1,5 +1,5 @@
 # Testnet environment
-[**l2mp-leasing-tmp-stop**](https://github.com/waves-exchange/contracts/tree/l2mp-leasing-tmp-stop) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **15:41 02.09.2024** (GMT+4)
+[**l2mp-leasing-tmp-stop**](https://github.com/waves-exchange/contracts/tree/l2mp-leasing-tmp-stop) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **17:12 02.09.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
