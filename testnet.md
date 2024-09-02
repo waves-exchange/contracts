@@ -1,5 +1,5 @@
 # Testnet environment
-[**l2mp-leasing-tmp-stop**](https://github.com/waves-exchange/contracts/tree/l2mp-leasing-tmp-stop) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **15:25 02.09.2024** (GMT+4)
+[**l2mp-leasing-tmp-stop**](https://github.com/waves-exchange/contracts/tree/l2mp-leasing-tmp-stop) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **15:41 02.09.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -13,6 +13,7 @@ futures_factory | [`3N33da2nqrqyBQgBkrpYhUVyzmS2bjZvepH`](https://wavesexplorer.
 gwx_reward | [`3Mp5kisFrqESzrXxAMEPk2k69zpeF41czEE`](https://wavesexplorer.com/addresses/3Mp5kisFrqESzrXxAMEPk2k69zpeF41czEE?network=testnet) | `G349Uq3FTox7dRNLeAfAQeoACvwZ9iEnVSaHcEYn6j8J` | [gwx_reward.ride](https://github.com/waves-exchange/contracts/blob/l2mp-leasing-tmp-stop/ride/gwx_reward.ride) 
 ido | [`3MptKi7f3jwXjzqhHpvLLzsSpEQdZiwAo5c`](https://wavesexplorer.com/addresses/3MptKi7f3jwXjzqhHpvLLzsSpEQdZiwAo5c?network=testnet) | `44kjsoExo76qSrM51NMhbG8FtdLkcPtyJxEDrwDyT8kz` | [ido.ride](https://github.com/waves-exchange/contracts/blob/l2mp-leasing-tmp-stop/ride/ido.ride) 
 investor | [`3N3sjhLSBU5duySKvnNuKe5S2YNebk2Pxye`](https://wavesexplorer.com/addresses/3N3sjhLSBU5duySKvnNuKe5S2YNebk2Pxye?network=testnet) | `Cm17BFEPG286HnXKy3BbrJ8QYz8AbCqoWfUi8rKwHo12` | [investor.ride](https://github.com/waves-exchange/contracts/blob/l2mp-leasing-tmp-stop/ride/investor.ride) 
+l2mp_leasing | [`3NCWFHDzdPHZC6636ZkMLNDup9mjpbTLs7h`](https://wavesexplorer.com/addresses/3NCWFHDzdPHZC6636ZkMLNDup9mjpbTLs7h?network=testnet) | `3z8Q6Zu3KppVmn6fJJvrLc1Wo3krVHSvfaNcerm82md2` | [l2mp_leasing.ride](https://github.com/waves-exchange/contracts/blob/l2mp-leasing-tmp-stop/ride/l2mp_leasing.ride) 
 l2mp_staking | [`3N4yYqBkTUq1mDdHhvAd3St7spCbm84DytS`](https://wavesexplorer.com/addresses/3N4yYqBkTUq1mDdHhvAd3St7spCbm84DytS?network=testnet) | `8h7G4haeVwXKNHXNHsWkC1miUp5CQtk3WmpBKazQPxRh` | [l2mp_staking.ride](https://github.com/waves-exchange/contracts/blob/l2mp-leasing-tmp-stop/ride/l2mp_staking.ride) 
 l2mp_swap | [`3MyXFjhxofZUKbHj3p8TUgZwDEPNzq7YNo3`](https://wavesexplorer.com/addresses/3MyXFjhxofZUKbHj3p8TUgZwDEPNzq7YNo3?network=testnet) | `GMSDsb2uuChLYT3PeuzaUNyxyxCVWUKaV6Y5dP7xWxUV` | [l2mp_swap.ride](https://github.com/waves-exchange/contracts/blob/l2mp-leasing-tmp-stop/ride/l2mp_swap.ride) 
 BTC/ETH pool | [`3N8iNNRC4UfDK4aJctSvHajiZ81fzSumCeP`](https://wavesexplorer.com/addresses/3N8iNNRC4UfDK4aJctSvHajiZ81fzSumCeP?network=testnet) | `F7NZd812aXMUyDcj1XaB3wgMJXJfUsq3RhPhrEZ9b6ND` | [lp.ride](https://github.com/waves-exchange/contracts/blob/l2mp-leasing-tmp-stop/ride/lp.ride) 
