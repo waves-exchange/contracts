@@ -45,6 +45,7 @@ describe(`[${process.pid}] futures: add account`, () => {
         { key: `%s%s%s__${assetId1}__${assetId2}__pairAllowed`, type: 'boolean', value: true },
       ],
       chainId,
+      additionalFee: 400000,
     }, accounts.factory.seed)).catch(({ message }) => { throw new Error(message); });
   });
 
@@ -104,7 +105,7 @@ describe(`[${process.pid}] futures: add account`, () => {
     }, accounts.account1.seed))).to.be.rejectedWith('invalid script');
   });
 
-  it('successfull init account', async () => {
+  it('successfully init account', async () => {
     await broadcastAndWait(setScript({
       script: validScript,
       chainId,
@@ -160,7 +161,7 @@ describe(`[${process.pid}] futures: add account`, () => {
             value: [
               { type: 'string', value: assetId1 },
               { type: 'string', value: assetId2 },
-              { type: 'string', value: '1' },
+              { type: 'string', value: '2' },
             ],
           },
         ],

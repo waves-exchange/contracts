@@ -29,12 +29,6 @@ describe(`[${process.pid}] futures: factory request account`, () => {
       accounts, rewardAmount, assetId1, assetId2,
     } = await setup());
 
-    requestId = base58Encode(sha256([
-      ...base58Decode(accounts.user1.address),
-      ...base58Decode(assetId1),
-      ...base58Decode(assetId2),
-    ]));
-
     const kAccountScript = '%s__accountScript';
     validScript = await api.addresses.fetchDataKey(
       accounts.factory.address,
@@ -56,6 +50,7 @@ describe(`[${process.pid}] futures: factory request account`, () => {
             value: [
               { type: 'string', value: assetId1 },
               { type: 'string', value: assetId2 },
+              { type: 'string', value: '2' },
             ],
           },
         ],
@@ -152,9 +147,10 @@ describe(`[${process.pid}] futures: factory request account`, () => {
         { key: `%s%s%s__${assetId1}__${assetId2}__pairAllowed`, type: 'boolean', value: true },
       ],
       chainId,
+      additionalFee: 400000,
     }, accounts.factory.seed)).catch(({ message }) => { throw new Error(message); });
 
-    await broadcastAndWait(invokeScript({
+    const requestInvokeTx = invokeScript({
       dApp: accounts.factory.address,
       call: {
         function: 'call',
@@ -165,6 +161,7 @@ describe(`[${process.pid}] futures: factory request account`, () => {
             value: [
               { type: 'string', value: assetId1 },
               { type: 'string', value: assetId2 },
+              { type: 'string', value: '2' },
             ],
           },
         ],
@@ -173,12 +170,12 @@ describe(`[${process.pid}] futures: factory request account`, () => {
         { assetId: null, amount: rewardAmount },
       ],
       chainId,
-    }, accounts.user1.seed)).catch(({ message }) => { throw new Error(message); });
+    }, accounts.user1.seed);
 
-    const accountId = base58Encode(sha256([
-      ...base58Decode(accounts.user1.address),
-      ...base58Decode(assetId1),
-      ...base58Decode(assetId2),
+    await broadcastAndWait(requestInvokeTx).catch(({ message }) => { throw new Error(message); });
+
+    requestId = base58Encode(sha256([
+      ...base58Decode(requestInvokeTx.id),
     ]));
 
     const accountStatusEmpty = 0;
@@ -187,58 +184,33 @@ describe(`[${process.pid}] futures: factory request account`, () => {
 
     const expected = [
       {
-        key: `%s%s__${accountId}__status`,
+        key: `%s%s__${requestId}__status`,
         type: 'integer',
         value: accountStatusEmpty,
       },
       {
         key: '%s__requestsQueue',
         type: 'binary',
-        value: `base64:${base64Encode(base58Decode(accountId))}`,
+        value: `base64:${base64Encode(base58Decode(requestId))}`,
       },
       {
-        key: `%s%s__${accountId}__ownerPublicKey`,
+        key: `%s%s__${requestId}__ownerPublicKey`,
         type: 'binary',
         value: `base64:${base64Encode(base58Decode(accounts.user1.publicKey))}`,
       },
       {
-        key: `%s%s__${accountId}__amountAssetId`,
+        key: `%s%s__${requestId}__amountAssetId`,
         type: 'string',
         value: assetId1,
       },
       {
-        key: `%s%s__${accountId}__priceAssetId`,
+        key: `%s%s__${requestId}__priceAssetId`,
         type: 'string',
         value: assetId2,
       },
     ];
 
     expect(factoryState).to.containSubset(expected);
-  });
-
-  it('account already exists', async () => {
-    const functionName = 'requestAccount';
-
-    return expect(broadcastAndWait(invokeScript({
-      dApp: accounts.factory.address,
-      call: {
-        function: 'call',
-        args: [
-          { type: 'string', value: functionName },
-          {
-            type: 'list',
-            value: [
-              { type: 'string', value: assetId1 },
-              { type: 'string', value: assetId2 },
-            ],
-          },
-        ],
-      },
-      payment: [
-        { assetId: null, amount: rewardAmount },
-      ],
-      chainId,
-    }, accounts.user1.seed))).to.be.rejectedWith('account is already exists');
   });
 
   it('add account after request was created', async () => {

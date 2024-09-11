@@ -484,7 +484,7 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
     wrapErr("invalid leverage")
   )
   let userAddress = addressFromPublicKey(callerPublicKey)
-  let requestId = sha256(userAddress.bytes + amountAssetIdStr.fromBase58String() + priceAssetIdStr.fromBase58String() + leverage.toBytes())
+  let requestId = sha256(i.transactionId)
   let amountAssetId = parseAssetId(amountAssetIdStr)
   let priceAssetId = parseAssetId(priceAssetIdStr)
   let userRequestsNumber = kRequestsByOwner(userAddress).size() / queueItemSize
