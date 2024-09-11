@@ -24,6 +24,7 @@ describe(`[${process.pid}] futures: calculator permissions`, () => {
       data: [
         { key: `%s%s%s__${assetId1}__${assetId2}__pairAllowed`, type: 'boolean', value: true },
       ],
+      additionalFee: 4e5,
       chainId,
     }, accounts.factory.seed)).catch(({ message }) => { throw new Error(message); });
   });

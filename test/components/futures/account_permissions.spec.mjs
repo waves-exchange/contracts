@@ -19,13 +19,14 @@ const { expect } = chai;
 describe(`[${process.pid}] futures: account permissions`, () => {
   let accounts;
   let assetIdOwned;
+  let rewardAmount;
   let assetId1;
   let assetId2;
   let validScript;
 
   before(async () => {
     ({
-      accounts, assetId1, assetId2,
+      accounts, rewardAmount, assetId1, assetId2,
     } = await setup());
 
     ({ id: assetIdOwned } = await broadcastAndWait(issue({
@@ -47,6 +48,7 @@ describe(`[${process.pid}] futures: account permissions`, () => {
       data: [
         { key: `%s%s%s__${assetId1}__${assetId2}__pairAllowed`, type: 'boolean', value: true },
       ],
+      additionalFee: 4e5,
       chainId,
     }, accounts.factory.seed));
 
@@ -54,6 +56,28 @@ describe(`[${process.pid}] futures: account permissions`, () => {
       script: validScript,
       chainId,
     }, accounts.account1.seed));
+
+    await broadcastAndWait(invokeScript({
+      dApp: accounts.factory.address,
+      call: {
+        function: 'call',
+        args: [
+          { type: 'string', value: 'requestAccount' },
+          {
+            type: 'list',
+            value: [
+              { type: 'string', value: assetId1 },
+              { type: 'string', value: assetId2 },
+              { type: 'string', value: '2' },
+            ],
+          },
+        ],
+      },
+      payment: [
+        { assetId: null, amount: rewardAmount },
+      ],
+      chainId,
+    }, accounts.user1.seed));
 
     await broadcastAndWait(invokeScript({
       dApp: accounts.account1.address,

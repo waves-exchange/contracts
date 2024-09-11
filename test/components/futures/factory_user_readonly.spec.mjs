@@ -43,47 +43,8 @@ describe(`[${process.pid}] futures: factory readonly`, () => {
         { key: '%s__usdtAssetId', type: 'string', value: assetId2 },
       ],
       chainId,
+      additionalFee: 4e5,
     }, accounts.factory.seed)).catch(({ message }) => { throw new Error(message); });
-
-    // Account 1
-    await broadcastAndWait(setScript({
-      script: validScript,
-      chainId,
-    }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
-
-    await broadcastAndWait(invokeScript({
-      dApp: accounts.account1.address,
-      call: {
-        function: 'init',
-        args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
-        ],
-      },
-      payment: [],
-      chainId,
-      additionalFee: 4e5,
-    }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
-
-    // Account 2
-    await broadcastAndWait(setScript({
-      script: validScript,
-      chainId,
-    }, accounts.account2.seed)).catch(({ message }) => { throw new Error(message); });
-
-    await broadcastAndWait(invokeScript({
-      dApp: accounts.account2.address,
-      call: {
-        function: 'init',
-        args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
-        ],
-      },
-      payment: [],
-      chainId,
-      additionalFee: 4e5,
-    }, accounts.account2.seed)).catch(({ message }) => { throw new Error(message); });
 
     await broadcastAndWait(invokeScript({
       dApp: accounts.factory.address,
@@ -128,6 +89,46 @@ describe(`[${process.pid}] futures: factory readonly`, () => {
       ],
       chainId,
     }, accounts.user1.seed)).catch(({ message }) => { throw new Error(message); });
+
+    // Account 1
+    await broadcastAndWait(setScript({
+      script: validScript,
+      chainId,
+    }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
+
+    await broadcastAndWait(invokeScript({
+      dApp: accounts.account1.address,
+      call: {
+        function: 'init',
+        args: [
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
+        ],
+      },
+      payment: [],
+      chainId,
+      additionalFee: 4e5,
+    }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
+
+    // Account 2
+    await broadcastAndWait(setScript({
+      script: validScript,
+      chainId,
+    }, accounts.account2.seed)).catch(({ message }) => { throw new Error(message); });
+
+    await broadcastAndWait(invokeScript({
+      dApp: accounts.account2.address,
+      call: {
+        function: 'init',
+        args: [
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
+        ],
+      },
+      payment: [],
+      chainId,
+      additionalFee: 4e5,
+    }, accounts.account2.seed)).catch(({ message }) => { throw new Error(message); });
   });
 
   it('getUserInfoREADONLY', async () => {

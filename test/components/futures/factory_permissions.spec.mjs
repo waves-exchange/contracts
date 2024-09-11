@@ -25,6 +25,7 @@ describe(`[${process.pid}] futures: factory permissions`, () => {
       quantity: 1e6 * 1e8,
       decimals: 8,
       reissuable: true,
+      additionalFee: 4e5,
       chainId,
     }, accounts.factory.seed)));
   });

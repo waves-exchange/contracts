@@ -3,14 +3,12 @@ import chaiAsPromised from 'chai-as-promised';
 import chaiSubset from 'chai-subset';
 import {
   invokeScript, data, setScript,
-  transfer,
 } from '@waves/waves-transactions';
 import {
   base58Decode, base58Encode, sha256,
 } from '@waves/ts-lib-crypto';
 import {
   chainId, broadcastAndWait, api,
-  baseSeed,
 } from '../../utils/api.mjs';
 import { setup } from './_setup.mjs';
 
@@ -26,19 +24,11 @@ describe(`[${process.pid}] futures: factory readonly`, () => {
   let validScript;
   let rewardAmount;
   const leverage = 2;
-  const assetId1Amount = 12345;
-  const assetId2Amount = 34567;
 
   before(async () => {
     ({
       accounts, assetId1, assetId2, rewardAmount,
     } = await setup());
-
-    requestId = base58Encode(sha256([
-      ...base58Decode(accounts.user1.address),
-      ...base58Decode(assetId1),
-      ...base58Decode(assetId2),
-    ]));
 
     const kAccountScript = '%s__accountScript';
     validScript = await api.addresses.fetchDataKey(
@@ -52,6 +42,7 @@ describe(`[${process.pid}] futures: factory readonly`, () => {
         { key: '%s__usdtAssetId', type: 'string', value: assetId2 },
       ],
       chainId,
+      additionalFee: 4e5,
     }, accounts.factory.seed)).catch(({ message }) => { throw new Error(message); });
 
     await broadcastAndWait(setScript({
@@ -59,21 +50,7 @@ describe(`[${process.pid}] futures: factory readonly`, () => {
       chainId,
     }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
 
-    await broadcastAndWait(invokeScript({
-      dApp: accounts.account1.address,
-      call: {
-        function: 'init',
-        args: [
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
-          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
-        ],
-      },
-      payment: [],
-      chainId,
-      additionalFee: 4e5,
-    }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
-
-    await broadcastAndWait(invokeScript({
+    const requestInvokeTx = invokeScript({
       dApp: accounts.factory.address,
       call: {
         function: 'call',
@@ -93,21 +70,27 @@ describe(`[${process.pid}] futures: factory readonly`, () => {
         { assetId: null, amount: rewardAmount },
       ],
       chainId,
-    }, accounts.user1.seed)).catch(({ message }) => { throw new Error(message); });
+    }, accounts.user1.seed);
 
-    await broadcastAndWait(transfer({
-      recipient: accounts.account1.address,
-      assetId: assetId1,
-      amount: assetId1Amount,
-      chainId,
-    }, baseSeed)).catch(({ message }) => { throw new Error(message); });
+    await broadcastAndWait(requestInvokeTx).catch(({ message }) => { throw new Error(message); });
 
-    await broadcastAndWait(transfer({
-      recipient: accounts.account1.address,
-      assetId: assetId2,
-      amount: assetId2Amount,
+    requestId = base58Encode(sha256([
+      ...base58Decode(requestInvokeTx.id),
+    ]));
+
+    await broadcastAndWait(invokeScript({
+      dApp: accounts.account1.address,
+      call: {
+        function: 'init',
+        args: [
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.factory.publicKey))}` },
+          { type: 'binary', value: `base64:${base64Encode(base58Decode(accounts.creator.publicKey))}` },
+        ],
+      },
+      payment: [],
       chainId,
-    }, baseSeed)).catch(({ message }) => { throw new Error(message); });
+      additionalFee: 4e5,
+    }, accounts.account1.seed)).catch(({ message }) => { throw new Error(message); });
   });
 
   it('getAccountInfoREADONLY', async () => {
@@ -162,11 +145,11 @@ describe(`[${process.pid}] futures: factory readonly`, () => {
         },
         _10: {
           type: 'Int',
-          value: assetId1Amount,
+          value: 0,
         },
         _11: {
           type: 'Int',
-          value: assetId2Amount,
+          value: 0,
         },
         _12: {
           type: 'Int',
