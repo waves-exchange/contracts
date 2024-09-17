@@ -500,21 +500,53 @@ func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
   ]
 
   # add request to queue
-  let (actions, factoryActions) = ([
+  let actions = [
       ScriptTransfer(factoryAddress, rewardAmount(), unit)
-    ],
-    [
-      factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_EMPTY], []),
-      factoryAddress.invoke("binaryEntry",  [kRequestsQueue(), requestsQueue() + requestId], []),
-      factoryAddress.invoke("integerEntry", [kRequestLeverage(requestId), leverage], [])
     ]
-  )
 
-  (actions, factoryActions ++ [
-    factoryAddress.invoke("binaryEntry", [kRequestOwnerPublicKey(requestId), callerPublicKey], []),
-    factoryAddress.invoke("binaryEntry", [kRequestsByOwner(userAddress), requestsByOwner(userAddress) + requestId], []),
-    factoryAddress.invoke("stringEntry", [kRequestAmountAssetId(requestId), amountAssetIdStr], []),
-    factoryAddress.invoke("stringEntry", [kRequestPriceAssetId(requestId), priceAssetIdStr], [])
+  (actions, [
+    factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_EMPTY], []),
+    factoryAddress.invoke("binaryEntry",  [kRequestsQueue(), requestsQueue() + requestId], []),
+    factoryAddress.invoke("binaryEntry",  [kRequestsByOwner(userAddress), requestsByOwner(userAddress) + requestId], []),
+    factoryAddress.invoke("binaryEntry",  [kRequestOwnerPublicKey(requestId), callerPublicKey], []),
+    factoryAddress.invoke("stringEntry",  [kRequestAmountAssetId(requestId), amountAssetIdStr], []),
+    factoryAddress.invoke("stringEntry",  [kRequestPriceAssetId(requestId), priceAssetIdStr], []),
+    factoryAddress.invoke("integerEntry", [kRequestLeverage(requestId), leverage], [])
+  ])
+}
+
+# called by user
+# args: [accountAddress, amountAssetId, priceAssetId, leverage]
+@Callable(i)
+func editAccount(callerPublicKey: ByteVector, args: List[String]) = {
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+  let amountAssetIdStr = args[1]
+  let priceAssetIdStr = args[2]
+  let leverage = parseInt(args[3]).valueOrErrorMessage(
+    wrapErr("invalid leverage")
+  )
+  let requestId = getRequestId(accountAddress)
+  let ownerPublicKey = getAccountOwnerPublicKey(accountAddress)
+  let amountAssetId = parseAssetId(amountAssetIdStr)
+  let priceAssetId = parseAssetId(priceAssetIdStr)
+
+  strict checks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory(),
+    callerPublicKey == ownerPublicKey || throwErr("caller is not an account owner"),
+    pairAllowed(amountAssetId, priceAssetId) || throwErr("pair is not allowed"),
+    leverage == 2 || throwErr("leverage is not allowed"),
+    factoryAddress.getInteger(
+      kRequestStatus(requestId)
+    ) == REQUEST_STATUS_READY || throwErr("account is not ready")
+  ]
+
+  (nil, [
+    factoryAddress.invoke("stringEntry",  [kRequestAmountAssetId(requestId), amountAssetIdStr], []),
+    factoryAddress.invoke("stringEntry",  [kRequestPriceAssetId(requestId), priceAssetIdStr], []),
+    factoryAddress.invoke("integerEntry", [kRequestLeverage(requestId), leverage], [])
   ])
 }
 
