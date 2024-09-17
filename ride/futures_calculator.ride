@@ -1,0 +1,902 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let separator = "__"
+let chainId = this.bytes.drop(1).take(1)
+let chainIdW = base16'57'
+let contractFilename = "futures_calculator.ride"
+let mult8 = 100_000_000
+let mult18BigInt = 1_000_000_000_000_000_000.toBigInt()
+let wavesDecimals = 8
+let usdtDecimals = 6
+let wavesString = "WAVES"
+let queueItemSize = 32
+let big0 = 0.toBigInt()
+let INDEX_LIST = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+let kMultisig = "%s__multisig"
+func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
+
+let kShutdown = "%s__shutdown"
+let kPublicKeys = "%s__publicKeys"
+let kMatcherPublicKey = "%s__matcherPublicKey"
+
+func toX18(origVal: Int, origScaleMult: Int) = fraction(origVal.toBigInt(), mult18BigInt, origScaleMult.toBigInt())
+func fromX18(val: BigInt, resultScaleMult: Int) = fraction(val, resultScaleMult.toBigInt(), mult18BigInt).toInt()
+
+func validateAddress(address: String) = {
+  addressFromString(address).isDefined()
+}
+
+func wrapErr(s: String) = {
+  contractFilename + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
+
+func ensurePositive(v: Int, s: String) = {
+  if (v >= 0) then v else throwErr(s + " value should be positive")
+}
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
+func getAssetInfoOrFail(assetId: ByteVector) = {
+  assetInfo(assetId).valueOrErrorMessage(wrapErr("invalid asset info"))
+}
+
+func getAssetDecimalsOrFail(assetId: ByteVector|Unit) = {
+  match assetId {
+    case _: Unit => wavesDecimals
+    case assetId: ByteVector => getAssetInfoOrFail(assetId).decimals
+  }
+}
+
+func getAssetBalance(assetId: ByteVector|Unit, address: Address) = {
+  match assetId {
+    case _: Unit => address.wavesBalance().available
+    case assetId: ByteVector => address.assetBalance(assetId)
+  }
+}
+
+func pow10(n: Int) = pow(10, 0, n, 0, 0, DOWN)
+
+func pow10Decimals(assetId: ByteVector|Unit) = pow10(getAssetDecimalsOrFail(assetId))
+
+let kFactoryAddress = "%s__factoryAddress"
+let factoryAddressOption = match this.getString(kFactoryAddress) {
+  case s: String => s.addressFromString()
+  case _: Unit => unit
+}
+let factoryAddress = factoryAddressOption.valueOrErrorMessage(wrapErr("invalid factory address"))
+
+let kUsdtAssetId = "%s__usdtAssetId"
+let usdtAssetIdOption = match factoryAddress.getString(kUsdtAssetId) {
+  case s: String => parseAssetId(s)
+  case _: Unit => unit
+}
+let usdtAssetId = usdtAssetIdOption.valueOrErrorMessage(wrapErr("invalid usdt asset id"))
+
+let kPricesAddress = "%s__calculatorAddress"
+
+let shutdown = factoryAddress.getBoolean(kShutdown).valueOrElse(false)
+
+func mustAddress(caller: Address, address: Address) = {
+  caller == address || throwErr("permission denied")
+}
+
+func mustThis(caller: Address) = {
+  mustAddress(caller, this)
+}
+
+func mustFactory(caller: Address) = {
+  mustAddress(caller, factoryAddress)
+}
+
+func mustAdmin(callerPublicKey: ByteVector) = {
+  let multisigAddressString = factoryAddress.getString(kMultisig)
+  let isAdmin = match (multisigAddressString) {
+      case addressString:String => {
+        let multisig = addressString.addressFromStringValue()
+        let publicKeysList = multisig.getStringValue(kPublicKeys).split(separator)
+
+        containsElement(publicKeysList, callerPublicKey.toBase58String()) 
+      }
+      case _ => callerPublicKey.addressFromPublicKey() == factoryAddress
+    }
+
+  isAdmin || throwErr("not allowed")
+}
+
+let kAccountScript = "%s__accountScript"
+func accountScript() = factoryAddress.getBinary(
+  kAccountScript
+).valueOrErrorMessage(wrapErr("account script is not set"))
+
+let kRewardAmount = "%s__rewardAmount"
+func rewardAmount() = factoryAddress.getInteger(
+  kRewardAmount
+).valueOrErrorMessage(wrapErr("reward amount is not set"))
+
+let kAccountsLimit = "%s__accountsLimit"
+let accountsLimitDefault = 20
+func accountsLimit() = factoryAddress.getInteger(
+  kAccountsLimit
+).valueOrElse(accountsLimitDefault)
+
+func kDeposited(accountAddress: Address) = ["%s%s", "deposited", accountAddress.toString()].makeString(separator)
+func depositedOption(accountAddress: Address) = factoryAddress.getInteger(
+  kDeposited(accountAddress)
+)
+func kCredit(accountAddress: Address, assetId: ByteVector|Unit) = ["%s%s%s", "credit", accountAddress.toString(), assetId.assetIdToString()].makeString(separator)
+func creditOption(accountAddress: Address, assetId: ByteVector|Unit) = factoryAddress.getInteger(
+  kCredit(accountAddress, assetId)
+)
+func kLeverage(accountAddress: Address) = ["%s%s", "leverage", accountAddress.toString()].makeString(separator)
+func kRequestLeverage(requestId: ByteVector) = ["%s%s", "requestLeverage", requestId.toBase58String()].makeString(separator)
+func kSyntheticAssetId(baseAssetId: ByteVector|Unit) = ["%s%s", "syntheticAssetId", baseAssetId.assetIdToString()].makeString(separator)
+func kBaseAssetId(syntheticAssetId: ByteVector|Unit) = ["%s%s", "baseAssetId", syntheticAssetId.assetIdToString()].makeString(separator)
+
+let REQUEST_STATUS_EMPTY = 0
+let REQUEST_STATUS_READY = 1
+func kRequestStatus(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "status"].makeString(separator)
+}
+
+func kAccountCreatorPublicKey(accountAddress: Address) = {
+  ["%s%s", accountAddress.toString(), "creatorPublicKey"].makeString(separator)
+}
+func kRequestOwnerPublicKey(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "ownerPublicKey"].makeString(separator)
+}
+func kRequestAmountAssetId(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "amountAssetId"].makeString(separator)
+}
+func kRequestPriceAssetId(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "priceAssetId"].makeString(separator)
+}
+func kRequestIdToAccountPublicKey(requestId: ByteVector) = {
+  ["%s%s", requestId.toBase58String(), "requestIdToAccountPublicKey"].makeString(separator)
+}
+func kAccountAddressToRequestId(accountAddress: Address) = {
+  ["%s%s", accountAddress.toString(), "accountAddressToRequestId"].makeString(separator)
+}
+
+func kRequestsQueue() = {
+  ["%s", "requestsQueue"].makeString(separator)
+}
+func requestsQueue() = factoryAddress.getBinary(kRequestsQueue()).valueOrElse(base58'')
+
+func kRequestsByOwner(ownerAddress: Address) = {
+  ["%s%s", "requests", ownerAddress.toString()].makeString(separator)
+}
+func requestsByOwner(ownerAddress: Address) = factoryAddress.getBinary(
+  kRequestsByOwner(ownerAddress)
+).valueOrElse(base58'')
+
+func kPairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
+  ["%s%s%s", assetIdToString(amountAssetId), assetIdToString(priceAssetId), "pairAllowed"].makeString(separator)
+}
+func pairAllowed(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
+  factoryAddress.getBoolean(
+    kPairAllowed(amountAssetId, priceAssetId)
+  ).valueOrElse(false)
+}
+
+func kPrice(assetId: ByteVector|Unit) = {
+  ["%s", assetIdToString(assetId)].makeString(separator)
+}
+
+# Pair settings 
+func kPairPricesListKey(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
+  ["%s%s%s", assetIdToString(amountAssetId), assetIdToString(priceAssetId), "pairSettingPrices"].makeString(separator)
+}
+
+func getPairPricesList(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit) = {
+  match (factoryAddress.getString(kPairPricesListKey(amountAssetId, priceAssetId))) {
+      case s:String => s.split(separator)
+      case _ => []
+    }
+}
+
+func kPairSettingsKey(amountAssetId: ByteVector|Unit, priceAssetId: ByteVector|Unit, priceString: String) = {
+  ["%s%s%d%s", assetIdToString(amountAssetId), assetIdToString(priceAssetId), priceString, "settings"].makeString(separator)
+}
+
+func getCurrentPrice(assetId: ByteVector|Unit) = {
+  let matcherPublicKey = factoryAddress.getString(kMatcherPublicKey).valueOrErrorMessage(
+    wrapErr("invalid matcher public key")
+  ).fromBase58String()
+  let matcherAddress = addressFromPublicKey(matcherPublicKey)
+  let price = matcherAddress.getInteger(kPrice(assetId)).valueOrErrorMessage(
+    wrapErr("invalid price, assetId = " + assetIdToString(assetId))
+  )
+
+  price
+}
+
+func calcTotalCredit(creditA: BigInt, creditB: BigInt, currentPrice: BigInt) = {
+  fraction(creditA, currentPrice, mult18BigInt) + creditB
+}
+
+func calcTotalBalance(balanceA: BigInt, balanceB: BigInt, currentPrice: BigInt) = {
+  fraction(balanceA, currentPrice, mult18BigInt) + balanceB
+}
+
+func calcPnl(totalBalance: BigInt, totalCredit: BigInt) = {
+  totalBalance - totalCredit
+}
+
+func calcCreditAvailable(deposit: BigInt, leverage: BigInt, totalCredit: BigInt) = {
+  fraction(deposit, leverage, mult18BigInt) - totalCredit
+}
+
+func calcRealInCredit(credit: BigInt, balance: BigInt) = {
+  if (credit > big0) then credit - balance else big0
+}
+
+func calcFree(credit: BigInt, balance: BigInt) = {
+  if (credit > big0) then balance - credit else big0
+}
+
+func calcShortPrice(free: BigInt, realInCredit: BigInt) = {
+  if (realInCredit > big0) then max([big0, fraction(free, mult18BigInt, realInCredit)]) else big0
+}
+
+func calcLongPrice(free: BigInt, realInCredit: BigInt) = {
+  if (realInCredit > big0) then max([big0, fraction(realInCredit, mult18BigInt, free)]) else big0
+}
+
+func calcStartMargin(realInCreditA: BigInt, realInCreditB: BigInt, currentPrice: BigInt, settingsMargin: BigInt) = {
+  fraction(fraction(realInCreditA, currentPrice, mult18BigInt) + realInCreditB, settingsMargin, mult18BigInt)
+}
+
+func calcMarginSupply(settingsMarginSupply: BigInt, settingsMargin: BigInt, startMargin: BigInt) = {
+  fraction(settingsMarginSupply, startMargin, settingsMargin)
+}
+
+func calcLiquidationPrice(
+  deposit: BigInt,
+  marginSupply: BigInt,
+  realInCreditA: BigInt,
+  realInCreditB: BigInt,
+  shortPrice: BigInt,
+  longPrice: BigInt
+) = {
+  let liquidationPriceA = if (realInCreditA > big0) then {
+    (deposit - marginSupply) / realInCreditA + shortPrice
+  } else big0
+  let liquidationPriceB = if (realInCreditB > big0) then {
+    longPrice - (deposit - marginSupply) / (realInCreditA / longPrice)
+  } else big0
+  liquidationPriceA + liquidationPriceB
+}
+
+func getRequestId(accountAddress: Address) = {
+  let requestId = factoryAddress.getString(
+    kAccountAddressToRequestId(accountAddress)
+  ).valueOrErrorMessage(wrapErr("invalid account address: request id is undefined")).fromBase58String()
+
+  requestId
+}
+
+func getAccountAssets(accountAddress: Address) = {
+  let requestId = getRequestId(accountAddress)
+  let amountAssetId = factoryAddress.getString(
+    kRequestAmountAssetId(requestId)
+  ).valueOrErrorMessage(wrapErr("invalid amount asset id")).parseAssetId()
+  let priceAssetId = factoryAddress.getString(
+    kRequestPriceAssetId(requestId)
+  ).valueOrErrorMessage(wrapErr("invalid amount price id")).parseAssetId()
+
+  (amountAssetId, priceAssetId)
+}
+
+func getAccountOwnerPublicKey(accountAddress: Address) = {
+  let requestId = getRequestId(accountAddress)
+
+  let requestOwnerPublicKey = factoryAddress.getBinary(
+    kRequestOwnerPublicKey(requestId)
+  ).valueOrErrorMessage(wrapErr("invalid amount asset id"))
+
+  requestOwnerPublicKey
+}
+
+func getAccountInfoInternal(accountAddress: Address) = {
+  let (amountAssetId, priceAssetId) = getAccountAssets(accountAddress)
+  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrErrorMessage(
+    wrapErr("leverage should be defined")
+  )
+
+  let requestId = getRequestId(accountAddress)
+  let accountPublicKey = factoryAddress.getBinary(kRequestIdToAccountPublicKey(requestId)).valueOrErrorMessage("kRequestIdToAccountPublicKey not found")
+  let deposited = depositedOption(accountAddress).valueOrElse(0)
+  let currentPrice = getCurrentPrice(amountAssetId).toX18(pow10Decimals(priceAssetId))
+  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0)
+  let creditB = factoryAddress.getInteger(kCredit(accountAddress, priceAssetId)).valueOrElse(0)
+  let status = factoryAddress.getInteger(kRequestStatus(requestId)).valueOrErrorMessage("status not found. RequestId = " + requestId.toBase58String())
+
+  let synthAmountAssetId = factoryAddress.getString(kSyntheticAssetId(amountAssetId))
+  let synthAmountAssetBalance = match (synthAmountAssetId) {
+      case s:String => getAssetBalance(s.parseAssetId(), accountAddress)
+      case _ => 0
+    }
+
+  let synthPriceAssetId = factoryAddress.getString(kSyntheticAssetId(priceAssetId))
+  let synthPriceAssetBalance = match (synthPriceAssetId) {
+      case s:String => getAssetBalance(s.parseAssetId(), accountAddress)
+      case _ => 0
+    }
+
+  (
+    amountAssetId.assetIdToString(),
+    priceAssetId.assetIdToString(),
+    accountAddress.toString(),
+    accountPublicKey.toBase58String(),
+    leverage,
+    requestId.toBase58String(),
+    deposited,
+    creditA,
+    creditB,
+    synthAmountAssetBalance,
+    synthPriceAssetBalance,
+    status
+  )
+}
+
+# Deposit USDT
+# args: [accountAddress]
+func depositINTERNAL(callerPublicKey: ByteVector, args: List[String], i: Invocation) = {
+  let payment = i.payments[0]
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory(),
+    i.payments.size() == 1 || throwErr("1 payment is required"),
+    payment.assetId == usdtAssetId || throwErr("invalid asset"),
+    # check if account is ready
+    factoryAddress.getInteger(
+      kRequestStatus(getRequestId(accountAddress))
+    ) == REQUEST_STATUS_READY || throwErr("account is not ready")
+  ]
+
+  let actions = [
+    ScriptTransfer(accountAddress, payment.amount, payment.assetId)
+  ]
+
+  let factoryActions = [
+    factoryAddress.invoke(
+      "integerEntry",
+      [
+        kDeposited(accountAddress),
+        depositedOption(accountAddress).valueOrElse(0) + payment.amount
+      ], []
+    )
+  ]
+
+  (actions, factoryActions)
+}
+
+# args: [accountAddress, assetId, amount]
+func borrowINTERNAL(callerPublicKey: ByteVector, args: List[String], i: Invocation) = {
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+  let assetIdRequested = parseAssetId(args[1])
+  let amountRequested = parseInt(args[2]).valueOrErrorMessage(
+    wrapErr("invalid requested amount")
+  ).ensurePositive("requested amount")
+  let accountOwnerPublicKey = getAccountOwnerPublicKey(accountAddress)
+  let userAddress = addressFromPublicKey(callerPublicKey)
+
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory(),
+    callerPublicKey == accountOwnerPublicKey || throwErr(
+      "can be called by account owner only"
+    )
+  ]
+
+  let amountAssetId = getAccountAssets(accountAddress)._1
+  let deposited = depositedOption(accountAddress).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
+  let currentPrice = getCurrentPrice(amountAssetId).toX18(pow10Decimals(usdtAssetId))
+  let creditA = factoryAddress.getInteger(kCredit(accountAddress, amountAssetId)).valueOrElse(0).toX18(pow10Decimals(amountAssetId))
+  let creditB = factoryAddress.getInteger(kCredit(accountAddress, usdtAssetId)).valueOrElse(0).toX18(pow10Decimals(usdtAssetId))
+  let totalCredit = calcTotalCredit(creditA, creditB, currentPrice)
+  let leverage = factoryAddress.getInteger(kLeverage(accountAddress)).valueOrErrorMessage(
+    wrapErr("leverage should be defined")
+  ).toX18(1)
+  let creditAvailableUsdt = calcCreditAvailable(deposited, leverage, totalCredit)
+
+  let creditAvailable = if (assetIdRequested == amountAssetId) then {
+    fraction(creditAvailableUsdt, mult18BigInt, currentPrice).fromX18(pow10Decimals(amountAssetId))
+  } else if (assetIdRequested == usdtAssetId) then {
+    creditAvailableUsdt.fromX18(pow10Decimals(usdtAssetId))
+  } else throwErr("invalid requested asset id")
+
+  let syntheticAssetId = factoryAddress.getString(
+    kSyntheticAssetId(assetIdRequested)
+  ).valueOrErrorMessage(
+    wrapErr("synthetic asset for requested asset is undefined")
+  ).parseAssetId()
+
+  let amountToSend = if (amountRequested <= creditAvailable) then {
+    amountRequested
+  } else throwErr("credit available = " + creditAvailable.toString())
+
+  let factoryActions = [
+    factoryAddress.invoke(
+      "integerEntry",
+      [
+        kCredit(accountAddress, assetIdRequested),
+        creditOption(accountAddress, assetIdRequested).valueOrElse(0) + amountToSend
+      ], []
+    ),
+    factoryAddress.invoke(
+      "transferAsset", 
+      [
+        accountAddress.bytes,
+        amountToSend,
+        syntheticAssetId
+      ], []
+    )
+  ]
+
+  (nil, [factoryActions, creditAvailable])
+}
+
+@Callable(i)
+func init(
+  factoryAddressStr: String
+) = {
+  strict checkCaller = i.caller.mustThis()
+
+  ([
+    StringEntry(kFactoryAddress, factoryAddressStr)
+  ], unit)
+}
+
+# TODO: Validate assetIdStrings
+# TODO: price asset id should be usdt?
+# TODO: validate leverage
+# called by user
+# additional fee in payment
+# args: [amountAssetId, priceAssetId, leverage]
+@Callable(i)
+func requestAccount(callerPublicKey: ByteVector, args: List[String]) = {
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory()
+  ]
+  let amountAssetIdStr = args[0]
+  let priceAssetIdStr = args[1]
+  let leverage = parseInt(args[2]).valueOrErrorMessage(
+    wrapErr("invalid leverage")
+  )
+  let userAddress = addressFromPublicKey(callerPublicKey)
+  let requestId = sha256(i.transactionId)
+  let amountAssetId = parseAssetId(amountAssetIdStr)
+  let priceAssetId = parseAssetId(priceAssetIdStr)
+  let userRequestsNumber = kRequestsByOwner(userAddress).size() / queueItemSize
+
+  strict checks = [
+    i.payments.size() == 1 || throwErr("1 payment is required"),
+    i.payments[0].assetId == unit || throwErr("invalid asset"),
+    i.payments[0].amount == rewardAmount() || throwErr("invalid amount"),
+    pairAllowed(amountAssetId, priceAssetId) || throwErr("pair is not allowed"),
+    leverage == 2 || throwErr("leverage is not allowed"),
+    factoryAddress.getInteger(kRequestStatus(requestId)) == unit || throwErr("account is already exists"),
+    userRequestsNumber < accountsLimit() || throwErr("accounts limit is " + accountsLimit().toString())
+  ]
+
+  # add request to queue
+  let actions = [
+      ScriptTransfer(factoryAddress, rewardAmount(), unit)
+    ]
+
+  (actions, [
+    factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_EMPTY], []),
+    factoryAddress.invoke("binaryEntry",  [kRequestsQueue(), requestsQueue() + requestId], []),
+    factoryAddress.invoke("binaryEntry",  [kRequestsByOwner(userAddress), requestsByOwner(userAddress) + requestId], []),
+    factoryAddress.invoke("binaryEntry",  [kRequestOwnerPublicKey(requestId), callerPublicKey], []),
+    factoryAddress.invoke("stringEntry",  [kRequestAmountAssetId(requestId), amountAssetIdStr], []),
+    factoryAddress.invoke("stringEntry",  [kRequestPriceAssetId(requestId), priceAssetIdStr], []),
+    factoryAddress.invoke("integerEntry", [kRequestLeverage(requestId), leverage], [])
+  ])
+}
+
+# called by user
+# args: [accountAddress, amountAssetId, priceAssetId, leverage]
+@Callable(i)
+func editAccount(callerPublicKey: ByteVector, args: List[String]) = {
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+  let amountAssetIdStr = args[1]
+  let priceAssetIdStr = args[2]
+  let leverage = parseInt(args[3]).valueOrErrorMessage(
+    wrapErr("invalid leverage")
+  )
+  let requestId = getRequestId(accountAddress)
+  let ownerPublicKey = getAccountOwnerPublicKey(accountAddress)
+  let amountAssetId = parseAssetId(amountAssetIdStr)
+  let priceAssetId = parseAssetId(priceAssetIdStr)
+
+  strict checks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory(),
+    callerPublicKey == ownerPublicKey || throwErr("caller is not an account owner"),
+    pairAllowed(amountAssetId, priceAssetId) || throwErr("pair is not allowed"),
+    leverage == 2 || throwErr("leverage is not allowed"),
+    factoryAddress.getInteger(
+      kRequestStatus(requestId)
+    ) == REQUEST_STATUS_READY || throwErr("account is not ready")
+  ]
+
+  (nil, [
+    factoryAddress.invoke("stringEntry",  [kRequestAmountAssetId(requestId), amountAssetIdStr], []),
+    factoryAddress.invoke("stringEntry",  [kRequestPriceAssetId(requestId), priceAssetIdStr], []),
+    factoryAddress.invoke("integerEntry", [kRequestLeverage(requestId), leverage], [])
+  ])
+}
+
+# called by account script
+# additional fee is sent to recipient
+# args: [creatorPublicKey]
+@Callable(i)
+func addAccount(callerPublicKey: ByteVector, args: List[String]) = {
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory()
+  ]
+  let creatorPublicKey = args[0].fromBase58String()
+  let accountPublicKey = callerPublicKey
+  let accountAddress = addressFromPublicKey(callerPublicKey)
+  let creatorAddress = addressFromPublicKey(creatorPublicKey)
+
+  strict checks = [
+    factoryAddress.getBinary(kAccountCreatorPublicKey(accountAddress)) == unit || throwErr("account is already exists"),
+    match scriptHash(accountAddress) {
+      case b: ByteVector => b == blake2b256_32Kb(accountScript())
+      case _ => false
+    } || throwErr("invalid script")
+  ]
+
+  let (actions, factoryActions) = if (requestsQueue().size() == 0) then { # if the requests queue is empty
+    # then add account to accounts queue
+    (throwErr("requests queue is empty"), nil)
+  } else { # if the requests queue is not empty
+    # then fulfill next request
+    let requestId = requestsQueue().take(queueItemSize)
+    let leverage = factoryAddress.getInteger(kRequestLeverage(requestId)).valueOrErrorMessage(
+      wrapErr("request's leverage is undefined")
+    )
+    (
+      [],
+      [
+        factoryAddress.invoke("integerEntry", [kRequestStatus(requestId), REQUEST_STATUS_READY], []),
+        factoryAddress.invoke("binaryEntry", [kRequestIdToAccountPublicKey(requestId), accountPublicKey], []),
+        factoryAddress.invoke("binaryEntry", [kRequestsQueue(), requestsQueue().drop(queueItemSize)], []),
+        factoryAddress.invoke("stringEntry", [kAccountAddressToRequestId(accountAddress), requestId.toBase58String()], []),
+        factoryAddress.invoke("transferWaves", [creatorAddress.bytes, rewardAmount()], []),
+        factoryAddress.invoke("integerEntry", [kLeverage(accountAddress), leverage], [])
+      ]
+    )
+  }
+
+  (actions, factoryActions ++ [
+    factoryAddress.invoke("binaryEntry", [kAccountCreatorPublicKey(accountAddress), creatorPublicKey], [])
+  ])
+}
+
+# TODO: validate accounts relations. (!)
+# TODO: validate asset id
+# TODO: ensure amount is positive
+# args: [accountAddress, amount, assetId]
+@Callable(i)
+func withdraw(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory()
+  ]
+  let userAddress = addressFromPublicKey(callerPublicKey)
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+  let amount = parseInt(args[1]).valueOrErrorMessage(
+    wrapErr("invalid amount")
+  )
+  let assetId = parseAssetId(args[2])
+
+  let invocations = [
+    accountAddress.invoke("transferAsset", [userAddress.bytes, amount, assetId], [])
+  ]
+
+  (nil, invocations)
+}
+
+# Deposit USDT
+# args: [accountAddress]
+@Callable(i)
+func deposit(callerPublicKey: ByteVector, args: List[String]) = {
+  let (actions, factoryActions) = depositINTERNAL(callerPublicKey, args, i)
+
+  (actions, factoryActions)
+}
+
+# args: [accountAddress, assetId, amount]
+@Callable(i)
+func borrow(callerPublicKey: ByteVector, args: List[String]) = {
+  let (actions, factoryActions) = borrowINTERNAL(callerPublicKey, args, i)
+
+  (actions, factoryActions)
+}
+
+# args: [accountAddress, assetId, amount]
+@Callable(i)
+func depositAndBorrow(callerPublicKey: ByteVector, args: List[String]) = {
+  let accountAddress = args[0]
+  let (depositActions, depositFactoryActions) = depositINTERNAL(callerPublicKey, [accountAddress], i)
+  let (borrowActions, borrowFactoryActions) = borrowINTERNAL(callerPublicKey, args, i)
+
+  (depositActions ++ borrowActions, depositFactoryActions ++ borrowFactoryActions)
+}
+
+# TODO: not implemented
+@Callable(i)
+func repay(callerPublicKey: ByteVector, args: List[String]) = {
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory()
+  ]
+
+  (nil, unit)
+}
+
+# args: [amountAssetId, priceAssetId, allow]
+@Callable(i)
+func setPairAllowance(callerPublicKey: ByteVector, args: List[String]) = {
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory(),
+    callerPublicKey.mustAdmin()
+  ]
+  let amountAssetIdStr = args[0]
+  let priceAssetIdStr = args[1]
+  let allowStr = args[2]
+  let amountAssetId = parseAssetId(amountAssetIdStr)
+  let priceAssetId = parseAssetId(priceAssetIdStr)
+  let allow = allowStr == "true"
+
+  let invocations = [
+    factoryAddress.invoke("booleanEntry", [kPairAllowed(amountAssetId, priceAssetId), allow], [])
+  ]
+
+  (nil, invocations)
+}
+
+# args: [assetId]
+@Callable(i)
+func addSyntheticAsset(callerPublicKey: ByteVector, args: List[String]) = {
+  let baseAssetId = parseAssetId(args[0])
+  let syntheticAssetId = parseAssetId(args[1])
+
+  strict ckecks = [
+    !shutdown || throwErr("not allowed"),
+    i.caller.mustFactory(),
+    callerPublicKey.mustAdmin(),
+    factoryAddress.getString(kSyntheticAssetId(baseAssetId)) == unit || throwErr(
+      "invalid base asset"
+    ),
+    factoryAddress.getString(kBaseAssetId(syntheticAssetId)) == unit || throwErr(
+      "invalid synthetic asset"
+    )
+  ]
+
+  let invocations = [
+    factoryAddress.invoke("stringEntry", [kSyntheticAssetId(baseAssetId), assetIdToString(syntheticAssetId)], []),
+    factoryAddress.invoke("stringEntry", [kBaseAssetId(syntheticAssetId), assetIdToString(baseAssetId)], [])
+  ]
+
+  (nil, invocations)
+}
+
+@Callable(i)
+func doShutdown(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checks = [
+    i.caller.mustFactory(),
+    callerPublicKey.mustAdmin()
+  ]
+
+  let invocations = [
+    factoryAddress.invoke("booleanEntry", [kShutdown, true], [])
+  ]
+
+  (nil, invocations)
+}
+
+# args: [accountAddress]
+@Callable(i)
+func getAccountInfoREADONLY(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checks = [
+    i.caller.mustFactory()
+  ]
+
+  let accountAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid account address")
+  )
+
+  let data = getAccountInfoInternal(accountAddress)
+
+  (nil, data)
+}
+
+# args: [userAddress]
+@Callable(i)
+func getUserInfoREADONLY(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checks = [
+    i.caller.mustFactory()
+  ]
+
+  let userAddress = addressFromString(args[0]).valueOrErrorMessage(
+    wrapErr("invalid user address")
+  )
+
+  let userRequests = factoryAddress.getBinary(kRequestsByOwner(userAddress)).valueOrElse(base58'')
+  let userRequestsNumber = userRequests.size() / queueItemSize
+
+  func getAccountsData(acc: (List[ByteVector], ByteVector, Int), count: Int) = {
+    let (accDataList, rawBytes, maxSize) = acc
+
+    if (count < maxSize) then {
+      let requestId = rawBytes.take(queueItemSize)
+      let newRawBytes = rawBytes.drop(queueItemSize)
+      let accountPublicKey = factoryAddress.getBinary(kRequestIdToAccountPublicKey(requestId)).valueOrErrorMessage("kRequestIdToAccountPublicKey not found")
+      let accountAddress = addressFromPublicKey(accountPublicKey)
+      let data = getAccountInfoInternal(accountAddress)
+
+      (accDataList :+ data, newRawBytes, maxSize)
+    } else {
+      acc
+    }
+  }
+
+  let (accDataList, _a, _b) = FOLD<20>(INDEX_LIST, ([], userRequests, userRequestsNumber), getAccountsData)
+
+  (nil, accDataList)
+}
+
+@Callable(i)
+func getPairSettingsInfoREADONLY(callerPublicKey: ByteVector, args: List[String]) = {
+  let amountAsset = parseAssetId(args[0])
+  let priceAsset = parseAssetId(args[1])
+  
+  let pricesList = getPairPricesList(amountAsset, priceAsset)
+
+  func getPairSettings(acc: List[(Int, Int, Int, Int)], pricesString: String) = {
+    let settingsKey = kPairSettingsKey(amountAsset, priceAsset, pricesString)
+    let settingsStringValue = factoryAddress.getStringValue(settingsKey)
+    let sList = settingsStringValue.split(separator)
+
+    let price = pricesString.parseInt()
+    let maxLeverage = sList[1].parseInt()
+    let initialMargin   = sList[2].parseInt()
+    let maintenanceMargin = sList[3].parseInt()
+
+    acc :+ (price, maxLeverage, initialMargin, maintenanceMargin)
+  }
+
+  let data = FOLD<20>(pricesList, [], getPairSettings)
+
+  (nil, data)
+}
+
+# args: [amountAssetId, priceAssetId, price, maxLeverage, initialMargin, maintenanceMargin]
+@Callable(i)
+func editPairSettings(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checks = [
+    i.caller.mustFactory(),
+    callerPublicKey.mustAdmin()
+  ]
+
+  let amountAsset = parseAssetId(args[0])
+  let priceAsset = parseAssetId(args[1])
+  let price = args[2]
+  let maxLeverage = args[3]
+  let initialMargin = args[4]
+  let maintenanceMargin = args[5]
+  
+  let pairPricesListKey = kPairPricesListKey(amountAsset, priceAsset)
+  let settingsKey = kPairSettingsKey(amountAsset, priceAsset, price)
+  let pricesList = getPairPricesList(amountAsset, priceAsset)
+
+  let newList = match(pricesList.indexOf(price)) {
+    case ind:Int => pricesList
+    case _ => pricesList :+ price
+  }
+
+  strict check2 = [
+    price.parseInt().valueOrErrorMessage(wrapErr("price value is not an Int")),
+    maxLeverage.valueOrErrorMessage(wrapErr("maxLeverage value is not an Int")),
+    initialMargin.valueOrErrorMessage(wrapErr("initialMargin value is not an Int")),
+    maintenanceMargin.valueOrErrorMessage(wrapErr("maintenanceMargin value is not an Int")),
+    newList.size() <= 20 || throwErr("exceeded max prices list size (20)")
+  ] 
+
+  let pairSettingValue = [
+    "%s%s%s",
+    maxLeverage,
+    initialMargin,
+    maintenanceMargin
+  ].makeString(separator)
+
+
+  let invocations = [
+    factoryAddress.invoke("stringEntry", [kPairPricesListKey(amountAsset, priceAsset), newList.makeString(separator)], []),
+    factoryAddress.invoke("stringEntry", [kPairSettingsKey(amountAsset, priceAsset, price), pairSettingValue], [])
+  ]
+
+  (nil, invocations)
+}
+
+# args: [amountAssetId, priceAssetId, price]
+@Callable(i)
+func deletePairSettings(callerPublicKey: ByteVector, args: List[String]) = {
+  strict checks = [
+    i.caller.mustFactory(),
+    callerPublicKey.mustAdmin()
+  ]
+
+  let amountAsset = parseAssetId(args[0])
+  let priceAsset = parseAssetId(args[1])
+  let price = args[2]
+  
+  let settingsKey = kPairSettingsKey(amountAsset, priceAsset, price)
+  let pairPricesListKey = kPairPricesListKey(amountAsset, priceAsset)
+  let pricesList = getPairPricesList(amountAsset, priceAsset)
+
+  let newList = match(pricesList.indexOf(price)) {
+    case ind:Int => pricesList.removeByIndex(ind)
+    case _ => pricesList
+  }
+
+  let invocations = [
+    factoryAddress.invoke("deleteEntry", [settingsKey], []),
+
+    if (newList.size() == 0) then {
+      factoryAddress.invoke("deleteEntry", [kPairPricesListKey(amountAsset, priceAsset)], [])
+    } else {
+      factoryAddress.invoke("stringEntry", [kPairPricesListKey(amountAsset, priceAsset), newList.makeString(separator)], [])
+    }
+  ]
+
+  (nil, invocations)
+}
+
+
+@Verifier(tx)
+func verify() = {
+  if (factoryAddressOption.isDefined() && factoryAddress.getString(kMultisig).isDefined()) then {
+    match factoryAddress.getString(kMultisig) {
+      case multisig: String => {
+        let statusKey = kStatus(this.toString(), tx.id.toBase58String())
+        let status = multisig.addressFromStringValue().getBoolean(statusKey).valueOrElse(false)
+
+        status
+      }
+      case _ => false
+    }
+  } else {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+  }
+}

@@ -1,0 +1,179 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let separator = "__"
+let chainId = this.bytes.drop(1).take(1)
+let chainIdW = base16'57'
+let contractFilename = "futures_factory.ride"
+
+let kMultisig = "%s__multisig"
+func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
+
+let kShutdown = "%s__shutdown"
+
+let shutdown = getBoolean(kShutdown).valueOrElse(false)
+
+func validateAddress(address: String) = {
+  addressFromString(address).isDefined()
+}
+
+func wrapErr(s: String) = {
+  contractFilename + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
+
+let kMatcherPublicKey = "%s__matcherPublicKey"
+let kCalculatorAddress = "%s__calculatorAddress"
+let calculatorAddressOption = match this.getString(kCalculatorAddress) {
+  case s: String => s.addressFromString()
+  case _: Unit => unit
+}
+let calculatorAddress = calculatorAddressOption.valueOrErrorMessage(wrapErr("invalid calculator address"))
+
+let kAccountScript = "%s__accountScript"
+let kRewardAmount = "%s__rewardAmount"
+
+func mustAddress(i: Invocation, address: Address) = {
+  i.caller == address || throwErr("permission denied")
+}
+
+func mustThis(i: Invocation) = {
+  mustAddress(i, this)
+}
+
+func mustCalculator(i: Invocation) = {
+  mustAddress(i, calculatorAddress)
+}
+
+let wavesString = "WAVES"
+let queueItemSize = 32
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
+@Callable(i)
+func init(
+  calculatorAddressStr: String,
+  matcherPublicKeyStr: String,
+  accountScript: ByteVector,
+  rewardAmount: Int
+) = {
+  strict checkCaller = i.mustThis()
+
+  ([
+    StringEntry(kCalculatorAddress, calculatorAddressStr),
+    StringEntry(kMatcherPublicKey, matcherPublicKeyStr),
+    BinaryEntry(kAccountScript, accountScript),
+    IntegerEntry(kRewardAmount, rewardAmount)
+  ], unit)
+}
+
+@Callable(i)
+func stringEntry(key: String, val: String) =
+  if (!shutdown && i.mustCalculator()) then ([StringEntry(key, val)], key) else throwErr("not allowed")
+
+@Callable(i)
+func integerEntry(key: String, val: Int) =
+  if (!shutdown && i.mustCalculator()) then ([IntegerEntry(key, val)], key) else throwErr("not allowed")
+
+@Callable(i)
+func booleanEntry(key: String, val: Boolean) =
+  if (!shutdown && i.mustCalculator()) then ([BooleanEntry(key, val)], key) else throwErr("not allowed")
+
+@Callable(i)
+func binaryEntry(key: String, val: ByteVector) =
+  if (!shutdown && i.mustCalculator()) then ([BinaryEntry(key, val)], key) else throwErr("not allowed")
+
+@Callable(i)
+func deleteEntry(key: String) =
+  if (!shutdown && i.mustCalculator()) then ([DeleteEntry(key)], key) else throwErr("not allowed")
+
+@Callable(i)
+func reissue(assetId: ByteVector, amount: Int, reissuable: Boolean) = 
+  if (!shutdown && i.mustCalculator()) then ([Reissue(assetId, amount, reissuable)], amount) else throwErr("not allowed")
+
+@Callable(i)
+func burn(assetId: ByteVector, amount: Int) = 
+  if (!shutdown && i.mustCalculator()) then ([Burn(assetId, amount)], amount) else throwErr("not allowed")
+
+@Callable(i)
+func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 
+  if (!shutdown && i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else throwErr("not allowed")
+
+@Callable(i)
+func transferAssets(recipientBytes: ByteVector, assetsList: List[ByteVector], amountsList: List[Int]) = {
+  if (!shutdown && i.mustCalculator()) then {
+    func addNewTransfer(acc: (List[ScriptTransfer], Int), nextAssetId: ByteVector) = {
+      let (transfers, j) = acc
+
+      let newTransfer = ScriptTransfer(
+        Address(recipientBytes),
+        amountsList[j],
+        assetsList[j]
+      )
+      let updatedTransfers = transfers :+ newTransfer
+      (updatedTransfers, j + 1)
+    }
+
+    let (assetsTransfers, _lastIndex) = FOLD<10>(assetsList, ([], 0), addNewTransfer)
+    (assetsTransfers, unit)
+  } else {
+    throwErr("not allowed")
+  }
+}
+
+@Callable(i)
+func transferWaves(recipientBytes: ByteVector, amount: Int) = 
+  if (!shutdown && i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else throwErr("not allowed")
+
+@Callable(i)
+func call(function: String, args: List[String]) = {
+  # To allow usage with node script evaluation (without payments)
+  # there is a bug(?) when function is called like expression
+  # Invocation structure doesn't contain "payments" key for some reason
+  let cleanPayments = if (i.callerPublicKey == base58'11111111111111111111111111111111') then [] else i.payments
+  let result = calculatorAddress.reentrantInvoke(function, [i.callerPublicKey, args], cleanPayments)
+
+  (nil, result)
+}
+
+@Callable(i)
+func setMultisig(multisig: String) = {
+  strict checks = [
+    i.mustThis(),
+    validateAddress(multisig) || throwErr("setMultisig: invalid multisig address"),
+    multisig != this.toString() || throwErr("setMultisig: factory address cannot be multisig address")
+  ]
+
+  ([
+    StringEntry(kMultisig, multisig)
+  ], unit)
+}
+
+@Verifier(tx)
+func verify() = {
+  let signCheck = sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+
+  match this.getString(kMultisig) {
+    case multisig: String => {
+      if (multisig != this.toString() && validateAddress(multisig)) then {
+        let statusKey = kStatus(this.toString(), tx.id.toBase58String())
+        let status = multisig.addressFromStringValue().getBoolean(statusKey).valueOrElse(false)
+
+        status
+      } else {
+        signCheck
+      }
+    }
+    case _ => signCheck
+  }
+}
