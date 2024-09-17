@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **17:12 02.09.2024** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **12:06 17.09.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -237,6 +237,8 @@ SpitzCoin 🐕/WX pool | [`3PQiRZia25qcz8r2of4Lpy6m4kg6Ju3mwXe`](https://wavesex
 L2MP/ROME pool | [`3PB1p6MJAbXshcZYmKHnr6QViazGUwA7Axk`](https://wavesexplorer.com/addresses/3PB1p6MJAbXshcZYmKHnr6QViazGUwA7Axk) | `85PeSm28Eobr73DdhNo127NXcL4tb4cGmhdhkVpbMPQE` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 FREEDUROV/WX pool | [`3PEmvVbYuk8HZS7GndxPV1CKPqJW41BfvMw`](https://wavesexplorer.com/addresses/3PEmvVbYuk8HZS7GndxPV1CKPqJW41BfvMw) | `4cEyDwYYccLnCcejveNeTjoNdKPx3zuFvn3ijY83W5mA` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 PWR/USDT-ERC20 pool | [`3PCsGNV8xB5rPNYp7mZf9PCjHifvAMHN6Gj`](https://wavesexplorer.com/addresses/3PCsGNV8xB5rPNYp7mZf9PCjHifvAMHN6Gj) | `3FhwUftc6353RWspQf8GgwMYDhRfEeq64S5uAVKyFEEm` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+OOH /WAVES pool | [`3PHYzF9FsiWF6jMY1kHSbFMYyFhKJPCVrZn`](https://wavesexplorer.com/addresses/3PHYzF9FsiWF6jMY1kHSbFMYyFhKJPCVrZn) | `Ayk7Gq3TqjUb64LWumH7YVsVGCCpkyqMXQkXDwoeLwdR` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+OOH /WX pool | [`3P5CVajAX1UBTmqvmA2i9Tz5dh3fGveCciv`](https://wavesexplorer.com/addresses/3P5CVajAX1UBTmqvmA2i9Tz5dh3fGveCciv) | `DbM2zpVjvnnNu8U6NjuDHrarZ5jejRNmSFBbL9X9k84j` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -350,6 +352,7 @@ MEME0 | [`3eT9vmK4NLdpnnwYdYTGg26Va6Z8TWK38te6b2vVf9vJ`](https://wavesexplorer.c
 Money Energy | [`6XJAscmejGPTLAdKsg12MynB5rNQzNiZz8Yj81SWeFrj`](https://wavesexplorer.com/assets/6XJAscmejGPTLAdKsg12MynB5rNQzNiZz8Yj81SWeFrj) | Money.Energy community token (ME). 
 Neutrino EUR | [`DUk2YTxhRoAqMJLus4G2b3fR8hMHVh6eiyFx5r29VR6t`](https://wavesexplorer.com/assets/DUk2YTxhRoAqMJLus4G2b3fR8hMHVh6eiyFx5r29VR6t) | Neutrino protocol based algorithmic Euro 
 NSBT | [`6nSpVyNH7yM69eg446wrQR94ipbbcmZMU1ENPwanC97g`](https://wavesexplorer.com/assets/6nSpVyNH7yM69eg446wrQR94ipbbcmZMU1ENPwanC97g) | Neutrino System Base Token (NSBT) 
+OOH  | [`2xomKvm9SbdXCgD9rbDF52FzGxFmfmp6fGC18zzikPNz`](https://wavesexplorer.com/assets/2xomKvm9SbdXCgD9rbDF52FzGxFmfmp6fGC18zzikPNz) | Out-Of-Home - optimization tool. 
 PCBT | [`24WUa12Uq7HtpzKDcxgHt9KJMdMpz1sNU1q8QcUCy3Cu`](https://wavesexplorer.com/assets/24WUa12Uq7HtpzKDcxgHt9KJMdMpz1sNU1q8QcUCy3Cu) | PepeTeam Crosschain Bridge Token 
 PEST | [`7hi3116DGjNpwahf1uMattxa9QkWisq6jyhqWyMBHD8C`](https://wavesexplorer.com/assets/7hi3116DGjNpwahf1uMattxa9QkWisq6jyhqWyMBHD8C) | Pest Educational Solutions Token (PEST): 
 Membership token for the 123Pest network, users can earn tokens by learning about pest control, whilst creators earn tokens by providing great content.          
@@ -521,6 +524,8 @@ Money En~WAVESLP | [`FBSThqQEFB4B5gfQU7tkWXwZsiLppRidd2nnEgqrbxEY`](https://wave
 Mon~USDT-ERC20LP | [`5rHg7hGbrLLByXswVQCetRxBFUGCnnTCdu2ozXazC3Ri`](https://wavesexplorer.com/assets/5rHg7hGbrLLByXswVQCetRxBFUGCnnTCdu2ozXazC3Ri) | Mon~/USDT-ERC20 pool liquidity provider token 
 NSBTWAVESLP | [`DZeA7RbVab98r61hVH5zcFZXwNALPJGgq1eyHandsKKW`](https://wavesexplorer.com/assets/DZeA7RbVab98r61hVH5zcFZXwNALPJGgq1eyHandsKKW) | NSBT/WAVES pool liquidity provider token 
 NSBTXTNLP | [`AGo49HCtQUghfxHSpUXub3KBaMXyunJmTxQ4azgU5Ax5`](https://wavesexplorer.com/assets/AGo49HCtQUghfxHSpUXub3KBaMXyunJmTxQ4azgU5Ax5) | WX NSBT/XTN pool liquidity provider token 
+OOH ~WAVESLP | [`4UtCRyLVk4iquJGZGorw8Ly9iJxRDgQjJzuw8fahdQ92`](https://wavesexplorer.com/assets/4UtCRyLVk4iquJGZGorw8Ly9iJxRDgQjJzuw8fahdQ92) | OOH ~/WAVES pool liquidity provider token 
+OOH ~WXLP | [`A9NpqF87kkcHNXuQYrQZo1ek36VK6MtXxpApte8YbkB2`](https://wavesexplorer.com/assets/A9NpqF87kkcHNXuQYrQZo1ek36VK6MtXxpApte8YbkB2) | OOH ~/WX pool liquidity provider token 
 PCBTWAVESLP | [`4oLuufBogbf294QTsmXobvoMHSMzoNtPMqQMJs5L55FR`](https://wavesexplorer.com/assets/4oLuufBogbf294QTsmXobvoMHSMzoNtPMqQMJs5L55FR) | PCBT/WAVES pool liquidity provider token 
 PCBT~USDT-PPTLP | [`CkrDxF4882mQoqruSfutqjbiAcemkov23rZzUxp6u5Lu`](https://wavesexplorer.com/assets/CkrDxF4882mQoqruSfutqjbiAcemkov23rZzUxp6u5Lu) | PCBT~/USDT-PPT pool liquidity provider token 
 PETEUSDT-ERC20LP | [`7FAAChNCHekbkWg7RoAW3crDwpzCT8y7onsbWnNTpwgp`](https://wavesexplorer.com/assets/7FAAChNCHekbkWg7RoAW3crDwpzCT8y7onsbWnNTpwgp) | PETE/USDT-ERC20 pool liquidity provider token 
