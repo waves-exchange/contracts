@@ -1028,34 +1028,31 @@ func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boole
   } else {
     getStringOrFail(this, aa())
   }
-  let poolAssetInBalance = getAccBalance(assetIn) - i.payments[0].value().amount - feePoolAmount
+  let poolAssetInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
   let poolAssetOutBalance = getAccBalance(assetOut)
   let amountOut = fraction(poolAssetOutBalance, cleanAmountIn, poolAssetInBalance + cleanAmountIn)
 
   let oldK = poolAssetInBalance.toBigInt() * poolAssetOutBalance.toBigInt()
-  let newK = (getAccBalance(assetIn).toBigInt() + feePoolAmount.toBigInt()) * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
+  let newK = (getAccBalance(assetIn).toBigInt()) * (getAccBalance(assetOut).toBigInt() - amountOut.toBigInt())
 
   strict checkK = newK >= oldK || "new K is fewer error".throw()
   strict checkMin = amountOutMin <= amountOut || "Exchange result is fewer coins than expected".throw()
 
-  let amountAssetBalanceDelta = if (isReverse) then {
-    -amountOut
-  } else {
-    feePoolAmount
-  }
-  let priceAssetBalanceDelta = if (isReverse) then {
-    feePoolAmount
-  } else {
-    -amountOut
-  }
-  strict refreshKLpActions = refreshKLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)._1
+  let priceAssetId = getStringOrFail(this, pa())
+  let feeAssetId = priceAssetId.fromBase58String()
+  let feeAmount = fraction(cleanAmountIn, feePoolAmount, 100) 
 
   strict rebalanceState = rebalanceAsset(assetIn)
-  strict withdrawState = withdrawAndRebalanceAsset(assetOut, amountOut)
-  ( withdrawState ++
+  strict withdrawState = withdrawAndRebalanceAsset(assetOut, amountOut + feeAmount)
+  
+  let feeTransfer = ScriptTransfer(feeCollectorAddress, feeAmount, feeAssetId)
+
+  (
+    withdrawState ++
     rebalanceState ++
     [
-      ScriptTransfer(addressTo.addressFromStringValue(), amountOut, assetOut.parseAssetId())
+      ScriptTransfer(addressTo.addressFromStringValue(), amountOut - feeAmount, assetOut.parseAssetId()),
+      feeTransfer
     ],
     amountOut
   )
