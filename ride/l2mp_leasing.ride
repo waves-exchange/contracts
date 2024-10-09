@@ -320,6 +320,26 @@ func getClaimUnlockedActions(userAddress: String, claimAmount: Int) = {
     ]
 }
 
+func getStakeForActions(userAddress: String, i: Invocation) = {
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
+
+    strict checks = [
+        !isForceStop || "contract is temporary stopped".throwErr(),
+        i.payments.size() <= 1 || 
+            "maximum 1 payment".throwErr(),
+        i.payments.size() == 0 || i.payments[0].assetId == assetIdBytes ||
+            ["payment assetId should be:", assetIdString].makeString(" ").throwErr(),
+        userAddress.isValidAddress() || 
+            ["user address is not valid:", userAddress].makeString(" ").throwErr()
+    ]
+
+    let newToClaim = toClaim + i.payments[0].amount
+
+    [
+        getUserToClaimEntry(userAddress, newToClaim, toUnlock)
+    ]
+}
+
 func getStakeActions(
     nodeAddress: String, 
     userAddress: String, 
@@ -513,6 +533,11 @@ func claimAll() = {
     ]
 
     getClaimUnlockedActions(userAddress, toClaim)
+}
+
+@Callable(i)
+func stakeFor(userAddress: String) = {
+    getStakeForActions(userAddress, i)
 }
 
 ######################
