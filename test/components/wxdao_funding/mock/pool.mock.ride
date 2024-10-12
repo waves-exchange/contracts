@@ -1,0 +1,13 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+# Send 1.0 WAVES or 5.5 USDT
+@Callable(i)
+func getAccBalanceWrapperREADONLY(assetIdString: String) = {
+    let balance = if(assetIdString == "WAVES") 
+        then 1_0000_0000
+        else 5_500_000
+
+    ([], balance)
+}
