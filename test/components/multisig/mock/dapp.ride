@@ -1,0 +1,73 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let separator = "__"
+let contractFilename = "dapp.ride"
+
+let kMultisig = "%s__multisig"
+let kPublicKeys = "%s__publicKeys"
+func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
+
+func validateAddress(address: String) = {
+  addressFromString(address).isDefined()
+}
+
+func wrapErr(s: String) = {
+  contractFilename + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
+
+func mustAddress(i: Invocation, address: Address) = {
+  i.caller == address || throwErr("permission denied")
+}
+
+func mustThis(i: Invocation) = {
+  mustAddress(i, this)
+}
+
+func mustAdmin(callerPublicKey: ByteVector) = {
+  let multisig = getStringValue(kMultisig).addressFromStringValue()
+  let publicKeysList = multisig.getStringValue(kPublicKeys).split(separator)
+
+  containsElement(
+    publicKeysList, callerPublicKey.toBase58String()
+  ) || throwErr("not allowed")
+}
+
+@Callable(i)
+func test() = {
+  strict checks = [
+    i.callerPublicKey.mustAdmin()
+  ]
+
+  (nil, unit)
+}
+
+@Callable(i)
+func setMultisig(multisig: String) = {
+  strict checks = [
+    i.mustThis(),
+    validateAddress(multisig) || throwErr("setMultisig: invalid multisig address")
+  ]
+
+  ([
+    StringEntry(kMultisig, multisig)
+  ], unit)
+}
+
+@Verifier(tx)
+func verify() = {
+  match getString(kMultisig) {
+    case multisig: String => {
+      let statusKey = kStatus(this.toString(), tx.id.toBase58String())
+      let status = multisig.addressFromStringValue().getBoolean(statusKey).valueOrElse(false)
+
+      status
+    }
+    case _ => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+  }
+}
