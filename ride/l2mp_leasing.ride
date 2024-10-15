@@ -48,6 +48,12 @@ func keyUserToClaim(userAddress: String) =
 func keyUserTotalLocked(userAddress: String) =
     ["%s%s", "userTotalLocked", userAddress].makeString(SEP)
 
+func keyClaimedBlock(userAddress: String) =
+    ["%s%s", userAddress, "claimedBlock"].makeString(SEP)
+
+func keyTotalUnitsClaimed(userAddress: String) = 
+    ["%s%s", userAddress, "totalUnitsClaimed"].makeString(SEP)
+
 # History keys
 func keyNodeLeasingByHeight(nodeAddress: String) = {
     let h = if (periodOffsetHeight == -1) then 0 else height
@@ -111,10 +117,6 @@ func genVotesKeys(keyPrefix: String) = {
   let (result, prefix) = FOLD<5>(getAdminsList(), ([], keyPrefix), genVotesKeysHelper)
   result
 }
-
-func keyClaimedBlock(userAddress: String) =
-    ["%s", userAddress, "claimedBlock"].makeString(SEP)
-
 
 # Count all votes for Prefix
 func countVotesHelper(result: Int, voteKey: String) = {
@@ -458,10 +460,17 @@ func claimUnit() = {
     let userAddress = i.caller.toString()
 
     let toClaimNow = calculateClaim(userAddress)
-    
+    let totalUnitClaimed = this.getInteger(keyTotalUnitsClaimed(userAddress)).valueOrElse(0)
+    let totalL2Staked = getUserTotalLocked(userAddress)
+
+    strict check = [
+        totalUnitClaimed + toClaimNow <= totalL2Staked || throwErr("Can't claim more than staked")
+    ]
+
     let claimedBlockKey = keyClaimedBlock(userAddress)
     let actions = [
-        IntegerEntry(claimedBlockKey, height)
+        IntegerEntry(claimedBlockKey, height),
+        IntegerEntry(keyTotalUnitsClaimed(userAddress), totalUnitClaimed + toClaimNow)
     ]
     let transferUnits = ScriptTransfer(i.caller, toClaimNow, unit)
     
