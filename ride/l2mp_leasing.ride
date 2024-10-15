@@ -4,6 +4,8 @@
 
 let contractFile = "l2mp_leasing.ride"
 let SEP = "__"
+let BLOCKS_IN_INTERVAL = 1000
+let scale8 = 1_0000_0000
 
 func throwErr(msg: String) = {
     throw(contractFile + ": " + msg)
@@ -109,6 +111,10 @@ func genVotesKeys(keyPrefix: String) = {
   let (result, prefix) = FOLD<5>(getAdminsList(), ([], keyPrefix), genVotesKeysHelper)
   result
 }
+
+func keyClaimedBlock(userAddress: String) =
+    ["%s", userAddress, "claimedBlock"].makeString(SEP)
+
 
 # Count all votes for Prefix
 func countVotesHelper(result: Int, voteKey: String) = {
@@ -340,6 +346,26 @@ func getStakeForActions(userAddress: String, i: Invocation) = {
     ]
 }
 
+func calculateClaim(userAddress: String) = {
+    let claimedBlockKey = keyClaimedBlock(userAddress)
+    let claimedBlock = this.getInteger(claimedBlockKey).valueOrElse(height)
+    
+    let blocksPassed = height - claimedBlock
+    let amountStaked = getUserTotalLocked(userAddress)
+    
+    let toClaimNow = blocksPassed * (amountStaked * scale8) / BLOCKS_IN_INTERVAL
+
+    toClaimNow 
+}
+
+func setUser(userAddress: String, claimedBlock: Int) = {
+    let claimedBlockKey = keyClaimedBlock(userAddress)
+    
+    [
+        IntegerEntry(claimedBlockKey, claimedBlock)
+    ]
+}
+
 func getStakeActions(
     nodeAddress: String, 
     userAddress: String, 
@@ -425,6 +451,21 @@ func setNewPeriodLength(newPeriodLength: Int) = {
     ]
 
     getSetNewPeriodLengthActions(newPeriodLength)
+}
+
+@Callable(i)
+func claimUnit() = {
+    let userAddress = i.caller.toString()
+
+    let toClaimNow = calculateClaim(userAddress)
+    
+    let claimedBlockKey = keyClaimedBlock(userAddress)
+    let actions = [
+        IntegerEntry(claimedBlockKey, height)
+    ]
+    let transferUnits = ScriptTransfer(i.caller, toClaimNow, unit)
+    
+    actions ++ [transferUnits]
 }
 
 @Callable(i)
