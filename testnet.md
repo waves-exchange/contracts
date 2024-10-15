@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-502-futures**](https://github.com/waves-exchange/contracts/tree/wxdefi-502-futures) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:20 15.10.2024** (GMT+4)
+[**wxdefi-502-futures**](https://github.com/waves-exchange/contracts/tree/wxdefi-502-futures) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **16:50 15.10.2024** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
