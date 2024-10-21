@@ -486,19 +486,7 @@ func getSetNewPeriodLengthActions(newPeriodLength: Int) = {
     }
 }
 
-@Callable(i)
-func setNewPeriodLength(newPeriodLength: Int) = {
-    strict checks = [
-        isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr()
-    ]
-
-    getSetNewPeriodLengthActions(newPeriodLength)
-}
-
-@Callable(i)
-func claimUnits() = {
-    let userAddress = i.caller.toString()
-
+func getUnitsClaimData(userAddress: String) = {
     let (unlockedUnitNow, l2ToBurnNow, claimedBlock) = calculateUnitsToClaim(userAddress)
     let unlockedUnitsPrev = this.getInteger(keyUnlockedUnits(userAddress)).valueOrElse(0)
     let unitsToSend = unlockedUnitNow + unlockedUnitsPrev
@@ -508,6 +496,12 @@ func claimUnits() = {
 
     let totalUnitsClaimed = this.getInteger(keyTotalUnitsClaimed(userAddress)).valueOrElse(0)
     let totalL2Burned = this.getInteger(keyL2BurnedTotal(userAddress)).valueOrElse(0)
+
+    (unitsToSend, totalUnitsClaimed, l2ToBurn, totalL2Burned, claimedBlock)
+}
+
+func getClaimUnitsActions(userAddress: String) = {
+    let (unitsToSend, totalUnitsClaimed, l2ToBurn, totalL2Burned, claimedBlock) = getUnitsClaimData(userAddress)
 
     strict check = [
         unitsToSend <= 0 || "nothing to claim".throwErr()
@@ -524,8 +518,24 @@ func claimUnits() = {
         IntegerEntry(keyL2BurnedTotal(userAddress), totalL2Burned + l2ToBurn),
         IntegerEntry(keyUnlockedUnits(userAddress), 0),
         IntegerEntry(keyL2ToBurn(userAddress), 0),
-        ScriptTransfer(i.caller, unitsToSend, unitsAssetIdBytes)
+        ScriptTransfer(userAddress.addressFromStringValue(), unitsToSend, unitsAssetIdBytes)
     ] ++ burnAction
+}
+
+@Callable(i)
+func setNewPeriodLength(newPeriodLength: Int) = {
+    strict checks = [
+        isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr()
+    ]
+
+    getSetNewPeriodLengthActions(newPeriodLength)
+}
+
+@Callable(i)
+func claimUnits() = {
+    let userAddress = i.caller.toString()
+
+    getClaimUnitsActions(userAddress)
 }
 
 @Callable(i)
@@ -583,12 +593,33 @@ func getUserLeasingDataREADONLY(nodeAddress: String, userAddress: String) = {
 # _4 = next period available to claim
 # _5 = total leased amount
 # _6 = current height
+# _7 = unit available to claim
+# _8 = total units claimed
+# _9 = l2mp to burn on units claim
+# _10 = total l2mp burned
+# _11 = last units claimed height
 @Callable(i)
 func getUserDataREADONLY(userAddress: String) = {
     let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
     let userTotalLocked = getUserTotalLocked(userAddress)
+    let (unitsToSend, totalUnitsClaimed, l2ToBurn, totalL2Burned, claimedBlock) = getUnitsClaimData(userAddress)
 
-    ([], (currentPeriodHeight, toClaim, nextPeriodHeight, toUnlock, userTotalLocked, height))
+    (
+        [], 
+        (
+            currentPeriodHeight,
+            toClaim,
+            nextPeriodHeight,
+            toUnlock,
+            userTotalLocked,
+            height,
+            unitsToSend,
+            totalUnitsClaimed,
+            l2ToBurn,
+            totalL2Burned,
+            claimedBlock
+        )
+    )
 }
 
 @Callable(i)
