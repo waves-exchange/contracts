@@ -590,15 +590,15 @@ func getUserLeasingDataREADONLY(nodeAddress: String, userAddress: String) = {
 }
 
 # User data
-# _1 = current period start height
-# _2 = current period available to claim
-# _3 = next period start height
-# _4 = next period available to claim
-# _5 = total leased amount
-# _6 = current height
-# _7 = unit available to claim
-# _8 = total units claimed
-# _9 = l2mp to burn on units claim
+# _1  = current period start height
+# _2  = current period available to claim
+# _3  = next period start height
+# _4  = next period available to claim
+# _5  = total leased amount
+# _6  = current height
+# _7  = unit available to claim
+# _8  = total units claimed
+# _9  = l2mp to burn on units claim
 # _10 = total l2mp burned
 # _11 = last units claimed height
 # _12 = units per block per l2 in scale16
