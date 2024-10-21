@@ -6,7 +6,8 @@ let contractFile = "l2mp_leasing.ride"
 let SEP = "__"
 let BLOCKS_IN_INTERVAL = 1000
 let scale8 = 1_0000_0000
-let unitsClaimInterval = 365 * 24 * 60
+let scale16 = scale8 * scale8
+
 
 func throwErr(msg: String) = {
     throw(contractFile + ": " + msg)
@@ -16,12 +17,13 @@ let keyL2AssetId = ["%s", "assetId"].makeString(SEP)
 let keyForceStop = ["%s", "forceStop"].makeString(SEP)
 let keyForceOutStop = ["%s", "forceOutStop"].makeString(SEP)
 let keyUnitsAssetId = ["%s", "unitsAssetId"].makeString(SEP)
-let keyUnitsPerBlockScale8 = ["%s", "unitsPerBlock"].makeString(SEP)
+let keyUnitsPerBlockScale16 = ["%s", "unitsPerBlockScale16"].makeString(SEP)
 
-let keyPeriodOffsetId     = ["%s", "offsetId"].makeString(SEP)
-let keyPeriodOffsetHeight = ["%s", "offsetHeight"].makeString(SEP)
-let keyPeriodLength       = ["%s", "periodLength"].makeString(SEP)
+let keyPeriodOffsetId        = ["%s", "offsetId"].makeString(SEP)
+let keyPeriodOffsetHeight    = ["%s", "offsetHeight"].makeString(SEP)
+let keyPeriodLength          = ["%s", "periodLength"].makeString(SEP)
 let keyUnitsClaimStartHeight = ["%s", "unitsClaimStartHeight"].makeString(SEP)
+let keyUnitsClaimInterval    = ["%s", "unitsClaimInterval"].makeString(SEP)
 
 let periodOffsetId     = this.getInteger(keyPeriodOffsetId).valueOrElse(0)
 let periodLength       = this.getInteger(keyPeriodLength).valueOrElse(10000)
@@ -43,6 +45,7 @@ let nextPeriodHeight = {
     else (currentPeriodHeight + periodLength)
 }
 let unitsClaimStartHeight = this.getInteger(keyUnitsClaimStartHeight).valueOrElse(height)
+let unitsClaimInterval = this.getInteger(keyUnitsClaimInterval).valueOrElse(0)
 
 func keyLeasingNodeData(nodeAddress: String) = ["%s", nodeAddress].makeString(SEP)
 
@@ -295,16 +298,16 @@ func getUserTotalLocked(userAddress: String) = {
 func calculateUnitsToClaim(userAddress: String) = {
     let claimedBlockKey = keyUnitsClaimedBlock(userAddress)
     let claimedBlock = this.getInteger(claimedBlockKey).valueOrElse(unitsClaimStartHeight)
-    let unitsPerBlockScale8 = this.getInteger(keyUnitsPerBlockScale8).valueOrElse(0)
+    let unitsPerBlockScale16 = this.getInteger(keyUnitsPerBlockScale16).valueOrElse(0)
     
     let currentBlock = min([unitsClaimStartHeight + unitsClaimInterval, height])
     let blocksPassed = currentBlock - claimedBlock
     let amountStaked = getUserTotalLocked(userAddress)
     
-    let unitsToClaimNow = fraction((unitsPerBlockScale8 * blocksPassed), amountStaked, scale8)
     let l2ToBurn = fraction(amountStaked, blocksPassed, unitsClaimInterval)
+    let unitsToClaimNow = fraction(l2ToBurn, unitsPerBlockScale16, scale16)
 
-    (unitsToClaimNow, l2ToBurn, claimedBlock)
+    (unitsToClaimNow, l2ToBurn, currentBlock)
 }
 
 func getUnlockUnitsAction(userAddress: String) = {
@@ -313,13 +316,13 @@ func getUnlockUnitsAction(userAddress: String) = {
     let kL2ToBurn = keyL2ToBurn(userAddress)
     let l2ToBurn = this.getInteger(kL2ToBurn).valueOrElse(0)
 
-    let (unitsToClaimNow, l2ToBurnNow, claimedBlock) = calculateUnitsToClaim(userAddress)
+    let (unitsToClaimNow, l2ToBurnNow, currentBlock) = calculateUnitsToClaim(userAddress)
 
     if (unitsToClaimNow <= 0) then {
         []
     } else {
         [
-            IntegerEntry(keyUnitsClaimedBlock(userAddress), claimedBlock),
+            IntegerEntry(keyUnitsClaimedBlock(userAddress), currentBlock),
             IntegerEntry(kL2ToBurn, l2ToBurn + l2ToBurnNow),
             IntegerEntry(kUnlockedUnits, unlockedUnits + unitsToClaimNow)
         ]
@@ -487,7 +490,7 @@ func getSetNewPeriodLengthActions(newPeriodLength: Int) = {
 }
 
 func getUnitsClaimData(userAddress: String) = {
-    let (unlockedUnitNow, l2ToBurnNow, claimedBlock) = calculateUnitsToClaim(userAddress)
+    let (unlockedUnitNow, l2ToBurnNow, currentBlock) = calculateUnitsToClaim(userAddress)
     let unlockedUnitsPrev = this.getInteger(keyUnlockedUnits(userAddress)).valueOrElse(0)
     let unitsToSend = unlockedUnitNow + unlockedUnitsPrev
 
@@ -497,14 +500,14 @@ func getUnitsClaimData(userAddress: String) = {
     let totalUnitsClaimed = this.getInteger(keyTotalUnitsClaimed(userAddress)).valueOrElse(0)
     let totalL2Burned = this.getInteger(keyL2BurnedTotal(userAddress)).valueOrElse(0)
 
-    (unitsToSend, totalUnitsClaimed, l2ToBurn, totalL2Burned, claimedBlock)
+    (unitsToSend, totalUnitsClaimed, l2ToBurn, totalL2Burned, currentBlock)
 }
 
 func getClaimUnitsActions(userAddress: String) = {
     let (unitsToSend, totalUnitsClaimed, l2ToBurn, totalL2Burned, claimedBlock) = getUnitsClaimData(userAddress)
 
     strict check = [
-        unitsToSend <= 0 || "nothing to claim".throwErr()
+        unitsToSend > 0 || "nothing to claim".throwErr()
     ]
 
     let burnAction = match (l2AssetIdBytes) {
@@ -673,21 +676,22 @@ func stakeFor(userAddress: String) = {
 }
 
 @Callable(i)
-func startUnitsVesting() = {
+func startUnitsVesting(unitsClaimInterval: Int) = {
     let totalL2 = 1_000_000_000_0000_0000
     let totalUnits = i.payments[0].amount
 
-    let unitsPerBlockScale8 = fraction(totalL2, scale8, totalUnits) / unitsClaimInterval
+    let unitsPerBlockScale16 = fraction(totalUnits, scale16, totalL2) / unitsClaimInterval
 
     strict check = [
         isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr(),
         i.payments.size() == 1 || "should be 1 payment".throwErr(),
-        unitsPerBlockScale8 > 0 || "units per block should be greated than 0".throwErr()
+        unitsPerBlockScale16 > 0 || "units per block should be greated than 0".throwErr()
     ]
 
     [
-        IntegerEntry(keyUnitsPerBlockScale8, unitsPerBlockScale8),
+        IntegerEntry(keyUnitsPerBlockScale16, unitsPerBlockScale16),
         IntegerEntry(keyUnitsClaimStartHeight, height),
+        IntegerEntry(keyUnitsClaimInterval, unitsClaimInterval),
         StringEntry(keyUnitsAssetId, i.payments[0].assetId.assetBytesToString())
     ]
 }
