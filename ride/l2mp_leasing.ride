@@ -601,11 +601,13 @@ func getUserLeasingDataREADONLY(nodeAddress: String, userAddress: String) = {
 # _9 = l2mp to burn on units claim
 # _10 = total l2mp burned
 # _11 = last units claimed height
+# -12 = units per block per l2 in scale16
 @Callable(i)
 func getUserDataREADONLY(userAddress: String) = {
     let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
     let userTotalLocked = getUserTotalLocked(userAddress)
     let (unitsToSend, totalUnitsClaimed, l2ToBurn, totalL2Burned, claimedBlock) = getUnitsClaimData(userAddress)
+    let unitsPerBlockScale16 = this.getInteger(keyUnitsPerBlockScale16).valueOrElse(0)
 
     (
         [], 
@@ -620,7 +622,8 @@ func getUserDataREADONLY(userAddress: String) = {
             totalUnitsClaimed,
             l2ToBurn,
             totalL2Burned,
-            claimedBlock
+            claimedBlock,
+            unitsPerBlockScale16
         )
     )
 }
