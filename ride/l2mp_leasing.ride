@@ -315,11 +315,15 @@ func getUnlockUnitsAction(userAddress: String) = {
     let unlockedUnits = this.getInteger(kUnlockedUnits).valueOrElse(0)
     let kL2ToBurn = keyL2ToBurn(userAddress)
     let l2ToBurn = this.getInteger(kL2ToBurn).valueOrElse(0)
+    let totalL2Locked = getUserTotalLocked(userAddress)
 
     let (unitsToClaimNow, l2ToBurnNow, currentBlock, _tmp) = calculateUnitsToClaim(userAddress)
 
+    # User staked something but units to claim is too low
+    # In that case just do nothing and wait for more blocks
     if (unitsToClaimNow <= 0) then {
-        []
+    # If locked amount was zero, that means user just locked on current block
+        if (totalL2Locked > 0) then [] else [ IntegerEntry(keyUnitsClaimedBlock(userAddress), currentBlock) ]
     } else {
         [
             IntegerEntry(keyUnitsClaimedBlock(userAddress), currentBlock),
