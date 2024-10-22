@@ -305,9 +305,9 @@ func calculateUnitsToClaim(userAddress: String) = {
     let amountStaked = getUserTotalLocked(userAddress)
     
     let l2ToBurn = fraction(amountStaked, blocksPassed, unitsClaimInterval)
-    let unitsToClaimNow = fraction(l2ToBurn, unitsPerBlockScale16, scale16)
+    let unitsToClaimNow = fraction(amountStaked, unitsPerBlockScale16*blocksPassed, scale16)
 
-    (unitsToClaimNow, l2ToBurn, currentBlock)
+    (unitsToClaimNow, l2ToBurn, currentBlock, (blocksPassed, unitsClaimStartHeight, unitsClaimInterval))
 }
 
 func getUnlockUnitsAction(userAddress: String) = {
@@ -316,7 +316,7 @@ func getUnlockUnitsAction(userAddress: String) = {
     let kL2ToBurn = keyL2ToBurn(userAddress)
     let l2ToBurn = this.getInteger(kL2ToBurn).valueOrElse(0)
 
-    let (unitsToClaimNow, l2ToBurnNow, currentBlock) = calculateUnitsToClaim(userAddress)
+    let (unitsToClaimNow, l2ToBurnNow, currentBlock, _tmp) = calculateUnitsToClaim(userAddress)
 
     if (unitsToClaimNow <= 0) then {
         []
@@ -490,7 +490,7 @@ func getSetNewPeriodLengthActions(newPeriodLength: Int) = {
 }
 
 func getUnitsClaimData(userAddress: String) = {
-    let (unlockedUnitNow, l2ToBurnNow, currentBlock) = calculateUnitsToClaim(userAddress)
+    let (unlockedUnitNow, l2ToBurnNow, currentBlock, _tmp) = calculateUnitsToClaim(userAddress)
     let unlockedUnitsPrev = this.getInteger(keyUnlockedUnits(userAddress)).valueOrElse(0)
     let unitsToSend = unlockedUnitNow + unlockedUnitsPrev
 
@@ -682,11 +682,11 @@ func stakeFor(userAddress: String) = {
 }
 
 @Callable(i)
-func startUnitsVesting(unitsClaimInterval: Int) = {
+func startUnitsVesting(unitsClaimNewInterval: Int) = {
     let totalL2 = 1_000_000_000_0000_0000
     let totalUnits = i.payments[0].amount
 
-    let unitsPerBlockScale16 = fraction(totalUnits, scale16, totalL2) / unitsClaimInterval
+    let unitsPerBlockScale16 = fraction(totalUnits, scale16, totalL2) / unitsClaimNewInterval
 
     strict check = [
         isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr(),
@@ -697,7 +697,7 @@ func startUnitsVesting(unitsClaimInterval: Int) = {
     [
         IntegerEntry(keyUnitsPerBlockScale16, unitsPerBlockScale16),
         IntegerEntry(keyUnitsClaimStartHeight, height),
-        IntegerEntry(keyUnitsClaimInterval, unitsClaimInterval),
+        IntegerEntry(keyUnitsClaimInterval, unitsClaimNewInterval),
         StringEntry(keyUnitsAssetId, i.payments[0].assetId.assetBytesToString())
     ]
 }
