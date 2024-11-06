@@ -45,7 +45,7 @@ let nextPeriodHeight = {
     else (currentPeriodHeight + periodLength)
 }
 let unitsClaimStartHeight = this.getInteger(keyUnitsClaimStartHeight).valueOrElse(height)
-let unitsClaimInterval = this.getInteger(keyUnitsClaimInterval).valueOrElse(0)
+let unitsClaimInterval = this.getInteger(keyUnitsClaimInterval).valueOrElse(1)
 
 func keyLeasingNodeData(nodeAddress: String) = ["%s", nodeAddress].makeString(SEP)
 
