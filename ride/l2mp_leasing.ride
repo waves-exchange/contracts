@@ -1,0 +1,742 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let contractFile = "l2mp_leasing.ride"
+let SEP = "__"
+let BLOCKS_IN_INTERVAL = 1000
+let scale8 = 1_0000_0000
+let scale16 = scale8 * scale8
+
+
+func throwErr(msg: String) = {
+    throw(contractFile + ": " + msg)
+}
+
+let keyL2AssetId = ["%s", "assetId"].makeString(SEP)
+let keyForceStop = ["%s", "forceStop"].makeString(SEP)
+let keyForceOutStop = ["%s", "forceOutStop"].makeString(SEP)
+let keyUnitsAssetId = ["%s", "unitsAssetId"].makeString(SEP)
+let keyUnitsPerBlockScale16 = ["%s", "unitsPerBlockScale16"].makeString(SEP)
+
+let keyPeriodOffsetId        = ["%s", "offsetId"].makeString(SEP)
+let keyPeriodOffsetHeight    = ["%s", "offsetHeight"].makeString(SEP)
+let keyPeriodLength          = ["%s", "periodLength"].makeString(SEP)
+let keyUnitsClaimStartHeight = ["%s", "unitsClaimStartHeight"].makeString(SEP)
+let keyUnitsClaimInterval    = ["%s", "unitsClaimInterval"].makeString(SEP)
+
+let periodOffsetId     = this.getInteger(keyPeriodOffsetId).valueOrElse(0)
+let periodLength       = this.getInteger(keyPeriodLength).valueOrElse(10000)
+let periodOffsetHeight = this.getInteger(keyPeriodOffsetHeight).valueOrElse(-1)
+let currentPeriodId = {
+    if (height > periodOffsetHeight && periodOffsetHeight != -1) then 
+        ((height - periodOffsetHeight) / periodLength) + periodOffsetId
+    else
+        max([0, periodOffsetId - 1])
+}
+let currentPeriodHeight = {
+    if (periodOffsetHeight == -1 || (currentPeriodId == 0 && height < periodOffsetHeight)) 
+    then 0
+    else periodOffsetHeight + ((currentPeriodId - periodOffsetId) * periodLength)
+}
+let nextPeriodHeight = {
+    if (periodOffsetHeight == -1 || (currentPeriodId == 0 && height < periodOffsetHeight)) 
+    then 0
+    else (currentPeriodHeight + periodLength)
+}
+let unitsClaimStartHeight = this.getInteger(keyUnitsClaimStartHeight).valueOrElse(height)
+let unitsClaimInterval = this.getInteger(keyUnitsClaimInterval).valueOrElse(1)
+
+func keyLeasingNodeData(nodeAddress: String) = ["%s", nodeAddress].makeString(SEP)
+
+func keyUserLeasingNodeData(userAddress: String, nodeAddress: String) =
+    ["%s%s", nodeAddress, userAddress].makeString(SEP)
+func keyUserToClaim(userAddress: String) =
+    ["%s%s", "toClaim", userAddress].makeString(SEP)
+func keyUserTotalLocked(userAddress: String) =
+    ["%s%s", "userTotalLocked", userAddress].makeString(SEP)
+
+func keyUnitsClaimedBlock(userAddress: String) =
+    ["%s%s", "unitsClaimedBlock", userAddress].makeString(SEP)
+func keyUnlockedUnits(userAddress: String) =
+    ["%s%s", "unlockedUnits", userAddress].makeString(SEP)
+func keyTotalUnitsClaimed(userAddress: String) = 
+    ["%s%s", "totalUnitsClaimed", userAddress].makeString(SEP)
+func keyL2ToBurn(userAddress: String) =
+    ["%s%s", "l2ToBurn", userAddress].makeString(SEP)
+func keyL2BurnedTotal(userAddress: String) =
+    ["%s%s", "l2BurnedTotal", userAddress].makeString(SEP)
+
+# History keys
+func keyNodeLeasingByHeight(nodeAddress: String) = {
+    let h = if (periodOffsetHeight == -1) then 0 else height
+    ["%s%d", nodeAddress, h.toString()].makeString(SEP)
+}
+func keyUserLeasingByHeight(nodeAddress: String, userAddress: String) = {
+    let h = if (periodOffsetHeight == -1) then 0 else height
+    ["%s%s%d", nodeAddress, userAddress, h.toString()].makeString(SEP)
+}
+
+func assetStringToBytes(assetIdString: String) = {
+    if (assetIdString == "WAVES") then unit else assetIdString.fromBase58String()
+}
+func assetBytesToString(assetId: ByteVector | Unit) = {
+    match (assetId) {
+        case a:ByteVector => a.toBase58String()
+        case _ => "WAVES"
+      }
+}
+
+let l2AssetIdString = this.getString(keyL2AssetId).valueOrElse("WAVES")
+let unitsAssetIdString = this.getString(keyUnitsAssetId).valueOrElse("WAVES")
+let l2AssetIdBytes  = assetStringToBytes(l2AssetIdString)
+let unitsAssetIdBytes  = assetStringToBytes(unitsAssetIdString)
+let isForceStop = this.getBoolean(keyForceStop).valueOrElse(false)
+let isForceOutStop = this.getBoolean(keyForceOutStop).valueOrElse(false)
+
+func isValidAddress(address: String) = {
+    match (address.addressFromString()) {
+        case a:Address => true
+        case _ => false
+      }
+}
+
+######################
+# MULTISIG FUNCTIONS #
+######################
+let ADMIN_LIST_SIZE = 5
+let QUORUM = 3
+let TXID_BYTES_LENGTH = 32
+
+func keyAllowedTxIdVotePrefix(txId: String) = makeString(["%s%s%s", "allowTxId", txId], SEP)
+# Make Admin vote key 
+func keyFullAdminVote(prefix: String, adminAddress: String) = makeString([prefix, adminAddress], SEP)
+# Admin List key
+func keyAdminAddressList() = makeString(["%s", "adminAddressList"], SEP)
+# Allowed TXID key
+func keyAllowedTxId() = makeString(["%s", "txId"], SEP)
+
+func getAdminVote(prefix: String, admin: String) = {
+  let voteKey = keyFullAdminVote(prefix, admin)
+  getInteger(voteKey).valueOrElse(0)
+}
+
+func getAdminsList() = {
+  match (this.getString(keyAdminAddressList())) {
+    case s:String => s.split(SEP)
+    case _ => []
+  }
+}
+
+func isInAdminList(address: String) = {
+  getAdminsList().containsElement(address)
+}
+
+# Generate List of keys with same prefix for all admins
+func genVotesKeysHelper(a: (List[String], String), adminAddress: String) = {
+  let (result, prefix) = a
+  (result :+ keyFullAdminVote(prefix, adminAddress), prefix)
+}
+func genVotesKeys(keyPrefix: String) = {
+  let adminList = keyAdminAddressList()
+  let (result, prefix) = FOLD<5>(getAdminsList(), ([], keyPrefix), genVotesKeysHelper)
+  result
+}
+
+# Count all votes for Prefix
+func countVotesHelper(result: Int, voteKey: String) = {
+  result + getInteger(voteKey).valueOrElse(0)
+}
+func countVotes(prefix: String) = {
+  let votes = genVotesKeys(prefix)
+  FOLD<5>(votes, 0, countVotesHelper)
+}
+
+# Generate DeleteEntry for all votes with Prefix
+func clearVotesHelper(result: List[DeleteEntry], key: String) = {
+  result :+ DeleteEntry(key) 
+}
+func getClearVoteEntries(prefix: String) = {
+  let votes = genVotesKeys(prefix)
+  FOLD<5>(votes, [], clearVotesHelper)
+}
+
+func voteINTERNAL(
+  callerAddressString: String, 
+  keyPrefix: String, 
+  minVotes: Int, 
+  voteResult: List[StringEntry|IntegerEntry|DeleteEntry]
+) = {
+  let voteKey = keyFullAdminVote(keyPrefix, callerAddressString)
+  let adminCurrentVote = getAdminVote(keyPrefix, callerAddressString)
+
+  strict err = if (!isInAdminList(callerAddressString)) then {
+    throwErr("Address: " + callerAddressString + " not in Admin list")
+  } else if (adminCurrentVote == 1) then {
+    throwErr(voteKey + " you already voted")
+  } else { unit }
+
+  let votes = countVotes(keyPrefix)
+  if (votes + 1 >= minVotes) then {
+    let clearVoteEntries = getClearVoteEntries(keyPrefix)
+    clearVoteEntries ++ voteResult
+  } else {
+    [ IntegerEntry(voteKey, 1) ]
+  }
+}
+##########################
+# MULTISIG FUNCTIONS END #
+##########################
+
+func getLeasingNodeEntry(nodeAddress: String, currentLeased: Int, nextLeased: Int) = {
+    let valueString = [
+        "%d%d%d%d",
+        currentPeriodHeight.toString(),
+        currentLeased.toString(),
+        nextPeriodHeight.toString(),
+        nextLeased.toString()
+    ].makeString(SEP)
+
+    StringEntry(keyLeasingNodeData(nodeAddress), valueString)
+}
+
+func getLeasingNodeData(nodeAddress: String) = {
+    let leasingNodeDataStringRaw = this.getString(keyLeasingNodeData(nodeAddress))
+
+    match (leasingNodeDataStringRaw) {
+        case ds:String => {
+            let dataList = ds.split(SEP)
+            let nodeCurrentPeriod = dataList[1].parseIntValue()
+            let nodeCurrentLeased = dataList[2].parseIntValue()
+            let nodeNextPeriod    = dataList[3].parseIntValue()
+            let nodeNextLeased    = dataList[4].parseIntValue()
+
+            if (height < nodeNextPeriod || periodOffsetHeight == -1)
+                then (nodeCurrentLeased, nodeNextLeased)
+                else (nodeNextLeased, nodeNextLeased)
+        }
+        case _ => (0, 0)
+      }
+}
+
+func getUserLeasingEntry(
+        nodeAddress: String, 
+        userAddress: String, 
+        userCurrentLeased: Int, 
+        userNextLeased: Int
+    ) = {
+    let valueString = [
+        "%d%d%d%d",
+        currentPeriodHeight.toString(),
+        userCurrentLeased.toString(),
+        nextPeriodHeight.toString(),
+        userNextLeased.toString()
+    ].makeString(SEP)
+
+    StringEntry(keyUserLeasingNodeData(userAddress, nodeAddress), valueString)
+}
+
+func getUserLeasingData(nodeAddress: String, userAddress: String) = {
+    let leasingUserDataStringRaw = 
+        this.getString(keyUserLeasingNodeData(userAddress, nodeAddress))
+
+    match (leasingUserDataStringRaw) {
+        case ds:String => {
+            let dataList = ds.split(SEP)
+            let userCurrentPeriod = dataList[1].parseIntValue()
+            let userCurrentLeased = dataList[2].parseIntValue()
+            let userNextPeriod    = dataList[3].parseIntValue()
+            let userNextLeased    = dataList[4].parseIntValue()
+
+            if (height < userNextPeriod || periodOffsetHeight == -1)
+                then (userCurrentLeased, userNextLeased)
+                else (userNextLeased, userNextLeased)
+        }
+        case _ => (0, 0)
+      }
+}
+
+func getUserToClaimEntry(userAddress: String, toClaim: Int, toUnlock: Int) = {
+    let valueString = [
+        "%d%d%d%d", 
+        currentPeriodHeight.toString(),
+        toClaim.toString(),
+        nextPeriodHeight.toString(),
+        toUnlock.toString()
+    ].makeString(SEP)
+
+    StringEntry(keyUserToClaim(userAddress), valueString)
+}
+
+func getUserToClaimBalance(userAddress: String) = {
+    let userToClaimDataStringRaw = this.getString(keyUserToClaim(userAddress))
+
+    match (userToClaimDataStringRaw) {
+        case ds:String => {
+            let dataList = ds.split(SEP)
+            let currentPeriod = dataList[1].parseIntValue()
+            let toClaim       = dataList[2].parseIntValue()
+            let nextPeriod    = dataList[3].parseIntValue()
+            let toUnlock      = dataList[4].parseIntValue()
+
+            if (height < nextPeriod || currentPeriodId == 0) 
+                then (toClaim, toUnlock)
+                else (toClaim + toUnlock, 0)
+        }
+        case _ => (0, 0)
+      }
+}
+
+func getUserTotalLockedEntry(userAddress: String, userTotalLocked: Int) = {
+    IntegerEntry(keyUserTotalLocked(userAddress), userTotalLocked)
+}
+
+func getUserTotalLocked(userAddress: String) = {
+    this.getInteger(keyUserTotalLocked(userAddress)).valueOrElse(0)
+}
+
+func calculateUnitsToClaim(userAddress: String) = {
+    let claimedBlockKey = keyUnitsClaimedBlock(userAddress)
+    let claimedBlock = this.getInteger(claimedBlockKey).valueOrElse(unitsClaimStartHeight)
+    let unitsPerBlockScale16 = this.getInteger(keyUnitsPerBlockScale16).valueOrElse(0)
+    
+    let currentBlock = min([unitsClaimStartHeight + unitsClaimInterval, height])
+    let blocksPassed = currentBlock - claimedBlock
+    let amountStaked = getUserTotalLocked(userAddress)
+    
+    let l2ToBurn = fraction(amountStaked, blocksPassed, unitsClaimInterval)
+    let unitsToClaimNow = fraction(amountStaked, unitsPerBlockScale16*blocksPassed, scale16)
+
+    (unitsToClaimNow, l2ToBurn, currentBlock, (blocksPassed, unitsClaimStartHeight, unitsClaimInterval))
+}
+
+func getUnlockUnitsAction(userAddress: String) = {
+    let kUnlockedUnits = keyUnlockedUnits(userAddress)
+    let unlockedUnits = this.getInteger(kUnlockedUnits).valueOrElse(0)
+    let kL2ToBurn = keyL2ToBurn(userAddress)
+    let l2ToBurn = this.getInteger(kL2ToBurn).valueOrElse(0)
+    let totalL2Locked = getUserTotalLocked(userAddress)
+
+    let (unitsToClaimNow, l2ToBurnNow, currentBlock, _tmp) = calculateUnitsToClaim(userAddress)
+
+    # User staked something but units to claim is too low
+    # In that case just do nothing and wait for more blocks
+    if (unitsToClaimNow <= 0) then {
+    # If locked amount was zero, that means user just locked on current block
+        if (totalL2Locked > 0) then [] else [ IntegerEntry(keyUnitsClaimedBlock(userAddress), currentBlock) ]
+    } else {
+        [
+            IntegerEntry(keyUnitsClaimedBlock(userAddress), currentBlock),
+            IntegerEntry(kL2ToBurn, l2ToBurn + l2ToBurnNow),
+            IntegerEntry(kUnlockedUnits, unlockedUnits + unitsToClaimNow)
+        ]
+    }
+}
+
+func getUnstakeActions(nodeAddress: String, userAddress: String, unstakeAmount: Int) = {
+    let (nodeCurrentLeased, nodeNextLeased) = getLeasingNodeData(nodeAddress)
+    let (userCurrentLeased, userNextLeased) = getUserLeasingData(nodeAddress, userAddress)
+    
+    strict checks = [
+        !isForceStop || "contract is temporary stopped".throwErr(),
+        !isForceOutStop || "unstake is temporary disabled".throwErr(),
+        unstakeAmount > 0 || "unstake amount should be greater than 0".throwErr(),
+        unstakeAmount <= userNextLeased || 
+            "unstake amount should be less or equal user staked amount".throwErr(),
+        unstakeAmount <= nodeNextLeased || 
+            "unstake amount should be less or equal node staked amount".throwErr(),
+        nodeAddress.isValidAddress() || 
+            ["node address is not valid:", nodeAddress].makeString(" ").throwErr(),
+        userAddress.isValidAddress() || 
+            ["user address is not valid:", userAddress].makeString(" ").throwErr()
+    ]
+
+    let newNodeNextLease = nodeNextLeased - unstakeAmount
+    let newUserNextLeased = userNextLeased - unstakeAmount
+
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
+    let newToUnlock = toUnlock + unstakeAmount
+
+    let userTotalLocked = getUserTotalLocked(userAddress)
+    let newUserTotalLocked = userTotalLocked - unstakeAmount
+
+    let unitsUnlockedActions = getUnlockUnitsAction(userAddress)
+
+    [
+        getLeasingNodeEntry(nodeAddress, nodeCurrentLeased, newNodeNextLease),
+        getUserLeasingEntry(nodeAddress, userAddress, userCurrentLeased, newUserNextLeased),
+        getUserToClaimEntry(userAddress, toClaim, newToUnlock),
+        getUserTotalLockedEntry(userAddress, newUserTotalLocked),
+        IntegerEntry(keyNodeLeasingByHeight(nodeAddress), newNodeNextLease),
+        IntegerEntry(keyUserLeasingByHeight(nodeAddress, userAddress), newUserNextLeased)
+    ] ++ unitsUnlockedActions
+}
+
+func getClaimUnlockedActions(userAddress: String, claimAmount: Int) = {
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
+
+    strict checks = [
+        !isForceStop || "contract is temporary stopped".throwErr(),
+        !isForceOutStop || "claim is temporary disabled".throwErr(),
+        claimAmount > 0 || "claim amount should be greater than 0".throwErr(),
+        claimAmount <= toClaim || 
+            "claim amount should be less or equal unlocked amount".throwErr(),
+        userAddress.isValidAddress() || 
+            ["user address is not valid:", userAddress].makeString(" ").throwErr()
+    ]
+
+    let newToClaim = toClaim - claimAmount
+
+    [
+        getUserToClaimEntry(userAddress, newToClaim, toUnlock),
+        ScriptTransfer(userAddress.addressFromStringValue(), claimAmount, l2AssetIdBytes)
+    ]
+}
+
+func getStakeForActions(userAddress: String, i: Invocation) = {
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
+
+    strict checks = [
+        !isForceStop || "contract is temporary stopped".throwErr(),
+        i.payments.size() <= 1 || 
+            "maximum 1 payment".throwErr(),
+        i.payments.size() == 0 || i.payments[0].assetId == l2AssetIdBytes ||
+            ["payment assetId should be:", l2AssetIdString].makeString(" ").throwErr(),
+        userAddress.isValidAddress() || 
+            ["user address is not valid:", userAddress].makeString(" ").throwErr()
+    ]
+
+    let newToClaim = toClaim + i.payments[0].amount
+
+    [
+        getUserToClaimEntry(userAddress, newToClaim, toUnlock)
+    ]
+}
+
+func getStakeActions(
+    nodeAddress: String, 
+    userAddress: String, 
+    userLeasingAmount: Int,
+    i: Invocation
+    ) = {
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
+    let paymentAmount = if (i.payments.size() == 0) then 0 else i.payments[0].amount
+    let available = toUnlock + toClaim + paymentAmount
+
+    strict checks = [
+        !isForceStop || "contract is temporary stopped".throwErr(),
+        i.payments.size() <= 1 || 
+            "maximum 1 payment".throwErr(),
+        i.payments.size() == 0 || i.payments[0].assetId == l2AssetIdBytes ||
+            ["payment assetId should be:", l2AssetIdString].makeString(" ").throwErr(),
+        userLeasingAmount > 0 ||
+            "amount should be greater than 0".throwErr(),
+        userLeasingAmount <= available || 
+            "amount should be less or equal (payment + available) amount".throwErr(),
+        userLeasingAmount >= paymentAmount || 
+            "amount should be greater or equal payment amount".throw(),
+        nodeAddress.isValidAddress() || 
+            ["node address is not valid:", nodeAddress].makeString(" ").throwErr(),
+        userAddress.isValidAddress() || 
+            ["user address is not valid:", userAddress].makeString(" ").throwErr()
+    ]
+
+    let (nodeCurrentLeased, nodeNextLeased) = getLeasingNodeData(nodeAddress)
+    let newNodeNextLease = nodeNextLeased + userLeasingAmount
+
+    let (userCurrentLeased, userNextLeased) = getUserLeasingData(nodeAddress, userAddress)
+    let newUserNextLeased = userNextLeased + userLeasingAmount
+
+    let fromUnlockedAmount = userLeasingAmount - paymentAmount
+    let newToUnlock = max([0, (toUnlock - fromUnlockedAmount)])
+    let newToClaim = min([toClaim, (toClaim + (toUnlock - fromUnlockedAmount))])
+
+    let userTotalLocked = getUserTotalLocked(userAddress)
+    let newUserTotalLocked = userTotalLocked + userLeasingAmount
+
+    let unitsUnlockedActions = getUnlockUnitsAction(userAddress)
+
+    [
+        getLeasingNodeEntry(nodeAddress, nodeCurrentLeased, newNodeNextLease),
+        getUserLeasingEntry(nodeAddress, userAddress, userCurrentLeased, newUserNextLeased),
+        getUserToClaimEntry(userAddress, newToClaim, newToUnlock),
+        getUserTotalLockedEntry(userAddress, newUserTotalLocked),
+        IntegerEntry(keyNodeLeasingByHeight(nodeAddress), newNodeNextLease),
+        IntegerEntry(keyUserLeasingByHeight(nodeAddress, userAddress), newUserNextLeased)
+    ] ++ unitsUnlockedActions
+}
+
+func getStakeFromPaymentActions(nodeAddress: String, userAddress: String, i: Invocation) = {
+    strict checks = [
+        i.payments.size() == 1 || "payment size should be exactly 1".throwErr()
+    ]
+
+    getStakeActions(nodeAddress, userAddress, i.payments[0].amount, i)
+}
+
+func getSetNewPeriodLengthActions(newPeriodLength: Int) = {
+    strict check = [
+        newPeriodLength > 0 || "period length should be greater than 0".throwErr()
+    ]
+
+    if (periodOffsetHeight == -1) then {
+        [
+            IntegerEntry(keyPeriodLength, newPeriodLength),
+            IntegerEntry(keyPeriodOffsetHeight, height)
+        ]
+    } else {
+        [
+            IntegerEntry(keyPeriodOffsetId, currentPeriodId + 1),
+            IntegerEntry(keyPeriodOffsetHeight, nextPeriodHeight),
+            IntegerEntry(keyPeriodLength, newPeriodLength)
+        ]
+    }
+}
+
+func getUnitsClaimData(userAddress: String) = {
+    let (unlockedUnitNow, l2ToBurnNow, currentBlock, _tmp) = calculateUnitsToClaim(userAddress)
+    let unlockedUnitsPrev = this.getInteger(keyUnlockedUnits(userAddress)).valueOrElse(0)
+    let unitsToSend = unlockedUnitNow + unlockedUnitsPrev
+
+    let l2ToBurnPrev = this.getInteger(keyL2ToBurn(userAddress)).valueOrElse(0)
+    let l2ToBurn = l2ToBurnPrev + l2ToBurnNow
+
+    let totalUnitsClaimed = this.getInteger(keyTotalUnitsClaimed(userAddress)).valueOrElse(0)
+    let totalL2Burned = this.getInteger(keyL2BurnedTotal(userAddress)).valueOrElse(0)
+
+    (unitsToSend, totalUnitsClaimed, l2ToBurn, totalL2Burned, currentBlock)
+}
+
+func getClaimUnitsActions(userAddress: String) = {
+    let (unitsToSend, totalUnitsClaimed, l2ToBurn, totalL2Burned, claimedBlock) = getUnitsClaimData(userAddress)
+
+    strict check = [
+        unitsToSend > 0 || "nothing to claim".throwErr()
+    ]
+
+    let burnAction = match (l2AssetIdBytes) {
+        case id:ByteVector => [ Burn(id, l2ToBurn) ]
+        case _ => []
+    }
+
+    [
+        IntegerEntry(keyUnitsClaimedBlock(userAddress), claimedBlock),
+        IntegerEntry(keyTotalUnitsClaimed(userAddress), totalUnitsClaimed + unitsToSend),
+        IntegerEntry(keyL2BurnedTotal(userAddress), totalL2Burned + l2ToBurn),
+        IntegerEntry(keyUnlockedUnits(userAddress), 0),
+        IntegerEntry(keyL2ToBurn(userAddress), 0),
+        ScriptTransfer(userAddress.addressFromStringValue(), unitsToSend, unitsAssetIdBytes)
+    ] ++ burnAction
+}
+
+@Callable(i)
+func setNewPeriodLength(newPeriodLength: Int) = {
+    strict checks = [
+        isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr()
+    ]
+
+    getSetNewPeriodLengthActions(newPeriodLength)
+}
+
+@Callable(i)
+func claimUnits() = {
+    let userAddress = i.caller.toString()
+
+    getClaimUnitsActions(userAddress)
+}
+
+@Callable(i)
+func setForceStopFlag(stop: Boolean) = {
+    strict check = [
+        isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr()
+    ]
+
+    [
+        BooleanEntry(keyForceStop, stop)
+    ]
+}
+
+@Callable(i)
+func setForceOutStopFlag(stop: Boolean) = {
+    strict check = [
+        isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr()
+    ]
+
+    [
+        BooleanEntry(keyForceOutStop, stop)
+    ]
+}
+
+# Node leasing data
+# _1 = current period start height
+# _2 = current period leased amount
+# _3 = next period start height
+# _4 = next period leased amount
+# _5 = current height
+@Callable(i)
+func getNodeDataREADONLY(nodeAddress: String) = {
+    let (currentLease, nextLeased) = getLeasingNodeData(nodeAddress)
+
+    ([], (currentPeriodHeight, currentLease, nextPeriodHeight, nextLeased, height))
+}
+
+# User leasing to Node data
+# _1 = current period start height
+# _2 = current period leased amount
+# _3 = next period start height
+# _4 = next period leased amount
+# _5 = current height
+@Callable(i)
+func getUserLeasingDataREADONLY(nodeAddress: String, userAddress: String) = {
+    let (currentLease, nextLeased) = getUserLeasingData(nodeAddress, userAddress)
+
+    ([], (currentPeriodHeight, currentLease, nextPeriodHeight, nextLeased, height))
+}
+
+# User data
+# _1  = current period start height
+# _2  = current period available to claim
+# _3  = next period start height
+# _4  = next period available to claim
+# _5  = total leased amount
+# _6  = current height
+# _7  = unit available to claim
+# _8  = total units claimed
+# _9  = l2mp to burn on units claim
+# _10 = total l2mp burned
+# _11 = last units claimed height
+# _12 = units per block per l2 in scale16
+# _13 = units claim remaining blocks
+@Callable(i)
+func getUserDataREADONLY(userAddress: String) = {
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
+    let userTotalLocked = getUserTotalLocked(userAddress)
+    let (unitsToSend, totalUnitsClaimed, l2ToBurn, totalL2Burned, claimedBlock) = getUnitsClaimData(userAddress)
+    let unitsPerBlockScale16 = this.getInteger(keyUnitsPerBlockScale16).valueOrElse(0)
+    let remainingblocks = max([0, unitsClaimStartHeight + unitsClaimInterval - height])
+
+    (
+        [], 
+        (
+            currentPeriodHeight,
+            toClaim,
+            nextPeriodHeight,
+            toUnlock,
+            userTotalLocked,
+            height,
+            unitsToSend,
+            totalUnitsClaimed,
+            l2ToBurn,
+            totalL2Burned,
+            claimedBlock,
+            unitsPerBlockScale16,
+            remainingblocks
+        )
+    )
+}
+
+@Callable(i)
+func leaseByAddress(nodeAddress: String, userAddress: String) = {
+    getStakeFromPaymentActions(nodeAddress, userAddress, i)
+}
+
+@Callable(i)
+func lease(nodeAddress: String) = {
+    let userAddress = i.caller.toString()
+
+    getStakeFromPaymentActions(nodeAddress, userAddress, i)
+}
+
+@Callable(i)
+func leaseFromLocked(nodeAddress: String, amount: Int) = {
+    let userAddress = i.caller.toString()
+
+    getStakeActions(nodeAddress, userAddress, amount, i)
+}
+
+@Callable(i)
+func cancelLease(nodeAddress: String, amount: Int) = {
+    let userAddress = i.caller.toString()
+
+    getUnstakeActions(nodeAddress, userAddress, amount)
+}
+
+@Callable(i)
+func claim(amount: Int) = {
+    let userAddress = i.caller.toString()
+
+    getClaimUnlockedActions(userAddress, amount)
+}
+
+@Callable(i)
+func claimAll() = {
+    let userAddress = i.caller.toString()
+    let (toClaim, toUnlock) = getUserToClaimBalance(userAddress)
+
+    strict checks = [
+        toClaim > 0 || "nothing to claim".throwErr()
+    ]
+
+    getClaimUnlockedActions(userAddress, toClaim)
+}
+
+@Callable(i)
+func stakeFor(userAddress: String) = {
+    getStakeForActions(userAddress, i)
+}
+
+@Callable(i)
+func startUnitsVesting(unitsClaimNewInterval: Int, totalL2String: String) = {
+    let totalUnits = i.payments[0].amount
+    let totalL2 = totalL2String.parseIntValue()
+
+    let unitsPerBlockScale16 = fraction(totalUnits, scale16, totalL2) / unitsClaimNewInterval
+
+    strict check = [
+        isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr(),
+        i.payments.size() == 1 || "should be 1 payment".throwErr(),
+        unitsPerBlockScale16 > 0 || "units per block should be greated than 0".throwErr(),
+        totalL2 > 0 || "total l2 should be greated than 0".throwErr()
+    ]
+
+    [
+        IntegerEntry(keyUnitsPerBlockScale16, unitsPerBlockScale16),
+        IntegerEntry(keyUnitsClaimStartHeight, height),
+        IntegerEntry(keyUnitsClaimInterval, unitsClaimNewInterval),
+        StringEntry(keyUnitsAssetId, i.payments[0].assetId.assetBytesToString())
+    ]
+}
+
+######################
+# MULTISIG FUNCTIONS #
+######################
+# Vote for txId that is allowed in Verifier
+@Callable(i)
+func voteForTxId(txId: String) = {
+  let callerAddressString = toBase58String(i.caller.bytes)
+  let keyPrefix = keyAllowedTxIdVotePrefix(txId)
+  let result = [ StringEntry(keyAllowedTxId(), txId) ]
+  let allowedTxIdOption = this.getString(keyAllowedTxId())
+  
+  strict err = [
+    txId.fromBase58String().size() == TXID_BYTES_LENGTH || throwErr(txId + " is not valid txId"),
+    allowedTxIdOption == unit || allowedTxIdOption.value() != txId || throwErr(txId + " is already allowed")
+  ]
+
+  voteINTERNAL(callerAddressString, keyPrefix, QUORUM, result)
+}
+##########################
+# MULTISIG FUNCTIONS END #
+##########################
+
+@Verifier(tx)
+func verify() = {
+  let byAdmins = (tx.id == this.getString(keyAllowedTxId()).valueOrElse("").fromBase58String())
+  let byOwner = (if (getAdminsList().size() >= QUORUM) then {
+      false
+    } else {
+      sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+  })
+
+  byAdmins || byOwner
+}

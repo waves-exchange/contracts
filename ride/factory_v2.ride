@@ -684,7 +684,7 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
 # return:
 @Callable(i)
 func managePool(poolAddress: String, newStatus: Int) = {
-  strict checkCaller = i.mustManager()
+  strict checkCaller = i.mustAdmin()
 
   let poolConfig = getPoolConfig(poolAddress)
 

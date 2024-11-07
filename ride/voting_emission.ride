@@ -5,8 +5,15 @@
 let separator = "__"
 let poolWeightMult = 100_000_000
 let maxDepthDefault = 10
-let finalizationStageTotal = 0
-let finalizationStageShares = 1
+let finalizationStageBalances = 0
+let finalizationStageTotal = 1
+let finalizationStageShares = 2
+let wavesString = "WAVES"
+
+let poolStatusActive = 1
+let poolStatusPutDisabled = 2
+let poolStatusMatcherDisabled = 3
+let poolStatusShutdown = 4
 
 let keyEpochLength = ["%s", "epochLength"].makeString(separator)
 let keyEpochLengthNew = ["%s%s", "epochLength__new"].makeString(separator)
@@ -14,6 +21,7 @@ func keyEpochLengthByEpoch(epoch: Int) = ["%s%d", "epochLength", epoch.toString(
 
 let keyCurrentEpoch = ["%s", "currentEpoch"].makeString(separator)
 let keyMaxDepth = ["%s", "maxDepth"].makeString(separator)
+let keyResumptionFee = ["%s", "resumptionFee"].makeString(separator)
 let keyVotingEmissionCandidateContract = ["%s", "votingEmissionCandidateContract"].makeString(separator)
 let keyVotingEmissionRateContract = ["%s", "votingEmissionRateContract"].makeString(separator)
 let keyFactoryContract = ["%s", "factoryContract"].makeString(separator)
@@ -29,6 +37,9 @@ let keyCurrentEpochUi = ["%s", "currentEpochUi"].makeString(separator)
 let keyStartHeightUi = ["%s", "startHeightUi"].makeString(separator)
 
 let keyFinalizationShouldBeForced = ["%s", "force"].makeString(separator)
+
+func keyAllowedLpScriptHash() = "%s__allowedLpScriptHash"
+func keyAllowedLpStableScriptHash() = "%s__allowedLpStableScriptHash"
 
 # start height will be set after first pool adding
 func keyStartHeightByEpoch(epoch: Int) = ["%s%d", "startHeight", epoch.toString()].makeString(separator)
@@ -96,6 +107,25 @@ let IdxFactoryCfgGwxRewardDapp = 10
 func keyFactoryCfg() = "%s__factoryConfig"
 func readFactoryCfgOrFail(factory: Address) = factory.getStrOrFail(keyFactoryCfg()).split(separator)
 func getGwxRewardAddressOrFail(factoryCfg: List[String]) = factoryCfg[IdxFactoryCfgGwxRewardDapp].addressFromStringValue()
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
+# returns (poolAddress: Address, lpAssetId: ByteVector)
+func getPoolInfo(amountAssetId: String, priceAssetId: String) = {
+  let poolInfoOption = factoryContract.invoke(
+    "poolInfoREADONLY",
+    [amountAssetId, priceAssetId],
+    []
+  ).as[(Address, ByteVector)]
+
+  poolInfoOption
+}
 
 func getLpAssetByPoolAssets(amountAssetId: String, priceAssetId: String) = {
   func keyMappingsBaseAsset2internalId(baseAssetStr: String) = {
@@ -250,7 +280,7 @@ func mustThis(i: Invocation) = {
 }
 # <-
 
-# TODO: Сделать обычной функцией
+# used by UI
 @Callable(i)
 func getUserGwxAmountAtHeight(userAddress: String, targetHeight: Int) = {
   let boostingContractAddress = this.getStrOrFail(keyBoostingContract).addressFromString().valueOrErrorMessage(("invalid boosting contract address").wrapErr())
@@ -418,29 +448,43 @@ func setMaxDepth(newMaxDepth: Int) = {
   )
 }
 
-# stages:
-# 0 - расчет общего числа голосов, перенос голосов с предыдущего периода, перенос на следующий период
-# 1 - расчет долей пулов, начало нового периода и изменение весов пулов - после этого этапа доступно голосование
+@Callable(i)
+func processPoolBalanceINTERNAL(poolStr: String) = {
+  strict checkCaller = i.mustThis()
 
-# сохраняем следующий шаг, чтобы не было проблем при удалении элементов
+  let epoch = this.getIntOrFail(keyCurrentEpoch)
+  let epochPrevious = epoch - 1
 
-# stage 0:
-# pool  user
-# -     -     получить pool из head pools, есть - записать, нет - завершить
-# +     -     получить user из head pool votes, есть - записать, нет - получить следующий пул и записать или завершить
-# +     +     обработать, получить следующего пользователя или пул и записать или завершить
+  let pool = poolStr.stringToPool()
+  let (amountAssetId, priceAssetId) = pool
+  let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
 
-# stage 1:
-# pool
-# -     получить pool из head pools, нет - завершить, есть - записать
-# +     обработать, получить следующий пул и записать или завершить
+  let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
+  let actions = if (!balanceIsOk) then {
+    strict deleteWxEmissionInv = factoryContract.invoke("deleteWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
+    strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, 0], [])
 
-# при переносе голосов возможно удаление пользователей из списка, если количество gwx стало равно 0
+    let poolAddress = getPoolInfo(
+      amountAssetId,
+      priceAssetId
+    ).valueOrErrorMessage(wrapErr("invalid assets"))._1
+    strict setPoolStatusInv = factoryContract.invoke("managePool", [poolAddress.toString(), poolStatusMatcherDisabled], [])
+  
+    let listActions = [
+      DeleteEntry(pool.keyInList())
+    ] ++ poolsListName.deleteNodeActions(pool.poolToString())
 
-# если голоса на текущий период нет, перенести с предыдущего?
-# учесть голос (totalVotes)? или totalVotes всегда актуален?
-# перенести голос на следующий период (vote, used, votingResult, totalVotes)
-# TODO: Сделать обычной функцией
+    [
+      IntegerEntry(pool.keyPoolShare(epochPrevious), 0)
+    ] ++ listActions
+  } else nil
+
+  (
+    actions,
+    unit
+  )
+}
+
 @Callable(i)
 func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   strict checkCaller = i.mustThis()
@@ -456,13 +500,14 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   strict checkTargetEpoch = epochPrevious >= 0 || "processVoteINTERNAL: invalid previous epoch".throwErr()
   let pool = poolStr.stringToPool()
   let (amountAssetId, priceAssetId) = pool
-  let wxEmission = pool.checkWxEmissionPoolLabel()
   let gwxAmountAtEndTotal = this.invoke("getUserGwxAmountAtHeight", [userAddressStr, endHeight], []).exactAs[Int]
   let gwxAmountAtEndTotalPrevious = this.invoke("getUserGwxAmountAtHeight", [userAddressStr, endHeightPrevious], []).exactAs[Int]
   let totalVotes = epoch.keyTotalVotes().getInteger().valueOrElse(0)
   let votingResult = pool.keyVotingResult(epoch).getInteger().valueOrElse(0)
-  let votePrevious = pool.keyVote(userAddress, epochPrevious).getInteger()
-    .valueOrErrorMessage(("processVoteINTERNAL " + poolStr + " " + userAddressStr + ": no previous vote").wrapErr())
+  let votePreviousOption = pool.keyVote(userAddress, epochPrevious).getInteger()
+  let votePrevious = votePreviousOption.valueOrErrorMessage(
+    wrapErr("processVoteINTERNAL " + poolStr + " " + userAddressStr + ": no previous vote")
+  )
   let used = this.getInteger(userAddress.keyUsed(epoch)).valueOrElse(0)
 
   # staked votes
@@ -470,23 +515,22 @@ func processVoteINTERNAL(poolStr: String, userAddressStr: String) = {
   let votingResultStakedPrevious = lpAssetIdStr.keyVotingResultStaked(epochPrevious).getInteger().valueOrElse(0)
   let stakingContract = this.getStrOrFail(keyStakingContract).addressFromStringValue()
   let stakedByUser = stakingContract.getInteger(lpAssetIdStr.keyStakedByUser(userAddressStr)).valueOrElse(0)
-  let votingResultStakedActions = if (stakedByUser == 0) then [] else [
+  let votingResultStakedActions = if (stakedByUser == 0 || votePreviousOption == unit) then [] else [
     IntegerEntry(lpAssetIdStr.keyVotingResultStaked(epochPrevious), votingResultStakedPrevious + votePrevious)
   ]
 
   let lpAssetId = getLpAssetByPoolAssets(amountAssetId, priceAssetId)
-  let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
 
   let newVote = if (gwxAmountAtEndTotalPrevious > 0) then fraction(votePrevious, gwxAmountAtEndTotal, gwxAmountAtEndTotalPrevious) else 0
-  let actions = if (newVote > 0 && wxEmission && balanceIsOk) then {
+  let actions = if (votePreviousOption == unit || newVote <= 0) then {
+    pool.getVotesListName().deleteNodeActions(userAddressStr)
+  } else {
     [
       IntegerEntry(pool.keyVote(userAddress, epoch), newVote),
       IntegerEntry(epoch.keyTotalVotes(), totalVotes + newVote),
       IntegerEntry(pool.keyVotingResult(epoch), votingResult + newVote),
       IntegerEntry(userAddress.keyUsed(epoch), used + newVote)
     ]
-  } else {
-    pool.getVotesListName().deleteNodeActions(userAddressStr)
   }
 
   (
@@ -513,17 +557,12 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
   if (r) then {
     ([], true)
   } else {
-    let assetsStoreContract = this.getString(keyAssetsStoreContract).valueOrElse("invalid assets store contract").addressFromStringValue()
-    let wxEmission = pool.checkWxEmissionPoolLabel()
-    let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId], []).exactAs[Boolean]
-    let amountAssetVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [amountAssetId], []).exactAs[Boolean]
-    let priceAssetVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [priceAssetId], []).exactAs[Boolean]
-    strict setWxEmissionInv = if (!wxEmission && balanceIsOk && amountAssetVerified && priceAssetVerified) then {
-      factoryContract.invoke("setWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
-    } else unit
+    let assetsStoreContract = factoryContract.getString(
+      keyAssetsStoreContract
+    ).valueOrErrorMessage("invalid assets store contract").addressFromStringValue()
     let totalVotes = this.getInteger(targetEpoch.keyTotalVotes()).valueOrElse(0)
     let votingResult = this.getInteger(pool.keyVotingResult(targetEpoch)).valueOrElse(0)
-    let share = if (totalVotes == 0 || !wxEmission || !balanceIsOk) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
+    let share = if (totalVotes == 0) then 0 else fraction(votingResult, poolWeightMult, totalVotes)
     strict modifyWeightInv = factoryContract.invoke("modifyWeight", [lpAssetId, share], [])
 
     (
@@ -535,9 +574,8 @@ func processPoolINTERNAL(poolStr: String, force: Boolean) = {
   }
 }
 
-# Может вызвать любой
-# Должно работать так же, как и финализация voting verified
-# Обновляем высоту сразу, так как для переноса голоса нужно знать, куда переносить
+# Can be called by anyone
+# Update the height immediately, as it is necessary to know where to transfer the votes
 @Callable(i)
 func finalizeHelper() = {
   let force = keyFinalizationShouldBeForced.getBoolean().valueOrElse(false)
@@ -547,7 +585,7 @@ func finalizeHelper() = {
   let epochLength = this.getIntOrFail(keyEpochLength)
   let endHeight = startHeight + epochLength
   let finalizationStageOrUnit = this.getInteger(keyFinalizationStage)
-  # если пора начинать финализацию, обновляем высоту, эпоху и этап финализации
+  # if it's time to start finalization, update the height, epoch, and finalization stage
   if (height >= endHeight && finalizationStageOrUnit == unit && !force) then {
     let newEpoch = epoch + 1
     let newEpochLengthOption = this.getInteger(keyEpochLengthNew)
@@ -563,7 +601,7 @@ func finalizeHelper() = {
         IntegerEntry(newEpoch.keyStartHeightByEpoch(), height),
         IntegerEntry(keyStartHeight, height),
         IntegerEntry(keyCurrentEpoch, newEpoch),
-        IntegerEntry(keyFinalizationStage, finalizationStageTotal),
+        IntegerEntry(keyFinalizationStage, finalizationStageBalances),
         IntegerEntry(epoch.keyEpochLengthByEpoch(), epochLength)
       ] ++ newEpochLengthActions,
       true
@@ -575,30 +613,48 @@ func finalizeHelper() = {
       ],
       true
     )
-  # голосование еще не завершилось
+  # voiting is not completed yet
   } else if (finalizationStageOrUnit == unit) then {
     (
       [],
       false
     )
-  # этап подсчета общего числа голосов
+  } else if (finalizationStageOrUnit == finalizationStageBalances) then {
+    let poolOrUnit = keyNextPool.getString()
+    match poolOrUnit {
+      case _: Unit => {
+        match poolsListName.keyListHead().getString() {
+          case _: Unit => {
+            ([
+              IntegerEntry(keyFinalizationStage, finalizationStageTotal),
+              DeleteEntry(keyNextPool)
+            ], true)
+          }
+          case nextPoolStr: String => {
+            ([StringEntry(keyNextPool, nextPoolStr)], true)
+          }
+        }
+      }
+      case poolStr: String => {
+        strict nextPoolOrUnit = poolsListName.keyListNext(poolStr).getString()
+        strict r = this.invoke("processPoolBalanceINTERNAL", [poolStr], [])
+        match nextPoolOrUnit {
+          case _: Unit => {
+            ([
+              IntegerEntry(keyFinalizationStage, finalizationStageTotal),
+              DeleteEntry(keyNextPool)
+            ], true)
+          }
+          case nextPoolStr: String => {
+            ([StringEntry(keyNextPool, nextPoolStr)], true)
+          }
+        }
+      }
+    }
+  # stage of calculating the total number of votes
   } else if (finalizationStageOrUnit == finalizationStageTotal) then {
     let poolOrUnit = keyNextPool.getString()
     let userOrUnit = keyNextUser.getString()
-    # Если нет пула, то получить пул из head.
-      # Если нет, то завершить.
-      # Если есть, то записать.
-    # Если есть пул
-      # Если нет пользователя, то получить пользователя из head для данного пула.
-        # Если нет, то получить следующий пул
-          # Если нет, то завершить
-          # Если есть, то записать
-        # Если есть, то записать
-      # Если есть пользователь, то обработать и получить следующего пользователя
-        # Если нет, то получить следующий пул
-          # Если нет, то завершить
-          # Если есть, то записать
-        # Если есть, то записать
     match poolOrUnit {
       case _: Unit => {
         match poolsListName.keyListHead().getString() {
@@ -649,7 +705,7 @@ func finalizeHelper() = {
         }
       }
     }
-  # этап вычисления долей пулов
+  # stage of calculating pool shares
   } else if (finalizationStageOrUnit == finalizationStageShares) then {
     let poolOrUnit = keyNextPool.getString()
     match poolOrUnit {
@@ -735,17 +791,12 @@ func finalizeWrapper(counter: Int) = {
   }
 }
 
-# TODO: возможны проблемы, если пользователь блокирует средства во время финализации
-# Запоминать количество gwx на момент начала финализации?
 @Callable(i)
 func finalize() = {
   strict inv = this.invoke("finalizeWrapper", [0], [])
 
   ([], unit)
 }
-
-# пул теряет свою эмиссию при потере токеном COMMUNITY VERIFIED лейбла.
-# но для того чтобы у пула была эмиссия, у него должен быть и WX EMISSION лейбл. а если токен теряет COMMUNITY VERIFIED, то пул лишается и WX EMISSION лейбла
 
 @Callable(i)
 func containsNodeREADONLY(listName: String, id: String) = {
@@ -787,6 +838,89 @@ func deletePool(amountAssetId: String, priceAssetId: String) = {
   [
     DeleteEntry(keyInList(pool))
   ] ++ actions
+}
+
+# statuses are returned within 3 days
+@Callable(i)
+func resume(amountAssetId: String, priceAssetId: String, slippageToleranceOrMinOutAmount: Int) = {
+  let finalizationStageOrUnit = this.getInteger(keyFinalizationStage)
+
+  let (poolAddress, lpAssetId) = getPoolInfo(
+    amountAssetId,
+    priceAssetId
+  ).valueOrErrorMessage(wrapErr("invalid assets"))
+
+  let feePayment = i.payments[0]
+
+  let assetsStoreContract = factoryContract.getStringValue(
+    keyAssetsStoreContract
+  ).addressFromStringValue()
+
+  let kBoostingConfig = "%s__config"
+  let idxCfgAssetId = 1
+  let boostingContract = this.getStrOrFail(keyBoostingContract).addressFromStringValue()
+  let wxAssetId = boostingContract.getStringValue(kBoostingConfig).split(separator)[idxCfgAssetId].fromBase58String()
+
+  let amountAssetVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [amountAssetId], []).exactAs[Boolean]
+  let priceAssetVerified = assetsStoreContract.invoke("isVerifiedREADONLY", [priceAssetId], []).exactAs[Boolean]
+
+  let resumptionFee = this.getInteger(
+    keyResumptionFee
+  ).valueOrErrorMessage("invalid resumption fee")
+
+  strict checks = [
+    i.payments.size() > 0 || throwErr("at least one payment should be attached"),
+    finalizationStageOrUnit == unit || "finalization is in progress".throwErr(),
+    feePayment.assetId == wxAssetId || throwErr("invalid fee payment asset id"),
+    feePayment.amount == resumptionFee || throwErr("invalid fee payment amount"),
+    amountAssetVerified && priceAssetVerified || throwErr("both assets should be verified")
+  ]
+
+  strict lpAssetBalanceBefore = this.assetBalance(lpAssetId)
+  let autoStake = false
+  strict put = if (i.payments.size() == 1) then {
+    unit
+  } else if (i.payments.size() == 2) then {
+    # put one token
+    let poolScriptHash = poolAddress.scriptHash().valueOrErrorMessage(
+      wrapErr("pool address is not scripted")
+    )
+    let allowedScriptHash = factoryContract.getString(keyAllowedLpStableScriptHash()).valueOrErrorMessage(
+      wrapErr("allowed lp stable script hash is not set")
+    ).fromBase64String()
+    let isStable = poolScriptHash == allowedScriptHash
+    let functionName = if (isStable) then "putOneTknV2" else "putOneTkn"
+
+    poolAddress.invoke(functionName, [slippageToleranceOrMinOutAmount, autoStake], [i.payments[1]])
+  } else if (i.payments.size() == 3) then {
+    # put two tokens
+    poolAddress.invoke("put", [slippageToleranceOrMinOutAmount, autoStake], [i.payments[1], i.payments[2]])
+  } else {
+    throwErr("invalid payments size")
+  }
+
+  let balanceIsOk = factoryContract.invoke("checkBalance", [lpAssetId.assetIdToString()], []).exactAs[Boolean]
+  strict checkBalance = balanceIsOk || throwErr("balances are too low")
+
+  strict lpAssetBalanceAfter = this.assetBalance(lpAssetId)
+  let lpAssetBalanceDiff = lpAssetBalanceAfter - lpAssetBalanceBefore
+  let lpAssetTransferActions = if (lpAssetBalanceDiff > 0) then [
+    ScriptTransfer(i.caller, lpAssetBalanceDiff, lpAssetId)
+  ] else nil
+
+  strict setWxEmissionInv = factoryContract.invoke("setWxEmissionPoolLabel", [amountAssetId, priceAssetId], [])
+
+  let poolStatus = factoryContract.invoke("getPoolStatusREADONLY", [poolAddress.toString()], []).exactAs[Int]
+  strict setPoolStatusInv = if (poolStatus == poolStatusMatcherDisabled) then {
+    factoryContract.invoke("managePool", [poolAddress.toString(), poolStatusActive], [])
+  } else unit
+
+  let pool = (amountAssetId, priceAssetId)
+  let inListActions = [
+    BooleanEntry(pool.keyInList(), true)
+  ] ++ poolsListName.insertNodeActions(pool.poolToString())
+
+  (inListActions ++ lpAssetTransferActions, unit)
 }
 
 @Verifier(tx)
