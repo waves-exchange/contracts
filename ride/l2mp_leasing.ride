@@ -686,16 +686,17 @@ func stakeFor(userAddress: String) = {
 }
 
 @Callable(i)
-func startUnitsVesting(unitsClaimNewInterval: Int) = {
-    let totalL2 = 1_000_000_000_0000_0000
+func startUnitsVesting(unitsClaimNewInterval: Int, totalL2String: String) = {
     let totalUnits = i.payments[0].amount
+    let totalL2 = totalL2String.parseIntValue()
 
     let unitsPerBlockScale16 = fraction(totalUnits, scale16, totalL2) / unitsClaimNewInterval
 
     strict check = [
         isInAdminList(i.caller.toString()) || "caller is not in adminList".throwErr(),
         i.payments.size() == 1 || "should be 1 payment".throwErr(),
-        unitsPerBlockScale16 > 0 || "units per block should be greated than 0".throwErr()
+        unitsPerBlockScale16 > 0 || "units per block should be greated than 0".throwErr(),
+        totalL2 > 0 || "total l2 should be greated than 0".throwErr()
     ]
 
     [
