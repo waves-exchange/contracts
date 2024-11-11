@@ -222,7 +222,7 @@ func getVestingUserInfo(userAddress: String) = {
     if (vestingAmount == 0 || banList.containsElement(userAddress)) then 
       acc
     else
-      acc :+ [vestingAmount, startBlock + lockLength, unlockedAmount, remainingAmount, totalClaimed]
+      acc :+ [vestingAmount, startBlock + lockLength, unlockedAmount, remainingAmount, totalClaimed, assetIdString]
   }
 
   FOLD<30>(IDS_LIST, [], helper)
@@ -337,6 +337,7 @@ func claimAll() = {
 #    + _3 = unlocked amount
 #    + _4 = locked amount
 #    + _5 = claimed amount
+#    + _6 = assetId
 @Callable(i)
 func userInfoREADONLY(userAddress: String) = {
   let (_a, totalAmount) = getClaimAllActions(userAddress)
