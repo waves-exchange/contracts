@@ -179,7 +179,7 @@ func swapCalculateREADONLY(
 
   # Protocol fee should always be extracted from Pool Price Asset
   let newTotalGet = if (isReverse == true) then {
-    totalGetRaw
+    max([0, totalGetRaw])
   } else {
     let feeProtocolFromGetCalc = fraction(totalGetRaw.toBigInt(), prFee.toBigInt(), feeScale)    
     let feeProtocolAmountFromGet = if (feeProtocolFromGetCalc.toInt() == 0) then {
@@ -188,7 +188,7 @@ func swapCalculateREADONLY(
       feeProtocolFromGetCalc.toInt()
     }
 
-    totalGetRaw - feeProtocolAmountFromGet
+    max([0, (totalGetRaw - feeProtocolAmountFromGet)])
   }
 
   (
@@ -246,7 +246,10 @@ func swap(
 
   # Protocol fee should always be extracted from Pool Price Asset
   let (protocolFeeActions, newTotalGet) = if (isReverse == true) then {
-    ([ScriptTransfer(feeCollectorAddress, feeProtocolAmount.toInt(), assetInAttachedPayment)], totalGetRaw)
+    (
+      [ScriptTransfer(feeCollectorAddress, feeProtocolAmount.toInt(), assetInAttachedPayment)],
+      max([0, totalGetRaw])
+    )
   } else {
     let feeProtocolFromGetCalc = fraction(totalGetRaw.toBigInt(), prFee.toBigInt(), feeScale)    
     let feeProtocolAmountFromGet = if (feeProtocolFromGetCalc.toInt() == 0) then {
@@ -255,7 +258,10 @@ func swap(
       feeProtocolFromGetCalc.toInt()
     }
 
-    ([ScriptTransfer(feeCollectorAddress, feeProtocolAmountFromGet, assetOut.stringToAssetId())], totalGetRaw - feeProtocolAmountFromGet)
+    (
+      [ScriptTransfer(feeCollectorAddress, feeProtocolAmountFromGet, assetOut.stringToAssetId())], 
+      max([0, (totalGetRaw - feeProtocolAmountFromGet)])
+    )
   }
 
   (
