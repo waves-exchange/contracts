@@ -13,23 +13,20 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should successfully putOneTkn with autoStake false', async function () {
-    const minOutAmount = 1e8;
-    const slippage = 0;
-    const autoStake = false;
+describe('lp_stable: unstakeAndGetOneTknV2.mjs', /** @this {MochaSuiteModified} */() => {
+  it('should successfully unstakeAndGetOneTknV2.', async function () {
+    const outLp = 1e10;
+    const autoStake = true;
     const usdtAmount = 1e8;
     const usdnAmount = 1e8;
+    const minOutAmount = 0;
+    const delay = 2;
+    const expectedPriceLast = 100174811;
+    const expectedPriceHistory = 100174811;
 
-    const expectedPriceLast = 50025012;
-    const expectedPriceHistory = 50025012;
-    const expectedWriteAmAmt = 1e8;
-    const expectedWritePrAmt = 0;
-    const expectedEmitLpAmt = 9982549115;
-    const expectedFee = 100000;
-    const expectedSlippageCalc = 0;
-    const expectedAmDiff = 0;
-    const expectedPrDiff = 0;
+    const expectedOutAmAmt = 99974432;
+    const expectedFee = 100074;
+    const expectedOutPrAmt = 0;
 
     const lpStable = address(this.accounts.lpStable, chainId);
 
@@ -43,7 +40,7 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
         function: 'put',
         args: [
           { type: 'integer', value: 0 },
-          { type: 'boolean', value: false },
+          { type: 'boolean', value: autoStake },
         ],
       },
       chainId,
@@ -66,13 +63,39 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
       chainId,
     }, this.accounts.user1);
     await api.transactions.broadcast(putOneTkn, {});
-    const { height, stateChanges, id } = await ni.waitForTx(putOneTkn.id, { apiBase });
+    const { height } = await ni.waitForTx(putOneTkn.id, { apiBase });
 
-    const { timestamp } = await api.blocks.fetchHeadersAt(height);
-    const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
+    await ni.waitForHeight(height + delay, { apiBase });
+
+    const getOneTkn = invokeScript({
+      dApp: lpStable,
+      payment: [],
+      call: {
+        function: 'unstakeAndGetOneTknV2',
+        args: [
+          { type: 'integer', value: outLp },
+          { type: 'string', value: this.usdtAssetId },
+          { type: 'integer', value: minOutAmount },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
+    await api.transactions.broadcast(getOneTkn, {});
+    const {
+      height: heightAfterGetOneTkn,
+      stateChanges,
+      id,
+    } = await ni.waitForTx(getOneTkn.id, { apiBase });
+
+    const { timestamp } = await api.blocks.fetchHeadersAt(heightAfterGetOneTkn);
+    const keyPriceHistory = `%s%s%d%d__price__history__${heightAfterGetOneTkn}__${timestamp}`;
     const lpStableState = await api.addresses.data(lpStable);
 
     expect(lpStableState).to.include.deep.members([{
+      key: `%s%s%s__G__${address(this.accounts.user1, chainId)}__${id}`,
+      type: 'string',
+      value: `%d%d%d%d%d%d__${expectedOutAmAmt}__${expectedOutPrAmt}__${outLp}__${expectedPriceLast}__${heightAfterGetOneTkn}__${timestamp}`,
+    }, {
       key: '%s%s__price__last',
       type: 'integer',
       value: expectedPriceLast,
@@ -81,24 +104,20 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
       type: 'integer',
       value: expectedPriceHistory,
     }, {
-      key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
-      type: 'string',
-      value: `%d%d%d%d%d%d%d%d%d%d__${expectedWriteAmAmt}__${expectedWritePrAmt}__${expectedEmitLpAmt}__${expectedPriceLast}__${slippage}__${expectedSlippageCalc}__${height}__${timestamp}__${expectedAmDiff}__${expectedPrDiff}`,
-    }, {
       key: '%s__dLpRefreshedHeight',
       type: 'integer',
-      value: height,
+      value: heightAfterGetOneTkn,
     }, {
       key: '%s__dLp',
       type: 'string',
-      value: '10000000000068219985437352296',
+      value: '10000000127432425026570490178',
     }]);
 
-    expect(flattenTransfers(stateChanges)).to.include.deep.members([
+    expect(flattenTransfers(stateChanges)).to.deep.include.members([
       {
         address: address(this.accounts.user1, chainId),
-        asset: this.lpStableAssetId,
-        amount: expectedEmitLpAmt,
+        asset: this.usdtAssetId,
+        amount: expectedOutAmAmt,
       },
       {
         address: address(this.accounts.feeCollector, chainId),
@@ -109,7 +128,7 @@ describe('lp_stable: putOneTkn.mjs', /** @this {MochaSuiteModified} */() => {
 
     expect(flattenInvokesList(stateChanges))
       .to.deep.include.members([
-        [address(this.accounts.factoryV2, chainId), 'emit'],
+        [address(this.accounts.factoryV2, chainId), 'burn'],
       ]);
   });
 });
