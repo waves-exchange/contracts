@@ -253,6 +253,14 @@ describe('Factory V2 - deletePool by pool creator', /** @this {MochaSuiteModifie
         key: `%s%s__changeAmpTarget__${poolAddress}`,
         value: null,
       },
+      {
+        key: `%s%s__amp__${poolAddress}`,
+        value: null,
+      },
+      {
+        key: `%s%s__changeAmpLastCall__${poolAddress}`,
+        value: null,
+      },
     ]);
 
     expect(stateChanges.invokes).to.containSubset([
