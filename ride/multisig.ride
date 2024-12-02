@@ -1,0 +1,196 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let separator = "__"
+let contractFilename = "multisig.ride"
+
+let publicKeySize = 32
+let txIdSize = 32
+let maxOwners = 10
+
+let kMultisig = "%s__multisig"
+let kPublicKeys = "%s__publicKeys"
+let kQuorum = "%s__quorum"
+
+func kConfirm(address: String, txId: String) = ["%s__confirm", address, txId].makeString(separator)
+func kStatus(address: String, txId: String) = ["%s__status", address, txId].makeString(separator)
+
+func wrapErr(s: String) = {
+  contractFilename + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
+
+func validateAddress(address: String) = {
+  addressFromString(address).isDefined()
+}
+
+func validatePublicKey(publicKey: String) = {
+  fromBase58String(publicKey).size() == publicKeySize
+}
+
+func validateOwner(owners: List[String], pk: String) = {
+  strict checks = [
+    validatePublicKey(pk) || throwErr("invalid owner public key"),
+    owners.indexOf(pk) == owners.lastIndexOf(pk) || throwErr("must not contain duplicates")
+  ]
+
+  owners
+}
+
+@Callable(i)
+func init(owners: List[String], quorum: Int) = {
+  strict checks = [
+    i.caller == this || throwErr("init: not allowed"),
+    !getString(kMultisig).isDefined() || throwErr("init: already initialized"),
+    (owners.size() > 0 && owners.size() <= maxOwners) || throwErr("init: invalid owners"),
+    (quorum > 0 && quorum <= owners.size()) || throwErr("init: invalid quorum"),
+    # maxOwners = 10
+    FOLD<10>(owners, owners, validateOwner)
+  ]
+
+  ([
+    StringEntry(kMultisig, this.toString()),
+    StringEntry(kPublicKeys, makeString(owners, separator)),
+    IntegerEntry(kQuorum, quorum)
+  ], unit)
+}
+
+@Callable(i)
+func addOwner(publicKey: String) = {
+  let publicKeysList = getStringValue(kPublicKeys).split(separator)
+
+  strict checks = [
+    i.caller == this || throwErr("addOwner: not allowed"),
+    validatePublicKey(publicKey) || throwErr("addOwner: invalid public key"),
+    !containsElement(publicKeysList, publicKey) || throwErr("addOwner: public key already added"),
+    publicKeysList.size() < maxOwners || throwErr("addOwner: too many owners")
+  ]
+
+  let publicKeysListUpdated = publicKeysList :+ publicKey
+  let publicKeysUpdated = [
+    StringEntry(kPublicKeys, publicKeysListUpdated.makeString(separator))
+  ]
+
+  (publicKeysUpdated, unit)
+}
+
+@Callable(i)
+func removeOwner(publicKey: String) = {
+  let quorum = getIntegerValue(kQuorum)
+  let publicKeys = getStringValue(kPublicKeys)
+  let publicKeysList = publicKeys.split(separator)
+
+  strict checks = [
+    i.caller == this || throwErr("removeOwner: not allowed"),
+    validatePublicKey(publicKey) || throwErr("removeOwner: invalid public key"),
+    publicKeysList.size() > 1 || throwErr("removeOwner: too few owners")
+  ]
+
+  let index = indexOf(publicKeysList, publicKey).valueOrErrorMessage(
+    wrapErr("removeOwner: no such owner")
+  )
+  let publicKeysListUpdated = removeByIndex(publicKeysList, index)
+  let publicKeysUpdated = [
+    StringEntry(kPublicKeys, makeString(publicKeysListUpdated, separator))
+  ]
+
+  let quorumUpdated = if quorum > publicKeysListUpdated.size() then [
+    IntegerEntry(kQuorum, publicKeysListUpdated.size())
+  ] else []
+
+  (publicKeysUpdated ++ quorumUpdated, unit)
+}
+
+@Callable(i)
+func setQuorum(quorum: Int) = {
+  let publicKeys = getStringValue(kPublicKeys)
+  let publicKeysList = publicKeys.split(separator)
+
+  strict checks = [
+    i.caller == this || throwErr("setQuorum: not allowed"),
+    (quorum > 0 && quorum <= publicKeysList.size()) || throwErr("setQuorum: invalid quorum")
+  ]
+
+  ([
+    IntegerEntry(kQuorum, quorum)
+  ], unit)
+}
+
+@Callable(i)
+func confirmTransaction(address: String, txId: String) = {
+  let callerPublicKey = toBase58String(i.callerPublicKey)
+  let quorum = getIntegerValue(kQuorum)
+  let publicKeys = getStringValue(kPublicKeys)
+  let publicKeysList = publicKeys.split(separator)
+  let confirmationsKey = kConfirm(address, txId)
+  let confirmations = getString(confirmationsKey).valueOrElse("")
+  let statusKey = kStatus(address, txId)
+
+  strict checks = [
+    containsElement(publicKeysList, callerPublicKey) || throwErr("confirmTransaction: only admin"),
+    fromBase58String(txId).size() == txIdSize ||throwErr("confirmTransaction: invalid txId"),
+    validateAddress(address) || throwErr("confirmTransaction: invalid address"),
+    !contains(confirmations, callerPublicKey) || throwErr("confirmTransaction: already confirmed")
+  ]
+
+  let (confirmationsCount, confirmationsUpdated) = if confirmations == "" then (
+    1,
+    callerPublicKey
+  ) else (
+    1 + confirmations.split(separator).size(),
+    confirmations + separator + callerPublicKey
+  )
+
+  ([
+    StringEntry(confirmationsKey, confirmationsUpdated),
+    BooleanEntry(statusKey, confirmationsCount >= quorum)
+  ], unit)
+}
+
+@Callable(i)
+func revokeConfirmation(address: String, txId: String) = {
+  let callerPublicKey = toBase58String(i.callerPublicKey)
+  let quorum = getIntegerValue(kQuorum)
+  let publicKeys = getStringValue(kPublicKeys)
+  let publicKeysList = publicKeys.split(separator)
+  let confirmationsKey = kConfirm(address, txId)
+  let confirmations = getString(confirmationsKey).valueOrElse("")
+  let confirmationsList = confirmations.split(separator)
+  let statusKey = kStatus(address, txId)
+  let status = getBoolean(statusKey).valueOrElse(false)
+
+  strict checks = [
+    containsElement(publicKeysList, callerPublicKey) || throwErr("revokeConfirmation: only admin"),
+    fromBase58String(txId).size() == txIdSize || throwErr("revokeConfirmation: invalid txId"),
+    validateAddress(address) || throwErr("revokeConfirmation: invalid address"),
+    contains(confirmations, callerPublicKey) || throwErr("revokeConfirmation: not confirmed"),
+    !status || throwErr("revokeConfirmation: quorum already reached")
+  ]
+
+  let confirmationsListUpdated = confirmationsList.removeByIndex(
+    confirmationsList.indexOf(callerPublicKey).value()
+  )
+  let confirmationsCount = confirmationsListUpdated.size()
+
+  ([
+    StringEntry(confirmationsKey, makeString(confirmationsListUpdated, separator)),
+    BooleanEntry(statusKey, confirmationsCount >= quorum)
+  ], unit)
+}
+
+@Verifier(tx)
+func verify() = {
+  match getString(kMultisig) {
+    case multisig: String => {
+      let statusKey = kStatus(this.toString(), tx.id.toBase58String())
+      let status = multisig.addressFromStringValue().getBoolean(statusKey).valueOrElse(false)
+
+      status
+    }
+    case _ => sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+  }
+}
