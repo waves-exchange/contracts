@@ -36,6 +36,8 @@ func keyManagerPublicKey() = "%s__managerPublicKey"
 
 func keyAssetDescription(assetId: String) = ["%s%s", "assetDescription", assetId].makeString(SEP) 
 
+func keyMemePoolFactory() = ["%s", "memePoolFactory"].makeString(SEP)
+
 func getValueOrFail(address: Address, key: String, type: String|Int) = {
   let error = ["mandatory ", address.toString(), ".", key, " is not defined"].makeString("")
 
@@ -101,6 +103,23 @@ func mustAdmin(i: Invocation) = {
 
 func isCreated(assetId: String) = {
   keyCreated(assetId).getBoolean().valueOrElse(false) 
+}
+
+func isMemePoolFactory(i: Invocation) = {
+  match (this.getString(keyFactoryContract())) {
+    case factoryAddress: String => {
+      match (factoryAddress.addressFromString()) {
+          case factoryContract:Address => {
+            match (factoryContract.getString(keyMemePoolFactory())) {
+              case memePoolFactoryAddress: String => (i.caller.toString() == memePoolFactoryAddress)
+              case _ => false
+            }
+          }
+          case _ => false
+        }
+    }
+    case _ => false
+  }
 }
 
 func verifiedToStatus(verified: Boolean) = {
@@ -281,7 +300,7 @@ func deleteTicker(assetId: String) = {
 
 @Callable(i)
 func createOrUpdate(assetId: String, logo: String, verified: Boolean) = {
-  strict checkCaller = i.mustAdmin()
+  strict checkCaller = i.isMemePoolFactory() || i.mustAdmin()
 
   # causes an error in factory_v2.activateNewPool
   # strict checkAssetId = assetId.fromBase58String().assetInfo().valueOrErrorMessage("Invalid asset ID")

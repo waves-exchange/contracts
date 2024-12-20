@@ -1,0 +1,13 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "version": 2,
+    "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+    "data": [
+        {
+            "key": "%s__memePoolFactory",
+            "type": "string",
+            "value": "3PQNBGCSfNyAiFzEVZzzuopNe8q92vCyaEt"
+        }
+    ]
+}
