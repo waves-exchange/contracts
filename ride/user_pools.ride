@@ -59,6 +59,7 @@ func keyFeeAmount() = ["%s", "feeAmount"].makeString(SEP)
 func keyPoolAssetDefaultMinAmount() = ["%s", "poolAssetDefaultMinAmount"].makeString(SEP)
 func keyPoolAssetsMinAmount(assetId: String) = ["%s%s", "poolAssetMinAmount", assetId].makeString(SEP)
 func keyPriceAssets() = ["%s", "priceAssets"].makeString(SEP)
+func keyMemePoolFactory() = ["%s", "memePoolFactory"].makeString(SEP)
 
 func getManagerVaultAddressOrThis() = {
   match keyManagerVaultAddress().getString() {
@@ -121,6 +122,14 @@ func mustAdmin(i: Invocation) = {
   }
 }
 
+func isMemePoolFactory(i: Invocation) = {
+  let memePoolFactory = factoryContract.getString(keyMemePoolFactory())
+  match (memePoolFactory) {
+      case address: String => i.caller.toString() == address
+      case _: Unit => false
+    }
+}
+
 func isVerified(assetId: String) = {
   keyAssetsStoreContract().getStringOrFail().addressFromStringValue().getInteger("status_<"+assetId+">").valueOrElse(0) == 2
 }
@@ -172,12 +181,12 @@ func _create(i: Invocation, poolType: String) = {
     !isCreateCalled(amountAssetId, priceAssetId) || throwPoolExists(),
     !poolExists || throwPoolExists(),
     amountAssetId != priceAssetId || throwInvalidAssetPair(),
-    i.isManager() || (amountAssetId.isVerified() && priceAssetId.isVerified()) || throwInvalidAssetPair(),
     priceAssetsList.containsElement(amountAssetId) || priceAssetsList.containsElement(priceAssetId) || throwInvalidAssetPair(),
-    i.isManager() || keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
-    i.isManager() || amountAssetAmount >= amountAssetMinAmount || throwInvalidAmountAsset(),
-    i.isManager() || priceAssetAmount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
-    i.isManager() || feeAssetAmount == keyFeeAmount().getInteger() || throwInvalidFee()
+    i.isManager() || i.isMemePoolFactory() || (amountAssetId.isVerified() && priceAssetId.isVerified()) || throwInvalidAssetPair(),
+    i.isManager() || i.isMemePoolFactory() || keyFeeAssetId().getString() == feeAssetId || throwInvalidFeeAsset(),
+    i.isManager() || i.isMemePoolFactory() || amountAssetAmount >= amountAssetMinAmount || throwInvalidAmountAsset(),
+    i.isManager() || i.isMemePoolFactory() || priceAssetAmount >= priceAssetMinAmount || throwInvalidPriceAssetAmount(),
+    i.isManager() || i.isMemePoolFactory() || feeAssetAmount == keyFeeAmount().getInteger() || throwInvalidFee()
   ]
 
   let paymentsWithFeeSize = 3
