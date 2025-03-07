@@ -4,7 +4,7 @@
 
 let separator = "__"
 let poolWeightMult = 100_000_000
-let maxDepthDefault = 10
+let depthInit = 5
 let finalizationStageBalances = 0
 let finalizationStageTotal = 1
 let finalizationStageShares = 2
@@ -20,7 +20,7 @@ let keyEpochLengthNew = ["%s%s", "epochLength__new"].makeString(separator)
 func keyEpochLengthByEpoch(epoch: Int) = ["%s%d", "epochLength", epoch.toString()].makeString(separator)
 
 let keyCurrentEpoch = ["%s", "currentEpoch"].makeString(separator)
-let keyMaxDepth = ["%s", "maxDepth"].makeString(separator)
+let keyDefaultDepth = ["%s", "defaultDepth"].makeString(separator)
 let keyResumptionFee = ["%s", "resumptionFee"].makeString(separator)
 let keyVotingEmissionCandidateContract = ["%s", "votingEmissionCandidateContract"].makeString(separator)
 let keyVotingEmissionRateContract = ["%s", "votingEmissionRateContract"].makeString(separator)
@@ -40,6 +40,12 @@ let keyFinalizationShouldBeForced = ["%s", "force"].makeString(separator)
 
 func keyAllowedLpScriptHash() = "%s__allowedLpScriptHash"
 func keyAllowedLpStableScriptHash() = "%s__allowedLpStableScriptHash"
+
+func keyStageDepth(stage: Int) = ["%s%d", "stageDepth", stage.toString()].makeString(separator)
+
+## Depth values
+let defaultDepth = this.getInteger(keyDefaultDepth).valueOrElse(depthInit)
+func getStageDepth(stage: Int) = this.getInteger(keyStageDepth(stage)).valueOrElse(defaultDepth)
 
 # start height will be set after first pool adding
 func keyStartHeightByEpoch(epoch: Int) = ["%s%d", "startHeight", epoch.toString()].makeString(separator)
@@ -433,16 +439,25 @@ func setEpochLength(newEpochLength: Int) = {
   )
 }
 
+# finalizationStageBalances = 0
+# finalizationStageTotal = 1
+# finalizationStageShares = 2
 @Callable(i)
-func setMaxDepth(newMaxDepth: Int) = {
+func setDefaultDepth(newDefaultDepth: Int, stageBalancesDepth: Int, stageTotalDepth: Int, stageSharesDepth: Int) = {
   strict checks = [
     i.mustManager(),
-    newMaxDepth > 0 || "invalid max depth".throwErr()
+    newDefaultDepth    > 0 || "invalid default depth".throwErr(),
+    stageBalancesDepth > 0 || "invalid stage balances depth".throwErr(),
+    stageTotalDepth    > 0 || "invalid stage total depth".throwErr(),
+    stageSharesDepth   > 0 || "invalid stage shares depth".throwErr()
   ]
 
   (
     [
-      IntegerEntry(keyMaxDepth, newMaxDepth)
+      IntegerEntry(keyDefaultDepth, newDefaultDepth),
+      IntegerEntry(keyStageDepth(finalizationStageBalances), stageBalancesDepth),
+      IntegerEntry(keyStageDepth(finalizationStageTotal), stageTotalDepth),
+      IntegerEntry(keyStageDepth(finalizationStageShares), stageSharesDepth)
     ],
     unit
   )
@@ -770,9 +785,11 @@ func finalizeHelper() = {
 }
 
 @Callable(i)
-func finalizeWrapper(counter: Int) = {
+func finalizeWrapper(counter: Int, startingStage: Int) = {
   let votingEmissionRateContract = this.getStringValue(keyVotingEmissionRateContract).addressFromStringValue()
   strict result = this.invoke("finalizeHelper", [], []).exactAs[Boolean]
+  let finalizationStage = this.getInteger(keyFinalizationStage).valueOrElse(-1)
+  let maxDepth = getStageDepth(finalizationStage)
   if (!result) then {
     if (counter == 0) then {
       throwErr("Current voting is not over yet")
@@ -781,9 +798,8 @@ func finalizeWrapper(counter: Int) = {
       ([], unit)
     }
   } else {
-    let maxDepth = this.getInteger(keyMaxDepth).valueOrElse(maxDepthDefault)
-    if (counter < maxDepth) then {
-      strict inv = this.invoke("finalizeWrapper", [counter + 1], [])
+    if (counter < maxDepth && startingStage == finalizationStage) then {
+      strict inv = this.invoke("finalizeWrapper", [counter + 1, startingStage], [])
       ([], unit)
     } else {
       ([], unit)
@@ -793,7 +809,8 @@ func finalizeWrapper(counter: Int) = {
 
 @Callable(i)
 func finalize() = {
-  strict inv = this.invoke("finalizeWrapper", [0], [])
+  let startingStage = this.getInteger(keyFinalizationStage).valueOrElse(-1)
+  strict inv = this.invoke("finalizeWrapper", [0, startingStage], [])
 
   ([], unit)
 }
