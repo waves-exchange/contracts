@@ -790,11 +790,16 @@ func finalizeWrapper(counter: Int, startingStage: Int) = {
   strict result = this.invoke("finalizeHelper", [], []).exactAs[Boolean]
   let finalizationStage = this.getInteger(keyFinalizationStage).valueOrElse(-1)
   let maxDepth = getStageDepth(finalizationStage)
+
+  # last call
+  strict votingEmissionInv = if (startingStage == finalizationStageShares && finalizationStage == -1) then {
+      votingEmissionRateContract.invoke("finalize", [], [])
+  } else { unit }
+
   if (!result) then {
     if (counter == 0) then {
       throwErr("Current voting is not over yet")
     } else {
-      strict inv = votingEmissionRateContract.invoke("finalize", [], [])
       ([], unit)
     }
   } else {
