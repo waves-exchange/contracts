@@ -199,6 +199,8 @@ func getManagerVaultAddressOrThis() = {
 func toX18(origVal: Int, origScaleMult: Int) = fraction(origVal.toBigInt(), MULT18, origScaleMult.toBigInt())
 func fromX18(val: BigInt, resultScaleMult: Int) = fraction(val, resultScaleMult.toBigInt(), MULT18).toInt()
 
+let isGlobalShutdown = this.getBoolean(keyAllPoolsShutdown()).valueOrElse(false)
+let poolShutdownErr = throwErr("pool shutdown")
 #------------------------
 # CONTRACT FUNCTIONS
 #------------------------
@@ -320,13 +322,13 @@ func dataMappingPoolAssets(internalAmountAssetStr: Int, internalPriceAssetStr: I
     SEP)
 }
 
-  # function used to gather all pool data from factory
-  func getPoolConfig(poolAddress: String) = {
-    let poolAssets = getStringOrFail(keyMappingPoolContractAddressToPoolAssets(poolAddress)).split(SEP)
-    let amountAssetInternal = poolAssets[1]
-    let priceAssetInternal = poolAssets[2]
-    getStringOrFail(keyPoolConfig(amountAssetInternal, priceAssetInternal)).split(SEP)
-  }
+# function used to gather all pool data from factory
+func getPoolConfig(poolAddress: String) = {
+  let poolAssets = getStringOrFail(keyMappingPoolContractAddressToPoolAssets(poolAddress)).split(SEP)
+  let amountAssetInternal = poolAssets[1]
+  let priceAssetInternal = poolAssets[2]
+  getStringOrFail(keyPoolConfig(amountAssetInternal, priceAssetInternal)).split(SEP)
+}
 
 # purpose:
 #    attemps to find mapping for passed assetId, create new mapping if was failed
@@ -742,12 +744,17 @@ func emit(amountToEmit: Int) = {
 
 @Callable(i)
 func burn(amountToBurn: Int) = {
-   let caller = i.caller
+   let caller = i.caller.toString()
    let originCaller = i.originCaller
    let payment = i.payments[0].value()
    let paymentAmount = payment.amount.value()
    let inAmountAssetId = payment.assetId.value().toBase58String()
-   let lpAssetRequestedForBurning = getString(keyMappingPoolContractToLPAsset(caller.toString())).valueOrErrorMessage("Invalid LP address called me.")
+   let lpAssetRequestedForBurning = getString(keyMappingPoolContractToLPAsset(caller)).valueOrErrorMessage("Invalid LP address called me.")
+   let poolConfig = caller.getPoolConfig()
+
+   strict check = [
+    poolConfig[idxPoolStatus].parseIntValue() != PoolShutdown || throwErr("burn: pool shutdown")
+   ]
 
    if(inAmountAssetId != lpAssetRequestedForBurning) then throwErr("Invalid asset passed.") else
    if(amountToBurn != paymentAmount) then throwErr("Invalid amount passed.")  else
@@ -925,6 +932,9 @@ func poolInfoREADONLY(amountAssetIdStr: String, priceAssetIdStr: String) = {
   let lpAssetIdOption = this.getString(poolContractAddressOption.value().keyMappingPoolContractToLPAsset())
   let poolExists = amountAssetInternalIdOption.isDefined() && priceAssetInternalIdOption.isDefined() && poolContractAddressOption.isDefined()
 
+  let poolStatus = getPoolConfig(poolContractAddressOption.value())[idxPoolStatus].parseIntValue()
+  strict check = [ !isGlobalShutdown || poolStatus != PoolShutdown || poolShutdownErr ]
+
   let poolInfo = if (poolExists) then {
     (
       poolContractAddressOption.value().addressFromStringValue(),
@@ -941,6 +951,10 @@ func getPoolStatusREADONLY(poolAddress: String) = {
   let amountAssetInternal = poolAssets[1]
   let priceAssetInternal = poolAssets[2]
   let cfg = keyPoolConfig(amountAssetInternal, priceAssetInternal).getStringOrFail().split(SEP)
+
+  let poolStatus = cfg[idxPoolStatus].parseIntValue()
+  strict check = [ !isGlobalShutdown || poolStatus != PoolShutdown || poolShutdownErr ]
+
   ([], cfg[idxPoolStatus].parseIntValue())
 }
 
@@ -950,6 +964,10 @@ func getPoolConfigREADONLY(poolAddress: String) = {
   let amountAssetInternal = poolAssets[1]
   let priceAssetInternal = poolAssets[2]
   let cfg = keyPoolConfig(amountAssetInternal, priceAssetInternal).getStringOrFail().split(SEP)
+
+  let poolStatus = cfg[idxPoolStatus].parseIntValue()
+  strict check = [ !isGlobalShutdown || poolStatus != PoolShutdown || poolShutdownErr ]
+
   ([], cfg)
 }
 
@@ -959,6 +977,10 @@ func getPoolConfigByLpAssetIdREADONLY(lpAssetIdStr: String) = {
   let amountAssetInternal = poolAssets[1]
   let priceAssetInternal = poolAssets[2]
   let cfg = keyPoolConfig(amountAssetInternal, priceAssetInternal).getStringOrFail().split(SEP)
+
+  let poolStatus = cfg[idxPoolStatus].parseIntValue()
+  strict check = [ !isGlobalShutdown || poolStatus != PoolShutdown || poolShutdownErr ]
+
   ([], cfg)
 }
 
