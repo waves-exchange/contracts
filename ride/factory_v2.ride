@@ -83,6 +83,7 @@ func keyAssetsStoreContract() = "%s__assetsStoreContract"
 func keyVotingEmissionContract() = "%s__votingEmissionContract"
 func keyUserPoolsContract() = "%s__userPoolsContract"
 func keyPriceAssets() = ["%s", "priceAssets"].makeString(SEP)
+func keyManagerVaultAdminList() = makeString(["%s", "adminAddressList"], SEP)
 
 func keyPriceDecimals()
       = "%s__priceDecimals"
@@ -236,6 +237,9 @@ func managerPublicKeyOrUnit() = {
     case _: Unit => unit
   }
 }
+
+let managerVaultAdminList = getManagerVaultAddressOrThis()
+  .getString(keyManagerVaultAdminList()).valueOrElse("").split(SEP)
 
 let permissionDeniedError = "Permission denied".throwErr()
 
@@ -1108,6 +1112,15 @@ func checkBalance(lpAssetIdStr: String) = {
   let balanceIsOk = amountAssetBalanceIsOk && priceAssetBalanceIsOk
 
   (nil, balanceIsOk)
+}
+
+@Callable(i)
+func globalShutdown(state: Boolean) = {
+  strict check = if (state) 
+    then { managerVaultAdminList.containsElement(i.caller.toString()) || i.mustManager() }
+    else { i.mustManager() }
+
+  [ BooleanEntry(keyAllPoolsShutdown(), state) ]
 }
 
 @Verifier(tx)
