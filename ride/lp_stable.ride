@@ -114,6 +114,7 @@ func aa() = {"%s__amountAsset"}
 func pa() = {"%s__priceAsset"}
 # keyAmplificator
 func amp() = {"%s__amp"}
+func fcAmp() = {["%s%s", "amp", this.toString()].makeString(SEP)}
 func keyAmpHistory(heightBlocks: Int) = "%s%d__amp__" + heightBlocks.toString()
 func keyChangeAmpLastCall() = "%s__changeAmpLastCall"
 
@@ -197,7 +198,8 @@ func isAddressWhitelisted(address: Address) = {
   fca.getBoolean(keyAddressWhitelisted(address)).valueOrElse(false)
 }
 
-let A = strf(this, amp())
+let defaultAmp = "50"
+let A = fca.getString(fcAmp()).valueOrElse(defaultAmp)
 
 # isGlobalShutdown
 # check that global shutdown is take place
