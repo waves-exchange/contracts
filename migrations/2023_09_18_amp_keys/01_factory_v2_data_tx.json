@@ -1,0 +1,108 @@
+{
+    "type": 12,
+    "fee": 500000,
+    "feeAssetId": null,
+    "version": 2,
+    "senderPublicKey": "HBWgh7DKPyzCnEXKJAJ5dKQ3jmPtMhGD78tt6jRdkV61",
+    "data": [
+        {
+            "key": "%s%s__amp__3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__changeAmpLastCall__3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz",
+            "type": "integer",
+            "value": 3622973
+        },
+        {
+            "key": "%s%s__amp__3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__changeAmpLastCall__3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1",
+            "type": "integer",
+            "value": 3622973
+        },
+        {
+            "key": "%s%s__amp__3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__changeAmpLastCall__3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD",
+            "type": "integer",
+            "value": 3622973
+        },
+        {
+            "key": "%s%s__amp__3P4Dn8Ghz4QDH5SAL4xQi6cW2FhuKq6gnyC",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__changeAmpLastCall__3P4Dn8Ghz4QDH5SAL4xQi6cW2FhuKq6gnyC",
+            "type": "integer",
+            "value": 3622973
+        },
+        {
+            "key": "%s%s__amp__3P5VC7EqCZ3BsTuz3QrZFpxZ9VEm5N6WHTb",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__amp__3P5muaLnF5EB3QEZTzkPYFDBdMeH8EnNkXs",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__amp__3PAqRnZbZ9YQCs2kaq5fUdbvtaKCg9vw7hV",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__amp__3PJazesjmprZcXYcFx3LxBux9T7q6qYoEDu",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__amp__3P5muaLnF5EB3QEZTzkPYFDBdMeH8EnNkXs",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__amp__3PAqRnZbZ9YQCs2kaq5fUdbvtaKCg9vw7hV",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__amp__3PJazesjmprZcXYcFx3LxBux9T7q6qYoEDu",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__amp__3PDqijReU8yXKFfBGBrRjckzaAp5K8Sywhv",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__amp__3PBxqamajfw2cHR2wmv5usiWxBncKLdXVdu",
+            "type": "string",
+            "value": "100"
+        },
+        {
+            "key": "%s%s__amp__3PQ4BZAPz3A8xApagrKHHAaBCipyXyMZfBD",
+            "type": "string",
+            "value": "100"
+        },
+        {
+            "key": "%s%s__amp__3P5V29rzis25fDSpfgGWcDcLY1xxf7MfWRJ",
+            "type": "string",
+            "value": "50"
+        },
+        {
+            "key": "%s%s__amp__3P85eCEdGNPJaURRNo3bkrtYm8dhQ2r8tVY",
+            "type": "string",
+            "value": "50"
+        }
+    ]
+}

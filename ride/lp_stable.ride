@@ -47,7 +47,6 @@ let big3 = 3.toBigInt()
 let big4 = 4.toBigInt()
 let slippage4D = (scale8 - scale8 * 1 / scale8).toBigInt() # 9999999 or error of 0.0000001
 let wavesString = "WAVES"
-let ampInitial = 50
 
 let Amult = "100"
 let Dconv = "1" # D convergence
@@ -113,9 +112,7 @@ func gau(ua: String, txId: String) = "%s%s%s__G__" + ua + "__" + txId
 func aa() = {"%s__amountAsset"}
 func pa() = {"%s__priceAsset"}
 # keyAmplificator
-func amp() = {"%s__amp"}
-func keyAmpHistory(heightBlocks: Int) = "%s%d__amp__" + heightBlocks.toString()
-func keyChangeAmpLastCall() = "%s__changeAmpLastCall"
+func amp() = {["%s%s", "amp", this.toString()].makeString(SEP)}
 
 let keyFee = "%s__fee"
 let fee = this.getInteger(keyFee).valueOrElse(feeDefault)
@@ -197,7 +194,7 @@ func isAddressWhitelisted(address: Address) = {
   fca.getBoolean(keyAddressWhitelisted(address)).valueOrElse(false)
 }
 
-let A = strf(this, amp())
+let A = strf(fca, amp())
 
 # isGlobalShutdown
 # check that global shutdown is take place
@@ -1619,9 +1616,7 @@ func activate(amtAsStr: String, prAsStr: String) = {
     if (i.caller.toString() != fca.toString()) then throw("denied") else {
         ([
             StringEntry(aa(),amtAsStr),
-            StringEntry(pa(),prAsStr),
-            StringEntry(amp(), ampInitial.toString()),
-            StringEntry(keyAmpHistory(height), ampInitial.toString())
+            StringEntry(pa(),prAsStr)
             ],
         "success")
     }
@@ -1729,36 +1724,8 @@ func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpA
 
 @Callable(i)
 func changeAmp() = {
-  let cfg = fca.invoke("getChangeAmpConfigREADONLY", [this.toString()], [])
-  let (delay, delta, target) = match cfg {
-    case list: List[Any] => {
-      (list[0].exactAs[Int], list[1].exactAs[Int], list[2].exactAs[Int])
-    }
-    case _ => "invalid entry type".throwErr()
-  }
-
-  let curAmp = amp().getStringValue().parseIntValue()
-  let newAmpRaw = curAmp + delta
-  # to not increment/decrement too much
-  let newAmp = if (delta < 0) then {
-    if (newAmpRaw < target) then target else newAmpRaw
-  } else {
-    if (newAmpRaw > target) then target else newAmpRaw
-  }
-
-  let lastCall = keyChangeAmpLastCall().getInteger().valueOrElse(0)
-  let wait = lastCall+delay
-
-  strict checks = [
-    height > wait || "try again in few blocks".throwErr(),
-    curAmp != newAmp || "already reached target".throwErr()
-  ]
-
-  [
-    IntegerEntry(keyChangeAmpLastCall(), height),
-    StringEntry(amp(), newAmp.toString()),
-    StringEntry(keyAmpHistory(height), newAmp.toString())
-  ]
+  strict fcaInv = fca.invoke("changeAmp", [this.toString()], [])
+  nil
 }
 
 @Verifier(tx)

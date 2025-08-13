@@ -180,6 +180,15 @@ func keyMinBalance(poolAddress: String, assetId: String)
 func keyMinBalanceDefault(assetId: String)
       = makeString(["%s%s", "minBalanceDefault", assetId], SEP)
 
+# keyAmplification
+func keyAmp(poolAddress: String) 
+      = makeString(["%s%s", "amp", poolAddress], SEP)
+func keyAmpHistory(poolAddress: String, heightBlocks: Int) 
+      = makeString(["%s%s%d", "amp", poolAddress, heightBlocks.toString()], SEP)
+func keyChangeAmpLastCall(poolAddress: String) 
+      = makeString(["%s%s", "changeAmpLastCall", poolAddress], SEP)
+let ampInitial = 50
+
 func keyAddressWhitelisted(address: Address) = makeString(["%s%s", "whitelisted", address.toString()], SEP)
 
 #------------------------
@@ -674,7 +683,9 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
                   StringEntry(keyMappingPoolLPAssetToPoolContractAddress(lpAssetIdStr), poolAddress),
                   StringEntry(keyMappingPoolContractToLPAsset(poolAddress), lpAssetIdStr),
                   IntegerEntry(keyPoolToWeight(poolAddress),poolWeight),
-                  IntegerEntry(keyPoolSpread(poolAddress),defaultSpread)
+                  IntegerEntry(keyPoolSpread(poolAddress),defaultSpread),
+                  StringEntry(keyAmp(poolAddress), ampInitial.toString()),
+                  StringEntry(keyAmpHistory(poolAddress, height), ampInitial.toString())
               ]
               , lpAssetIdStr
             )
@@ -881,6 +892,36 @@ func onVerificationLoss(assetId: String) = {
 }
 
 @Callable(i)
+func changeAmp(poolAddress: String) = {
+  let delay = keyChangeAmpDelay(poolAddress).getIntegerValue()
+  let delta = keyChangeAmpDelta(poolAddress).getIntegerValue()
+  let target = keyChangeAmpTarget(poolAddress).getIntegerValue()
+
+  let curAmp = keyAmp(poolAddress).getStringValue().parseIntValue()
+  let newAmpRaw = curAmp + delta
+  # to not increment/decrement too much
+  let newAmp = if (delta < 0) then {
+    if (newAmpRaw < target) then target else newAmpRaw
+  } else {
+    if (newAmpRaw > target) then target else newAmpRaw
+  }
+
+  let lastCall = keyChangeAmpLastCall(poolAddress).getInteger().valueOrElse(0)
+  let wait = lastCall+delay
+
+  strict checks = [
+    height > wait || "try again in few blocks".throwErr(),
+    curAmp != newAmp || "already reached target".throwErr()
+  ]
+
+  [
+    IntegerEntry(keyChangeAmpLastCall(poolAddress), height),
+    StringEntry(keyAmp(poolAddress), newAmp.toString()),
+    StringEntry(keyAmpHistory(poolAddress, height), newAmp.toString())
+  ]
+}
+
+@Callable(i)
 func isPoolOneTokenOperationsDisabledREADONLY(poolAddress: String) = {
   let poolConfig = poolAddress.getPoolConfig()
   let assetsInternal = (poolConfig[idxIAmtAssetId].parseIntValue(), poolConfig[idxIPriceAssetId].parseIntValue())
@@ -1059,7 +1100,10 @@ func deletePool(poolContractAddress: String) = {
     
     DeleteEntry(keyChangeAmpDelay(poolContractAddress)),
     DeleteEntry(keyChangeAmpDelta(poolContractAddress)),
-    DeleteEntry(keyChangeAmpTarget(poolContractAddress))
+    DeleteEntry(keyChangeAmpTarget(poolContractAddress)),
+
+    DeleteEntry(keyAmp(poolContractAddress)),
+    DeleteEntry(keyChangeAmpLastCall(poolContractAddress))
   ]
 }
 
