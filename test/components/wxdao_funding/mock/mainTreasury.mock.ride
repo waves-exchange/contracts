@@ -1,0 +1,11 @@
+{-# STDLIB_VERSION 6 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+# Send 1.5 WAVES
+@Callable(i)
+func Claim() = {
+    [
+        ScriptTransfer(i.caller, 1_5000_0000, unit)
+    ]
+}
