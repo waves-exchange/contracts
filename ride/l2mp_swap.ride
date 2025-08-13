@@ -160,7 +160,6 @@ func getSwapActions(i: Invocation, stakingNode: String) = {
   let payment = i.payments[0]
   let assetInAmount = payment.amount
   let assetOutAmount = fraction(assetInAmount, scale8, assetOutPrice)
-  let stake = if (stakingNode.isValidAddress()) then true else false
 
   strict checks = [
     i.payments.size() == 1       || throwErr("invalid payments size"),
@@ -169,16 +168,10 @@ func getSwapActions(i: Invocation, stakingNode: String) = {
     assetOutAmount > 0           || throwErr("invalid assetOutAmount")
   ]
 
-  let stakeAction = if (!stake) 
-    then [ ScriptTransfer(userAddress, assetOutAmount, assetOutId) ]
-    else {
-      strict stakeInvoke = stakingAddress.invoke(
-      "leaseByAddress",
-      [stakingNode, userAddress.toString()],
-      [AttachedPayment(assetOutId, assetOutAmount)])
-
-      []
-    }
+  strict stakeInvoke = stakingAddress.invoke(
+    "leaseByAddress",
+    [stakingNode, userAddress.toString()],
+    [AttachedPayment(assetOutId, assetOutAmount)])
 
   (
     [
@@ -200,27 +193,20 @@ func getSwapActions(i: Invocation, stakingNode: String) = {
       ),
       StringEntry(
         keyHistory(userAddress, i.transactionId),
-        formatHistory(assetInAmount, assetOutAmount, stake, stakingNode)
+        formatHistory(assetInAmount, assetOutAmount, true, stakingNode)
       )
-    ] ++ stakeAction,
+    ],
     assetOutAmount
   )
 }
 
 @Callable(i)
-func swap() = {
-  getSwapActions(i, "NULL")
-}
-
-@Callable(i)
 func swapAndStake(stakingNode: String) = {
   strict check = [
-    stakingNode.isValidAddress() || stakingNode == "" || "staking node address is no valid".throwErr()
+    stakingNode.isValidAddress() || "staking node address is no valid".throwErr()
   ]
 
-  let node = if (stakingNode == "") then "NULL" else stakingNode
-
-  getSwapActions(i, node)
+  getSwapActions(i, stakingNode)
 }
 
 @Callable(i)
