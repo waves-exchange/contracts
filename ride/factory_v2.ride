@@ -180,6 +180,15 @@ func keyMinBalance(poolAddress: String, assetId: String)
 func keyMinBalanceDefault(assetId: String)
       = makeString(["%s%s", "minBalanceDefault", assetId], SEP)
 
+let profitIncreaseDefault = 10000000
+func keyPoolProfitIncrease(poolAddress: String) = "%s%s__profitIncrease__" + poolAddress
+
+let stepSizeDefault = 100000
+func keyPoolStepSize(poolAddress: String) = "%s%s__stepSize__" + poolAddress
+
+let ordersNumberDefault = 100
+func keyPoolOrdersNumber(poolAddress: String) = "%s%s__ordersNumber__" + poolAddress
+
 func keyAddressWhitelisted(address: Address) = makeString(["%s%s", "whitelisted", address.toString()], SEP)
 
 #------------------------
@@ -674,7 +683,10 @@ func activateNewPool(poolAddress: String, amountAssetStr: String, priceAssetStr:
                   StringEntry(keyMappingPoolLPAssetToPoolContractAddress(lpAssetIdStr), poolAddress),
                   StringEntry(keyMappingPoolContractToLPAsset(poolAddress), lpAssetIdStr),
                   IntegerEntry(keyPoolToWeight(poolAddress),poolWeight),
-                  IntegerEntry(keyPoolSpread(poolAddress),defaultSpread)
+                  IntegerEntry(keyPoolSpread(poolAddress),defaultSpread),
+                  IntegerEntry(keyPoolProfitIncrease(poolAddress), profitIncreaseDefault),
+                  IntegerEntry(keyPoolStepSize(poolAddress), stepSizeDefault),
+                  IntegerEntry(keyPoolOrdersNumber(poolAddress), ordersNumberDefault)
               ]
               , lpAssetIdStr
             )
