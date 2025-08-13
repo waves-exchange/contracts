@@ -183,6 +183,14 @@ func keyMinBalanceDefault(assetId: String)
 func keyAddressWhitelisted(address: Address) = makeString(["%s%s", "whitelisted", address.toString()], SEP)
 
 #------------------------
+# SWAP FUNCTIONS
+#------------------------
+
+func keySwapProtocolFee() = ["%s", "protocolFee"].makeString(SEP)
+func keySwapPoolFee() = ["%s", "poolFee"].makeString(SEP)
+func keyFeeCollectorAddress() = ["%s", "feeCollectorAddress"].makeString(SEP)
+
+#------------------------
 # GLOBAL FUNCTIONS
 #------------------------
 func getStringOrFail(key: String)   = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}

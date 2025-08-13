@@ -26,7 +26,11 @@ let factoryContract = addressFromStringValue(getStringOrFail(fc()))
 func protocolFee() = ["%s", "protocolFee"].makeString(SEP)
 func poolFee() = ["%s", "poolFee"].makeString(SEP)
 
-func getStringOrFailFromAddress(address: Address, key: String) = address.getString(key).valueOrErrorMessage(makeString(["mandatory ", address.toString(), ".", key, " is not defined"], ""))
+func getStringOrFailFromAddress(address: Address, key: String) = {
+  address.getString(key).valueOrErrorMessage(
+    makeString(["mandatory ", address.toString(), ".", key, " is not defined"], "")
+  )
+}
 
 let keyFeeCollectorAddress = "%s__feeCollectorAddress"
 let feeCollectorAddress = factoryContract.getStringOrFailFromAddress(keyFeeCollectorAddress).addressFromStringValue()
@@ -82,8 +86,8 @@ func stringToAssetId(assetIdString: String) = {
 
 # %d%d__poolFee__protocolFee
 func getSwapFees(poolAddressStr: String) = {
-  let poolFeeDefault = this.getInteger(poolFee()).value()
-  let protocolFeeDefault = this.getInteger(protocolFee()).value()
+  let poolFeeDefault = factoryContract.getIntegerValue(poolFee())
+  let protocolFeeDefault = factoryContract.getIntegerValue(protocolFee())
 
   match factoryContract.invoke("getSwapFeeREADONLY", [poolAddressStr], []) {
     case fees: (Int, Int) => (fees._1, fees._2)
