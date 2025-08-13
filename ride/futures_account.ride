@@ -1,0 +1,183 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let separator = "__"
+let chainId = this.bytes.drop(1).take(1)
+let chainIdW = base16'57'
+let contractFilename = "futures_account.ride"
+
+let kMultisig = "%s__multisig"
+func kStatus(dapp: String, txId: String) = ["%s__status", dapp, txId].makeString(separator)
+
+let kShutdown = "%s__shutdown"
+
+func wrapErr(s: String) = {
+  contractFilename + ": " + s
+}
+
+func throwErr(s: String) = {
+  throw(wrapErr(s))
+}
+
+func mustAddress(i: Invocation, address: Address) = {
+  i.caller == address || throwErr("permission denied")
+}
+
+func mustThis(i: Invocation) = {
+  mustAddress(i, this)
+}
+
+let wavesString = "WAVES"
+
+func parseAssetId(input: String) = {
+  if (input == wavesString) then unit else input.fromBase58String()
+}
+
+func assetIdToString(input: ByteVector|Unit) = {
+  if (input == unit) then wavesString else input.value().toBase58String()
+}
+
+let kFactoryPublicKey = "%s__factoryPublicKey"
+
+func kAccountAddressToRequestId(accountAddress: Address) = {
+  ["%s%s", accountAddress.toString(), "accountAddressToRequestId"].makeString(separator)
+}
+func kAccountOwner(requestId: String) = {
+  ["%s%s", requestId, "ownerPublicKey"].makeString(separator)
+}
+func kRequestAmountAssetId(requestId: String) = {
+  ["%s%s", requestId, "amountAssetId"].makeString(separator)
+}
+func kRequestPriceAssetId(requestId: String) = {
+  ["%s%s", requestId, "priceAssetId"].makeString(separator)
+}
+
+let factoryAddress = addressFromPublicKey(
+  this.getBinary(kFactoryPublicKey).valueOrErrorMessage(
+    wrapErr("factory public key is not defined")
+  )
+)
+
+let shutdown = factoryAddress.getBoolean(kShutdown).valueOrElse(false)
+
+let kCalculatorAddress = "%s__calculatorAddress"
+let calculatorAddressOption = match factoryAddress.getString(kCalculatorAddress) {
+  case s: String => s.addressFromString()
+  case _: Unit => unit
+}
+let calculatorAddress = calculatorAddressOption.valueOrErrorMessage(wrapErr("invalid calculator address"))
+
+let kMatcherPublicKey = "%s__matcherPublicKey"
+let matcherPublicKeyOption = match factoryAddress.getString(kMatcherPublicKey) {
+  case s: String => s.fromBase58String()
+  case _: Unit => unit
+}
+let matcherPublicKey = matcherPublicKeyOption.valueOrErrorMessage(wrapErr("invalid matcher public key"))
+
+let requestId = factoryAddress.getStringValue(kAccountAddressToRequestId(this))
+let ownerPublicKey = factoryAddress.getBinaryValue(kAccountOwner(requestId))
+let ownerAddress = addressFromPublicKey(ownerPublicKey)
+let amountAssetId = factoryAddress.getStringValue(kRequestAmountAssetId(requestId)).parseAssetId()
+let priceAssetId = factoryAddress.getStringValue(kRequestPriceAssetId(requestId)).parseAssetId()
+
+func mustFactory(i: Invocation) = {
+  mustAddress(i, factoryAddress)
+}
+
+func mustCalculator(i: Invocation) = {
+  mustAddress(i, calculatorAddress)
+}
+
+func mustOwner(i: Invocation) = {
+  mustAddress(i, ownerAddress)
+}
+
+@Callable(i)
+func stringEntry(key: String, val: String) =
+  if (!shutdown && i.mustCalculator()) then ([StringEntry(key, val)], key) else throwErr("not allowed")
+
+@Callable(i)
+func integerEntry(key: String, val: Int) =
+  if (!shutdown && i.mustCalculator()) then ([IntegerEntry(key, val)], key) else throwErr("not allowed")
+
+@Callable(i)
+func booleanEntry(key: String, val: Boolean) =
+  if (!shutdown && i.mustCalculator()) then ([BooleanEntry(key, val)], key) else throwErr("not allowed")
+
+@Callable(i)
+func binaryEntry(key: String, val: ByteVector) =
+  if (!shutdown && i.mustCalculator()) then ([BinaryEntry(key, val)], key) else throwErr("not allowed")
+
+@Callable(i)
+func deleteEntry(key: String) =
+  if (!shutdown && i.mustCalculator()) then ([DeleteEntry(key)], key) else throwErr("not allowed")
+
+@Callable(i)
+func reissue(assetId: ByteVector, amount: Int, reissuable: Boolean) = 
+  if (!shutdown && i.mustCalculator()) then ([Reissue(assetId, amount, reissuable)], amount) else throwErr("not allowed")
+
+@Callable(i)
+func burn(assetId: ByteVector, amount: Int) = 
+  if (!shutdown && i.mustCalculator()) then ([Burn(assetId, amount)], amount) else throwErr("not allowed")
+
+@Callable(i)
+func transferAsset(recipientBytes: ByteVector, amount: Int, assetId: ByteVector) = 
+  if (!shutdown && i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else throwErr("not allowed")
+
+@Callable(i)
+func transferWaves(recipientBytes: ByteVector, amount: Int) = 
+  if (!shutdown && i.mustCalculator()) then ([ScriptTransfer(Address(recipientBytes), amount, unit)], amount) else throwErr("not allowed")
+
+@Callable(i)
+func init(factoryPublicKey: ByteVector, creatorPublicKey: ByteVector) = {
+  strict checkCaller = i.mustThis()
+
+  # throws if accounts is not ok
+  strict completeRequest = addressFromPublicKey(
+    factoryPublicKey
+  ).invoke("call", ["addAccount", [creatorPublicKey.toBase58String()]], [])
+
+  ([
+    BinaryEntry(kFactoryPublicKey, factoryPublicKey)
+  ], unit)
+}
+
+@Verifier(tx)
+func verify() = {
+  let factoryPublicKeyOption = this.getBinary(kFactoryPublicKey)
+  match tx {
+    case o: Order => {
+      strict checks = [
+        !shutdown || throwErr("not allowed"),
+        o.matcherPublicKey == matcherPublicKey || throwErr(
+          "matcher public key must be " + matcherPublicKey.toBase58String()
+        ),
+        o.assetPair.amountAsset == amountAssetId || throwErr(
+          "amount asset id have must be " + amountAssetId.assetIdToString()
+        ),
+        o.assetPair.priceAsset == priceAssetId || throwErr(
+          "price asset id have must be" + priceAssetId.assetIdToString()
+        ),
+        sigVerify(tx.bodyBytes, tx.proofs[0], ownerPublicKey) || throwErr(
+          "tx have must be signed by account owner " + ownerPublicKey.toBase58String()
+        )
+      ]
+      
+      true
+    }
+    case _ => if (factoryPublicKeyOption.isDefined()) then {
+      match factoryAddress.getString(kMultisig) {
+        case multisig: String => {
+          let statusKey = kStatus(this.toString(), tx.id.toBase58String())
+          let status = multisig.addressFromStringValue().getBoolean(statusKey).valueOrElse(false)
+
+          status
+        }
+        case _ => false
+      }
+    } else {
+      sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+    }
+  }
+}
