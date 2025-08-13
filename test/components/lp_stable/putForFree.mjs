@@ -13,18 +13,19 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp_stable: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
-  it('should successfully put with shouldAutoStake true', async function () {
+describe('lp_stable: putForFree.mjs', /** @this {MochaSuiteModified} */() => {
+  it('should successfully put without lp emission', async function () {
     const usdnAmount = 1e16 / 10;
     const usdtAmount = 1e8 / 10;
-    const expectedLpAmount = 2689907208382172;
-    const shouldAutoStake = true;
+    const expectedLpAmount = 0;
     const priceLast = 1e16;
     const priceHistory = 1e16;
+    // TODO calculate dLp
 
     const lpStable = address(this.accounts.lpStable, chainId);
+    const userAddress = address(this.accounts.user1, chainId);
 
-    const put = invokeScript({
+    const initPut = invokeScript({
       dApp: lpStable,
       payment: [
         { assetId: this.usdtAssetId, amount: usdtAmount },
@@ -34,7 +35,27 @@ describe('lp_stable: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
         function: 'put',
         args: [
           { type: 'integer', value: 0 },
-          { type: 'boolean', value: shouldAutoStake },
+          { type: 'boolean', value: false },
+        ],
+      },
+      chainId,
+    }, this.accounts.user1);
+    await api.transactions.broadcast(initPut, {});
+    await ni.waitForTx(initPut.id, { apiBase });
+
+    const userBeforeBalance = await api.assets
+      .fetchBalanceAddressAssetId(userAddress, this.lpStableAssetId);
+
+    const put = invokeScript({
+      dApp: lpStable,
+      payment: [
+        { assetId: this.usdtAssetId, amount: usdtAmount },
+        { assetId: this.usdnAssetId, amount: usdnAmount },
+      ],
+      call: {
+        function: 'putForFree',
+        args: [
+          { type: 'integer', value: 1000000 },
         ],
       },
       chainId,
@@ -44,7 +65,10 @@ describe('lp_stable: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
 
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
+
     const lpStableState = await api.addresses.data(lpStable);
+    const userAfterBalance = await api.assets
+      .fetchBalanceAddressAssetId(userAddress, this.lpStableAssetId);
 
     expect(lpStableState).to.include.deep.members([{
       key: '%s%s__price__last',
@@ -57,7 +81,7 @@ describe('lp_stable: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
     }, {
       key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
-      value: `%d%d%d%d%d%d%d%d%d%d__${usdtAmount}__${usdnAmount}__${expectedLpAmount}__${priceLast}__0__0__${height}__${timestamp}__0__0`,
+      value: `%d%d%d%d%d%d%d%d%d%d__${usdtAmount}__${usdnAmount}__${expectedLpAmount}__${priceLast}__1000000__1000000__${height}__${timestamp}__0__0`,
     }, {
       key: '%s__dLpRefreshedHeight',
       type: 'integer',
@@ -65,13 +89,15 @@ describe('lp_stable: putAutoStake.mjs', /** @this {MochaSuiteModified} */() => {
     }, {
       key: '%s__dLp',
       type: 'string',
-      value: '10000000000000003120271887017',
+      value: '20000000000000006240543774034',
     }]);
 
+    expect(Number(userAfterBalance.balance))
+      .to.eql(Number(userBeforeBalance.balance) + expectedLpAmount);
+
     expect(flattenInvokesList(stateChanges))
-      .to.deep.include.members([
+      .to.deep.not.include.members([
         [address(this.accounts.factoryV2, chainId), 'emit'],
-        [address(this.accounts.staking, chainId), 'stake'],
       ]);
   });
 });

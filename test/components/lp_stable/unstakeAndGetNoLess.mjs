@@ -13,14 +13,14 @@ const chainId = 'R';
 
 const api = create(apiBase);
 
-describe('lp_stable: get.mjs', /** @this {MochaSuiteModified} */() => {
+describe('lp_stable: unstakeAndGetNoLess.mjs', /** @this {MochaSuiteModified} */() => {
   it(
-    'should successfully get. The put method uses the shouldAutoStake argument with a value of false',
+    'should successfully unstakeAndGetNoLess. The put method uses the shouldAutoStake argument with a value of true',
     async function () {
       const usdnAmount = 1e16 / 10;
       const usdtAmount = 1e8 / 10;
       const lpStableAmount = 268990720838218;
-      const shouldAutoStake = false;
+      const shouldAutoStake = true;
       const priceLast = 1e16;
       const priceHistory = 1e16;
 
@@ -44,19 +44,20 @@ describe('lp_stable: get.mjs', /** @this {MochaSuiteModified} */() => {
       await api.transactions.broadcast(put, {});
       await ni.waitForTx(put.id, { apiBase });
 
-      const get = invokeScript({
+      const unstakeAndGet = invokeScript({
         dApp: lpStable,
-        payment: [
-          { assetId: this.lpStableAssetId, amount: lpStableAmount },
-        ],
         call: {
-          function: 'get',
-          args: [],
+          function: 'unstakeAndGetNoLess',
+          args: [
+            { type: 'integer', value: lpStableAmount },
+            { type: 'integer', value: usdtAmount / 10 },
+            { type: 'integer', value: usdnAmount / 10 },
+          ],
         },
         chainId,
       }, this.accounts.user1);
-      await api.transactions.broadcast(get, {});
-      const { height, stateChanges, id } = await ni.waitForTx(get.id, { apiBase });
+      await api.transactions.broadcast(unstakeAndGet, {});
+      const { height, stateChanges, id } = await ni.waitForTx(unstakeAndGet.id, { apiBase });
 
       const { timestamp } = await api.blocks.fetchHeadersAt(height);
       const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
@@ -84,7 +85,7 @@ describe('lp_stable: get.mjs', /** @this {MochaSuiteModified} */() => {
         value: '10000000000000006424805538327',
       }]);
 
-      expect(flattenTransfers(stateChanges)).to.eql([{
+      expect(flattenTransfers(stateChanges)).to.deep.include.members([{
         address: address(this.accounts.user1, chainId),
         asset: this.usdtAssetId,
         amount: usdtAmount / 10,

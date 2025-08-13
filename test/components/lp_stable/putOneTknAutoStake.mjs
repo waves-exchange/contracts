@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { flattenInvokesList } from './contract/tools.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -25,7 +26,7 @@ describe('lp_stable: putOneTknAutoStake.mjs', /** @this {MochaSuiteModified} */(
     const expectedWriteAmAmt = 1e8;
     const expectedWritePrAmt = 0;
     const expectedEmitLpAmt = 9982549115;
-    const expectedslippageCalc = 0;
+    const expectedSlippageCalc = 0;
     const expectedAmDiff = 0;
     const expectedPrDiff = 0;
 
@@ -68,8 +69,9 @@ describe('lp_stable: putOneTknAutoStake.mjs', /** @this {MochaSuiteModified} */(
 
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
+    const lpStableState = await api.addresses.data(lpStable);
 
-    expect(stateChanges.data).to.eql([{
+    expect(lpStableState).to.include.deep.members([{
       key: '%s%s__price__last',
       type: 'integer',
       value: expectedPriceLast,
@@ -80,7 +82,7 @@ describe('lp_stable: putOneTknAutoStake.mjs', /** @this {MochaSuiteModified} */(
     }, {
       key: `%s%s%s__P__${address(this.accounts.user1, chainId)}__${id}`,
       type: 'string',
-      value: `%d%d%d%d%d%d%d%d%d%d__${expectedWriteAmAmt}__${expectedWritePrAmt}__${expectedEmitLpAmt}__${expectedPriceLast}__${slippage}__${expectedslippageCalc}__${height}__${timestamp}__${expectedAmDiff}__${expectedPrDiff}`,
+      value: `%d%d%d%d%d%d%d%d%d%d__${expectedWriteAmAmt}__${expectedWritePrAmt}__${expectedEmitLpAmt}__${expectedPriceLast}__${slippage}__${expectedSlippageCalc}__${height}__${timestamp}__${expectedAmDiff}__${expectedPrDiff}`,
     }, {
       key: '%s__dLpRefreshedHeight',
       type: 'integer',
@@ -91,7 +93,7 @@ describe('lp_stable: putOneTknAutoStake.mjs', /** @this {MochaSuiteModified} */(
       value: '10000000000068219985437352296',
     }]);
 
-    expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
+    expect(flattenInvokesList(stateChanges))
       .to.deep.include.members([
         [address(this.accounts.factoryV2, chainId), 'emit'],
         [address(this.accounts.staking, chainId), 'stakeFor'],

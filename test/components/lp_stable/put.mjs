@@ -3,6 +3,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { address } from '@waves/ts-lib-crypto';
 import { invokeScript, nodeInteraction as ni } from '@waves/waves-transactions';
 import { create } from '@waves/node-api-js';
+import { flattenInvokesList } from './contract/tools.mjs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -23,6 +24,9 @@ describe('lp_stable: put.mjs', /** @this {MochaSuiteModified} */() => {
     // TODO calculate dLp
 
     const lpStable = address(this.accounts.lpStable, chainId);
+    const userAddress = address(this.accounts.user1, chainId);
+    const userBeforeBalance = await api.assets
+      .fetchBalanceAddressAssetId(userAddress, this.lpStableAssetId);
 
     const put = invokeScript({
       dApp: lpStable,
@@ -45,7 +49,11 @@ describe('lp_stable: put.mjs', /** @this {MochaSuiteModified} */() => {
     const { timestamp } = await api.blocks.fetchHeadersAt(height);
     const keyPriceHistory = `%s%s%d%d__price__history__${height}__${timestamp}`;
 
-    expect(stateChanges.data).to.eql([{
+    const lpStableState = await api.addresses.data(lpStable);
+    const userAfterBalance = await api.assets
+      .fetchBalanceAddressAssetId(userAddress, this.lpStableAssetId);
+
+    expect(lpStableState).to.include.deep.members([{
       key: '%s%s__price__last',
       type: 'integer',
       value: priceLast.toString(),
@@ -67,13 +75,10 @@ describe('lp_stable: put.mjs', /** @this {MochaSuiteModified} */() => {
       value: '10000000000000003120271887017',
     }]);
 
-    expect(stateChanges.transfers).to.eql([{
-      address: address(this.accounts.user1, chainId),
-      asset: this.lpStableAssetId,
-      amount: expectedLpAmount.toString(),
-    }]);
+    expect(Number(userAfterBalance.balance))
+      .to.eql(Number(userBeforeBalance.balance) + expectedLpAmount);
 
-    expect(stateChanges.invokes.map((item) => [item.dApp, item.call.function]))
+    expect(flattenInvokesList(stateChanges))
       .to.deep.include.members([
         [address(this.accounts.factoryV2, chainId), 'emit'],
       ]);

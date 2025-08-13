@@ -988,118 +988,105 @@ func skipOrderValidation() = {
   fca.getBoolean(keySkipOrderValidation(this.toString())).valueOrElse(false)
 }
 
+let keyFactoryAddress = ["%s", "factoryContract"].makeString(SEP)
+let factoryAddress = this.getStringValue(keyFactoryAddress).addressFromStringValue()
+
+let keyImplAddress = ["%s", "lpStableImpl"].makeString(SEP)
+let implAddress = factoryAddress.getStringValue(keyImplAddress).addressFromStringValue()
+
+func mustAddress(i: Invocation, address: Address) = {
+  i.caller == address || throw()
+}
+
+func mustImpl(i: Invocation) = {
+  mustAddress(i, implAddress)
+}
+
+@Callable(i)
+func stringEntry(key: String, val: String) =
+  if (i.mustImpl()) then ([StringEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func integerEntry(key: String, val: Int) =
+  if (i.mustImpl()) then ([IntegerEntry(key, val)], key) else ([], unit)
+
+@Callable(i)
+func transferAsset(recipientBytes: ByteVector, amount: Int, assetIdString: String) = {
+  let assetId = if (assetIdString == wavesString) then unit else assetIdString.fromBase58String()
+  if (i.mustImpl()) then ([ScriptTransfer(Address(recipientBytes), amount, assetId)], amount) else ([], unit)
+}
+
+@Callable(i)
+func callInvoke(recipientBytes: ByteVector, funcName: String, paymentAssetIdString: String, paymentAmount: Int) = {
+  let assetId = if (paymentAssetIdString == wavesString) then unit else paymentAssetIdString.fromBase58String()
+  let dappAddress = Address(recipientBytes)
+  if (i.mustImpl()) then ([], dappAddress.invoke(funcName, [], [AttachedPayment(assetId, paymentAmount)])) else ([], unit)
+}
+
+@Callable(i)
+func callEmit(dappAddress: ByteVector, emitLpAmt: Int) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("emit", [emitLpAmt], [])) else ([], unit)
+}
+
+@Callable(i)
+func callPut(dappAddress: ByteVector, assetId: String, amount: Int) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("put", [], [AttachedPayment(assetId.parseAssetId(), amount)])) else ([], unit)
+}
+
+@Callable(i)
+func callStake(dappAddress: ByteVector, assetId: String, amount: Int) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("stake", [], [AttachedPayment(assetId.parseAssetId(), amount)])) else ([], unit)
+}
+
+@Callable(i)
+func callStakeFor(dappAddress: ByteVector, stakeAddress: String,assetId: String, amount: Int) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("stakeFor", [stakeAddress], [AttachedPayment(assetId.parseAssetId(), amount)])) else ([], unit)
+}
+
+@Callable(i)
+func callBurn(dappAddress: ByteVector, assetId: String, amount: Int) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("burn", [amount], [AttachedPayment(assetId.parseAssetId(), amount)])) else ([], unit)
+}
+
+@Callable(i)
+func callUnstake(dappAddress: ByteVector, assetId: String, amount: Int) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("unstake", [assetId, amount], [])) else ([], unit)
+}
+
+@Callable(i)
+func callUnstakeINTERNAL(dappAddress: ByteVector, assetId: String, amount: Int, userAddress: ByteVector, recipientAddress: ByteVector) = {
+  if (i.mustImpl()) then ([], Address(dappAddress).invoke("unstakeINTERNAL", [assetId, amount, userAddress, recipientAddress], [])) else ([], unit)
+}
+
+
 @Callable(i)
 func calculateAmountOutForSwapREADONLY(cleanAmountIn: Int, isReverse: Boolean, feePoolAmount: Int) = {
-   let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
-    let assetOut = this.strf(pa())
-    let poolAmountInBalance = getAccBalance(this.strf(aa())).toBigInt() + cleanAmountIn.toBigInt()
-    (assetOut, poolAmountInBalance)
-  } else {
-    let assetOut = this.strf(aa())
-    let poolAmountInBalance = getAccBalance(this.strf(pa())).toBigInt() + cleanAmountIn.toBigInt()
-    (assetOut, poolAmountInBalance) 
-  }
-
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
-  
-  let D = xp.getD()
-  let y = getY(isReverse, D, cleanAmountIn.toBigInt())
-
-  let dy = getAccBalance(assetOut).toBigInt() - y - toBigInt(1) # -1 just in case there were some rounding errors
-
-  let totalGetRaw = [0, dy.toInt()].max()
-
-  let newXp = if (isReverse == false) then {
-    [amId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt(), prId.getAccBalance().toBigInt() - dy]
-  } else { 
-    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + cleanAmountIn.toBigInt() + feePoolAmount.toBigInt()]
-  }
-  let newD = newXp.getD()
-  strict checkD = newD >= D || makeString(["new D is fewer error", D.toString(), newD.toString()], "__").throw()
+  let totalGetRaw = implAddress.reentrantInvoke(
+    "calculateAmountOutForSwapREADONLY",
+    [cleanAmountIn, isReverse, feePoolAmount],
+    []
+  )
   
   (nil, totalGetRaw)
 }
 
 @Callable(i)
 func calculateAmountOutForSwapAndSendTokens(cleanAmountIn: Int, isReverse: Boolean, amountOutMin: Int, addressTo: String, feePoolAmount: Int) = {
-  let swapContact = invoke(
-    fca,
-    "getSwapContractREADONLY", 
-    [], 
-    []
-  ).exactAs[String]
-
-  let isPoolSwapDisabled = fca.invoke(
-    "isPoolSwapDisabledREADONLY",
-    [this.toString()],
-    []
-  ).exactAs[Boolean]
-  let isSwapDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown || isPoolSwapDisabled)
-
-  strict checks = [
-    !isSwapDisabled || i.isManager() || "swap operation is blocked by admin".throwErr(),
-    i.payments[0].value().amount >= cleanAmountIn || "Wrong amount".throwErr(),
-    i.caller == addressFromStringValue(swapContact) || "Permission denied".throwErr()
-  ]
-  let pmt = i.payments[0].value()
-  let assetIn = pmt.assetId.assetIdToString()
-
-  let (assetOut, poolAmountInBalance) = if (isReverse == false) then {
-    let assetOut = this.strf(pa())
-    let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
-    (assetOut, poolAmountInBalance)
-  } else {
-    let assetOut = this.strf(aa())
-    let poolAmountInBalance = getAccBalance(assetIn) - i.payments[0].value().amount
-    (assetOut, poolAmountInBalance) 
-  }
-
-  let poolConfig = gpc()
-  let amId = poolConfig[idxAmAsId]
-  let prId = poolConfig[idxPrAsId]
-  let xp = if (isReverse == false) then {
-    [amId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt(), prId.getAccBalance().toBigInt()]
-  } else { 
-    [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt() - i.payments[0].value().amount.toBigInt()]
-  }
-  let D = xp.getD()
-  let y = getY(isReverse, D, toBigInt(0))
-
-  let dy = getAccBalance(assetOut).toBigInt() - y - toBigInt(1) # -1 just in case there were some rounding errors
-
-  let totalGetRaw = [0, dy.toInt()].max()
-
-  strict checkMin = amountOutMin <= totalGetRaw || "Exchange result is fewer coins than expected".throw()
-
-  let newXp = if (isReverse == false) then {
-    [amId.getAccBalance().toBigInt() + feePoolAmount.toBigInt(), prId.getAccBalance().toBigInt() - dy]
-  } else { 
-    [amId.getAccBalance().toBigInt() - dy, prId.getAccBalance().toBigInt() + feePoolAmount.toBigInt()]
-  }
-  let newD = newXp.getD()
-  strict checkD = newD >= D || "new D is fewer error".throw()
-
-  let amountAssetBalanceDelta = if (isReverse) then {
-    -totalGetRaw
-  } else {
-    feePoolAmount
-  }
-  let priceAssetBalanceDelta = if (isReverse) then {
-    feePoolAmount
-  } else {
-    -totalGetRaw
-  }
-  strict refreshDLpActions = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)._1
-  
-  (
+  strict totalGetRaw = implAddress.reentrantInvoke(
+    "calculateAmountOutForSwapAndSendTokens",
     [
-      ScriptTransfer(addressTo.addressFromStringValue(), totalGetRaw, assetOut.parseAssetId())
+      cleanAmountIn, 
+      isReverse, 
+      amountOutMin,
+      addressTo,
+      feePoolAmount,
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount
     ],
-    totalGetRaw
+    []
   )
+
+  ([], totalGetRaw)
 }
 
 @Callable(i)
@@ -1121,196 +1108,68 @@ func constructor(fc: String) = {
 #       2. slipage is not bigger that current tokens ratio
 # arguments:
 #    slippageTolerance  max allowed slippage
-#    shouldAutoStake    perform LP staking immediatelly in case true otherwise transfer LP to user)
+#    shouldAutoStake    perform LP staking immediately in case true otherwise transfer LP to user)
 # attach:
 #    attached should be two valid tokens from the available pools.
 # return:
 #    transfer LP tokens based on deposit share
 @Callable(i)
 func put(slip: Int, autoStake: Boolean) = {
-    let factCfg = gfc()
-    let stakingCntr = addressFromString(factCfg[idxFactStakCntr]).valueOrErrorMessage("Wr st addr")
-    let slipCntr = addressFromString(factCfg[idxFactSlippCntr]).valueOrErrorMessage("Wr sl addr")
-    if(slip < 0) then throw("Wrong slippage") else
-    if (i.payments.size() != 2) then throw("2 pmnts expd") else
+  strict putInvoke = implAddress.reentrantInvoke(
+    "put",
+    [
+      slip, 
+      autoStake, 
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount,
+      i.payments[1].assetId.assetIdToString(),
+      i.payments[1].amount
+    ],
+    []
+  )
 
-    let amAssetPmt = i.payments[0].value().amount.toBigInt()
-    let prAssetPmt = i.payments[1].value().amount.toBigInt()
-
-    strict amountAssetBalance = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt() - amAssetPmt
-    strict priceAssetBalance = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt() - prAssetPmt
-    strict lpAssetEmission = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
-    strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
-    # estPut
-    let e = cp(i.caller.toString(),
-                          i.transactionId.toBase58String(),
-                          AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
-                          i.payments[1],
-                          slip,
-                          true,
-                          false,
-                          true,
-                          0,
-                          "")
-
-    let emitLpAmt = e._2
-    let lpAssetId = e._7
-    let state     = e._9
-    let amDiff    = e._10
-    let prDiff    = e._11
-    let amId      = e._12
-    let prId      = e._13
-
-    # emit lp on factory
-    strict r = fca.invoke("emit", [emitLpAmt], [])
-    # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
-    strict el = match (r) {
-      case legacy: Address => legacy.invoke("emit", [emitLpAmt], [])
-      case _ => unit
-    }
-    strict sa = if(amDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(amId, amDiff)])        else []
-    strict sp = if(prDiff > 0)      then slipCntr.invoke("put",[],[AttachedPayment(prId, prDiff)])        else []
-
-    let lpTrnsfr =
-      if(autoStake) then strict ss = stakingCntr.invoke("stake",[],[AttachedPayment(lpAssetId, emitLpAmt)]); []
-      else [ScriptTransfer(i.caller, emitLpAmt, lpAssetId)]
-    
-    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
-
-    # strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-    strict check = updatedDLp >= currentDLp || [
-      "updated DLp lower than current DLp",
-      amountAssetBalance.toString(),
-      priceAssetBalance.toString(),
-      lpAssetEmission.toString(),
-      currentDLp.toString(),
-      updatedDLp.toString(),
-      amDiff.toString(),
-      prDiff.toString()
-    ].makeString(" ").throwErr()
-
-    strict lpAssetEmissionAfter = assetInfo(cfgLpAssetId).value().quantity
-
-    state
-    ++ lpTrnsfr
-    ++ refreshDLpActions
+  ([], nil)
 }
 
 @Callable(i)
 func putOneTknV2(minOutAmount: Int, autoStake: Boolean) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke(
-    "isPoolOneTokenOperationsDisabledREADONLY",
-    [this.toString()],
-    []
-  ).exactAs[Boolean]
-  let isPutDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolPutDis || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
-
   strict checks = [
-    !isPutDisabled || i.isManager() || "put operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
-  let amId = cfgAmountAssetId.value().toBase58String()
-  let prId = cfgPriceAssetId.value().toBase58String()
-  let lpId = cfgLpAssetId
-  let amDecimals = cfgAmountAssetDecimals
-  let prDecimals = cfgPriceAssetDecimals
-
-  let userAddress = if (i.caller == this) then i.originCaller else i.caller
-
-  let pmt = i.payments[0].value()
-  let pmtAssetId = pmt.assetId.value().toBase58String()
-  let pmtAmt = pmt.amount
-
-  strict currentDLp = if (pmt.assetId == cfgAmountAssetId) then {
-    calcCurrentDLp(pmtAmt.toBigInt(), 0.toBigInt(), 0.toBigInt())
-  } else {
-    calcCurrentDLp(0.toBigInt(), pmtAmt.toBigInt(), 0.toBigInt())
-  }
-
-  strict (estimLP, state, feeAmount) = calcPutOneTkn(
-    pmtAmt,
-    pmtAssetId,
-    userAddress.toString(),
-    i.transactionId.toBase58String(),
-    true
+    strict emitLpAmt = implAddress.reentrantInvoke(
+    "putOneTknV2",
+    [
+      minOutAmount, 
+      autoStake, 
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount
+    ],
+    []
   )
 
-  let emitLpAmt = if (minOutAmount > 0 && estimLP < minOutAmount) then {
-    ["amount to receive is less than ", minOutAmount.toString()].makeString("").throwErr()
-  } else estimLP
-
-  # emit lp on factory
-  strict e = fca.invoke("emit", [emitLpAmt], [])
-  # if the lp instance address is in the legacy list then the legacy factory address will be returned from the factory
-  strict el = match (e) {
-    case legacy: Address => legacy.invoke("emit", [emitLpAmt], [])
-    case _ => unit
-  }
-
-  let lpTrnsfr =
-    if (autoStake) then {
-      strict ss = stakingContract.invoke(
-        "stakeFor",
-        [i.caller.toString()],
-        [AttachedPayment(lpId, emitLpAmt)]
-      )
-
-      []
-    } else [ScriptTransfer(i.caller, emitLpAmt, lpId)]
-
-  let sendFeeToMatcher = if (feeAmount > 0) then [ScriptTransfer(feeCollectorAddress, feeAmount, pmtAssetId.fromBase58String())] else []
-
-  let (amountAssetBalanceDelta, priceAssetBalanceDelta) = {
-    if (this == feeCollectorAddress) then (0, 0) else {
-      # full payment asset id validation is in calcPutOneTkn
-      let paymentInAmountAsset = if (pmt.assetId == cfgAmountAssetId) then true else false
-      if (paymentInAmountAsset) then (-feeAmount, 0) else (0, -feeAmount)
-    }
-  }
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(amountAssetBalanceDelta, priceAssetBalanceDelta, 0)
-
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-
-  (
-    state
-    ++ lpTrnsfr
-    ++ sendFeeToMatcher
-    ++ refreshDLpActions,
-    emitLpAmt
-  )
+  ([], emitLpAmt)
 }
 
 # Put without LP emission
 @Callable(i)
 func putForFree(maxSlpg: Int) = {
-  if(maxSlpg < 0) then throw("Wrong slpg") else
-  if (i.payments.size() != 2) then throw("2 pmnts expd") else
-    let estPut = cp(i.caller.toString(),
-                          i.transactionId.toBase58String(),
-                          AttachedPayment(i.payments[0].value().assetId, i.payments[0].value().amount),
-                          i.payments[1],
-                          maxSlpg,
-                          false,
-                          false,
-                          true,
-                          0,
-                          "")
+  strict check = i.payments.size() == 2 || throw("2 pmnts expd")
 
-    let state = estPut._9
+  strict putInvoke = implAddress.reentrantInvoke(
+    "putForFree",
+    [
+      maxSlpg, 
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount,
+      i.payments[1].assetId.assetIdToString(),
+      i.payments[1].amount
+    ],
+    []
+  )
 
-    let amAssetPmt = i.payments[0].value().amount.toBigInt()
-    let prAssetPmt = i.payments[1].value().amount.toBigInt()
-
-    strict currentDLp = calcCurrentDLp(amAssetPmt, prAssetPmt, 0.toBigInt())
-
-    let (refreshDLpActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
-
-    strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-
-    state ++ refreshDLpActions
+  ([], nil)
 }
-
 # Called by: LP
 #
 # purpose:
@@ -1324,80 +1183,48 @@ func putForFree(maxSlpg: Int) = {
 #    transfer to user his share of pool tokens base on passed lp token amount
 @Callable(i)
 func get() = {
-  # amountAssetBalance
-  # strict aab = cfgAmountAssetId.assetIdToString().getAccBalance().toBigInt()
-  # # priceAssetBalance
-  # strict pab = cfgPriceAssetId.assetIdToString().getAccBalance().toBigInt()
-  # # lpAssetEmission
-  # strict lae = assetInfo(cfgLpAssetId).value().quantity.toBigInt()
-  # # lpAssetEmissionAfter
-  # strict laea = lae - i.payments[0].value().amount.toBigInt()
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict getInvoke = implAddress.reentrantInvoke(
+    "get",
+    [
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount
+    ],
+    []
+  )
 
-  let r = cg(i)
-  let outAmtAmt    = r._1
-  let outPrAmt     = r._2
-  let pmtAmt       = r._3
-  let pmtAssetId   = r._4
-  let state        = r._5
-  strict b = invoke(fca,
-                    "burn",
-                    [pmtAmt],
-                    [AttachedPayment(pmtAssetId, pmtAmt)])
-
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmtAmt, -outPrAmt, 0)
-
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-
-  state ++ refreshDLpActions
+  ([], nil)
 }
 
 @Callable(i)
 func getOneTknV2(outAssetId: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke(
-    "isPoolOneTokenOperationsDisabledREADONLY",
-    [this.toString()],
-    []
-  ).exactAs[Boolean]
-  let isGetDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
-
   strict checks = [
-    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
     i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
   ]
 
-  let (state, totalAmount) = getOneTknV2Internal(
-    outAssetId,
-    minOutAmount,
-    i.payments,
-    i.caller,
-    i.originCaller,
-    i.transactionId
+  strict totalAmount = implAddress.reentrantInvoke(
+    "getOneTknV2",
+    [
+      outAssetId,
+      minOutAmount,
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount
+    ],
+    []
   )
 
-  (state, totalAmount)
+  ([], totalAmount)
 }
 
 
 @Callable(i)
 func refreshDLp() = {
-  let lastRefreshedBlockHeight = keyDLpRefreshedHeight.getInteger().valueOrElse(0)
-  strict checkLastRefreshedBlockHeight = if (height - lastRefreshedBlockHeight >= dLpRefreshDelay) then unit else {
-    [
-      dLpRefreshDelay.toString(),
-      " blocks have not passed since the previous call"
-    ].makeString("").throwErr()
-  }
+  strict updatedDLpString = implAddress.reentrantInvoke(
+    "refreshDLp",
+    [],
+    []
+  )
 
-  let dLp = this.getString(keyDLp)
-    .valueOrElse("0")
-    .parseBigInt()
-    .valueOrErrorMessage("invalid dLp".fmtErr())
-
-  let (dLpUpdateActions, updatedDLp) = refreshDLpInternal(0, 0, 0)
-  let actions = if (dLp != updatedDLp) then dLpUpdateActions else "nothing to refresh".throwErr()
-
-  (actions, updatedDLp.toString())
+  ([], updatedDLpString)
 }
 
 @Callable(i)
@@ -1405,27 +1232,13 @@ func getOneTknV2READONLY(
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
-  let amId = cfgAmountAssetId.value().toBase58String()
-  let prId = cfgPriceAssetId.value().toBase58String()
-  let lpId = cfgLpAssetId.value().toBase58String()
-  let xp = [amId.getAccBalance().toBigInt(), prId.getAccBalance().toBigInt()]
-  # let xp = [prId.getAccBalance().toBigInt(), amId.getAccBalance().toBigInt()]
-  let lpEmission = lpId.fromBase58String().assetInfo().valueOrErrorMessage("invalid lp asset").quantity.toBigInt()
-  let D0 = xp.getD()
-  let D1 = D0 - fraction(lpAssetAmount.toBigInt(), D0, lpEmission)
-  let index = if (outAssetId == amId) then {
-    0
-  } else if (outAssetId == prId) then {
-    1
-  } else {
-    "invalid out asset id".throw()
-  }
-  let newY = xp.getYD(index, D1)
-  let dy = xp[index] - newY
-  let totalGetRaw = [0, { dy - big1 }.toInt()].max()
-  let (totalGet, feeAmount) = totalGetRaw.takeFee(outFee)
+  strict outData = implAddress.reentrantInvoke(
+    "getOneTknV2READONLY",
+    [this.toString(), outAssetId, lpAssetAmount],
+    []
+  )
 
-  (nil, (totalGet, feeAmount))
+  ([], outData)
 }
 
 @Callable(i)
@@ -1433,176 +1246,89 @@ func getOneTknV2WithBonusREADONLY(
   outAssetId: String,
   lpAssetAmount: Int
 ) = {
-  let amId = cfgAmountAssetId.value().toBase58String()
-  let prId = cfgPriceAssetId.value().toBase58String()
-  let lpId = cfgLpAssetId.value().toBase58String()
-
-  let amBalance = amId.getAccBalance()
-  let prBalance = prId.getAccBalance()
-
-  let (totalGet, feeAmount) = this.invoke("getOneTknV2READONLY", [outAssetId, lpAssetAmount], []).exactAs[(Int, Int)]
-
-  let r = ego(
-    "",
-    lpId,
-    lpAssetAmount,
-    this
+  strict outData = implAddress.reentrantInvoke(
+    "getOneTknV2WithBonusREADONLY",
+    [outAssetId, lpAssetAmount],
+    []
   )
 
-  let outAmAmt = r._1
-  let outPrAmt = r._2
-  let sumOfGetAssets = outAmAmt + outPrAmt
-  
-  let bonus = if (sumOfGetAssets == 0) then {
-    if (totalGet == 0) then 0 else "bonus calculation error".throw()
-  } else {
-    fraction((totalGet - sumOfGetAssets), scale8, sumOfGetAssets)
-  }
-
-  ([], (totalGet, feeAmount, bonus))
+  ([], outData)
 }
 
 @Callable(i)
 func getNoLess(noLessThenAmtAsset: Int, noLessThenPriceAsset: Int) = {
-  let r = cg(i)
-  let outAmAmt    = r._1
-  let outPrAmt    = r._2
-  let pmtAmt      = r._3
-  let pmtAssetId  = r._4
-  let state       = r._5
-  if (outAmAmt < noLessThenAmtAsset) then throw("Failed:  " + outAmAmt.toString() + " < " + noLessThenAmtAsset.toString()) else
-  if (outPrAmt < noLessThenPriceAsset) then throw("Failed: " + outPrAmt.toString() + " < " + noLessThenPriceAsset.toString()) else
+  strict checks = [
+    i.payments.size() == 1 || "exactly 1 payment are expected".throwErr()
+  ]
 
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
+  strict inv = implAddress.reentrantInvoke(
+    "getNoLess",
+    [
+      noLessThenAmtAsset, 
+      noLessThenPriceAsset,
+      i.payments[0].assetId.assetIdToString(),
+      i.payments[0].amount
+    ],
+    []
+  )
 
-  strict burnLPAssetOnFactory = invoke(fca,
-                                  "burn",
-                                  [pmtAmt],
-                                  [AttachedPayment(pmtAssetId, pmtAmt)])
-
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
-
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-
-  state ++ refreshDLpActions
+  ([], nil)
 }
 
 # Unstake LP tokens and exit from pool
 @Callable(i)
 func unstakeAndGet(amount: Int) = {
-  strict checkPayments = if (i.payments.size() != 0) then throw("No pmnts expd") else true
+  strict checkPayments = (i.payments.size() == 0) || throw("No pmnts expd")
 
-  let factoryCfg = gfc()
+  strict inv = implAddress.reentrantInvoke("unstakeAndGet", [amount], [])
 
-  let lpAssetId = cfgLpAssetId
-  let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
-
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
-
-  # negative amount will not pass
-  strict unstakeInv = staking.invoke("unstake", [lpAssetId.toBase58String(), amount], [])
-
-  let r = ego(i.transactionId.toBase58String(), lpAssetId.toBase58String(), amount, i.caller)
-  let outAmAmt = r._1
-  let outPrAmt = r._2
-  let sts = r._9.parseIntValue()
-  let state = r._10
-
-  let isGetDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown)
-  strict v = if (isGetDisabled) then throw("Blocked: " + sts.toString()) else true
-
-  strict burnA = invoke(fca, "burn", [amount], [AttachedPayment(lpAssetId, amount)])
-
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
-
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-
-  state ++ refreshDLpActions
+  ([], nil)
 }
 
 @Callable(i)
 func unstakeAndGetNoLess(unstakeAmount: Int, noLessThenAmountAsset: Int, noLessThenPriceAsset: Int) = {
-  let isGetDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown)
+  strict checkPayments = (i.payments.size() == 0) || throw("no payments are expected")
 
-  strict checks = [
-    !isGetDisabled || "get operation is blocked by admin".throw(),
-    i.payments.size() == 0 || "no payments are expected".throw()
-  ]
+  strict inv = implAddress.reentrantInvoke(
+    "unstakeAndGetNoLess", 
+    [
+      unstakeAmount,
+      noLessThenAmountAsset,
+      noLessThenPriceAsset
+    ], 
+    [])
 
-  strict currentDLp = calcCurrentDLp(0.toBigInt(), 0.toBigInt(), 0.toBigInt())
-
-  strict unstakeInv = stakingContract.invoke("unstake", [cfgLpAssetId.toBase58String(), unstakeAmount], [])
-
-  let res = ego(i.transactionId.toBase58String(), cfgLpAssetId.toBase58String(), unstakeAmount, i.caller)
-  let outAmAmt = res._1
-  let outPrAmt = res._2
-  let state = res._10
-
-  strict checkAmounts = [
-    outAmAmt >= noLessThenAmountAsset || ["amount asset amount to receive is less than ", noLessThenAmountAsset.toString()].makeString("").throw(),
-    outPrAmt >= noLessThenPriceAsset || ["price asset amount to receive is less than ", noLessThenPriceAsset.toString()].makeString("").throw()
-  ]
-
-  strict burnLPAssetOnFactory = fca.invoke("burn", [unstakeAmount], [AttachedPayment(cfgLpAssetId, unstakeAmount)])
-
-  let (refreshDLpActions, updatedDLp) = refreshDLpInternal(-outAmAmt, -outPrAmt, 0)
-
-  strict isUpdatedDLpValid = validateUpdatedDLp(currentDLp, updatedDLp)
-
-  state ++ refreshDLpActions
+  ([], nil)
 }
 
 @Callable(i)
 func unstakeAndGetOneTknV2(unstakeAmount: Int, outAssetId: String, minOutAmount: Int) = {
-  let isPoolOneTokenOperationsDisabled = fca.invoke(
-    "isPoolOneTokenOperationsDisabledREADONLY",
-    [this.toString()],
-    []
-  ).exactAs[Boolean]
-  let isGetDisabled = !isAddressWhitelisted(i.caller) && (igs() || cfgPoolStatus == PoolShutdown || isPoolOneTokenOperationsDisabled)
+  strict checkPayments = (i.payments.size() == 0) || throw("no payments are expected")
 
-  strict checks = [
-    !isGetDisabled || i.isManager() || "get operation is blocked by admin".throwErr(),
-    i.payments.size() == 0 || "no payments are expected".throwErr()
-  ]
+    strict totalAmount = implAddress.reentrantInvoke(
+    "unstakeAndGetOneTknV2", 
+    [
+      unstakeAmount,
+      outAssetId,
+      minOutAmount
+    ], 
+    [])
 
-  let factoryCfg = gfc()
-
-  let lpAssetId = cfgLpAssetId
-  let staking = factoryCfg[idxFactStakCntr].addressFromString().valueOrErrorMessage("Wr st addr")
-
-  let userAddress = i.caller
-  let lpAssetRecipientAddress = this
-  strict unstakeInv = staking.invoke("unstakeINTERNAL", [
-    lpAssetId,
-    unstakeAmount,
-    userAddress.bytes,
-    lpAssetRecipientAddress.bytes
-  ], [])
-  let (state, totalAmount) = getOneTknV2Internal(
-    outAssetId,
-    minOutAmount,
-    [AttachedPayment(lpAssetId, unstakeAmount)],
-    i.caller,
-    i.originCaller,
-    i.transactionId
-  )
-
-  (state, totalAmount)
+  ([], totalAmount)
 }
 
 @Callable(i)
 func putOneTknV2WithBonusREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
-  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", true)
+  let result = implAddress.reentrantInvoke("putOneTknV2WithBonusREADONLY", [paymentAmountRaw, paymentAssetId], [])
 
-  (nil, (lpAmount, feeAmount, bonus))
+  (nil, result)
 }
 
 @Callable(i)
 func putOneTknV2WithoutTakeFeeREADONLY(paymentAmountRaw: Int, paymentAssetId: String) = {
-  let (lpAmount, state, feeAmount, bonus) = calcPutOneTkn(paymentAmountRaw, paymentAssetId, "", "", false)
+  let result = implAddress.reentrantInvoke("putOneTknV2WithoutTakeFeeREADONLY", [paymentAmountRaw, paymentAssetId], [])
 
-  (nil, (lpAmount, feeAmount, bonus))
+  (nil, result)
 }
 
 # purpose:
@@ -1630,55 +1356,44 @@ func activate(amtAsStr: String, prAsStr: String) = {
 # API wrappers
 @Callable(i)
 func getPoolConfigWrapperREADONLY() = {
-  (
-    [],
-    gpc()
-  )
+  let result = implAddress.reentrantInvoke("getPoolConfigWrapperREADONLY", [], [])
+
+  (nil, result)
 }
 
 @Callable(i)
 func getAccBalanceWrapperREADONLY(assetId: String) = {
-  (
-    [],
-    assetId.getAccBalance()
-  )
+  let result = implAddress.reentrantInvoke("getAccBalanceWrapperREADONLY", [assetId], [])
+
+  (nil, result)
 }
 
 @Callable(i)
 func calcPricesWrapperREADONLY(amAmt: Int, prAmt: Int, lpAmt: Int) = {
-  let pr = calcPrices(amAmt, prAmt, lpAmt)
-  (
-    [],
-    [
-      pr[0].toString(),
-      pr[1].toString(),
-      pr[2].toString()
-    ]
-  )
+  let result = implAddress.reentrantInvoke("calcPricesWrapperREADONLY", [amAmt, prAmt, lpAmt], [])
+
+  (nil, result)
 }
 
 @Callable(i)
 func fromX18WrapperREADONLY(val: String, resScaleMult: Int) = {
-  (
-    [],
-    f1(val.parseBigIntValue(), resScaleMult)
-  )
+  let result = implAddress.reentrantInvoke("fromX18WrapperREADONLY", [val, resScaleMult], [])
+
+  (nil, result)
 }
 
 @Callable(i)
 func toX18WrapperREADONLY(origVal: Int, origScaleMult: Int) = {
-  (
-    [],
-    t1(origVal, origScaleMult).toString()
-  )
+  let result = implAddress.reentrantInvoke("toX18WrapperREADONLY", [origVal, origScaleMult], [])
+
+  (nil, result)
 }
 
 @Callable(i)
 func calcPriceBigIntWrapperREADONLY(prAmtX18: String, amAmtX18: String) = {
-  (
-    [],
-    cpbi(prAmtX18.parseBigIntValue(), amAmtX18.parseBigIntValue()).toString()
-  )
+  let result = implAddress.reentrantInvoke("calcPriceBigIntWrapperREADONLY", [prAmtX18, amAmtX18], [])
+
+  (nil, result)
 }
 
 @Callable(i)
@@ -1693,10 +1408,10 @@ func estimatePutOperationWrapperREADONLY(
   isEval: Boolean,
   emitLp: Boolean
 ) = {
-  (
-    [],
-    epo(
-      txId58,
+  let result = implAddress.reentrantInvoke(
+    "estimatePutOperationWrapperREADONLY", 
+    [
+      txId58, 
       slippage,
       inAmAmt,
       inAmId,
@@ -1704,27 +1419,28 @@ func estimatePutOperationWrapperREADONLY(
       inPrId,
       usrAddr,
       isEval,
-      emitLp,
-      true,
-      false,
-      0,
-      ""
-    )
+      emitLp
+    ], 
+    []
   )
+
+  (nil, result)
 }
 
 @Callable(i)
 func estimateGetOperationWrapperREADONLY(txId58: String, pmtAsId: String, pmtLpAmt: Int, usrAddr: String) = {
-  let r = ego(
-    txId58,
-    pmtAsId,
-    pmtLpAmt,
-    usrAddr.addressFromStringValue()
+  let result = implAddress.reentrantInvoke(
+    "estimateGetOperationWrapperREADONLY", 
+    [
+      txId58, 
+      pmtAsId,
+      pmtLpAmt,
+      usrAddr
+    ], 
+    []
   )
-  (
-    [],
-    (r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8.toString(), r._9, r._10)
-  )
+
+  (nil, result)
 }
 
 @Callable(i)
