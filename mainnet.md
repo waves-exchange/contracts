@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **17:24 12.08.2025** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **13:14 19.08.2025** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -317,6 +317,7 @@ PZ BARSIK/WAVES pool | [`3P6VMSLXiUhixr9ZXjf2HWrTQERuMhViNKM`](https://wavesexpl
 SURF/WX pool | [`3PDE9t3gBckNuPdyjkc6XSvCqMRVsZSqkmt`](https://wavesexplorer.com/addresses/3PDE9t3gBckNuPdyjkc6XSvCqMRVsZSqkmt) | `BMFNBPkJz7RhsyTn4oVwcQDZjFC4ees4GuUj8EKK1HA1` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 NSTA/WAVES pool | [`3PR4678d7A5Vmp3Eak6YdyaV3x6gYDG1iHo`](https://wavesexplorer.com/addresses/3PR4678d7A5Vmp3Eak6YdyaV3x6gYDG1iHo) | `4UbWHQmobWm24MphrPxCipFCqKSLNSD9YQPZrgmGdRy1` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 KLUET/WAVES pool | [`3PHkPu7SeUp3csR346kHK7WjKCMkutak5kw`](https://wavesexplorer.com/addresses/3PHkPu7SeUp3csR346kHK7WjKCMkutak5kw) | `G9VjFPKFzT4STDhgE3f4WRF3oz3XFMLbJ2MtBJXCom1t` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+WSOL/USDT pool | [`3PFpXoNANUgkLtpQppR9d6skHAFVs18CK87`](https://wavesexplorer.com/addresses/3PFpXoNANUgkLtpQppR9d6skHAFVs18CK87) | `ZiTQwU18kLyxwDxPFxn5ut1MrnGp2Pi8EGuDAqosxxQ` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -362,12 +363,7 @@ voting_verified_v2 | [`3P4855PBM7UFPiDn8VC25LvqK8Yr9v5BawT`](https://wavesexplor
 | Name | AssetID | Description |
 |------|---------|-------------|
 2 PETE | [`9sgdTJZuFxnGHhBz3fdqwcmKVxQkcMXtNEwvLx7nAbZd`](https://wavesexplorer.com/assets/9sgdTJZuFxnGHhBz3fdqwcmKVxQkcMXtNEwvLx7nAbZd) | 2 Petes is better than 1 Pete. 1 Pete is a better rapper than 2pac. So here it goes, 2PETE! 
-3x4x4 | [`3rZzNcbFH1bunM7hVCq1sNxagG5dUVZmRzyWCM3UwEsy`](https://wavesexplorer.com/assets/3rZzNcbFH1bunM7hVCq1sNxagG5dUVZmRzyWCM3UwEsy) | DEX for p2p, bot's discord & telegram.
-Component for CEX.
-It's my life.
-Work : 2005-2x
-48*
-:D 
+3x4x4 | [`3rZzNcbFH1bunM7hVCq1sNxagG5dUVZmRzyWCM3UwEsy`](https://wavesexplorer.com/assets/3rZzNcbFH1bunM7hVCq1sNxagG5dUVZmRzyWCM3UwEsy) | DEX for p2p, bot's discord & telegram.<br>Component for CEX.<br>It's my life.<br>Work : 2005-2x<br>48*<br>:D 
 ACRES | [`4KvfJBzghmotV7MPWAoojerSbPud8ZgKYM4S3hvgssL8`](https://wavesexplorer.com/assets/4KvfJBzghmotV7MPWAoojerSbPud8ZgKYM4S3hvgssL8) | WavesLands land acres investment token 
 AFY Token | [`F8bmnoqNMxLRmgG3nnPUTAYCHA9iCvE6LpxnjYXKPL8y`](https://wavesexplorer.com/assets/F8bmnoqNMxLRmgG3nnPUTAYCHA9iCvE6LpxnjYXKPL8y) | AFY Token 
 Ahulinet | [`383XDbiSxMRecsPtkKiRq5ZrzecTcJLdK2XxYGaekeZV`](https://wavesexplorer.com/assets/383XDbiSxMRecsPtkKiRq5ZrzecTcJLdK2XxYGaekeZV) | i will become a billionaire 
@@ -389,22 +385,9 @@ BTCB-BSC-PPT | [`EW1uGLVo21Wd9i2Rhq8o4VKDTCQTGCGXE8DqayHGrLg8`](https://wavesexp
 BURN-XTN | [`3SjxA2YLdfF9fTRbzLm9xFn27C6MW34W1YsdJ6Axefns`](https://wavesexplorer.com/assets/3SjxA2YLdfF9fTRbzLm9xFn27C6MW34W1YsdJ6Axefns) | Constantly burn more XTN without draining collateral from Neutrino treasury and make a profit while doing so. Support Neutrino and the Waves ecosystem. For more info go to: www.burnxtn.tech 
 Cloud | [`HtcYCnSzEVu93915Je8L8GjdoygZKSTLYDiKvQUmbrhE`](https://wavesexplorer.com/assets/HtcYCnSzEVu93915Je8L8GjdoygZKSTLYDiKvQUmbrhE) | Cloud  is a modern token that will change the world. It can help in the field of education, medicine, science. With its help it will be possible to earn money for medical and educational services.  
 CRV-ERC20-PPT | [`FmsB2B21fVVetWvZm7Q48cC2Bvs2hEZtft49TBn3guV1`](https://wavesexplorer.com/assets/FmsB2B21fVVetWvZm7Q48cC2Bvs2hEZtft49TBn3guV1) | CRV ERC20 Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/CRV-ERC20-PPT 
-CSDT | [`GbZ28if9n6DQqudzmHPRVCjQaXe1X5KX7TNoUmHgP4q9`](https://wavesexplorer.com/assets/GbZ28if9n6DQqudzmHPRVCjQaXe1X5KX7TNoUmHgP4q9) | The Cyber Shield Devices Token is a cutting-edge digital asset designed to enhance cybersecurity and ensure seamless satellite internet connectivity for devices. In an increasingly complex digital landscape, CyberShield provides robust protection against cyber threats, featuring a specialized antivirus that safeguards devices in real time while guaranteeing reliable internet access.
-
-Leveraging advanced blockchain technology, CyberShield empowers users to secure their data through decentralized protocols, enabling proactive threat detection and mitigation. The token also connects users to a global network of satellite internet services, ensuring that even remote devices remain online and protected.
-
-With CyberShield Token, users can navigate the digital world with confidence, knowing their devices are fortified against attacks and their internet connections are secure. Join us in transforming cybersecurity and connectivity—experience peace of mind with CyberShield Devices. 
+CSDT | [`GbZ28if9n6DQqudzmHPRVCjQaXe1X5KX7TNoUmHgP4q9`](https://wavesexplorer.com/assets/GbZ28if9n6DQqudzmHPRVCjQaXe1X5KX7TNoUmHgP4q9) | The Cyber Shield Devices Token is a cutting-edge digital asset designed to enhance cybersecurity and ensure seamless satellite internet connectivity for devices. In an increasingly complex digital landscape, CyberShield provides robust protection against cyber threats, featuring a specialized antivirus that safeguards devices in real time while guaranteeing reliable internet access.<br><br>Leveraging advanced blockchain technology, CyberShield empowers users to secure their data through decentralized protocols, enabling proactive threat detection and mitigation. The token also connects users to a global network of satellite internet services, ensuring that even remote devices remain online and protected.<br><br>With CyberShield Token, users can navigate the digital world with confidence, knowing their devices are fortified against attacks and their internet connections are secure. Join us in transforming cybersecurity and connectivity—experience peace of mind with CyberShield Devices. 
 DAXCOIN | [`G6fYqzJsD142ZCb4tSv4cyfQqLGFThvDZQwRqKKk2Wfn`](https://wavesexplorer.com/assets/G6fYqzJsD142ZCb4tSv4cyfQqLGFThvDZQwRqKKk2Wfn) | innovation, speed, safety and overvaluation. come to daxcoin. 
-DecentralCoin | [`GhWsqQ3g23jwaAiYT5P3p5sWVwViCp64C6SDy3o1VZ7N`](https://wavesexplorer.com/assets/GhWsqQ3g23jwaAiYT5P3p5sWVwViCp64C6SDy3o1VZ7N) | Official DecentralCoin Gateway Token of the DecentralChain Blockchain.
-
-Website: https://DecentralChain.io
-
-Exchange: https://Decentral.Exchange
-
-Explorer: https://DecentralScan.com
-
-
- 
+DecentralCoin | [`GhWsqQ3g23jwaAiYT5P3p5sWVwViCp64C6SDy3o1VZ7N`](https://wavesexplorer.com/assets/GhWsqQ3g23jwaAiYT5P3p5sWVwViCp64C6SDy3o1VZ7N) | Official DecentralCoin Gateway Token of the DecentralChain Blockchain.<br><br>Website: https://DecentralChain.io<br><br>Exchange: https://Decentral.Exchange<br><br>Explorer: https://DecentralScan.com<br><br><br> 
 DEPS | [`C5Z9rc59bQgNF5GHsHxtRXJboGTMyXCFopsd7moevx4F`](https://wavesexplorer.com/assets/C5Z9rc59bQgNF5GHsHxtRXJboGTMyXCFopsd7moevx4F) | Deposit Coin 
 DOBERCOIN | [`AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc`](https://wavesexplorer.com/assets/AUcSEwD4A1siZB8vFrDeRk5xtfULVHAG5ztwcHo5cGhc) | A digital meme coin. Created in honor of a beloved pet. 
 DOGE | [`E5T5m8A6AC2NKetty2aSPF2gXLbZnQuPWPq1bijH4zhp`](https://wavesexplorer.com/assets/E5T5m8A6AC2NKetty2aSPF2gXLbZnQuPWPq1bijH4zhp) | Wrapped bridge token from BSC by wavesbridge.io 
@@ -415,20 +398,7 @@ EAST | [`3UHgFQECoynwC3iunYBnbhzmcCzC5gVnVZMv8Yw1bneK`](https://wavesexplorer.co
 eFranken | [`3D72RUJvJM1rMzw9VgrmU4SWjzEtYqHiLP9ZY7rhRw5c`](https://wavesexplorer.com/assets/3D72RUJvJM1rMzw9VgrmU4SWjzEtYqHiLP9ZY7rhRw5c) | Swiss cryptocurrency. See Parvex.org/eFranken 
 ENNO | [`7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg`](https://wavesexplorer.com/assets/7LMV3s1J4dKpMQZqge5sKYoFkZRLojnnU49aerqos4yg) | Native utility and governance token of Enno Wallet 
 ETH-Ethereum-PPT | [`3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13`](https://wavesexplorer.com/assets/3VuV5WTmDz47Dmdn3QpcYjzbSdipjQE4JMdNe1xZpX13) | ETH Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/ETH-Ethereum-PPT 
-FOBIA | [`FD2VhmVs6rVimxqmBCZCZhh1bkvYmjPAFLhtcbnabKK1`](https://wavesexplorer.com/assets/FD2VhmVs6rVimxqmBCZCZhh1bkvYmjPAFLhtcbnabKK1) | The FOBIA token is a new promising cryptocurrency that actively interacts with the community and has huge potential both for those who are going to invest in it at the start, and for those who want to buy it after it is promoted.
-
-Why is FOBIA the best choice:
-
-1. FOBIA has a huge potential for pumping, as there will be a huge promotion in social networks and the media sphere, the creation of a large number of giveaways, pools and other promotions to promote the token. 
-
-2. Social promotion:
-FOBIA will have a huge social base and prospects in the development of media, advertising will be bought from major YouTubers, the creation of viral content with the participation of the token and the creation of trash streams to promote the token. 
-
-3. The coin will be listed on major exchanges. 
-
-4. Airdrops and Token giveaways: FOBIA conducts regular airdrops and token giveaways among community members. 
-
-PHOBIA is one of the few experienced actresses that can be found in your portfolio. 
+FOBIA | [`FD2VhmVs6rVimxqmBCZCZhh1bkvYmjPAFLhtcbnabKK1`](https://wavesexplorer.com/assets/FD2VhmVs6rVimxqmBCZCZhh1bkvYmjPAFLhtcbnabKK1) | The FOBIA token is a new promising cryptocurrency that actively interacts with the community and has huge potential both for those who are going to invest in it at the start, and for those who want to buy it after it is promoted.<br><br>Why is FOBIA the best choice:<br><br>1. FOBIA has a huge potential for pumping, as there will be a huge promotion in social networks and the media sphere, the creation of a large number of giveaways, pools and other promotions to promote the token. <br><br>2. Social promotion:<br>FOBIA will have a huge social base and prospects in the development of media, advertising will be bought from major YouTubers, the creation of viral content with the participation of the token and the creation of trash streams to promote the token. <br><br>3. The coin will be listed on major exchanges. <br><br>4. Airdrops and Token giveaways: FOBIA conducts regular airdrops and token giveaways among community members. <br><br>PHOBIA is one of the few experienced actresses that can be found in your portfolio. 
 FREEDUROV | [`VkK5DnTYmzRWisfSypd5PxwyJVgWXDCsiZHasN21kmw`](https://wavesexplorer.com/assets/VkK5DnTYmzRWisfSypd5PxwyJVgWXDCsiZHasN21kmw) | Russia - FREEDUROV 
 FUDT | [`5Lhv8uKnvGxA2cjbFXXKZFASk1cAFp9dRWkmLYhULtSX`](https://wavesexplorer.com/assets/5Lhv8uKnvGxA2cjbFXXKZFASk1cAFp9dRWkmLYhULtSX) | FUDT is a community token. The token is using for activities in WAVES ecosystem like votings, advertising, activities etc. The token is an integral part of the FUD DAO. 
 GLF COIN | [`21j2vgdDsGtQGQd5s5rtdPK4yjF3tJTFb6JydUyyP35w`](https://wavesexplorer.com/assets/21j2vgdDsGtQGQd5s5rtdPK4yjF3tJTFb6JydUyyP35w) | GLF Network 
@@ -436,8 +406,7 @@ GOAT | [`Ea9Qxq3uM5MUwg7yEbvJ6aebVAi3yHaoHMtYj6zaRkWo`](https://wavesexplorer.co
 GORC | [`7n25Kre29ZaJRZuoQzYab7STyZW6iN5LE5Rv5ZNRSgCG`](https://wavesexplorer.com/assets/7n25Kre29ZaJRZuoQzYab7STyZW6iN5LE5Rv5ZNRSgCG) | Meme coin by God of Random Chance. Visit https://gorc.meme, sacrifice to the God of Random and you will receive an answer to any question or a blessing. Lucky one gets a Gift of God 
 gxWX | [`3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii`](https://wavesexplorer.com/assets/3TEr6AczV2N9Etz6Q76dDnv1kv4C7L5vR2oe7dnrLbii) | xWX - purpose of the token, increase the value and liquidity of the WX token.  The program will launch after the implementation of 15% of the emission of 1 xWX -1 WX with the support of the private capital community 
 HMSTR | [`DKa5Dzy42eKpTkQegaWcRJrgVthfpAqPgTz118j6Dtdj`](https://wavesexplorer.com/assets/DKa5Dzy42eKpTkQegaWcRJrgVthfpAqPgTz118j6Dtdj) | This is an Adapted Token Hamster Kombat that is naturalized on the Wave platform. 
-InfinityCoin | [`7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF`](https://wavesexplorer.com/assets/7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF) | 
-InfinityCoin: la criptovaluta del futuro. Sicura, veloce e senza intermediari, ti consente di trasferire valore in tutto il mondo con un semplice clic. Con la sua piattaforma di contratti intelligenti, puoi creare token personalizzati e avviare la tua attività basata su blockchain. Partecipa attivamente alle decisioni del progetto e godi di un ecosistema inclusivo. Lasciati trasportare verso l'infinito con InfinityCoin, dove le possibilità sono illimitate e il potenziale è senza confini. Unisciti a noi nella rivoluzione criptovalutaria e scopri l'eccitante futuro della finanza decentralizzata. 
+InfinityCoin | [`7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF`](https://wavesexplorer.com/assets/7jj2N37SzXoZeUHiXsBWvfs3q1B7jdx4hhgxHZigP5yF) | <br>InfinityCoin: la criptovaluta del futuro. Sicura, veloce e senza intermediari, ti consente di trasferire valore in tutto il mondo con un semplice clic. Con la sua piattaforma di contratti intelligenti, puoi creare token personalizzati e avviare la tua attività basata su blockchain. Partecipa attivamente alle decisioni del progetto e godi di un ecosistema inclusivo. Lasciati trasportare verso l'infinito con InfinityCoin, dove le possibilità sono illimitate e il potenziale è senza confini. Unisciti a noi nella rivoluzione criptovalutaria e scopri l'eccitante futuro della finanza decentralizzata. 
 Jerry | [`EteNGHJLf5vhGjS87C4mkKefBNZCiXJoQKwPRfmohdXQ`](https://wavesexplorer.com/assets/EteNGHJLf5vhGjS87C4mkKefBNZCiXJoQKwPRfmohdXQ) | The second main character of the cartoon "Tom and Jerry". He is the main target in various kinds of chases and fights for Tom the cat, and constantly tries to do some mischief to Tom. 
 KH   | [`71tShnZ6AdFUtJyQ1AnnfnTNE2P1fVkpxXpi8YXTEVRr`](https://wavesexplorer.com/assets/71tShnZ6AdFUtJyQ1AnnfnTNE2P1fVkpxXpi8YXTEVRr) | KH - from India to Jamaica - KH 
 KLUET | [`4fwWNGEzcytiGMiBeuDM7LQSr6LASyom66Qw9Tr2ax9m`](https://wavesexplorer.com/assets/4fwWNGEzcytiGMiBeuDM7LQSr6LASyom66Qw9Tr2ax9m) | Kluet Token By WX Network 
@@ -447,14 +416,10 @@ Krill | [`HrPA8VBPGicVukmy52EsgkGr5Appup4bfcoDjhioFkRE`](https://wavesexplorer.c
 L2MP | [`7scqyYoVsNrpWbTAc78eRqNVcYLxMPzZs8EQfX7ruJAg`](https://wavesexplorer.com/assets/7scqyYoVsNrpWbTAc78eRqNVcYLxMPzZs8EQfX7ruJAg) | Mining Power Token for WAVES EVM L2 bootstrapping. 
 Litecoin | [`HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk`](https://wavesexplorer.com/assets/HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk) | Litecoin token 
 LortrexNetwork | [`HdTuvhXu79Aar6K9q4KBcSM4DVoKejHsZ4pcMVtV5sJ6`](https://wavesexplorer.com/assets/HdTuvhXu79Aar6K9q4KBcSM4DVoKejHsZ4pcMVtV5sJ6) | Lortrex on WX Network 
-LozoTokeN | [`6NDqdJwiXzoYmuf1LV8xun7sfNpw9zEaF9fcosaMdgiP`](https://wavesexplorer.com/assets/6NDqdJwiXzoYmuf1LV8xun7sfNpw9zEaF9fcosaMdgiP) | The Ivorian Ga kingdom staking 
-Token market.
-  lozotoken@gmail.com .
- 
+LozoTokeN | [`6NDqdJwiXzoYmuf1LV8xun7sfNpw9zEaF9fcosaMdgiP`](https://wavesexplorer.com/assets/6NDqdJwiXzoYmuf1LV8xun7sfNpw9zEaF9fcosaMdgiP) | The Ivorian Ga kingdom staking <br>Token market.<br>  lozotoken@gmail.com .<br> 
 LUCKCOIN | [`GhaNEB5AHWko9RgGBt3y1xMEDBCNXFZF2FBVoogL2tet`](https://wavesexplorer.com/assets/GhaNEB5AHWko9RgGBt3y1xMEDBCNXFZF2FBVoogL2tet) | This token is created for all those people who want a special, one-of-a-kind victory in a very complicated world full of obstacles. 
 MANA | [`Aug9ccbPApb1hxXSue8fHuvbyMf1FV1BYBtLUuS5LZnU`](https://wavesexplorer.com/assets/Aug9ccbPApb1hxXSue8fHuvbyMf1FV1BYBtLUuS5LZnU) | Wrapped MANA token 
-Marquise Museum | [`BS1KFNR8zrXKBEWdUUvpaP6G57Hic3aESkwK7qQKdLpB`](https://wavesexplorer.com/assets/BS1KFNR8zrXKBEWdUUvpaP6G57Hic3aESkwK7qQKdLpB) | www.MarquiseMuseum.com
-Activated Museum Token-II 
+Marquise Museum | [`BS1KFNR8zrXKBEWdUUvpaP6G57Hic3aESkwK7qQKdLpB`](https://wavesexplorer.com/assets/BS1KFNR8zrXKBEWdUUvpaP6G57Hic3aESkwK7qQKdLpB) | www.MarquiseMuseum.com<br>Activated Museum Token-II 
 MATIC-POLY-PPT | [`AhGJvjtYmRG2pKwXvTh8N6sX1M2wNTpkjxaWKQfzJe7q`](https://wavesexplorer.com/assets/AhGJvjtYmRG2pKwXvTh8N6sX1M2wNTpkjxaWKQfzJe7q) | MATIC Token from Polygon network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/MATIC-POLY-PPT 
 MELANIA | [`441TtKJnEWsUzD7C4mCkNX6H58w1as4tCVjj89WnB97Z`](https://wavesexplorer.com/assets/441TtKJnEWsUzD7C4mCkNX6H58w1as4tCVjj89WnB97Z) | Wrapped token from Solana by wavesbridge.io 
 MEME0 | [`3eT9vmK4NLdpnnwYdYTGg26Va6Z8TWK38te6b2vVf9vJ`](https://wavesexplorer.com/assets/3eT9vmK4NLdpnnwYdYTGg26Va6Z8TWK38te6b2vVf9vJ) | zero layer of meme coins.  meme0.live 
@@ -468,9 +433,7 @@ OOH  | [`2xomKvm9SbdXCgD9rbDF52FzGxFmfmp6fGC18zzikPNz`](https://wavesexplorer.co
 PCBT | [`24WUa12Uq7HtpzKDcxgHt9KJMdMpz1sNU1q8QcUCy3Cu`](https://wavesexplorer.com/assets/24WUa12Uq7HtpzKDcxgHt9KJMdMpz1sNU1q8QcUCy3Cu) | PepeTeam Crosschain Bridge Token 
 PEPE | [`HZJVxPGGQodwNncFPZLGiBCDMGYgzVG8n1d4b7MLdWKx`](https://wavesexplorer.com/assets/HZJVxPGGQodwNncFPZLGiBCDMGYgzVG8n1d4b7MLdWKx) | Wrapped bridge token from Ethereum by wavesbridge.io 
 Perfection | [`31LrfAmRPURMhkXAA2kkMpy1j2DULVr3KyKnQ95cEzVW`](https://wavesexplorer.com/assets/31LrfAmRPURMhkXAA2kkMpy1j2DULVr3KyKnQ95cEzVW) | Created to praise the iconic "Perfection" Duck sold for $1,000,000 in 2021. PERFECTION to the moon! 
-PEST | [`7hi3116DGjNpwahf1uMattxa9QkWisq6jyhqWyMBHD8C`](https://wavesexplorer.com/assets/7hi3116DGjNpwahf1uMattxa9QkWisq6jyhqWyMBHD8C) | Pest Educational Solutions Token (PEST): 
-Membership token for the 123Pest network, users can earn tokens by learning about pest control, whilst creators earn tokens by providing great content.          
-www.123pest.com  
+PEST | [`7hi3116DGjNpwahf1uMattxa9QkWisq6jyhqWyMBHD8C`](https://wavesexplorer.com/assets/7hi3116DGjNpwahf1uMattxa9QkWisq6jyhqWyMBHD8C) | Pest Educational Solutions Token (PEST): <br>Membership token for the 123Pest network, users can earn tokens by learning about pest control, whilst creators earn tokens by providing great content.          <br>www.123pest.com  
 PETE | [`GAzAEjApmjMYZKPzri2g2VUXNvTiQGF7KDYZFFsP3AEq`](https://wavesexplorer.com/assets/GAzAEjApmjMYZKPzri2g2VUXNvTiQGF7KDYZFFsP3AEq) | PETE.SO 
 PL-WAVES | [`6DD42Rvu7Dd9Wp7g5LGAmLzuGt49uCqyRRyjy1JKaCrA`](https://wavesexplorer.com/assets/6DD42Rvu7Dd9Wp7g5LGAmLzuGt49uCqyRRyjy1JKaCrA) | Puzzle Lend LP token. Derivative for the WAVES token on the Waves blockchain. lend.puzzleswap.org 
 PLUTO | [`Ajso6nTTjptu2UHLx6hfSXVtHFtRBJCkKYd5SAyj7zf5`](https://wavesexplorer.com/assets/Ajso6nTTjptu2UHLx6hfSXVtHFtRBJCkKYd5SAyj7zf5) | Reserve currency built on top of the Waves Blockchain. 
@@ -484,48 +447,28 @@ PZ BARSIK | [`GWMgup79SpFF3DTTbEZrVpAEYx1tLAH97pLpJiwFApDX`](https://wavesexplor
 PZ MEGAMEME | [`BzAhuKAem8g3L65hHpQ5thAhDG4fW9MHqCWAt6Zt7ZAV`](https://wavesexplorer.com/assets/BzAhuKAem8g3L65hHpQ5thAhDG4fW9MHqCWAt6Zt7ZAV) | Puzzle Swap: pool index token 
 QUADROBER | [`DHm7ZknCg7am9SxmQhwJ7rpJu3qrSTT1XmC3ciX9FFNE`](https://wavesexplorer.com/assets/DHm7ZknCg7am9SxmQhwJ7rpJu3qrSTT1XmC3ciX9FFNE) | QUADROBER is not a QUADROBER if there is no QUADROBER !!! 
 RACE | [`D4TPjtzpsDEJFS1pUAkvh1tJJJMNWGcSrds9sveBoQka`](https://wavesexplorer.com/assets/D4TPjtzpsDEJFS1pUAkvh1tJJJMNWGcSrds9sveBoQka) | MetaRace.com utility token: GameFi project combining cyber sport and NFTs. 
-RAPS | [`AXXQDde8Dphp9aocNMJmNQqRRgPtrsCPeb4S7TBi5k17`](https://wavesexplorer.com/assets/AXXQDde8Dphp9aocNMJmNQqRRgPtrsCPeb4S7TBi5k17) | Криптоактив компании Радиолом Кострома
-Используется для премиальных бонусов сотрудникам организации, лицам осуществляющим поставку сырья, субъектам приобретающим продукцию сообщества
-Компания осуществляет свою деятельность с 2018 года инвестирует в цветные редкоземельные драгоценные металлы и криптовалюту
-Сайт 44.okis.ru
-Почта Gold4411a@yandex.ru 
+RAPS | [`AXXQDde8Dphp9aocNMJmNQqRRgPtrsCPeb4S7TBi5k17`](https://wavesexplorer.com/assets/AXXQDde8Dphp9aocNMJmNQqRRgPtrsCPeb4S7TBi5k17) | Криптоактив компании Радиолом Кострома<br>Используется для премиальных бонусов сотрудникам организации, лицам осуществляющим поставку сырья, субъектам приобретающим продукцию сообщества<br>Компания осуществляет свою деятельность с 2018 года инвестирует в цветные редкоземельные драгоценные металлы и криптовалюту<br>Сайт 44.okis.ru<br>Почта Gold4411a@yandex.ru 
 RASD | [`FiY6vdPBdYgsKYYEbFdW9fQJaH2KrqXJjUPcg72eyz7S`](https://wavesexplorer.com/assets/FiY6vdPBdYgsKYYEbFdW9fQJaH2KrqXJjUPcg72eyz7S) | Official token for Rasda Token  1:1 backed by Rasda Token 
 RCVC | [`E6bmKBwS1CFs3EJ1WrNRzBbMGHitsCwJwf7nyCqWRqYF`](https://wavesexplorer.com/assets/E6bmKBwS1CFs3EJ1WrNRzBbMGHitsCwJwf7nyCqWRqYF) | Réussir Chez Vous 
-Rebuild | [`2ZNFaFYuHJP9Fuo5y6d6gMfYcBaNdV56KcmBPoR51ysN`](https://wavesexplorer.com/assets/2ZNFaFYuHJP9Fuo5y6d6gMfYcBaNdV56KcmBPoR51ysN) | Welcome to learn about 'Rebuild,' a virtual currency dedicated to the reconstruction and preservation of countries affected by wars and natural disasters. Its aim is to contribute to the repair of schools and hospitals devastated by conflicts, as well as the safeguarding of the severely impacted local ecosystem.
-
-Key features of Rebuild:
-Post-conflict reconstruction: A portion of the transactions will be used to fund projects for rebuilding damaged schools and hospitals, restoring essential services, providing access to education and healthcare, and preserving the environment. Additionally, part of the funds raised will be allocated to protecting the local flora and fauna affected by disasters, preserving biodiversity and ecological balance.
-
-Transparency and accountability: Blockchain technology will ensure the traceability and transparency of donations and the use of funds, ensuring that every contribution is utilized for its intended purposes. 
+Rebuild | [`2ZNFaFYuHJP9Fuo5y6d6gMfYcBaNdV56KcmBPoR51ysN`](https://wavesexplorer.com/assets/2ZNFaFYuHJP9Fuo5y6d6gMfYcBaNdV56KcmBPoR51ysN) | Welcome to learn about 'Rebuild,' a virtual currency dedicated to the reconstruction and preservation of countries affected by wars and natural disasters. Its aim is to contribute to the repair of schools and hospitals devastated by conflicts, as well as the safeguarding of the severely impacted local ecosystem.<br><br>Key features of Rebuild:<br>Post-conflict reconstruction: A portion of the transactions will be used to fund projects for rebuilding damaged schools and hospitals, restoring essential services, providing access to education and healthcare, and preserving the environment. Additionally, part of the funds raised will be allocated to protecting the local flora and fauna affected by disasters, preserving biodiversity and ecological balance.<br><br>Transparency and accountability: Blockchain technology will ensure the traceability and transparency of donations and the use of funds, ensuring that every contribution is utilized for its intended purposes. 
 ROME | [`AP4Cb5xLYGH6ZigHreCZHoXpQTWDkPsG2BHqfDUx6taJ`](https://wavesexplorer.com/assets/AP4Cb5xLYGH6ZigHreCZHoXpQTWDkPsG2BHqfDUx6taJ) | Rome. Res Stabilis Ultima. 
-RoyalGacoin | [`G1tyWnzaEfWNevesep8d13MAhsrxSoS7QDBUtEQ7vA1d`](https://wavesexplorer.com/assets/G1tyWnzaEfWNevesep8d13MAhsrxSoS7QDBUtEQ7vA1d) | La crypto monnaie royal du peuple Ga est une crypto monnaie qui intervient dans plusieurs projets lucratives tout genre d'investissement inclus, la monnaie ce veut participante à la lutte contre la pauvreté et encourager les jeunes entrepreneurs et investisseurs. Les parts des investisseurs seront reversés selon la participation du capital émis par chacun. RoyalGacoin  http://gakingdomcoin.news.blog/   email : 
-gabusinesspeuple@gmail.com  
+RoyalGacoin | [`G1tyWnzaEfWNevesep8d13MAhsrxSoS7QDBUtEQ7vA1d`](https://wavesexplorer.com/assets/G1tyWnzaEfWNevesep8d13MAhsrxSoS7QDBUtEQ7vA1d) | La crypto monnaie royal du peuple Ga est une crypto monnaie qui intervient dans plusieurs projets lucratives tout genre d'investissement inclus, la monnaie ce veut participante à la lutte contre la pauvreté et encourager les jeunes entrepreneurs et investisseurs. Les parts des investisseurs seront reversés selon la participation du capital émis par chacun. RoyalGacoin  http://gakingdomcoin.news.blog/   email : <br>gabusinesspeuple@gmail.com  
 ROYFIN | [`AsaPipSDiWVeaiAnkcp9XBpRe7WS4GYqZS3QFzixwoxR`](https://wavesexplorer.com/assets/AsaPipSDiWVeaiAnkcp9XBpRe7WS4GYqZS3QFzixwoxR) | Royal Finance By WX Network 
 SANCHO | [`Gc7cmreP1F3w7SNTiYNMrRUZibHXZSerkStZ4eWQnfAP`](https://wavesexplorer.com/assets/Gc7cmreP1F3w7SNTiYNMrRUZibHXZSerkStZ4eWQnfAP) | Sancho - the first meme coin managed by AI 
 Sanchos | [`7KA6AQziGz3aPbzyHszoi4hdF9q4kCNPJWLUACuCJB4n`](https://wavesexplorer.com/assets/7KA6AQziGz3aPbzyHszoi4hdF9q4kCNPJWLUACuCJB4n) | Sanchos, a promising cryptocurrency with high potential. The cryptocurrency will be useful for mining. 
 SAND | [`8YyrMfuBdZ5gtMWkynLTveRvGb6LJ4Aff9rpz46UUMW`](https://wavesexplorer.com/assets/8YyrMfuBdZ5gtMWkynLTveRvGb6LJ4Aff9rpz46UUMW) | Wrapped SAND token 
 Sasha-X | [`Fz1S3rRAF8RaBoFSKoohDxzfPBX4Jj8mCTFn1Mab8H3x`](https://wavesexplorer.com/assets/Fz1S3rRAF8RaBoFSKoohDxzfPBX4Jj8mCTFn1Mab8H3x) | I am Sasha sturgeon, a very valuable fish in the Waves network.  I have 52,653 eggs - a limited collection.  IDO will automatically launch after verification.  The entire issue will be offered at a fixed price.  The offer period is one month. 
-SBT  | [`vAYvjoLheNuvi2wRdQYK9NUjJ6ZQ5EkAtx7jy36rK13`](https://wavesexplorer.com/assets/vAYvjoLheNuvi2wRdQYK9NUjJ6ZQ5EkAtx7jy36rK13) | SBT is the native platform token for StakeBooster - https://stakebooster.com/
-
-StakeBooster is a non-custodial platform provides an array of tools to help you maximize the potential of your digital assets, whether you are an individual, a DAO, or another protocol. 
-By accumulating gWX, StakeBooster provides access to enhanced yield for liquidity providers without the need to lock WX. 
-WX holders, on the other hand, can use StakeBooster to lock WX and receive the liquid derivative sbWX, as well as additional income in the form of revenue share from earned rewards.
- 
+SBT  | [`vAYvjoLheNuvi2wRdQYK9NUjJ6ZQ5EkAtx7jy36rK13`](https://wavesexplorer.com/assets/vAYvjoLheNuvi2wRdQYK9NUjJ6ZQ5EkAtx7jy36rK13) | SBT is the native platform token for StakeBooster - https://stakebooster.com/<br><br>StakeBooster is a non-custodial platform provides an array of tools to help you maximize the potential of your digital assets, whether you are an individual, a DAO, or another protocol. <br>By accumulating gWX, StakeBooster provides access to enhanced yield for liquidity providers without the need to lock WX. <br>WX holders, on the other hand, can use StakeBooster to lock WX and receive the liquid derivative sbWX, as well as additional income in the form of revenue share from earned rewards.<br> 
 sbWX | [`DeGaQpMuhAfey8A2VLZzbwnfdMVLzGh43Fox5vrHGuJH`](https://wavesexplorer.com/assets/DeGaQpMuhAfey8A2VLZzbwnfdMVLzGh43Fox5vrHGuJH) | sbWX is a tokenized version of locked gWX that is liquid (can be traded), and still receives protocol rewards. Provide liquidity to sbWX/WX pool on StakeBooster to get boosted yield: https://stakebooster.com/ 
 SETON | [`55YxziUUXkUfJba8CseGzAtGsTy39BJXFSF5s1Wk5Sa8`](https://wavesexplorer.com/assets/55YxziUUXkUfJba8CseGzAtGsTy39BJXFSF5s1Wk5Sa8) | The main token-share of the Seton trading scalper bot 
 SHIB | [`5biEgTRSShGKfAq2Znv1xzyT7SEddymajpBgYfQj2xq4`](https://wavesexplorer.com/assets/5biEgTRSShGKfAq2Znv1xzyT7SEddymajpBgYfQj2xq4) | Wrapped bridge token from Ethereum by wavesbridge.io 
 SIGN | [`9sQutD5HnRvjM1uui5cVC4w9xkMPAfYEV8ymug3Mon2Y`](https://wavesexplorer.com/assets/9sQutD5HnRvjM1uui5cVC4w9xkMPAfYEV8ymug3Mon2Y) | SignatureChain (SIGN) aims to decentralize a mainly centralized procedure - document certification. Blockchain technology will be utilized to certify various amounts of files, videos, and many more. 
 Sparkcoin | [`DE4pXnjNXz3Nb8M2tfDN1fXGhEaHchyS2t4yfbepGVCd`](https://wavesexplorer.com/assets/DE4pXnjNXz3Nb8M2tfDN1fXGhEaHchyS2t4yfbepGVCd) | — 
 SPICE | [`6jsmMsMfpJWqxSGyxrkTvH5zZyaQd2P6VEY9fBz2T8FB`](https://wavesexplorer.com/assets/6jsmMsMfpJWqxSGyxrkTvH5zZyaQd2P6VEY9fBz2T8FB) | Waves Ducks Hunt Game Token 
-SpitzCaramelo | [`GmAPBtY2H6CeKCoZVhzRfgjxk2YVrekaTYZTEXFRi9P1`](https://wavesexplorer.com/assets/GmAPBtY2H6CeKCoZVhzRfgjxk2YVrekaTYZTEXFRi9P1) | BR: siga-nos nas redes sociais, EN:follow us on social media, DE: Folgen Sie uns in den sozialen Medien, FR:suivez-nous sur les réseaux sociaux:  tiktok.com/@spitzcaramelo, youtube.com/@spitzcaramelo, instagram.com/spitzcaramelo, t.me/spitzcaramelo 
-BR: SpitzCaramelo foi criado para homenagear todos caes da raça "Spitz Alemão Anão".
-EN: SpitzCaramelo was created to honor all dogs of the Dwarf "German Spitz breed".
-DE: SpitzCaramelo wurde geschaffen, um alle Hunde der zwergdeutschen "Spitzrasse zu ehren".
-FR: SpitzCaramelo a été créé pour honorer tous les chiens de la race "Spitz allemand nain". 
+SpitzCaramelo | [`GmAPBtY2H6CeKCoZVhzRfgjxk2YVrekaTYZTEXFRi9P1`](https://wavesexplorer.com/assets/GmAPBtY2H6CeKCoZVhzRfgjxk2YVrekaTYZTEXFRi9P1) | BR: siga-nos nas redes sociais, EN:follow us on social media, DE: Folgen Sie uns in den sozialen Medien, FR:suivez-nous sur les réseaux sociaux:  tiktok.com/@spitzcaramelo, youtube.com/@spitzcaramelo, instagram.com/spitzcaramelo, t.me/spitzcaramelo <br>BR: SpitzCaramelo foi criado para homenagear todos caes da raça "Spitz Alemão Anão".<br>EN: SpitzCaramelo was created to honor all dogs of the Dwarf "German Spitz breed".<br>DE: SpitzCaramelo wurde geschaffen, um alle Hunde der zwergdeutschen "Spitzrasse zu ehren".<br>FR: SpitzCaramelo a été créé pour honorer tous les chiens de la race "Spitz allemand nain". 
 SpitzCoin 🐕 | [`8KEUsgGQdktr6GiLHH1BVVEN3K1hcHPgHU9VdKRAuNUo`](https://wavesexplorer.com/assets/8KEUsgGQdktr6GiLHH1BVVEN3K1hcHPgHU9VdKRAuNUo) | Token created by SpitzCoin whales meeting up to benefit the two networks, rate 1:1. 
 SPX6900 | [`GgQqNhBQ3UTfENpKhpgxj7Rz5PD4amtTkod5JHN5c6kv`](https://wavesexplorer.com/assets/GgQqNhBQ3UTfENpKhpgxj7Rz5PD4amtTkod5JHN5c6kv) | Wrapped bridge token from Solana by wavesbridge.io 
-STALKER | [`hcDYZLsyhQrcVbDvmJPcHsunDzafe1j2edZjQZZjb2y`](https://wavesexplorer.com/assets/hcDYZLsyhQrcVbDvmJPcHsunDzafe1j2edZjQZZjb2y) | Unofficial fan token of the game S.T.A.L.K.E.R.
-https://www.gsc-game.com/ 
+STALKER | [`hcDYZLsyhQrcVbDvmJPcHsunDzafe1j2edZjQZZjb2y`](https://wavesexplorer.com/assets/hcDYZLsyhQrcVbDvmJPcHsunDzafe1j2edZjQZZjb2y) | Unofficial fan token of the game S.T.A.L.K.E.R.<br>https://www.gsc-game.com/ 
 STEMX | [`4paftYM63FxjDL8RbMboEGLwce1BGasZCfHgVz5s9M3Z`](https://wavesexplorer.com/assets/4paftYM63FxjDL8RbMboEGLwce1BGasZCfHgVz5s9M3Z) | STEM - sport token exchange market. STEMX.PRO 
 STHN | [`6cno9pRczRwh9qs75pxZz4n5H9rSqYEnmmSPdaZs1pvb`](https://wavesexplorer.com/assets/6cno9pRczRwh9qs75pxZz4n5H9rSqYEnmmSPdaZs1pvb) | Sthanin Network 
 SURF | [`At8D6NFFpheCbvKVnjVoeLL84Eo8NZn6ovManxfLaFWL`](https://wavesexplorer.com/assets/At8D6NFFpheCbvKVnjVoeLL84Eo8NZn6ovManxfLaFWL) | Smart Utility Recapitalization Feature 
@@ -534,16 +477,14 @@ SWOP | [`Ehie5xYpeN8op1Cctc6aGUrqx8jq3jtf1DSjXDbfm7aT`](https://wavesexplorer.co
 TEAM FOMO | [`J4iWJS2kGmAqLC4dYFuHvmqXK1E6rBJaRTA6nd1VmFkj`](https://wavesexplorer.com/assets/J4iWJS2kGmAqLC4dYFuHvmqXK1E6rBJaRTA6nd1VmFkj) | Team token for the "TEAM FOMO" collective farm 
 TEAM STREET | [`DAGQvqQg4F5YTQCQ5JFaVJdZEVoTvecuw2W9ybL5P1hR`](https://wavesexplorer.com/assets/DAGQvqQg4F5YTQCQ5JFaVJdZEVoTvecuw2W9ybL5P1hR) | Team token for the "TEAM STREET" collective farm 
 The number 23 | [`6rE88UixaXYv8kKjjhGKoAm3Vycv9wLz2Esd5gv3sWuw`](https://wavesexplorer.com/assets/6rE88UixaXYv8kKjjhGKoAm3Vycv9wLz2Esd5gv3sWuw) | "There's no such thing as destiny. There are only different choices. Some choices are easy, some aren't. Those are the really important ones, the ones that define us as people." 
-TheGakingdom | [`3a6ZAyDXMfM4dJgLpEEgju8pr5vHd1Yi2nPrg65WZnrJ`](https://wavesexplorer.com/assets/3a6ZAyDXMfM4dJgLpEEgju8pr5vHd1Yi2nPrg65WZnrJ) | La crypto monnaie du royaume Ga du Loh-djiboua  est une crypto monnaie qui intervient dans plusieurs projets d'investissement tel que l'immobilier, l'agriculture, l'élevage, le commerce, le transport et dans le business numérique. La crypto monnaie royal participer au développement et encourage Entrepreneuriat des jeunes. 
-Le site internet : https://gakingdomcoinmarket.business.blog/ email : ogasika87@gmail.com  
+TheGakingdom | [`3a6ZAyDXMfM4dJgLpEEgju8pr5vHd1Yi2nPrg65WZnrJ`](https://wavesexplorer.com/assets/3a6ZAyDXMfM4dJgLpEEgju8pr5vHd1Yi2nPrg65WZnrJ) | La crypto monnaie du royaume Ga du Loh-djiboua  est une crypto monnaie qui intervient dans plusieurs projets d'investissement tel que l'immobilier, l'agriculture, l'élevage, le commerce, le transport et dans le business numérique. La crypto monnaie royal participer au développement et encourage Entrepreneuriat des jeunes. <br>Le site internet : https://gakingdomcoinmarket.business.blog/ email : ogasika87@gmail.com  
 TITS | [`4kedYPas1UEswFS5982TVVYshQeffyKiBQadJkd3inAJ`](https://wavesexplorer.com/assets/4kedYPas1UEswFS5982TVVYshQeffyKiBQadJkd3inAJ) | TITS aims to create an ecosystem where innovation and technology can thrive, and participants are rewarded for their contributions and active involvement. Everybody loves it 
 TLIZT | [`6KaN53eZs1wRr6mNomSLvBbdQZTHiLUgkitJ87yNaKXz`](https://wavesexplorer.com/assets/6KaN53eZs1wRr6mNomSLvBbdQZTHiLUgkitJ87yNaKXz) | The TLIZT Project 
-TRUMP | [`97nUwSbdKLtzvduu3wdxP8kTQeSWwBTHL81L2FVPL9Hy`](https://wavesexplorer.com/assets/97nUwSbdKLtzvduu3wdxP8kTQeSWwBTHL81L2FVPL9Hy) | Wrapped token from Solana by wavesbridge.io 
 TRUMP | [`G1y5DP5sXJdnnniLuGwiMnFuEoatRxJpaRuv8SECKhqq`](https://wavesexplorer.com/assets/G1y5DP5sXJdnnniLuGwiMnFuEoatRxJpaRuv8SECKhqq) | From Russia with Love! 
+TRUMP | [`97nUwSbdKLtzvduu3wdxP8kTQeSWwBTHL81L2FVPL9Hy`](https://wavesexplorer.com/assets/97nUwSbdKLtzvduu3wdxP8kTQeSWwBTHL81L2FVPL9Hy) | Wrapped token from Solana by wavesbridge.io 
 TRX-TRON-PPT | [`Fwvk46RZ4iBg4L9GzwjQ7jwVsEScn4aPD32V6wftTLHQ`](https://wavesexplorer.com/assets/Fwvk46RZ4iBg4L9GzwjQ7jwVsEScn4aPD32V6wftTLHQ) | TRX Token from Tron network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/TRX-TRON-PPT 
 Tsunami Token | [`8t4DPWTwPzpatHA9AkTxWAB47THnYzBsDnoY7fQqbG91`](https://wavesexplorer.com/assets/8t4DPWTwPzpatHA9AkTxWAB47THnYzBsDnoY7fQqbG91) | Tsunami Staking & Governance Token 
-TurtleNetwork | [`bPWkA3MNyEr1TuDchWgdpqJZhGhfPXj7dJdr3qiW2kD`](https://wavesexplorer.com/assets/bPWkA3MNyEr1TuDchWgdpqJZhGhfPXj7dJdr3qiW2kD) | Official token for TurtleNetwork
-1:1 backed by TurtleNetwork 
+TurtleNetwork | [`bPWkA3MNyEr1TuDchWgdpqJZhGhfPXj7dJdr3qiW2kD`](https://wavesexplorer.com/assets/bPWkA3MNyEr1TuDchWgdpqJZhGhfPXj7dJdr3qiW2kD) | Official token for TurtleNetwork<br>1:1 backed by TurtleNetwork 
 UNIT0 | [`GjwAHMjqWzYR4LgoNy91CxUKAGJN79h2hseZoae4nU8t`](https://wavesexplorer.com/assets/GjwAHMjqWzYR4LgoNy91CxUKAGJN79h2hseZoae4nU8t) | Unit Zero Mainnet Token | https://units.network 
 USD Coin | [`6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ`](https://wavesexplorer.com/assets/6XtHjpXbs9RRJP2Sr9GUyVqzACcby9TkThHXnjVC5CDJ) | USDC token 
 USDC-BSC-PPT | [`4BKKSp6NoNcrFHyorZogDyctq1fq6w7114Ym1pw6HUtC`](https://wavesexplorer.com/assets/4BKKSp6NoNcrFHyorZogDyctq1fq6w7114Ym1pw6HUtC) | USDC Token from Binance Smart Chain network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/USDC-BSC-PPT 
@@ -565,8 +506,7 @@ Waves World | [`AbunLGErT5ctzVN8MVjb4Ad9YgjpubB8Hqb17VxzfAck`](https://wavesexpl
 WavesCommunity | [`DHgwrRvVyqJsepd32YbBqUeDH4GJ1N984X8QoekjgH8J`](https://wavesexplorer.com/assets/DHgwrRvVyqJsepd32YbBqUeDH4GJ1N984X8QoekjgH8J) | Waves community token. 
 WAVESDLP | [`HYogWffUjS8Uw4bYA1Dn3qrGmJerMqkf139aJcHhk8yq`](https://wavesexplorer.com/assets/HYogWffUjS8Uw4bYA1Dn3qrGmJerMqkf139aJcHhk8yq) | WavesDAO liquidity provider token. https://wavesdao.tech/ 
 WAXS | [`ATQdLbehsMrmHZLNFhUm1r6s14NBT5JCFcSJGpaMrkAr`](https://wavesexplorer.com/assets/ATQdLbehsMrmHZLNFhUm1r6s14NBT5JCFcSJGpaMrkAr) | Wrapped AXS token 
-WBriacash | [`8caLEWCK2PWtJ9d3Qw7xxoBqV9p2fxpRLZCbrDAg6A5U`](https://wavesexplorer.com/assets/8caLEWCK2PWtJ9d3Qw7xxoBqV9p2fxpRLZCbrDAg6A5U) | WBRIACASH - DIGITAL SHARE DISTRIBUTION OF PROFITS
-https://briacash.pro 
+WBriacash | [`8caLEWCK2PWtJ9d3Qw7xxoBqV9p2fxpRLZCbrDAg6A5U`](https://wavesexplorer.com/assets/8caLEWCK2PWtJ9d3Qw7xxoBqV9p2fxpRLZCbrDAg6A5U) | WBRIACASH - DIGITAL SHARE DISTRIBUTION OF PROFITS<br>https://briacash.pro 
 WBriacash~WXLP | [`8K4WvP4K9GsesRu9njfc86mXZooVAP3sanN9WSCpZiaw`](https://wavesexplorer.com/assets/8K4WvP4K9GsesRu9njfc86mXZooVAP3sanN9WSCpZiaw) | WBriacash~/WX pool liquidity provider token 
 WBTC | [`8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS`](https://wavesexplorer.com/assets/8LQW8f7P5d5PZM7GtZEBgaqRPGSzS3DfPuiXrURJ4AJS) | Bitcoin Token 
 WBTC-ERC20-PPT | [`2Fge5HEBRD3XTeg7Xg3FW5yiB9HVJFQtMXiWMQo72Up6`](https://wavesexplorer.com/assets/2Fge5HEBRD3XTeg7Xg3FW5yiB9HVJFQtMXiWMQo72Up6) | WBTC ERC20 Token from Ethereum network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/WBTC-ERC20-PPT 
@@ -581,6 +521,7 @@ WFTT | [`2Fh9m3dNQXycHdnytEaETN3P1gDT7ij5U4HjMqQBeaqN`](https://wavesexplorer.co
 WGRT | [`A1uMqYTzBdakuSNDv7CruWXP8mRZ4EkHwmip2RCauyZH`](https://wavesexplorer.com/assets/A1uMqYTzBdakuSNDv7CruWXP8mRZ4EkHwmip2RCauyZH) | Wrapped GRT token 
 WIND | [`6TXFMpr6rG4tr2CuPmVRq1NsjgPLJ59s2VMVnL1ZLtpR`](https://wavesexplorer.com/assets/6TXFMpr6rG4tr2CuPmVRq1NsjgPLJ59s2VMVnL1ZLtpR) | Puzzle Swap: pool index token 
 WLGOLD | [`7E26JWe8XYXf4jNxH7CDAdFUjTg5fCTChHoCuZmfUoy1`](https://wavesexplorer.com/assets/7E26JWe8XYXf4jNxH7CDAdFUjTg5fCTChHoCuZmfUoy1) | WavesLands Gold investment token 
+WSOL | [`BtL3whCPSJofCtAgKDQgWwa9YmiYjJb9bFg778fy2B6h`](https://wavesexplorer.com/assets/BtL3whCPSJofCtAgKDQgWwa9YmiYjJb9bFg778fy2B6h) | Wrapped token from Solana by wavesbridge.io 
 WTDX | [`CBpA9zQMGiUvug1w8RRxFMq9VbLHwnidAYVni6gQcfeX`](https://wavesexplorer.com/assets/CBpA9zQMGiUvug1w8RRxFMq9VbLHwnidAYVni6gQcfeX) | Wrapped TIDEX token is a service intra-exchange token that allows you to use the Tidex Exchange tidex.com (https://tidex.com/) at the highest level, providing special features to its users. 
 WUNCOIN | [`4BoqqmFns9SbofSMd11e1sjmy1LTpbXwavFUNGL9xLFX`](https://wavesexplorer.com/assets/4BoqqmFns9SbofSMd11e1sjmy1LTpbXwavFUNGL9xLFX) | World Union Nation State Coin 
 WUNI | [`4YmM7mj3Av4DPvpNpbtK4jHbpzYDcZuY6UUnYpqTbzLj`](https://wavesexplorer.com/assets/4YmM7mj3Av4DPvpNpbtK4jHbpzYDcZuY6UUnYpqTbzLj) | Wrapped UNI token 
@@ -865,6 +806,7 @@ WESTXTNLP | [`CaryXC3PhVr1rTxUGk8Bx7CcoxPX9ea3F5RGFiCe98Jr`](https://wavesexplor
 WIND~WAVESLP | [`2dQqyqwo8S26kVUnFAe5LqHgNtU8FYG8vvZkrEzLEkiv`](https://wavesexplorer.com/assets/2dQqyqwo8S26kVUnFAe5LqHgNtU8FYG8vvZkrEzLEkiv) | WIND~/WAVES pool liquidity provider token 
 WLGOLD~WAVESLP | [`FN5GTbTYn3HoWqRY4zAFstzXmDxpdwgiVLSxaot125xH`](https://wavesexplorer.com/assets/FN5GTbTYn3HoWqRY4zAFstzXmDxpdwgiVLSxaot125xH) | WLGOLD~/WAVES pool liquidity provider token 
 WLG~USDT-ERC20LP | [`5ZXAMaVNwAqrS3cYjJTE6AQ5etQQ7aqbPhKFEq3kp4GU`](https://wavesexplorer.com/assets/5ZXAMaVNwAqrS3cYjJTE6AQ5etQQ7aqbPhKFEq3kp4GU) | WLG~/USDT-ERC20 pool liquidity provider token 
+WSOL~USDTLP | [`8g9amoqhp7giZ9ophFZZZNJiFBmsXKKE8YEqcTZUaWs6`](https://wavesexplorer.com/assets/8g9amoqhp7giZ9ophFZZZNJiFBmsXKKE8YEqcTZUaWs6) | WSOL~/USDT pool liquidity provider token 
 WUNCOIN~USDTLP | [`B3AFXsfCZfh6f7qkX6jmXYwDSKQXafT3Zaf8AK8kMuKq`](https://wavesexplorer.com/assets/B3AFXsfCZfh6f7qkX6jmXYwDSKQXafT3Zaf8AK8kMuKq) | WUNCOIN~/USDT pool liquidity provider token 
 WUNCOIN~WAVESLP | [`EKPJvGrHPFbYyhNLgezkX7CKbzJ5RtteStLdyYWhtyCc`](https://wavesexplorer.com/assets/EKPJvGrHPFbYyhNLgezkX7CKbzJ5RtteStLdyYWhtyCc) | WUNCOIN~/WAVES pool liquidity provider token 
 WWXTNLP | [`CJuMAECUKr5j3qtCLJ76W5emFDGP9MpDCZ9Ge9s5aAyM`](https://wavesexplorer.com/assets/CJuMAECUKr5j3qtCLJ76W5emFDGP9MpDCZ9Ge9s5aAyM) | WX WW/XTN pool liquidity provider token 

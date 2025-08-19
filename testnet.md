@@ -1,5 +1,5 @@
 # Testnet environment
-[**wxdefi-502-futures**](https://github.com/waves-exchange/contracts/tree/wxdefi-502-futures) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **17:23 12.08.2025** (GMT+4)
+[**wxdefi-502-futures**](https://github.com/waves-exchange/contracts/tree/wxdefi-502-futures) branch deployed to **testnet** network to **https://testnet.waves.exchange**. Table updated at **13:13 19.08.2025** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -110,9 +110,7 @@ PETE | [`H3GpF45ZwpMGA9ZX5B5eU1ZfJHpM2auqW3TKf9CLVatL`](https://wavesexplorer.co
 SBTC | [`6PkGTCJMnfhmTB3YZ9945J7sqeJeMaoo2c6jhkWU4iJv`](https://wavesexplorer.com/assets/6PkGTCJMnfhmTB3YZ9945J7sqeJeMaoo2c6jhkWU4iJv?network=testnet) | Synthetic BTC 
 SETH | [`8LPQ4M2K3YaeLaq6pmk6V6YbNETeRxaoKSbWueLBoaRs`](https://wavesexplorer.com/assets/8LPQ4M2K3YaeLaq6pmk6V6YbNETeRxaoKSbWueLBoaRs?network=testnet) | Synthetic ETH 
 shrek | [`AjyuN5ry5wbf2YoAtjxxEe8DhfYiha81bkF1wMfhAyTW`](https://wavesexplorer.com/assets/AjyuN5ry5wbf2YoAtjxxEe8DhfYiha81bkF1wMfhAyTW?network=testnet) | shrek is love shrek is life shrek is love shrek is life  
-sunrise | [`3ggEbG6iJ1gDji6JZ8gAMqmbDP2zJfhh3Wntq3qwpyxx`](https://wavesexplorer.com/assets/3ggEbG6iJ1gDji6JZ8gAMqmbDP2zJfhh3Wntq3qwpyxx?network=testnet) | sddsdsdsdsdsdsdsdasdasd f sdf sdf
-df sdf sdf
- sdf sdf 
+sunrise | [`3ggEbG6iJ1gDji6JZ8gAMqmbDP2zJfhh3Wntq3qwpyxx`](https://wavesexplorer.com/assets/3ggEbG6iJ1gDji6JZ8gAMqmbDP2zJfhh3Wntq3qwpyxx?network=testnet) | sddsdsdsdsdsdsdsdasdasd f sdf sdf<br>df sdf sdf<br> sdf sdf 
 SUSDT | [`HqJKjF9qiALuFe8q5vBarh7SZQaJkwXbzefWywSMJ9Gt`](https://wavesexplorer.com/assets/HqJKjF9qiALuFe8q5vBarh7SZQaJkwXbzefWywSMJ9Gt?network=testnet) | Synthetic USDT 
 sWAVES | [`FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm`](https://wavesexplorer.com/assets/FXiFxedP76Cmg1v4XGNDYJpNE9gTGPRG1zjfkmUsGhFm?network=testnet) | sWAVES is the tokenized form of staked WAVES powered by PepeTeam. See details at https://swaves.pepe.team 
 test3 | [`6R9VqBjQgc183CMXdygxb683tkED3LpLEyWCYXcZhkmk`](https://wavesexplorer.com/assets/6R9VqBjQgc183CMXdygxb683tkED3LpLEyWCYXcZhkmk?network=testnet) | test3 test3 test3 test3 test3test3 test3 test3 test3 
