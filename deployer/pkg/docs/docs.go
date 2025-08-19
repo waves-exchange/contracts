@@ -362,7 +362,7 @@ func dashIfEmpty(s string) string {
 	if s == "" {
 		return "—"
 	}
-	return s
+	return strings.ReplaceAll(s, "\n", "<br>")
 }
 
 func sortAndConcat(assets []*client.AssetsDetail, explorerSuffix string) string {

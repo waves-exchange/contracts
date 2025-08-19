@@ -319,10 +319,6 @@ func (s *Syncer) doHash(
 	}
 
 	lpRideHash := blake2b.Sum256(scriptBytes)
-	if err != nil {
-		return false, fmt.Errorf("blake2b.New256: %w", err)
-	}
-
 	newHashStr := base64.StdEncoding.EncodeToString(lpRideHash[:])
 
 	dataTxValue := &proto.StringDataEntry{
@@ -717,7 +713,8 @@ func (s *Syncer) doFile(
 			)
 			doLpRide := cont.File == lpRide && !mainnetLpHashEmpty
 			doLpStableRide := cont.File == lpStableRide && !mainnetLpStableHashEmpty
-			if doLpRide || doLpStableRide {
+			// TODO: Temporary disabled lp and lp_stable steps
+			if false && (doLpRide || doLpStableRide) {
 				er := s.sendTx(
 					ctx,
 					proto.NewUnsignedTransferWithProofs(
