@@ -1,0 +1,154 @@
+{-# STDLIB_VERSION 7 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let SEP = "__"
+let MULT12 = 1_0000_0000_0000
+
+let contractFile = "proxy_lease.ride"
+
+let keyLeaseNode   = ["%s", "leaseNode"].makeString(SEP)
+let keyLpAssetId   = ["%s", "lpAssetId"].makeString(SEP)
+let keyLeaseId     = ["%s", "leaseId"].makeString(SEP)
+let keyLeaseAmount = ["%s", "leaseAmount"].makeString(SEP)
+
+func getStringOrFail(key: String) = {this.getString(key).valueOrErrorMessage("No data for this.key=" + key)}
+
+let leaseNodeAddress = getStringOrFail(keyLeaseNode)
+let lpAssetIdString  = getStringOrFail(keyLpAssetId)
+
+let leaseNode = addressFromStringValue(leaseNodeAddress)
+let lpAsset   = lpAssetIdString.fromBase58String()
+
+let keyManagerPublicKey    = ["%s", "managerPublicKey"].makeString(SEP)
+let keyManagerVaultAddress = ["%s", "managerVaultAddress"].makeString(SEP)
+
+func getManagerVaultAddressOrThis() = {
+  match keyManagerVaultAddress.getString() {
+    case s:String => s.addressFromStringValue()
+    case _=> this
+  }
+}
+
+func throwErr(msg: String) = {
+    throw(contractFile + ": " + msg)
+}
+
+func managerPublicKeyOrUnit() = {
+  let managerVaultAddress = getManagerVaultAddressOrThis()
+  match managerVaultAddress.getString(keyManagerPublicKey) {
+    case s: String => s.fromBase58String()
+    case _: Unit => unit
+  }
+}
+
+func isManager(i: Invocation) = {
+  match managerPublicKeyOrUnit() {
+    case pk: ByteVector => i.callerPublicKey == pk
+    case _: Unit => i.caller == this
+  }
+}
+
+func mustManager(i: Invocation) = {
+  i.isManager() || "permission denied".throw()
+}
+
+@Callable(i)
+func init(leaseNodeAddress: String) = {
+  strict check = [
+    mustManager(i)
+  ]
+  let issueLpAction = Issue("LEASELP", "proxy_lease.ride", 0, 8, true)
+  let lpAssetId = calculateAssetId(issueLpAction)
+
+  let isLpIssued = match (this.getString(keyLpAssetId)) {
+      case t:String => true
+      case _ => false
+    }
+
+  let issueActions = if (isLpIssued) then [] else [
+    StringEntry(keyLpAssetId, lpAssetId.toBase58String()),
+    issueLpAction
+  ]
+
+  issueActions ++
+  [
+    StringEntry(keyLeaseNode, leaseNodeAddress)
+  ]
+}
+
+@Callable(i)
+func getRate() = {
+    ([], MULT12)
+}
+
+@Callable(i)
+func deposit() = {
+  strict check = [
+    i.payments[0].assetId == unit || throwErr("must be Waves")
+  ]
+
+  let amount = i.payments[0].amount
+  let oldLeaseAmount = this.getInteger(keyLeaseAmount).valueOrElse(0)
+  let newLeaseAmount = oldLeaseAmount + amount
+  let newLease = Lease(leaseNode, newLeaseAmount)
+  let newLeaseId = calculateLeaseId(newLease)
+  
+  let cancelLeaseAction = match (this.getBinary(keyLeaseId)) {
+      case leaseId:ByteVector => [LeaseCancel(leaseId)]
+      case _ => []
+    }
+
+  (
+    cancelLeaseAction ++
+    [
+      newLease,
+      BinaryEntry(keyLeaseId, newLeaseId),
+      IntegerEntry(keyLeaseAmount, newLeaseAmount),
+      Reissue(lpAsset, amount, true),
+      ScriptTransfer(i.caller, amount, lpAsset)
+    ],
+
+    amount
+  )
+}
+
+@Callable(i)
+func withdraw() = {
+  strict check = [
+    i.payments[0].assetId == lpAsset || throwErr("must be lpAsset")
+  ]
+
+  let amount = i.payments[0].amount
+  let oldLeaseAmount = this.getInteger(keyLeaseAmount).valueOrElse(0)
+  let newLeaseAmount = oldLeaseAmount - amount
+  let newLease = Lease(leaseNode, newLeaseAmount)
+  let newLeaseId = calculateLeaseId(newLease)
+  
+  let newLeaseActions = if(newLeaseAmount > 0) then [newLease, BinaryEntry(keyLeaseId, newLeaseId)] else [DeleteEntry(keyLeaseId)]
+
+  let cancelLeaseAction = match (this.getBinary(keyLeaseId)) {
+      case leaseId:ByteVector => [LeaseCancel(leaseId)]
+      case _ => []
+    }
+
+  (
+    cancelLeaseAction ++
+    newLeaseActions ++
+    [
+      IntegerEntry(keyLeaseAmount, newLeaseAmount),
+      Burn(lpAsset, amount),
+      ScriptTransfer(i.caller, amount, unit)
+    ],
+    amount
+  )
+}
+
+@Verifier(tx)
+func verify() = {
+  let targetPublicKey = match managerPublicKeyOrUnit() {
+    case pk: ByteVector => pk
+    case _: Unit => tx.senderPublicKey
+  }
+  sigVerify(tx.bodyBytes, tx.proofs[0], targetPublicKey)
+}
