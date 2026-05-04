@@ -327,6 +327,7 @@ func tradeRewardInternal(
 
   strict checks = [
     i.caller == this || "Permission denied".throwErr(),
+    rewards[currentIter] > 0 || "reward cannot be negative".throwErr(),
     paymentAmountLeftOver >= rewards[currentIter] || "insufficient payment assetId".throwErr()
   ]
 
@@ -341,21 +342,23 @@ func tradeRewardInternal(
     []
   )
 
+  let userAddress = userAddresses[currentIter]
   let tradingRewardHistoryKey = keyTradingRewardHistory(
-    userAddresses[currentIter],
+    userAddress,
     i
   )
 
-  let userAddress = addressFromStringValue(userAddresses[currentIter])
-
   ([
     IntegerEntry(tradingRewardHistoryKey, rewards[currentIter]),
-    IntegerEntry(userAddresses[currentIter].keyTradingReward(), rewards[currentIter])
+    IntegerEntry(userAddress.keyTradingReward(), userAddress.getTradingReward() + rewards[currentIter])
   ], tradeRewardInternal)
 }
 
 @Callable(i)
 func updateReferralActivity(userAddress: String, gWxAmountStart: Int) = {
+  strict check = [
+    i.caller == boostingContractOrFail() || "permission denied".throwErr()
+  ]
   let referrer = referralsContractAddressOrFail.getString(userAddress.keyReferrer())
   strict activeReferralInv = if (referrer == unit) then unit else {
     referralsContractAddressOrFail.invoke("updateReferralActivity", [referralProgramName, userAddress, gWxAmountStart >= referralMinGWxAmount], [])

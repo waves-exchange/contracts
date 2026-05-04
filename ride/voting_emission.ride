@@ -938,9 +938,12 @@ func resume(amountAssetId: String, priceAssetId: String, slippageToleranceOrMinO
   } else unit
 
   let pool = (amountAssetId, priceAssetId)
-  let inListActions = [
-    BooleanEntry(pool.keyInList(), true)
-  ] ++ poolsListName.insertNodeActions(pool.poolToString())
+  let inListActions = if poolsListName.containsNode(pool.poolToString()) then []
+  else {
+    [
+      BooleanEntry(pool.keyInList(), true)
+    ] ++ poolsListName.insertNodeActions(pool.poolToString())
+  }
 
   (inListActions ++ lpAssetTransferActions, unit)
 }
