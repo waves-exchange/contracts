@@ -1,5 +1,5 @@
 # Mainnet environment
-[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **11:58 18.02.2026** (GMT+4)
+[**main**](https://github.com/waves-exchange/contracts/tree/main) branch deployed to **mainnet** network to **https://waves.exchange**. Table updated at **13:04 04.05.2026** (GMT+4)
 
 ## Contracts
 | Name | Address | Public key | Code |
@@ -337,6 +337,13 @@ Taurus Gold/WX pool | [`3P4LxuMX5TzhRXjodGQSnnRqfBPs8GmuSNV`](https://wavesexplo
 DOMAIN/WAVES pool | [`3PDWsk9Uc6CB2oDHn3aiNFQSsVVQTJhXB8x`](https://wavesexplorer.com/addresses/3PDWsk9Uc6CB2oDHn3aiNFQSsVVQTJhXB8x) | `HCuu3kBjogCxy2e54YUZpJUNnVQ7HzLH4Z6e1RPREbrf` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 RCVC/WAVES pool | [`3PPTbgtc7UaP4fBWyDXsHLEhWMzNiyCLeLo`](https://wavesexplorer.com/addresses/3PPTbgtc7UaP4fBWyDXsHLEhWMzNiyCLeLo) | `EacEkqNvz4uuVdiqHdHQSYsV21qxDVQuLGXn1Kji4LuF` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 RCVC/WX pool | [`3PASUf5VCVdDYVRS2PmQiSAUovkfhyLw99z`](https://wavesexplorer.com/addresses/3PASUf5VCVdDYVRS2PmQiSAUovkfhyLw99z) | `YWKEn2uySCBxzAfrPCGpuzMr8PGRVWzJTQmHgCfVPDC` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+LAUGH COIN/WX pool | [`3PM1Qkhx26EdnKw38DnRsDd3VFWaD6G3Wki`](https://wavesexplorer.com/addresses/3PM1Qkhx26EdnKw38DnRsDd3VFWaD6G3Wki) | `GcXfm2ynjqEcB45vuHBjjnMwXPon9AbNxqpX5U3uqHii` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+BRIQ ENERGY/WX pool | [`3PNxe8M6mu7dxZ4KBHGXzd2jJCto5ERqKuT`](https://wavesexplorer.com/addresses/3PNxe8M6mu7dxZ4KBHGXzd2jJCto5ERqKuT) | `DEBHxw5HYfXDQ9dgsf6vxGUxLaYgbJmPzV2oBRUjdbYY` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+MENTALOCHKA/WX pool | [`3PCQyqSpo3fveT498K8k1SpuBPdAVdRSXWG`](https://wavesexplorer.com/addresses/3PCQyqSpo3fveT498K8k1SpuBPdAVdRSXWG) | `6dA1RFBGKEAjkbZMzuH32y1iRPBNG3QXL9R9cUvuWsAS` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+Fulfiller Token/WAVES pool | [`3P27kWzGs8W1H3dcNSYV1wrwCqj9GE8zfeH`](https://wavesexplorer.com/addresses/3P27kWzGs8W1H3dcNSYV1wrwCqj9GE8zfeH) | `DYnF5gBznFv37gKEPo3JkS2zZDURGtnFEvVWukQXXo6R` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+Money Energy/WX pool | [`3P6776Xi9vHVv12NHRV3uCQVJ897nkCbjeJ`](https://wavesexplorer.com/addresses/3P6776Xi9vHVv12NHRV3uCQVJ897nkCbjeJ) | `E8zZLkmB4s75xk3eReFkKf8Mo6JvN7927FxfBKAAm8ee` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+3x4x4/WX pool | [`3PL5Bou9UrBadFqCixEEFF6FoHJycAEpLJj`](https://wavesexplorer.com/addresses/3PL5Bou9UrBadFqCixEEFF6FoHJycAEpLJj) | `2YU4cWg41KYhcBsB9Sm35TMa6QZFG9QiCQTn4X5ifZu4` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
+Yasue Yaeudu/WX pool | [`3P5iF7CK3q2LAsrDpPtiGbdytNTLctA88EN`](https://wavesexplorer.com/addresses/3P5iF7CK3q2LAsrDpPtiGbdytNTLctA88EN) | `BkizwpautYxCfs9AW288hGdMVKebXzG5ZJTDRdvLE4RL` | [lp.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp.ride) 
 USDT/USDN pool | [`3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz`](https://wavesexplorer.com/addresses/3P8KMyAJCPWNcyedqrmymxaeWonvmkhGauz) | `DxhbzFs9BZTiN6kcnyybxmqPTV8xReD6Z5gWQ5AgRX8w` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 USDC/USDN pool | [`3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1`](https://wavesexplorer.com/addresses/3PC3HtupBxBmy4WtZf1Tym1vrxg9MwbZRK1) | `puwfE37HNxwJr9vM2zSgNtbZXBXKJXC3et2faRQ8trh` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
 BUSD/USDN pool | [`3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD`](https://wavesexplorer.com/addresses/3P5hjCSDFRGabd7VN74AVPiKNqgAHm8JAbD) | `H16Zrn7wiV2o2EPQoAjknZemVPziQy4HHjBBuWroFoy8` | [lp_stable.ride](https://github.com/waves-exchange/contracts/blob/main/ride/lp_stable.ride) 
@@ -407,6 +414,7 @@ BNB-BSC-PPT | [`66a1br3BrkoaJgP7yEar9hJcSTvJPoH6PYBLqscXcMGo`](https://wavesexpl
 Bones-X | [`Fix5Sa55Ra7vrpZhEECEJ5V3AVmQJonpqJASSpWbMb1y`](https://wavesexplorer.com/assets/Fix5Sa55Ra7vrpZhEECEJ5V3AVmQJonpqJASSpWbMb1y) | Bones are bonuses of the Dobercoin project, which you can win for participating in competitions in groups in Telegam (t.me/dobercoinwx and t.me/dobercoin_eng) as well as on the website dobercoin.com Bones will be provided with Pete coins, which we will buy for these purposes, help the same two projects. Happy new year friends) 
 BONK | [`6vi1PbdGJtXJFv9WhXa45Va3cwVGDHgCR26Vs8VR55Th`](https://wavesexplorer.com/assets/6vi1PbdGJtXJFv9WhXa45Va3cwVGDHgCR26Vs8VR55Th) | Wrapped bridge token from Solana by wavesbridge.io 
 Boss Cuan | [`5f9H3J1bpispr9poNWqizKKPzivS2H2YMYTAc7JDoCkS`](https://wavesexplorer.com/assets/5f9H3J1bpispr9poNWqizKKPzivS2H2YMYTAc7JDoCkS) | Starting from dreams and hopes that really wanted to be realized, these dreamers gathered in one community called "BOSS CUAN". share stories, share dreams, share ideas. more and more dreamers are gathered. and there are more and more dreams that want to be realized. But, how do we make this dream come true? BOSS CUAN Token appears. a token that is the answer to these dreams. that emerges from the community, the fundamental power of the token itself. The more dreamers there are, the bigger the BOSS CUAN token will be. If you still have dreams, answer your dreams with BOSS CUAN tokens. And make your dreams come true. 
+BRIQ ENERGY | [`DjkFbcNocbuRzMYXL9efVtftdvkUsW1MvhcJGo5TQRHZ`](https://wavesexplorer.com/assets/DjkFbcNocbuRzMYXL9efVtftdvkUsW1MvhcJGo5TQRHZ) | Real Word Asset (RWA) Token Briquettes As New Alternative Energy 
 BTCB-BSC-PPT | [`EW1uGLVo21Wd9i2Rhq8o4VKDTCQTGCGXE8DqayHGrLg8`](https://wavesexplorer.com/assets/EW1uGLVo21Wd9i2Rhq8o4VKDTCQTGCGXE8DqayHGrLg8) | BTCB Token from Binance Smart Chain network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/BTCB-BSC-PPT 
 BURN-XTN | [`3SjxA2YLdfF9fTRbzLm9xFn27C6MW34W1YsdJ6Axefns`](https://wavesexplorer.com/assets/3SjxA2YLdfF9fTRbzLm9xFn27C6MW34W1YsdJ6Axefns) | Constantly burn more XTN without draining collateral from Neutrino treasury and make a profit while doing so. Support Neutrino and the Waves ecosystem. For more info go to: www.burnxtn.tech 
 Cloud | [`HtcYCnSzEVu93915Je8L8GjdoygZKSTLYDiKvQUmbrhE`](https://wavesexplorer.com/assets/HtcYCnSzEVu93915Je8L8GjdoygZKSTLYDiKvQUmbrhE) | Cloud  is a modern token that will change the world. It can help in the field of education, medicine, science. With its help it will be possible to earn money for medical and educational services.  
@@ -455,6 +463,7 @@ FOBIA will have a huge social base and prospects in the development of media, ad
 PHOBIA is one of the few experienced actresses that can be found in your portfolio. 
 FREEDUROV | [`VkK5DnTYmzRWisfSypd5PxwyJVgWXDCsiZHasN21kmw`](https://wavesexplorer.com/assets/VkK5DnTYmzRWisfSypd5PxwyJVgWXDCsiZHasN21kmw) | Russia - FREEDUROV 
 FUDT | [`5Lhv8uKnvGxA2cjbFXXKZFASk1cAFp9dRWkmLYhULtSX`](https://wavesexplorer.com/assets/5Lhv8uKnvGxA2cjbFXXKZFASk1cAFp9dRWkmLYhULtSX) | FUDT is a community token. The token is using for activities in WAVES ecosystem like votings, advertising, activities etc. The token is an integral part of the FUD DAO. 
+Fulfiller Token | [`4hKtUbg1Hdd8cQVGDH8wjerPbnCkqHTRbseCs4ScyxgU`](https://wavesexplorer.com/assets/4hKtUbg1Hdd8cQVGDH8wjerPbnCkqHTRbseCs4ScyxgU) | Fulfiller Token is used for two primary purposes.  First to purchase goods and services from providers that accept the Fulfiller Token.  Some of these services include success and achievement webinars.  Second, to trade the Fulfiller Token for other crypto tokens, crypto currencies, and fiat currencies. 
 GIGASAYLOR | [`CjpMATkryqB6QRYw5BBNFMCHGPCGCvQ1TCNaF8N9Eozo`](https://wavesexplorer.com/assets/CjpMATkryqB6QRYw5BBNFMCHGPCGCvQ1TCNaF8N9Eozo) | $GIGASAYLOR – NUMBER GO GIGA.  
 21T supply. Each BTC Saylor buys = 10M burned 🔥  
 100% meme, 0% utility, only giga vibes.  
@@ -474,6 +483,7 @@ KOPEYKA | [`5kD5UVcsFeA7hZ7heZqXb1ZYDRtCmqqNzmAWTV5PEwUv`](https://wavesexplorer
 KremHrustCoin | [`7kMNXyfk3mYcYikG2NJ5C8dBj4bR91buXEMYb57w6VUL`](https://wavesexplorer.com/assets/7kMNXyfk3mYcYikG2NJ5C8dBj4bR91buXEMYb57w6VUL) | Paradoxical results of the day: an unconventional look at the news in the daily Cream-Crust Show. Yes, this is our coin! 
 Krill | [`HrPA8VBPGicVukmy52EsgkGr5Appup4bfcoDjhioFkRE`](https://wavesexplorer.com/assets/HrPA8VBPGicVukmy52EsgkGr5Appup4bfcoDjhioFkRE) | Made in Atlantic Canada, inspired by the ocean. "Krill" is found all around the world and is one of the most important parts of the food chain. Krill feed the larger fish and keep the ecosystem going. We invision this token to do the same thing in our economy. People buy or collect krill and spend(feed) the larger companies(whales) and help to keep our economy(ecosystem) going. 
 L2MP | [`7scqyYoVsNrpWbTAc78eRqNVcYLxMPzZs8EQfX7ruJAg`](https://wavesexplorer.com/assets/7scqyYoVsNrpWbTAc78eRqNVcYLxMPzZs8EQfX7ruJAg) | Mining Power Token for WAVES EVM L2 bootstrapping. 
+LAUGH COIN | [`936YQ6szYRhs8q49vdvEZ8Kux9NgrjgNCSEFCmwmhrc6`](https://wavesexplorer.com/assets/936YQ6szYRhs8q49vdvEZ8Kux9NgrjgNCSEFCmwmhrc6) | The futuristic meme coin 
 Litecoin | [`HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk`](https://wavesexplorer.com/assets/HZk1mbfuJpmxU1Fs4AX5MWLVYtctsNcg6e2C6VKqK8zk) | Litecoin token 
 LortrexNetwork | [`HdTuvhXu79Aar6K9q4KBcSM4DVoKejHsZ4pcMVtV5sJ6`](https://wavesexplorer.com/assets/HdTuvhXu79Aar6K9q4KBcSM4DVoKejHsZ4pcMVtV5sJ6) | Lortrex on WX Network 
 LozoTokeN | [`6NDqdJwiXzoYmuf1LV8xun7sfNpw9zEaF9fcosaMdgiP`](https://wavesexplorer.com/assets/6NDqdJwiXzoYmuf1LV8xun7sfNpw9zEaF9fcosaMdgiP) | The Ivorian Ga kingdom staking 
@@ -487,6 +497,7 @@ Activated Museum Token-II
 MATIC-POLY-PPT | [`AhGJvjtYmRG2pKwXvTh8N6sX1M2wNTpkjxaWKQfzJe7q`](https://wavesexplorer.com/assets/AhGJvjtYmRG2pKwXvTh8N6sX1M2wNTpkjxaWKQfzJe7q) | MATIC Token from Polygon network powered by PepeTeam Crosschain Bridge. See details at https://bridge.pepe.team/tokens/MATIC-POLY-PPT 
 MELANIA | [`441TtKJnEWsUzD7C4mCkNX6H58w1as4tCVjj89WnB97Z`](https://wavesexplorer.com/assets/441TtKJnEWsUzD7C4mCkNX6H58w1as4tCVjj89WnB97Z) | Wrapped token from Solana by wavesbridge.io 
 MEME0 | [`3eT9vmK4NLdpnnwYdYTGg26Va6Z8TWK38te6b2vVf9vJ`](https://wavesexplorer.com/assets/3eT9vmK4NLdpnnwYdYTGg26Va6Z8TWK38te6b2vVf9vJ) | zero layer of meme coins.  meme0.live 
+MENTALOCHKA | [`79CXP1j7RUTCr7vZLW515jALAVzerNCcjhcQmfuAefz1`](https://wavesexplorer.com/assets/79CXP1j7RUTCr7vZLW515jALAVzerNCcjhcQmfuAefz1) | we can't explain it 
 Money Energy | [`6XJAscmejGPTLAdKsg12MynB5rNQzNiZz8Yj81SWeFrj`](https://wavesexplorer.com/assets/6XJAscmejGPTLAdKsg12MynB5rNQzNiZz8Yj81SWeFrj) | https://moneyenergy.me/ - Secure Blockchain Wallet and Premium VPN service. Next Airdrop to token holders: 08 March 2025. Hold at least 100 ME. 
 MUSK | [`7sFqhTAp3KmvzWuYFXH9xqczYZ7GPCiTSpVswvVZ3XhA`](https://wavesexplorer.com/assets/7sFqhTAp3KmvzWuYFXH9xqczYZ7GPCiTSpVswvVZ3XhA) | MUSK - is a coin whose liquidity is confirmed by the musky aroma. This word comes from the Sanskrit "muska" - testicle - which means the fragrant secret of the inguinal gland of a male musk deer, a small deer with fangs and large ears, but without horns. This secret of musk deer is considered one of the most valuable ingredients and has been used in perfumery for a very long time. 
 Neutrino EUR | [`DUk2YTxhRoAqMJLus4G2b3fR8hMHVh6eiyFx5r29VR6t`](https://wavesexplorer.com/assets/DUk2YTxhRoAqMJLus4G2b3fR8hMHVh6eiyFx5r29VR6t) | Neutrino protocol based algorithmic Euro 
@@ -622,6 +633,10 @@ WXB Token | [`HkYbq1oqnfBnicWwXBRJZCxjM85zAVsQMdHvpQbDCRBo`](https://wavesexplor
 WXDAO | [`BE4VVq1VsrwGyUWpUkNjVFR5j9vzioiRhrUT52p8RW2m`](https://wavesexplorer.com/assets/BE4VVq1VsrwGyUWpUkNjVFR5j9vzioiRhrUT52p8RW2m) | Take the future of WX into your hands - join WX DAO now! https://app.power.tech/dao/3PEA2Mr8CgWXdaosBUK3TqxpWDC4MSofsYn 
 XBTC | [`AkRv1G12fE4oJ9ARQpk7NgRZoA8ggiF5Boa9yeNtESMo`](https://wavesexplorer.com/assets/AkRv1G12fE4oJ9ARQpk7NgRZoA8ggiF5Boa9yeNtESMo) | WX Derivative XBTC token. XBTC token is suitable for Derivative trading on WX Network only. 
 XTN. | [`DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p`](https://wavesexplorer.com/assets/DG2xFkPdDwKUoBkzGAhQtLpSGzfXLiCYPEzeKH2Ad24p) | Neutrino Index 
+Yasue Yaeudu | [`4n5iYYYQ7CbsWWnpQcKymXrTzCAML55qvWpDduZMnvfV`](https://wavesexplorer.com/assets/4n5iYYYQ7CbsWWnpQcKymXrTzCAML55qvWpDduZMnvfV) | محذرًا من اقتراب عودة يسوع، اشترِ الرمز وساهم في تبشير الأمم، فلنستعد لعودة المسيح.
+mhdhran min aqtirab eawdat yasue, ashtr alramz wasaham fi tabshir al'ummi, falinastaeida lieawdat almasiha.
+في وقت إصدار الرمز، تم إصدار المبلغ المتعلق بعدد سكان العالم.
+fi waqt 'iisdar alramzi, tama 'iisdar almablagh almutaealiq bieadad sukaan alealami. 
 YouTube | [`Ew2jWQyayzCuNkuwgEcQnV3tBLjivhwfLnReGEBJa36K`](https://wavesexplorer.com/assets/Ew2jWQyayzCuNkuwgEcQnV3tBLjivhwfLnReGEBJa36K) | YouTube and in Africa - YouTube 
 
 ## Pool LP assets
@@ -630,6 +645,7 @@ YouTube | [`Ew2jWQyayzCuNkuwgEcQnV3tBLjivhwfLnReGEBJa36K`](https://wavesexplorer
 161fz~WAVESLP | [`3qnEKWoacFFMk9dzmQc2syPGMnf2ihupVJZwF87JmyLv`](https://wavesexplorer.com/assets/3qnEKWoacFFMk9dzmQc2syPGMnf2ihupVJZwF87JmyLv) | 161fz~/WAVES pool liquidity provider token 
 2 PETE~WAVESLP | [`GxsUNJjQF87xiFH8GWS8zBKJkeznUjM65f3ghi6R2xUf`](https://wavesexplorer.com/assets/GxsUNJjQF87xiFH8GWS8zBKJkeznUjM65f3ghi6R2xUf) | 2 PETE~/WAVES pool liquidity provider token 
 3x4x4~WAVESLP | [`GHM7v7bcG3CrxHH7MMwsDbq4gC2Yuuy4NJ2J8m3uMkgQ`](https://wavesexplorer.com/assets/GHM7v7bcG3CrxHH7MMwsDbq4gC2Yuuy4NJ2J8m3uMkgQ) | 3x4x4~/WAVES pool liquidity provider token 
+3x4x4~WXLP | [`Hen7dMt4MQ6SqrETFQV5PTcayMY2xVfb3ZxLP4rY6Ecb`](https://wavesexplorer.com/assets/Hen7dMt4MQ6SqrETFQV5PTcayMY2xVfb3ZxLP4rY6Ecb) | 3x4x4~/WX pool liquidity provider token 
 ACRES~WAVESLP | [`YmNHRv49z2AP89v47b6itaPSyUPe5VBEsVQQ9tineBg`](https://wavesexplorer.com/assets/YmNHRv49z2AP89v47b6itaPSyUPe5VBEsVQQ9tineBg) | ACRES~/WAVES pool liquidity provider token 
 ACR~USDT-ERC20LP | [`5ZBKvfiz1S1xxbYDZo7dHEaXSVZgp5C5AWqrVVmGACj3`](https://wavesexplorer.com/assets/5ZBKvfiz1S1xxbYDZo7dHEaXSVZgp5C5AWqrVVmGACj3) | ACR~/USDT-ERC20 pool liquidity provider token 
 AFY Toke~WAVESLP | [`87iCyd25UNpnAx7LLMsyRqv45pV1SZbLbmfHzT6ViVQP`](https://wavesexplorer.com/assets/87iCyd25UNpnAx7LLMsyRqv45pV1SZbLbmfHzT6ViVQP) | AFY Toke~/WAVES pool liquidity provider token 
@@ -657,6 +673,7 @@ BNBWAVESLP | [`7swiE4RL4CWeq5ZTbwaxva1HpcAsd1xugSMN6byKX887`](https://wavesexplo
 BONK~WAVESLP | [`7DZsWcqGHzFXo8oUBKYjrc8PuwqgtoQhj15rq6vgQmRi`](https://wavesexplorer.com/assets/7DZsWcqGHzFXo8oUBKYjrc8PuwqgtoQhj15rq6vgQmRi) | BONK~/WAVES pool liquidity provider token 
 Boss Cuan~WXLP | [`9vyRooJ3dJPt5XvQMP8UQpjydwocwV5XBGytsvWPA5P3`](https://wavesexplorer.com/assets/9vyRooJ3dJPt5XvQMP8UQpjydwocwV5XBGytsvWPA5P3) | Boss Cuan~/WX pool liquidity provider token 
 Boss Cua~WAVESLP | [`87xSm8Rwc6JQQeNsycZ925GTDmkLkmb8KrN2sQavTqLJ`](https://wavesexplorer.com/assets/87xSm8Rwc6JQQeNsycZ925GTDmkLkmb8KrN2sQavTqLJ) | Boss Cua~/WAVES pool liquidity provider token 
+BRIQ ENERGY~WXLP | [`CfeXotzd2xMbBaWqa2ApWBwUeq9vHAEBSN4hcftkXAqo`](https://wavesexplorer.com/assets/CfeXotzd2xMbBaWqa2ApWBwUeq9vHAEBSN4hcftkXAqo) | BRIQ ENERGY~/WX pool liquidity provider token 
 BTCUSDNWXLP | [`8WhH5CCJ6NakPvEvAJcizqqD7H6axhupdYHDFumSDwsy`](https://wavesexplorer.com/assets/8WhH5CCJ6NakPvEvAJcizqqD7H6axhupdYHDFumSDwsy) | WX Btc/Usdn pool liquidity provider token 
 BURN-XTN~WAVESLP | [`GyiHdcN59sZ46baFvj68ruLngrTPEvWDtsd6jHm4o46n`](https://wavesexplorer.com/assets/GyiHdcN59sZ46baFvj68ruLngrTPEvWDtsd6jHm4o46n) | BURN-XTN~/WAVES pool liquidity provider token 
 BURN-XTN~XTNLP | [`7BLynNvde1NTBbaivX9zj1h1rrN9L1kWeWkFzpFhpJBz`](https://wavesexplorer.com/assets/7BLynNvde1NTBbaivX9zj1h1rrN9L1kWeWkFzpFhpJBz) | BURN-XTN~/XTN pool liquidity provider token 
@@ -700,6 +717,7 @@ FTMXTNLP | [`9s3j75byznhtBHfwerKirr6VbRgYkk8Y7AWd2wVL3vvL`](https://wavesexplore
 FTTXTNLP | [`BvydnzP19hvrrALiT3FeUBut4gU1efTPb29gVFbKgxJg`](https://wavesexplorer.com/assets/BvydnzP19hvrrALiT3FeUBut4gU1efTPb29gVFbKgxJg) | WX FTT/XTN pool liquidity provider token 
 FUDT~USDTLP | [`3b6sGQhCk8rYsU9cCpsX85uT2UX9g7B3ecn6pnUkfRYR`](https://wavesexplorer.com/assets/3b6sGQhCk8rYsU9cCpsX85uT2UX9g7B3ecn6pnUkfRYR) | FUDT~/USDT pool liquidity provider token 
 FUDT~WAVESLP | [`4c2g8p5VK3v4hottZGzKTywuvY6Wj7W6SvRZvUoSwCgK`](https://wavesexplorer.com/assets/4c2g8p5VK3v4hottZGzKTywuvY6Wj7W6SvRZvUoSwCgK) | FUDT~/WAVES pool liquidity provider token 
+Fulfille~WAVESLP | [`1TqUUEJDbfQFtddZCpLr9wkhTZxRq4eG1FYgDqko8DR`](https://wavesexplorer.com/assets/1TqUUEJDbfQFtddZCpLr9wkhTZxRq4eG1FYgDqko8DR) | Fulfille~/WAVES pool liquidity provider token 
 GIGASAYL~WAVESLP | [`HM2csSupjmAdu6upBmb42Z7A1ziHfWSxBHoW3i5B3o7h`](https://wavesexplorer.com/assets/HM2csSupjmAdu6upBmb42Z7A1ziHfWSxBHoW3i5B3o7h) | GIGASAYL~/WAVES pool liquidity provider token 
 GLF COIN~WAVESLP | [`DQv5YxCikVuFMXdVuscRqRaf5KYTdjGJ9Yj9YVsyKjET`](https://wavesexplorer.com/assets/DQv5YxCikVuFMXdVuscRqRaf5KYTdjGJ9Yj9YVsyKjET) | GLF COIN~/WAVES pool liquidity provider token 
 GLF COIN~WXLP | [`3V4EwQnnsUEBv66hMWPjhJXS3UCw5oEe2qp1dnpxFdde`](https://wavesexplorer.com/assets/3V4EwQnnsUEBv66hMWPjhJXS3UCw5oEe2qp1dnpxFdde) | GLF COIN~/WX pool liquidity provider token 
@@ -725,6 +743,7 @@ L2MP~WXLP | [`3CvJkvzRkUp5PvLjuL8zN9y7zUigYyzyGKZTA3otfB94`](https://wavesexplor
 L2MP~XTNLP | [`EJc5E2mjN8oGxEUuji8SMgES6B3TBVp47sKzJ2V3P1z5`](https://wavesexplorer.com/assets/EJc5E2mjN8oGxEUuji8SMgES6B3TBVp47sKzJ2V3P1z5) | L2MP~/XTN pool liquidity provider token 
 L2MP~~ROMELP | [`2U18N6rDQTG5Bx9D5ptvie3P9ULRLGXg7MDAikZg6eKV`](https://wavesexplorer.com/assets/2U18N6rDQTG5Bx9D5ptvie3P9ULRLGXg7MDAikZg6eKV) | L2MP~/~ROME pool liquidity provider token 
 L2M~USDT-ERC20LP | [`GYkgBchN9answmT5G3bDf9uf135CNTeDdUbHy6QoqswX`](https://wavesexplorer.com/assets/GYkgBchN9answmT5G3bDf9uf135CNTeDdUbHy6QoqswX) | L2M~/USDT-ERC20 pool liquidity provider token 
+LAUGH COIN~WXLP | [`BTGfNGo5XJaWe7yfVRsEpWDXtKLJ96NRrrdBLeSeXfTU`](https://wavesexplorer.com/assets/BTGfNGo5XJaWe7yfVRsEpWDXtKLJ96NRrrdBLeSeXfTU) | LAUGH COIN~/WX pool liquidity provider token 
 LortrexNe~PETELP | [`FW4r5cYAyB1cm3ju7vB78muMJqPPMhgMyYgCJ9cnBtqB`](https://wavesexplorer.com/assets/FW4r5cYAyB1cm3ju7vB78muMJqPPMhgMyYgCJ9cnBtqB) | LortrexNe~/PETE pool liquidity provider token 
 LTCXTNLP | [`CNkqC6GPi888WdJ1EuVtu9JGZ9VHpAn8eTHwR8YZxXbv`](https://wavesexplorer.com/assets/CNkqC6GPi888WdJ1EuVtu9JGZ9VHpAn8eTHwR8YZxXbv) | WX LTC/XTN pool liquidity provider token 
 LUCKCOIN~WAVESLP | [`2YoFYFzYUmZWTvG5jfECCZMgfcae8bJ8txQXMJ5gwVjX`](https://wavesexplorer.com/assets/2YoFYFzYUmZWTvG5jfECCZMgfcae8bJ8txQXMJ5gwVjX) | LUCKCOIN~/WAVES pool liquidity provider token 
@@ -736,6 +755,8 @@ Marquise~WAVESLP | [`CYVkTU4nYQ95sb5Xf7KTYvvPWAthefjuRb9UcAAB6A1e`](https://wave
 MATIC-POL~USDTLP | [`91W4JjLLFHaUxJ2qJEuKiUifxzuUAGAdKeaAmg7QzqHh`](https://wavesexplorer.com/assets/91W4JjLLFHaUxJ2qJEuKiUifxzuUAGAdKeaAmg7QzqHh) | MATIC-POL~/USDT pool liquidity provider token 
 MELANIA~WAVESLP | [`3MNPSBp5uALZwAnPaDssjxHgqzF4ZyEWJZ9H8TxWm8zo`](https://wavesexplorer.com/assets/3MNPSBp5uALZwAnPaDssjxHgqzF4ZyEWJZ9H8TxWm8zo) | MELANIA~/WAVES pool liquidity provider token 
 MEME0~USDTLP | [`3CvBbgPQPpjx352ZFJ1dc73yZoZSzrZtHXiid2KAuMD5`](https://wavesexplorer.com/assets/3CvBbgPQPpjx352ZFJ1dc73yZoZSzrZtHXiid2KAuMD5) | MEME0~/USDT pool liquidity provider token 
+MENTALOCHKA~WXLP | [`BBNNBc4DE8dS1JrDF1MNnmMXJdcjZ4VPHi3tm1FWNNRA`](https://wavesexplorer.com/assets/BBNNBc4DE8dS1JrDF1MNnmMXJdcjZ4VPHi3tm1FWNNRA) | MENTALOCHKA~/WX pool liquidity provider token 
+Money Energ~WXLP | [`GTWPSHX4vufLVzpF3Jn9y51bTZkokXSizNMcW3jm67xv`](https://wavesexplorer.com/assets/GTWPSHX4vufLVzpF3Jn9y51bTZkokXSizNMcW3jm67xv) | Money Energ~/WX pool liquidity provider token 
 Money Ener~XTNLP | [`DfRFTxfUnxUVAVEKNaq8p73tSrBxvfmL7MuV2yCTZeQm`](https://wavesexplorer.com/assets/DfRFTxfUnxUVAVEKNaq8p73tSrBxvfmL7MuV2yCTZeQm) | Money Ener~/XTN pool liquidity provider token 
 Money En~WAVESLP | [`FBSThqQEFB4B5gfQU7tkWXwZsiLppRidd2nnEgqrbxEY`](https://wavesexplorer.com/assets/FBSThqQEFB4B5gfQU7tkWXwZsiLppRidd2nnEgqrbxEY) | Money En~/WAVES pool liquidity provider token 
 Mon~USDT-ERC20LP | [`5rHg7hGbrLLByXswVQCetRxBFUGCnnTCdu2ozXazC3Ri`](https://wavesexplorer.com/assets/5rHg7hGbrLLByXswVQCetRxBFUGCnnTCdu2ozXazC3Ri) | Mon~/USDT-ERC20 pool liquidity provider token 
@@ -934,4 +955,5 @@ WX~ROMELP | [`AuMs3E4K6c5K1CHr7x2pCNRXZ5ENFSUGWYKshZrex1Vc`](https://wavesexplor
 XBTC~USDTLP | [`GU1hHaGgtiPRrGd4jvVKfXXKRMxRyXttshNptA7FoZWY`](https://wavesexplorer.com/assets/GU1hHaGgtiPRrGd4jvVKfXXKRMxRyXttshNptA7FoZWY) | XBTC~/USDT pool liquidity provider token 
 XBT~USDT-ERC20LP | [`D4C5uf7PiCa9wKkXZgDTLSPiiBsW2EdFLrbBkjrEmVv9`](https://wavesexplorer.com/assets/D4C5uf7PiCa9wKkXZgDTLSPiiBsW2EdFLrbBkjrEmVv9) | XBT~/USDT-ERC20 pool liquidity provider token 
 XTNUSDTLP | [`EueGJgronh9D9YiEfYhDu492eLbeX1AEB6wyMYvss6Vc`](https://wavesexplorer.com/assets/EueGJgronh9D9YiEfYhDu492eLbeX1AEB6wyMYvss6Vc) | XTN/USDT pool liquidity provider token 
+Yasue Yaeud~WXLP | [`3gAvWsUxfUvD1BG77LJfsQiDmEXi5XGjaVYkraQEArya`](https://wavesexplorer.com/assets/3gAvWsUxfUvD1BG77LJfsQiDmEXi5XGjaVYkraQEArya) | Yasue Yaeud~/WX pool liquidity provider token 
 YouTube~XTNLP | [`B4fxx9tzWjtAHqYtAuSMbepQ5NgiVvcaEENXSt88zMge`](https://wavesexplorer.com/assets/B4fxx9tzWjtAHqYtAuSMbepQ5NgiVvcaEENXSt88zMge) | YouTube~/XTN pool liquidity provider token 
